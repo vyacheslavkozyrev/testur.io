@@ -136,9 +136,9 @@ Single Next.js application hosted on Azure Static Web Apps, split into two logic
 
 Testurio uses **logical multi-tenancy** — all clients share a single infrastructure stack. Isolation is enforced at two layers:
 
-| Layer | Mechanism |
-| --- | --- |
-| **API** | Every request carries an Azure AD B2C JWT; the API extracts `userId` from the token and scopes all queries to that user's data |
+| Layer        | Mechanism                                                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API**      | Every request carries an Azure AD B2C JWT; the API extracts `userId` from the token and scopes all queries to that user's data                          |
 | **Database** | `userId` is the partition key on all Cosmos DB containers (Users, Projects, TestResults); cross-partition queries that could leak data are never issued |
 
 No client-visible tenant ID is required — the authenticated identity is the tenant. A new client account is simply a new user record; no infrastructure is provisioned per client.
@@ -176,6 +176,7 @@ Container Apps workers
 ```
 
 **Client setup (one time):**
+
 1. Copy the Testurio published egress IP range from the documentation.
 2. Add the IPs to your staging environment's firewall or CDN allowlist.
 3. No further action needed — the worker connects transparently on every test run.
@@ -184,29 +185,31 @@ Container Apps workers
 
 For environments where firewall rules cannot be modified, the project stores credentials encrypted in Azure Key Vault. Two sub-options:
 
-| Sub-option            | How it works                                                                 | Playwright behaviour                                      |
-| --------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| **HTTP Basic Auth**   | Username + password stored per project; URL is `https://user:pass@host/...` | Playwright passes credentials via `httpCredentials` option |
+| Sub-option              | How it works                                                                  | Playwright behaviour                                                    |
+| ----------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **HTTP Basic Auth**     | Username + password stored per project; URL is `https://user:pass@host/...`   | Playwright passes credentials via `httpCredentials` option              |
 | **Custom header token** | A shared secret header (e.g. `X-Testurio-Token`) checked by client middleware | Playwright injects the header into every request via `extraHTTPHeaders` |
 
 **Client setup — Basic Auth:**
+
 1. Protect your staging environment with HTTP Basic Auth (e.g. nginx, middleware).
 2. Enter the username and password in Testurio project settings.
 
 **Client setup — Custom header token:**
+
 1. Add middleware to your staging environment that rejects requests missing `X-Testurio-Token: <secret>`.
 2. Generate a secret and enter it in Testurio project settings.
 
 ### Project Config Fields
 
-| Field               | Description                                                                 |
-| ------------------- | --------------------------------------------------------------------------- |
-| `test_type`         | `api` \| `ui_e2e` \| `both` — controls which executor runs               |
-| `access_mode`       | `ip_allowlist` \| `basic_auth` \| `header_token`                           |
-| `basic_auth_user`   | Username (Basic Auth mode only); stored in Key Vault                        |
-| `basic_auth_pass`   | Password (Basic Auth mode only); stored in Key Vault                        |
-| `header_token_name` | Header name (header token mode only), e.g. `X-Testurio-Token`            |
-| `header_token_value`| Header value (header token mode only); stored in Key Vault                 |
+| Field                | Description                                                   |
+| -------------------- | ------------------------------------------------------------- |
+| `test_type`          | `api` \| `ui_e2e` \| `both` — controls which executor runs    |
+| `access_mode`        | `ip_allowlist` \| `basic_auth` \| `header_token`              |
+| `basic_auth_user`    | Username (Basic Auth mode only); stored in Key Vault          |
+| `basic_auth_pass`    | Password (Basic Auth mode only); stored in Key Vault          |
+| `header_token_name`  | Header name (header token mode only), e.g. `X-Testurio-Token` |
+| `header_token_value` | Header value (header token mode only); stored in Key Vault    |
 
 Credentials are never stored in Cosmos DB directly — only a Key Vault secret reference is persisted in the project document.
 
@@ -250,8 +253,8 @@ builder.AddOpenAIChatCompletion(
 ## Project Structure
 
 ```
-Testurio/
-├── src/
+testur.io/
+├── source/
 │   ├── Testurio.Web/              # Next.js — public site + user portal
 │   ├── Testurio.Api/              # ASP.NET Core — portal API + webhooks
 │   ├── Testurio.Worker/           # .NET Worker Service — test pipeline

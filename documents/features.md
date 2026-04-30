@@ -14,7 +14,7 @@ tags: [features, business, product]
 - MVP priority order: AI Testing Pipeline → Public Website → Personal Web Panel → Billing
 - v1 scope: single-user accounts, web products only, Azure DevOps and Jira integrations
 - **POC scope:** features 0001–0005; Jira integration, API testing only, commercial LLM API, hardcoded single project config
-- **MVP scope:** all 18 features; both PM tools, API + UI E2E testing, self-hosted LLM, full portal and billing
+- **MVP scope:** all 23 features; both PM tools, API + UI E2E testing, self-hosted LLM, full portal and billing
 
 ---
 
@@ -22,7 +22,25 @@ tags: [features, business, product]
 
 **[0001]: Automatic Test Run Trigger** `POC`
 _Business Outcome: Eliminates manual QA scheduling by starting test runs without human intervention._
-When a work item moves to the "In Testing" status in the connected PM tool, the system automatically picks it up and begins a test run. The QA lead never needs to manually launch tests or monitor the PM tool queue.
+When a User Story moves to the "In Testing" status in Jira, the system receives the event via webhook and enqueues an API test run. If the story has no description or acceptance criteria, the QA lead is notified and the run is skipped. Incoming triggers while a run is active are queued and executed sequentially. POC constraints: Jira only, webhook only, User Story issue type only, API testing only, no plan-tier trigger limits.
+
+---
+
+**[0019]: Trigger Notification Method Configuration** `MVP`
+_Business Outcome: Lets QA leads choose the integration approach that fits their infrastructure without involving a developer._
+When setting up a project, the QA lead can select whether Testurio receives Jira status-change events via webhook or by polling on a configured interval. Both methods are supported for Jira and Azure DevOps. Only one method is active per project at a time.
+
+---
+
+**[0020]: Configurable Work Item Type Filtering** `MVP`
+_Business Outcome: Prevents unwanted test runs triggered by irrelevant issue types such as tasks or sub-tasks._
+The QA lead can specify which Jira or Azure DevOps issue types are eligible to trigger a test run (e.g. Story, Bug, Task). Changes apply to future triggers only and are configured per project. At least one type must be selected.
+
+---
+
+**[0021]: Plan-Tier Test Run Quota** `MVP`
+_Business Outcome: Ensures infrastructure usage stays within plan boundaries and creates a clear upgrade path._
+Each subscription plan defines a maximum number of test run triggers per day. When the quota is reached, additional triggers are rejected and the QA lead is notified with the reset time. The project dashboard shows current usage versus the plan limit. The counter resets at midnight UTC.
 
 ---
 
@@ -35,6 +53,18 @@ The system reads the work item's description and acceptance criteria and generat
 **[0003]: Automated API Test Execution** `POC`
 _Business Outcome: Delivers consistent, repeatable API coverage without QA effort per story._
 Generated API test scenarios are executed automatically — the system sends HTTP requests to the configured product URL and validates responses against expected outcomes. The QA lead receives results without writing or running a single test manually.
+
+---
+
+**[0022]: Configurable API Request Timeout** `MVP`
+_Business Outcome: Prevents slow product APIs from stalling test runs indefinitely while giving QA leads control over acceptable response times._
+The QA lead can set a per-request timeout (in seconds) at the project level. If an HTTP request exceeds the timeout, the step is marked as failed and execution continues with the remaining steps. POC uses a fixed hardcoded timeout.
+
+---
+
+**[0023]: Multiple Authentication Methods for API Test Execution** `MVP`
+_Business Outcome: Allows Testurio to test APIs that require different authentication schemes without manual request editing._
+The QA lead can configure the authentication method used when executing API test requests against the product URL. Supported methods: Bearer token, API key (header or query param), and HTTP Basic Auth. Credentials are stored securely in project settings. POC supports Bearer token only.
 
 ---
 
