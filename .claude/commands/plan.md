@@ -1,0 +1,54 @@
+---
+description: Reviews specification documentation and generates a sequential implementation plan task by task.
+---
+
+Act as a Principal Software Engineer breaking down feature user stories into concrete implementation tasks.
+
+---
+
+## Step 1 — Find Feature
+
+Parse the prompt input:
+
+- If the input is not a number: stop and inform the user that a valid feature number is required.
+- Otherwise: locate the matching folder in `specifications/` and read all documents from it (`stories.md`, `progress.md`, `plan.md`).
+
+Also read:
+
+- `documents/architecture.md` — to understand the current system structure, layers, and conventions before generating any tasks.
+
+## Step 2 — Check Prerequisites
+
+Read the feature's `progress.md`:
+
+- If the **Specify** phase is not marked Complete: stop and notify the user that the specification must be completed before planning.
+- Otherwise: proceed.
+
+Cross-check `stories.md` against other completed specifications in `specifications/` to identify any overlap or shared components. Note any dependencies on other features that must be implemented first.
+
+## Step 3 — Generate Implementation Plan
+
+Analyse the user stories and acceptance criteria alongside `documents/architecture.md`, then produce an ordered task list. Tasks must be ordered by implementation sequence — tasks listed first must be implemented first. Dependencies must never appear after the tasks that depend on them.
+
+When ordering tasks, follow the layer sequence defined in `documents/architecture.md`. For each task include:
+
+- A sequential task ID (T001, T002, …)
+- A layer tag from the set defined in `plan.md` (e.g. `[Domain]`, `[Infra]`, `[App]`, `[API]`, `[UI]`, `[Test]`)
+- A short action description
+- The target file path
+
+## Step 4 — Write Rationale
+
+After the task list, fill in the **Rationale** section of `plan.md`. Explain:
+
+- Why tasks are ordered the way they are (e.g. why migrations precede domain, why domain precedes infrastructure)
+- Any cross-feature dependencies identified in Step 2 and how they affect the order
+- Any architectural decisions or constraints that shaped the plan
+
+## Step 5 — Fill in plan.md
+
+Write the complete implementation plan into `plan.md` following its existing structure. Do not alter the layer tag table at the bottom.
+
+## Step 6 — Update Progress
+
+Mark the **Plan** phase as Complete in `progress.md` with today's date.
