@@ -14,7 +14,7 @@ tags: [features, business, product]
 - MVP priority order: AI Testing Pipeline → Public Website → Personal Web Panel → Billing
 - v1 scope: single-user accounts, web products only, Azure DevOps and Jira integrations
 - **POC scope:** features 0001–0005; Jira integration, API testing only, commercial LLM API, hardcoded single project config
-- **MVP scope:** all 23 features; both PM tools, API + UI E2E testing, self-hosted LLM, full portal and billing
+- **MVP scope:** all 24 features; both PM tools, API + UI E2E testing, self-hosted LLM, full portal and billing
 
 ---
 
@@ -71,6 +71,12 @@ The QA lead can configure the authentication method used when executing API test
 **[0004]: Test Report Delivery to PM Tool** `POC`
 _Business Outcome: Keeps all test evidence in the PM tool where the team already works._
 After execution, a report is posted directly back to the originating work item as a comment or attachment. The report format and included attachments follow the template the QA lead defined in project settings.
+
+---
+
+**[0024]: Automatic Work Item Status Transition After Report Delivery** `MVP`
+_Business Outcome: Closes the testing loop automatically by moving work items to the correct status without the QA lead touching Jira after a run completes._
+The QA lead can configure, per project, which Jira or Azure DevOps status the work item should be transitioned to after a passed run and after a failed run. If not configured, no transition is made. POC makes no status transitions — report delivery only.
 
 ---
 
