@@ -2,14 +2,13 @@
 
 ## Phase Status
 
-| Phase | Status | Date | Notes |
-|-------|--------|------|-------|
-| Specify | ✅ Complete | 2026-04-30 | 4 stories, 16 ACs — POC scope |
-| Analyze | ⏳ Pending | | |
-| Plan | ⏳ Pending | | |
-| Implement | ⏳ Pending | | |
-| Review | ⏳ Pending | | |
-| Test | ⏳ Pending | | |
+| Phase     | Status      | Date       | Notes                         |
+| --------- | ----------- | ---------- | ----------------------------- |
+| Specify   | ✅ Complete | 2026-04-30 | 4 stories, 16 ACs — POC scope |
+| Plan      | ✅ Complete | 2026-04-30 | 11 tasks — amends 0001 JiraApiClient location |
+| Implement | ⏳ Pending  |            |                               |
+| Review    | ⏳ Pending  |            |                               |
+| Test      | ⏳ Pending  |            |                               |
 
 ---
 
