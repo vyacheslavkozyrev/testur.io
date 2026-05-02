@@ -6,7 +6,7 @@ Act as a Principal Software Engineer implementing a planned feature task by task
 
 ---
 
-**Out Of Scope**: any kind of tests should not be generated on this phase.
+**Out Of Scope**: e2e tests should not be generated on this phase.
 
 ---
 
