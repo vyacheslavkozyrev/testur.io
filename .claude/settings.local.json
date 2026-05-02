@@ -7,7 +7,8 @@
       "WebFetch(domain:docs.ref.tools)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(git checkout *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(git remote *)"
     ]
   },
   "enableAllProjectMcpServers": true
