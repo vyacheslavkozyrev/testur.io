@@ -1,48 +1,41 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Middleware;
 
-public class JiraWebhookSignatureMiddleware
+public static class JiraWebhookSignatureFilter
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<JiraWebhookSignatureMiddleware> _logger;
-
-    public JiraWebhookSignatureMiddleware(RequestDelegate next, ILogger<JiraWebhookSignatureMiddleware> logger)
+    public static async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        _next = next;
-        _logger = logger;
-    }
+        var httpContext = context.HttpContext;
+        var logger = httpContext.RequestServices.GetRequiredService<ILogger<JiraWebhookSignatureFilter>>();
 
-    public async Task InvokeAsync(HttpContext context)
-    {
-        if (!context.Request.Path.StartsWithSegments("/webhooks/jira"))
+        if (!httpContext.Request.Headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader) || string.IsNullOrWhiteSpace(signatureHeader))
         {
-            await _next(context);
-            return;
+            LogMissingSignature(logger);
+            return TypedResults.Unauthorized();
         }
 
-        if (!context.Request.Headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader))
+        var projectId = context.GetArgument<string>(0);
+        var projectRepo = httpContext.RequestServices.GetRequiredService<IProjectRepository>();
+        var project = await projectRepo.GetByIdAsync(string.Empty, projectId, httpContext.RequestAborted);
+        if (project is null)
+            return TypedResults.NotFound();
+
+        httpContext.Request.EnableBuffering();
+        var body = await new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync(httpContext.RequestAborted);
+        httpContext.Request.Body.Position = 0;
+
+        if (!IsValidSignature(body, signatureHeader!, project.JiraWebhookSecret))
         {
-            LogMissingSignature(_logger);
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
+            LogInvalidSignature(logger, projectId);
+            return TypedResults.Unauthorized();
         }
 
-        context.Request.EnableBuffering();
-        var body = await new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync();
-        context.Request.Body.Position = 0;
-
-        var secret = context.Items["JiraWebhookSecret"] as string;
-        if (string.IsNullOrEmpty(secret) || !IsValidSignature(body, signatureHeader!, secret))
-        {
-            LogInvalidSignature(_logger, context.Request.Path);
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
-
-        await _next(context);
+        httpContext.Items["Project"] = project;
+        return await next(context);
     }
 
     private static bool IsValidSignature(string body, string signatureHeader, string secret)
@@ -56,9 +49,9 @@ public class JiraWebhookSignatureMiddleware
             Encoding.ASCII.GetBytes(signatureHeader.ToString()));
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook received without signature header")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook received without X-Hub-Signature-256 header")]
     private static partial void LogMissingSignature(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook signature validation failed for {Path}")]
-    private static partial void LogInvalidSignature(ILogger logger, PathString path);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook HMAC validation failed for project {ProjectId}")]
+    private static partial void LogInvalidSignature(ILogger logger, string projectId);
 }

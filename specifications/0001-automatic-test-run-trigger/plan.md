@@ -14,7 +14,7 @@
 - [x] T010 [App] Implement `JiraApiClient` (post comment to Jira issue) — `source/Testurio.Api/Clients/JiraApiClient.cs`
 - [x] T011 [App] Implement `JiraWebhookService` (validate event, check description/AC, enqueue or skip) — `source/Testurio.Api/Services/JiraWebhookService.cs`
 - [x] T012 [API] Add Jira webhook signature validation middleware — `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs`
-- [ ] T013 [API] Add `JiraWebhookController` with `POST /webhooks/jira/{projectId}` — `source/Testurio.Api/Controllers/JiraWebhookController.cs`
+- [x] T013 [API] Add `JiraWebhookController` with `POST /webhooks/jira/{projectId}` — `source/Testurio.Api/Controllers/JiraWebhookController.cs`
 - [ ] T014 [Worker] Implement `RunQueueManager` (FIFO processing, dedup, active run check) — `source/Testurio.Worker/Services/RunQueueManager.cs`
 - [ ] T015 [Worker] Implement `TestRunJobProcessor` (Service Bus consumer, dispatches to queue manager) — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [ ] T016 [Config] Register worker services and Service Bus consumer in DI — `source/Testurio.Worker/DependencyInjection.cs`
