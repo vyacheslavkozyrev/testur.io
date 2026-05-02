@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Create `QueuedRun` entity — `source/Testurio.Core/Entities/QueuedRun.cs`
 - [x] T003 [Domain] Create `JiraWebhookPayload` model — `source/Testurio.Core/Models/JiraWebhookPayload.cs`
 - [x] T004 [Domain] Add `ITestRunRepository` interface — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
-- [ ] T005 [Domain] Add `IRunQueueRepository` interface — `source/Testurio.Core/Repositories/IRunQueueRepository.cs`
+- [x] T005 [Domain] Add `IRunQueueRepository` interface — `source/Testurio.Core/Repositories/IRunQueueRepository.cs`
 - [ ] T006 [Infra] Implement `TestRunRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
 - [ ] T007 [Infra] Implement `RunQueueRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs`
 - [ ] T008 [Infra] Implement `TestRunJobSender` (Service Bus) — `source/Testurio.Infrastructure/ServiceBus/TestRunJobSender.cs`
