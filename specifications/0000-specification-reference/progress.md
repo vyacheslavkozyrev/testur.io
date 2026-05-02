@@ -12,12 +12,6 @@
 
 ---
 
-## Conflict Analysis
-
-_Populated by `/analyze [####]`_
-
----
-
 ## Implementation Notes
 
 _Populated by `/implement [####]`_
