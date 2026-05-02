@@ -27,7 +27,7 @@ Wait for the user's answers before proceeding.
 
 ## Step 3 — Create Specification Folder
 
-Using `specification/0000-specification-reference` as the structural template, create a new numbered specification folder with all required files populated.
+Using `specifications/0000-specification-reference` as the structural template, create a new numbered specification folder with all required files populated.
 
 ## Step 4 — Generate User Stories
 
@@ -40,3 +40,12 @@ Populate `stories.md` with the full set of user stories, following the establish
 ## Step 5 — Update Progress
 
 Update `progress.md` in the current specification folder to reflect the newly created specification.
+
+## Step 6 — Commit
+
+Commit the new specification folder:
+
+```
+git add specifications/[####]-*/
+git commit -m "spec([####]): add specification for [feature name]"
+```

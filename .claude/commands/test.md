@@ -27,7 +27,7 @@ Run the existing test suite for the feature:
 - Execute all unit and integration tests related to the implemented tasks in `plan.md`.
 - Capture the full test output.
 
-If no tests exist, notify the user and stop — do not mark the phase as complete.
+If no tests exist, record every acceptance criterion in `stories.md` as a gap and proceed to Step 5 to report them — do not stop.
 
 ## Step 4 — Validate Acceptance Criteria
 

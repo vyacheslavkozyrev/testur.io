@@ -8,6 +8,12 @@ The feature number is passed to every sub-command unchanged.
 
 ---
 
+## Step 0 — Research (optional)
+
+If `documents/features.md` does not exist, call `/research` first and wait for the user to confirm the feature list before proceeding.
+
+If `documents/features.md` already exists, skip this step.
+
 ## Step 1 — Specify
 
 Call `/specify` with the feature number.
@@ -30,7 +36,7 @@ Wait for implementation to be completed and all files written before proceeding 
 
 Call `/review` with the feature number.
 
-Address any issues raised before proceeding to the next step.
+Wait for the review, all automated fixes, and the commit to complete before proceeding to the next step.
 
 ## Step 5 — Test
 

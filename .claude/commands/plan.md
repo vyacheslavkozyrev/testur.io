@@ -52,3 +52,12 @@ Write the complete implementation plan into `plan.md` following its existing str
 ## Step 6 — Update Progress
 
 Mark the **Plan** phase as Complete in `progress.md` with today's date.
+
+## Step 7 — Commit
+
+Commit the updated plan and progress files:
+
+```
+git add specifications/[####]-*/
+git commit -m "plan([####]): add implementation plan for [feature name]"
+```

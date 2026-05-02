@@ -41,7 +41,7 @@ Spawn the `code-reviewer` agent (`.claude/agents/code-reviewer.md`) with this co
 - Full content of `stories.md`
 - Relevant sections of `documents/architecture.md`
 
-The agent will run `git diff main...HEAD` itself and read the rule files. Collect all findings it returns and pass them to Step 5.
+The agent will run `git diff develop...HEAD` itself and read the rule files. Collect all findings it returns and pass them to Step 5.
 
 ## Step 5 — Fix All Findings
 
