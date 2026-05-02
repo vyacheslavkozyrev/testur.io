@@ -1,19 +1,12 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Interfaces;
+using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.ServiceBus;
 
-public class TestRunJobMessage
-{
-    public required string TestRunId { get; init; }
-    public required string ProjectId { get; init; }
-    public required string UserId { get; init; }
-    public required string JiraIssueKey { get; init; }
-    public required string JiraIssueId { get; init; }
-}
-
-public class TestRunJobSender
+public partial class TestRunJobSender : ITestRunJobSender
 {
     private readonly ServiceBusSender _sender;
     private readonly ILogger<TestRunJobSender> _logger;
@@ -24,7 +17,7 @@ public class TestRunJobSender
         _logger = logger;
     }
 
-    public async Task SendAsync(TestRunJobMessage message, CancellationToken cancellationToken = default)
+    public virtual async Task SendAsync(TestRunJobMessage message, CancellationToken cancellationToken = default)
     {
         var body = JsonSerializer.Serialize(message);
         var sbMessage = new ServiceBusMessage(body)

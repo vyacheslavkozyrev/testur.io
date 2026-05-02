@@ -2,17 +2,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Interfaces;
 
 namespace Testurio.Api.Clients;
 
-public class JiraApiClientOptions
-{
-    public required string BaseUrl { get; init; }
-    public required string Email { get; init; }
-    public required string ApiToken { get; init; }
-}
-
-public class JiraApiClient
+public partial class JiraApiClient : IJiraApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<JiraApiClient> _logger;
@@ -23,7 +17,7 @@ public class JiraApiClient
         _logger = logger;
     }
 
-    public async Task PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
+    public virtual async Task PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
     {
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
         var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{issueKey}/comment");

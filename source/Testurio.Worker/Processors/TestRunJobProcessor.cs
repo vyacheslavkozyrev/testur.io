@@ -3,12 +3,12 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.ServiceBus;
+using Testurio.Core.Models;
 using Testurio.Worker.Services;
 
 namespace Testurio.Worker.Processors;
 
-public class TestRunJobProcessor : IAsyncDisposable
+public partial class TestRunJobProcessor : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;

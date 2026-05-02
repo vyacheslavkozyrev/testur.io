@@ -1,21 +1,22 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
+using Testurio.Core.Interfaces;
+using Testurio.Core.Models;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.ServiceBus;
 
 namespace Testurio.Worker.Services;
 
-public class RunQueueManager
+public partial class RunQueueManager
 {
     private readonly ITestRunRepository _testRunRepository;
     private readonly IRunQueueRepository _runQueueRepository;
-    private readonly TestRunJobSender _jobSender;
+    private readonly ITestRunJobSender _jobSender;
     private readonly ILogger<RunQueueManager> _logger;
 
     public RunQueueManager(
         ITestRunRepository testRunRepository,
         IRunQueueRepository runQueueRepository,
-        TestRunJobSender jobSender,
+        ITestRunJobSender jobSender,
         ILogger<RunQueueManager> logger)
     {
         _testRunRepository = testRunRepository;

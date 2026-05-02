@@ -18,7 +18,7 @@
 - [x] T014 [Worker] Implement `RunQueueManager` (FIFO processing, dedup, active run check) — `source/Testurio.Worker/Services/RunQueueManager.cs`
 - [x] T015 [Worker] Implement `TestRunJobProcessor` (Service Bus consumer, dispatches to queue manager) — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [x] T016 [Config] Register worker services and Service Bus consumer in DI — `source/Testurio.Worker/DependencyInjection.cs`
-- [ ] T017 [Test] Unit tests for `JiraWebhookService` — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
+- [x] T017 [Test] Unit tests for `JiraWebhookService` — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
 - [ ] T018 [Test] Unit tests for `RunQueueManager` — `tests/Testurio.UnitTests/Services/RunQueueManagerTests.cs`
 - [ ] T019 [Test] Integration tests for `POST /webhooks/jira/{projectId}` — `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs`
 

@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Logging;
-using Testurio.Api.Clients;
 using Testurio.Core.Entities;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.ServiceBus;
 
 namespace Testurio.Api.Services;
 
-public class JiraWebhookService
+public partial class JiraWebhookService
 {
     private const string UserStoryIssueType = "Story";
     private const string SkipReasonIncompleteStory = "Skipped — incomplete story";
@@ -15,16 +14,16 @@ public class JiraWebhookService
     private readonly IProjectRepository _projectRepository;
     private readonly ITestRunRepository _testRunRepository;
     private readonly IRunQueueRepository _runQueueRepository;
-    private readonly TestRunJobSender _jobSender;
-    private readonly JiraApiClient _jiraApiClient;
+    private readonly ITestRunJobSender _jobSender;
+    private readonly IJiraApiClient _jiraApiClient;
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
         IProjectRepository projectRepository,
         ITestRunRepository testRunRepository,
         IRunQueueRepository runQueueRepository,
-        TestRunJobSender jobSender,
-        JiraApiClient jiraApiClient,
+        ITestRunJobSender jobSender,
+        IJiraApiClient jiraApiClient,
         ILogger<JiraWebhookService> logger)
     {
         _projectRepository = projectRepository;
