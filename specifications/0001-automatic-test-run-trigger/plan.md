@@ -20,7 +20,7 @@
 - [x] T016 [Config] Register worker services and Service Bus consumer in DI — `source/Testurio.Worker/DependencyInjection.cs`
 - [x] T017 [Test] Unit tests for `JiraWebhookService` — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
 - [x] T018 [Test] Unit tests for `RunQueueManager` — `tests/Testurio.UnitTests/Services/RunQueueManagerTests.cs`
-- [ ] T019 [Test] Integration tests for `POST /webhooks/jira/{projectId}` — `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs`
+- [x] T019 [Test] Integration tests for `POST /webhooks/jira/{projectId}` — `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs`
 
 ## Rationale
 

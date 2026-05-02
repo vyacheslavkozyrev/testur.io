@@ -43,6 +43,13 @@ public static class DependencyInjection
             return new ServiceBusClient(opts.ServiceBusConnectionString);
         });
 
+        services.AddSingleton<IProjectRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new ProjectRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<ITestRunRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();

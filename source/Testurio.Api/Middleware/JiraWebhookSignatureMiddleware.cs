@@ -5,12 +5,12 @@ using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Middleware;
 
-public static class JiraWebhookSignatureFilter
+public static partial class JiraWebhookSignatureFilter
 {
     public static async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var httpContext = context.HttpContext;
-        var logger = httpContext.RequestServices.GetRequiredService<ILogger<JiraWebhookSignatureFilter>>();
+        var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("JiraWebhookSignatureFilter");
 
         if (!httpContext.Request.Headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader) || string.IsNullOrWhiteSpace(signatureHeader))
         {
@@ -24,7 +24,7 @@ public static class JiraWebhookSignatureFilter
         if (project is null)
             return TypedResults.NotFound();
 
-        httpContext.Request.EnableBuffering();
+        httpContext.Request.Body.Position = 0;
         var body = await new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync(httpContext.RequestAborted);
         httpContext.Request.Body.Position = 0;
 
