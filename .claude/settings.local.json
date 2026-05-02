@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Skill(update-config)",
+      "WebFetch(domain:ref.tools)",
+      "WebFetch(domain:docs.ref.tools)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "Ref"
+  ],
+  "enableAllProjectMcpServers": true
 }
