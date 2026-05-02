@@ -1,0 +1,70 @@
+using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.ServiceBus;
+
+namespace Testurio.Infrastructure;
+
+public class InfrastructureOptions
+{
+    public required string CosmosConnectionString { get; init; }
+    public required string CosmosDatabaseName { get; init; }
+    public required string ServiceBusConnectionString { get; init; }
+    public required string TestRunJobQueueName { get; init; }
+}
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    {
+        services.AddOptions<InfrastructureOptions>()
+            .BindConfiguration("Infrastructure")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new CosmosClient(opts.CosmosConnectionString, new CosmosClientOptions
+            {
+                SerializerOptions = new CosmosSerializationOptions
+                {
+                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                }
+            });
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new ServiceBusClient(opts.ServiceBusConnectionString);
+        });
+
+        services.AddSingleton<ITestRunRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestRunRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<IRunQueueRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new RunQueueRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var client = sp.GetRequiredService<ServiceBusClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
+            return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
+        });
+
+        return services;
+    }
+}

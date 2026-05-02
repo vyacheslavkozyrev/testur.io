@@ -10,7 +10,7 @@
 - [x] T006 [Infra] Implement `TestRunRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
 - [x] T007 [Infra] Implement `RunQueueRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs`
 - [x] T008 [Infra] Implement `TestRunJobSender` (Service Bus) — `source/Testurio.Infrastructure/ServiceBus/TestRunJobSender.cs`
-- [ ] T009 [Infra] Register repositories and Service Bus sender in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T009 [Infra] Register repositories and Service Bus sender in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T010 [App] Implement `JiraApiClient` (post comment to Jira issue) — `source/Testurio.Api/Clients/JiraApiClient.cs`
 - [ ] T011 [App] Implement `JiraWebhookService` (validate event, check description/AC, enqueue or skip) — `source/Testurio.Api/Services/JiraWebhookService.cs`
 - [ ] T012 [API] Add Jira webhook signature validation middleware — `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs`
