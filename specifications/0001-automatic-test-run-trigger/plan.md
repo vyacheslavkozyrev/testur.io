@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `TestRun` entity — `source/Testurio.Core/Entities/TestRun.cs`
+- [x] T001 [Domain] Create `TestRun` entity — `source/Testurio.Core/Entities/TestRun.cs`
 - [ ] T002 [Domain] Create `QueuedRun` entity — `source/Testurio.Core/Entities/QueuedRun.cs`
 - [ ] T003 [Domain] Create `JiraWebhookPayload` model — `source/Testurio.Core/Models/JiraWebhookPayload.cs`
 - [ ] T004 [Domain] Add `ITestRunRepository` interface — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
