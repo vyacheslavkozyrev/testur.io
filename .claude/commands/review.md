@@ -31,7 +31,7 @@ Before spawning the review agent:
 
 1. **File existence** — for every file path referenced in `plan.md`, verify the file exists. List any missing files and treat each as a Blocker finding (skip to Step 4 with these pre-populated); do not spawn the agent until the user confirms how to proceed.
 
-2. **Diff size guard** — run `git diff main...HEAD --stat` and count the total lines changed. If the total exceeds 500 lines, report the line count to the user and ask for confirmation before continuing.
+2. **Diff size guard** — run `git diff develop...HEAD --stat` and count the total lines changed. If the total exceeds 500 lines, report the line count to the user and ask for confirmation before continuing.
 
 ## Step 4 — Review Implementation
 

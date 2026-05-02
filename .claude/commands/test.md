@@ -45,4 +45,9 @@ If there are any failures or gaps, stop and do not mark the phase as complete. W
 
 ## Step 6 — Update Progress
 
-Mark the **Test** phase as Complete in `progress.md` with today's date.
+Mark the **Test** phase as Complete in `progress.md` with today's date and commit:
+
+```
+git add specifications/[####]-*/progress.md
+git commit -m "chore([####]): mark test phase complete"
+```

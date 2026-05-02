@@ -13,7 +13,7 @@ You will receive:
 - The full content of `stories.md` (acceptance criteria)
 - Relevant sections of `documents/architecture.md`
 
-Start by running `git diff main...HEAD` yourself to obtain the full diff.
+Start by running `git diff develop...HEAD` yourself to obtain the full diff.
 
 Also read the rule files for the conventions in force:
 - `.claude/rules/be.md`
