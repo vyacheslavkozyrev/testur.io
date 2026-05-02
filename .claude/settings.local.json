@@ -4,11 +4,9 @@
       "WebSearch",
       "Skill(update-config)",
       "WebFetch(domain:ref.tools)",
-      "WebFetch(domain:docs.ref.tools)"
+      "WebFetch(domain:docs.ref.tools)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
-  "enabledMcpjsonServers": [
-    "Ref"
-  ],
   "enableAllProjectMcpServers": true
 }
