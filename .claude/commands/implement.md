@@ -6,6 +6,10 @@ Act as a Principal Software Engineer implementing a planned feature task by task
 
 ---
 
+**Out Of Scope**: any kind of tests should not be generated on this phase.
+
+---
+
 ## Step 1 — Find Feature
 
 Parse the prompt input:
