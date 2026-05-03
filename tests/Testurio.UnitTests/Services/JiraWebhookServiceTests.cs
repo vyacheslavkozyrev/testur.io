@@ -125,7 +125,7 @@ public class JiraWebhookServiceTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenActiveRunExists_AddsToQueueAndReturnsEnqueued()
+    public async Task ProcessAsync_WhenActiveRunExists_AddsToQueueAndReturnsQueued()
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {
@@ -146,7 +146,7 @@ public class JiraWebhookServiceTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenDuplicateInQueue_ReturnsEnqueuedWithoutAddingDuplicate()
+    public async Task ProcessAsync_WhenDuplicateInQueue_ReturnsQueuedWithoutAddingDuplicate()
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {

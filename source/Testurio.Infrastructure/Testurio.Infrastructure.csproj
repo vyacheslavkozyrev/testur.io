@@ -9,13 +9,15 @@
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.59.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.7" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- We use the built-in STJ camelCase serializer (CosmosSerializationOptions) and do not reference
+         Newtonsoft.Json directly. Suppress the Cosmos SDK build-time check accordingly. -->
+    <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
   </PropertyGroup>
 
 </Project>

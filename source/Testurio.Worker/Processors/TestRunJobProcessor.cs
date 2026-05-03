@@ -85,8 +85,11 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.CompletedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
-            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
+            // Complete the message before dispatching the next queued run so that a failure in
+            // OnRunCompletedAsync does not cause this message to be redelivered and the run queue
+            // to be advanced a second time.
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
+            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             LogCompleted(_logger, message.TestRunId, message.ProjectId);
         }
         catch (Exception ex)
@@ -95,7 +98,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.Status = TestRunStatus.Failed;
             try
             {
-                await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
+                // Use CancellationToken.None — the host may be shutting down (args.CancellationToken already
+                // cancelled) but the status-update write must complete to avoid a stuck Active/Pending record.
+                await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
             }
             catch (Exception updateEx)
             {

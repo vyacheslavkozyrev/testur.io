@@ -84,9 +84,6 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         return await client.SendAsync(request);
     }
 
-    private Mock<IProjectRepository> GetProjectRepoMock() =>
-        _factory.Services.GetRequiredService<Mock<IProjectRepository>>();
-
     [Fact]
     public async Task PostWebhook_WithMissingSignature_Returns401()
     {
@@ -103,7 +100,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     [Fact]
     public async Task PostWebhook_WithInvalidSignature_Returns401()
     {
-        GetProjectRepoMock()
+        _factory.ProjectRepoMock
             .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeProject());
 
@@ -116,15 +113,11 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     [Fact]
     public async Task PostWebhook_ValidPayloadNoActiveRun_Returns202()
     {
-        var projectRepo = _factory.Services.GetRequiredService<Mock<IProjectRepository>>();
-        var testRunRepo = _factory.Services.GetRequiredService<Mock<ITestRunRepository>>();
-        var jobSender = _factory.Services.GetRequiredService<Mock<ITestRunJobSender>>();
-
-        projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
-        testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync((TestRun?)null);
-        testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+        _factory.ProjectRepoMock.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
+        _factory.TestRunRepoMock.Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync((TestRun?)null);
+        _factory.TestRunRepoMock.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
-        jobSender.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        _factory.JobSenderMock.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload());
@@ -135,7 +128,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     [Fact]
     public async Task PostWebhook_WrongIssueType_Returns200AndDoesNotEnqueue()
     {
-        GetProjectRepoMock()
+        _factory.ProjectRepoMock
             .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeProject());
 
@@ -148,14 +141,10 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     [Fact]
     public async Task PostWebhook_MissingDescription_Returns200AndSkips()
     {
-        var projectRepo = _factory.Services.GetRequiredService<Mock<IProjectRepository>>();
-        var testRunRepo = _factory.Services.GetRequiredService<Mock<ITestRunRepository>>();
-        var jiraClient = _factory.Services.GetRequiredService<Mock<IJiraApiClient>>();
-
-        projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
-        testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+        _factory.ProjectRepoMock.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
+        _factory.TestRunRepoMock.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
-        jiraClient.Setup(c => c.PostCommentAsync(
+        _factory.JiraApiClientMock.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -164,7 +153,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var response = await PostWebhookAsync(client, MakePayload(description: null));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        testRunRepo.Verify(r => r.CreateAsync(
+        _factory.TestRunRepoMock.Verify(r => r.CreateAsync(
             It.Is<TestRun>(t => t.Status == TestRunStatus.Skipped),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -176,6 +165,12 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
         private readonly Mock<ITestRunJobSender> _jobSender = new();
         private readonly Mock<IJiraApiClient> _jiraApiClient = new();
+
+        public Mock<IProjectRepository> ProjectRepoMock => _projectRepo;
+        public Mock<ITestRunRepository> TestRunRepoMock => _testRunRepo;
+        public Mock<IRunQueueRepository> RunQueueRepoMock => _runQueueRepo;
+        public Mock<ITestRunJobSender> JobSenderMock => _jobSender;
+        public Mock<IJiraApiClient> JiraApiClientMock => _jiraApiClient;
 
         public void ResetMocks()
         {
@@ -195,18 +190,14 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                     ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
-                    ["Infrastructure:TestRunJobQueueName"] = "test-runs"
+                    ["Infrastructure:TestRunJobQueueName"] = "test-runs",
+                    ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
+                    ["AzureAdB2C:ClientId"] = "test-client-id"
                 });
             });
 
             builder.ConfigureTestServices(services =>
             {
-                services.AddSingleton(_projectRepo);
-                services.AddSingleton(_testRunRepo);
-                services.AddSingleton(_runQueueRepo);
-                services.AddSingleton(_jobSender);
-                services.AddSingleton(_jiraApiClient);
-
                 services.Replace(ServiceDescriptor.Singleton<IProjectRepository>(_ => _projectRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunRepository>(_ => _testRunRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));

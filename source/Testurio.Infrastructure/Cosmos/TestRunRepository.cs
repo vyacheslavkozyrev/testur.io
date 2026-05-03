@@ -31,15 +31,17 @@ public class TestRunRepository : ITestRunRepository
     {
         var query = _container.GetItemLinqQueryable<TestRun>(requestOptions: new QueryRequestOptions
         {
-            PartitionKey = new PartitionKey(projectId)
+            PartitionKey = new PartitionKey(projectId),
+            MaxItemCount = 1
         })
-        .Where(r => r.ProjectId == projectId && r.Status == TestRunStatus.Active)
+        .Where(r => r.ProjectId == projectId && (r.Status == TestRunStatus.Active || r.Status == TestRunStatus.Pending))
         .ToFeedIterator();
 
-        if (query.HasMoreResults)
+        while (query.HasMoreResults)
         {
             var page = await query.ReadNextAsync(cancellationToken);
-            return page.FirstOrDefault();
+            var result = page.FirstOrDefault();
+            if (result is not null) return result;
         }
 
         return null;

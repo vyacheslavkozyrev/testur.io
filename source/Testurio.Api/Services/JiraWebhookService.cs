@@ -95,8 +95,10 @@ public partial class JiraWebhookService : IJiraWebhookService
 
         var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
         var comment = $"Testurio skipped this test run because the story is missing: {missingParts}. Please update the story and move it back to \"In Testing\" to trigger a new run.";
-        await _jiraApiClient.PostCommentAsync(
+        var posted = await _jiraApiClient.PostCommentAsync(
             project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
+        if (!posted)
+            LogCommentPostFailed(_logger, issue.Key, project.Id);
 
         LogSkipped(_logger, issue.Key, project.Id, missingParts);
     }
@@ -153,6 +155,9 @@ public partial class JiraWebhookService : IJiraWebhookService
         LogEnqueued(_logger, issue.Key, project.Id, created.Id);
         return WebhookProcessResult.Enqueued;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to post skip comment on Jira issue {IssueKey} in project {ProjectId}")]
+    private static partial void LogCommentPostFailed(ILogger logger, string issueKey, string projectId);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Skipped test run for {IssueKey} in project {ProjectId}: missing {MissingParts}")]
     private static partial void LogSkipped(ILogger logger, string issueKey, string projectId, string missingParts);
