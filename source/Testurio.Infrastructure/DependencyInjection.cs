@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.ServiceBus;
@@ -10,10 +12,10 @@ namespace Testurio.Infrastructure;
 
 public class InfrastructureOptions
 {
-    public required string CosmosConnectionString { get; init; }
-    public required string CosmosDatabaseName { get; init; }
-    public required string ServiceBusConnectionString { get; init; }
-    public required string TestRunJobQueueName { get; init; }
+    [Required] public required string CosmosConnectionString { get; init; }
+    [Required] public required string CosmosDatabaseName { get; init; }
+    [Required] public required string ServiceBusConnectionString { get; init; }
+    [Required] public required string TestRunJobQueueName { get; init; }
 }
 
 public static class DependencyInjection
@@ -64,13 +66,16 @@ public static class DependencyInjection
             return new RunQueueRepository(cosmos, opts.CosmosDatabaseName);
         });
 
-        services.AddSingleton(sp =>
+        services.AddSingleton<ITestRunJobSender>(sp =>
         {
             var client = sp.GetRequiredService<ServiceBusClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
         });
+
+        // Production: swap PassthroughSecretResolver for KeyVaultSecretResolver backed by Azure Key Vault + Managed Identity.
+        services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 
         return services;
     }

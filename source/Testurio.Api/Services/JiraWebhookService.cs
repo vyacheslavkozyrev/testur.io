@@ -16,6 +16,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
     private readonly IJiraApiClient _jiraApiClient;
+    private readonly ISecretResolver _secretResolver;
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
@@ -24,6 +25,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
         IJiraApiClient jiraApiClient,
+        ISecretResolver secretResolver,
         ILogger<JiraWebhookService> logger)
     {
         _projectRepository = projectRepository;
@@ -31,6 +33,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
         _jiraApiClient = jiraApiClient;
+        _secretResolver = secretResolver;
         _logger = logger;
     }
 
@@ -100,9 +103,10 @@ public partial class JiraWebhookService : IJiraWebhookService
         };
         await _testRunRepository.CreateAsync(testRun, cancellationToken);
 
+        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
         var comment = $"Testurio skipped this test run because the story is missing: {missingParts}. Please update the story and move it back to \"In Testing\" to trigger a new run.";
         await _jiraApiClient.PostCommentAsync(
-            project.JiraBaseUrl, issue.Key, project.JiraEmail, project.JiraApiTokenSecretRef, comment, cancellationToken);
+            project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
 
         LogSkipped(_logger, issue.Key, projectId, missingParts);
     }

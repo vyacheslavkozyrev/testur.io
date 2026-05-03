@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
@@ -42,7 +43,17 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     private async Task OnMessageAsync(ProcessMessageEventArgs args)
     {
-        var message = args.Message.Body.ToObjectFromJson<TestRunJobMessage>();
+        TestRunJobMessage? message;
+        try
+        {
+            message = args.Message.Body.ToObjectFromJson<TestRunJobMessage>();
+        }
+        catch (JsonException)
+        {
+            await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Message body is not valid JSON", args.CancellationToken);
+            return;
+        }
+
         if (message is null)
         {
             await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Could not deserialize message body", args.CancellationToken);

@@ -34,6 +34,10 @@ public partial class RunQueueManager
             return;
         }
 
+        // Delete-before-create: at-most-once semantics. If CreateAsync fails after DeleteAsync the run
+        // is lost, but no duplicate run is created for the same story (preferred over at-least-once here).
+        await _runQueueRepository.DeleteAsync(projectId, next.Id, cancellationToken);
+
         var testRun = new TestRun
         {
             ProjectId = projectId,
@@ -43,8 +47,6 @@ public partial class RunQueueManager
             Status = TestRunStatus.Pending
         };
         var created = await _testRunRepository.CreateAsync(testRun, cancellationToken);
-
-        await _runQueueRepository.DeleteAsync(projectId, next.Id, cancellationToken);
 
         await _jobSender.SendAsync(new TestRunJobMessage
         {

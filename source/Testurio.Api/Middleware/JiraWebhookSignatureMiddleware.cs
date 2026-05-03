@@ -1,36 +1,51 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Middleware;
 
-public static partial class JiraWebhookSignatureFilter
+public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
 {
-    public static async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    private readonly IProjectRepository _projectRepository;
+    private readonly ISecretResolver _secretResolver;
+    private readonly ILogger<JiraWebhookSignatureFilter> _logger;
+
+    public JiraWebhookSignatureFilter(
+        IProjectRepository projectRepository,
+        ISecretResolver secretResolver,
+        ILogger<JiraWebhookSignatureFilter> logger)
+    {
+        _projectRepository = projectRepository;
+        _secretResolver = secretResolver;
+        _logger = logger;
+    }
+
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var httpContext = context.HttpContext;
-        var logger = httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("JiraWebhookSignatureFilter");
 
         if (!httpContext.Request.Headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader) || string.IsNullOrWhiteSpace(signatureHeader))
         {
-            LogMissingSignature(logger);
+            LogMissingSignature(_logger);
             return TypedResults.Unauthorized();
         }
 
         var projectId = httpContext.GetRouteValue("projectId") as string ?? string.Empty;
-        var projectRepo = httpContext.RequestServices.GetRequiredService<IProjectRepository>();
-        var project = await projectRepo.GetByProjectIdAsync(projectId, httpContext.RequestAborted);
+        var project = await _projectRepository.GetByProjectIdAsync(projectId, httpContext.RequestAborted);
         if (project is null)
-            return TypedResults.NotFound();
+            return TypedResults.Unauthorized();
 
         httpContext.Request.Body.Position = 0;
-        var body = await new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync(httpContext.RequestAborted);
+        using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true);
+        var body = await reader.ReadToEndAsync(httpContext.RequestAborted);
         httpContext.Request.Body.Position = 0;
 
-        if (!IsValidSignature(body, signatureHeader.ToString().Trim(), project.JiraWebhookSecretRef))
+        var secret = await _secretResolver.ResolveAsync(project.JiraWebhookSecretRef, httpContext.RequestAborted);
+        if (!IsValidSignature(body, signatureHeader.ToString().Trim(), secret))
         {
-            LogInvalidSignature(logger, projectId);
+            LogInvalidSignature(_logger, projectId);
             return TypedResults.Unauthorized();
         }
 

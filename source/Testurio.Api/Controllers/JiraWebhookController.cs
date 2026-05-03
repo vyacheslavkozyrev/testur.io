@@ -10,10 +10,10 @@ public static class JiraWebhookController
 {
     public static IEndpointRouteBuilder MapJiraWebhooks(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/v1/webhooks/jira");
+        var group = app.MapGroup("/v1/webhooks/jira").AllowAnonymous();
 
         group.MapPost("/{projectId}", HandleWebhookAsync)
-            .AddEndpointFilter(JiraWebhookSignatureFilter.InvokeAsync)
+            .AddEndpointFilter<JiraWebhookSignatureFilter>()
             .WithName("JiraWebhook");
 
         return app;
@@ -26,10 +26,7 @@ public static class JiraWebhookController
         HttpContext context,
         CancellationToken cancellationToken)
     {
-        var project = context.Items["Project"] as Project;
-        if (project is null)
-            return TypedResults.Unauthorized();
-
+        var project = (Project)context.Items["Project"]!;
         var result = await webhookService.ProcessAsync(project.UserId, projectId, payload, cancellationToken);
 
         return result switch

@@ -16,6 +16,13 @@ public class JiraWebhookServiceTests
     private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
     private readonly Mock<ITestRunJobSender> _jobSender = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
+    private readonly Mock<ISecretResolver> _secretResolver = new();
+
+    public JiraWebhookServiceTests()
+    {
+        _secretResolver.Setup(r => r.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string s, CancellationToken _) => s);
+    }
 
     private JiraWebhookService CreateSut() => new(
         _projectRepo.Object,
@@ -23,6 +30,7 @@ public class JiraWebhookServiceTests
         _runQueueRepo.Object,
         _jobSender.Object,
         _jiraApiClient.Object,
+        _secretResolver.Object,
         NullLogger<JiraWebhookService>.Instance);
 
     private static Project MakeProject(string inTestingLabel = "In Testing") => new()
@@ -166,6 +174,7 @@ public class JiraWebhookServiceTests
 
         Assert.Equal(WebhookProcessResult.Queued, result);
         _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default), Times.Never);
+        _jobSender.VerifyNoOtherCalls();
     }
 
     [Fact]

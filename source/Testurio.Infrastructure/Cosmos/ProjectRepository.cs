@@ -27,12 +27,14 @@ public class ProjectRepository : IProjectRepository
         }
     }
 
-    // Cross-partition query: called from the HMAC filter before userId is known — intentional trade-off
-    // for the webhook auth path. MaxItemCount = 1 limits RU cost to a single-document scan.
+    // Cross-partition fan-out: called from the HMAC filter before userId is known — intentional trade-off
+    // for the webhook auth path. MaxItemCount = 1 caps the first page to one document per partition.
+    // Note: EnableScanInQuery controls in-partition index scans, not cross-partition fan-out RU cost.
+    // A dedicated indexing policy on 'id' or a lookup document keyed by projectId would eliminate the fan-out.
     public async Task<Project?> GetByProjectIdAsync(string projectId, CancellationToken cancellationToken = default)
     {
         var query = _container.GetItemLinqQueryable<Project>(allowSynchronousQueryExecution: false,
-            requestOptions: new QueryRequestOptions { MaxItemCount = 1, EnableScanInQuery = false })
+            requestOptions: new QueryRequestOptions { MaxItemCount = 1 })
             .Where(p => p.Id == projectId)
             .ToFeedIterator();
 
