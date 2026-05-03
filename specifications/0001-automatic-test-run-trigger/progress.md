@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-04-29 | 3 stories, 11 ACs — POC scope                        |
 | Plan      | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
 | Implement | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
-| Review    | ✅ Complete | 2026-05-03 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed        |
+| Review    | ✅ Complete | 2026-05-03 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed |
 | Test      | ⏳ Pending  |            |                                                      |
 
 ---
@@ -74,6 +74,35 @@ _Populated by `/implement 0001`_
 - `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs:176` — added `_jobSender.VerifyNoOtherCalls()` to the duplicate-queue test to guard against accidentally sending a Service Bus message for a duplicate
 - `source/Testurio.Api/Controllers/JiraWebhookController.cs` — switched from `.AddEndpointFilter(JiraWebhookSignatureFilter.InvokeAsync)` to `.AddEndpointFilter<JiraWebhookSignatureFilter>()` for DI-managed filter instantiation
 - `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs` — added `Mock<ISecretResolver>` with passthrough setup; injected into `JiraWebhookService` constructor in all unit tests
+
+### Status: Complete
+
+---
+
+## Review — 2026-05-03 (pass 3)
+
+### Blockers fixed
+- `source/Testurio.Api/Services/IJiraWebhookService.cs:7` — `ProcessAsync(string userId, string projectId, ...)` changed to `ProcessAsync(Project project, ...)` to eliminate double Cosmos read (middleware already fetched the project)
+- `source/Testurio.Api/Services/JiraWebhookService.cs` — removed `IProjectRepository` dependency and `GetByIdAsync` call; all internal lookups now use the pre-resolved `Project` entity passed in
+- `source/Testurio.Infrastructure/DependencyInjection.cs` — `PassthroughSecretResolver` registration removed from `AddInfrastructure()` (was unconditional, would run in production); moved to `Program.cs` and `Worker/Program.cs` behind `IsDevelopment()` guard
+- `source/Testurio.Api/Program.cs` — conditional `PassthroughSecretResolver` (dev-only); inline buffering lambda replaced with `UseMiddleware<RequestBodyBufferingMiddleware>()`; `AddJwtBearer()` added; `Microsoft.AspNetCore.Authentication.JwtBearer` package added to csproj
+- `source/Testurio.Worker/Program.cs` — conditional `PassthroughSecretResolver` registration (dev-only)
+- `source/Testurio.Api/Middleware/RequestBodyBufferingMiddleware.cs` — extracted inline buffering lambda into a named `IMiddleware` class; `WebhookProcessResult` enum extracted to its own file (`WebhookProcessResult.cs`)
+
+### Warnings fixed
+- `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs:40` — `CanSeek` guard added before `Body.Position = 0`; returns 401 if body stream is not seekable (e.g. buffering middleware skipped)
+- `source/Testurio.Worker/Processors/TestRunJobProcessor.cs:66` — `OnRunCompletedAsync` now called in the "TestRun not found" dead-letter path so the run queue is not permanently stuck
+- `source/Testurio.Api/Services/JiraWebhookService.cs` — TOCTOU comment updated to note that the unique constraint must be configured in `infra/modules/cosmos.bicep` before relying on it
+- `source/Testurio.Api/Clients/JiraApiClient.cs:20` — `virtual` removed from `PostCommentAsync`; interface provides the substitution seam, `virtual` is redundant and misleading
+- `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs` — `ResetMocks()` method added to `ApiFactory` and called from test constructor; prevents setup accumulation across tests sharing the `IClassFixture` instance
+- `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs` — `ISecretResolver` registered as `PassthroughSecretResolver` in test factory (not in dev env, so must be explicit); removed stale `GetByIdAsync` setups from `PostWebhook_ValidPayloadNoActiveRun_Returns202` and `PostWebhook_MissingDescription_Returns200AndSkips`
+
+### Suggestions fixed
+- `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs` — `Mock<IProjectRepository>` field and `_projectRepo.Object` removed from `CreateSut()`; all `ProcessAsync("user1", "proj1", payload)` calls updated to `ProcessAsync(MakeProject(), payload)`
+- `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs` — all `_projectRepo.Setup(GetByIdAsync)` calls removed; project passed directly, eliminating mock setup boilerplate
+- `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs:76,88` — `_projectRepo.VerifyNoOtherCalls()` removed from early-exit tests (repository no longer injected)
+- `source/Testurio.Core/Repositories/IRunQueueRepository.cs:7` — `GetQueueAsync` signature updated with `int limit = 100` parameter
+- `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs:20` — `GetQueueAsync` updated to accept `limit` and pass it as `MaxItemCount` in `QueryRequestOptions` to cap Cosmos RU consumption
 
 ### Status: Complete
 
