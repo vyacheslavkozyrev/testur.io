@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 using Testurio.Core.Entities;
@@ -21,13 +20,13 @@ public static class JiraWebhookController
 
     private static async Task<IResult> HandleWebhookAsync(
         string projectId,
-        [FromBody] JiraWebhookPayload payload,
-        [FromServices] IJiraWebhookService webhookService,
+        JiraWebhookPayload payload,
+        IJiraWebhookService webhookService,
         HttpContext context,
         CancellationToken cancellationToken)
     {
         var project = (Project)context.Items["Project"]!;
-        var result = await webhookService.ProcessAsync(project.UserId, projectId, payload, cancellationToken);
+        var result = await webhookService.ProcessAsync(project, payload, cancellationToken);
 
         return result switch
         {

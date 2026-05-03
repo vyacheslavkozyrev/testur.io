@@ -17,7 +17,7 @@ public partial class JiraApiClient : IJiraApiClient
         _logger = logger;
     }
 
-    public virtual async Task<bool> PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
+    public async Task<bool> PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
     {
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
         var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{issueKey}/comment");

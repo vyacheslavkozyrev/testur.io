@@ -11,7 +11,6 @@ public partial class JiraWebhookService : IJiraWebhookService
     private const string UserStoryIssueType = "Story";
     private const string SkipReasonIncompleteStory = "Skipped — incomplete story";
 
-    private readonly IProjectRepository _projectRepository;
     private readonly ITestRunRepository _testRunRepository;
     private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
@@ -20,7 +19,6 @@ public partial class JiraWebhookService : IJiraWebhookService
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
-        IProjectRepository projectRepository,
         ITestRunRepository testRunRepository,
         IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
@@ -28,7 +26,6 @@ public partial class JiraWebhookService : IJiraWebhookService
         ISecretResolver secretResolver,
         ILogger<JiraWebhookService> logger)
     {
-        _projectRepository = projectRepository;
         _testRunRepository = testRunRepository;
         _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
@@ -38,8 +35,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     }
 
     public async Task<WebhookProcessResult> ProcessAsync(
-        string userId,
-        string projectId,
+        Project project,
         JiraWebhookPayload payload,
         CancellationToken cancellationToken = default)
     {
@@ -52,10 +48,6 @@ public partial class JiraWebhookService : IJiraWebhookService
         if (fields?.IssueType?.Name != UserStoryIssueType)
             return WebhookProcessResult.Ignored;
 
-        var project = await _projectRepository.GetByIdAsync(userId, projectId, cancellationToken);
-        if (project is null)
-            return WebhookProcessResult.Ignored;
-
         var transitionedTo = payload.Transition?.To?.Name ?? string.Empty;
         if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
@@ -63,11 +55,11 @@ public partial class JiraWebhookService : IJiraWebhookService
         var missingParts = GetMissingParts(fields);
         if (missingParts is not null)
         {
-            await HandleIncompleteStoryAsync(userId, projectId, project, issue, missingParts, cancellationToken);
+            await HandleIncompleteStoryAsync(project, issue, missingParts, cancellationToken);
             return WebhookProcessResult.Skipped;
         }
 
-        return await EnqueueOrQueueRunAsync(userId, projectId, project, issue, cancellationToken);
+        return await EnqueueOrQueueRunAsync(project, issue, cancellationToken);
     }
 
     private static string? GetMissingParts(JiraIssueFields? fields)
@@ -85,8 +77,6 @@ public partial class JiraWebhookService : IJiraWebhookService
     }
 
     private async Task HandleIncompleteStoryAsync(
-        string userId,
-        string projectId,
         Project project,
         JiraIssue issue,
         string missingParts,
@@ -94,8 +84,8 @@ public partial class JiraWebhookService : IJiraWebhookService
     {
         var testRun = new TestRun
         {
-            ProjectId = projectId,
-            UserId = userId,
+            ProjectId = project.Id,
+            UserId = project.UserId,
             JiraIssueKey = issue.Key,
             JiraIssueId = issue.Id,
             Status = TestRunStatus.Skipped,
@@ -108,44 +98,43 @@ public partial class JiraWebhookService : IJiraWebhookService
         await _jiraApiClient.PostCommentAsync(
             project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
 
-        LogSkipped(_logger, issue.Key, projectId, missingParts);
+        LogSkipped(_logger, issue.Key, project.Id, missingParts);
     }
 
     private async Task<WebhookProcessResult> EnqueueOrQueueRunAsync(
-        string userId,
-        string projectId,
         Project project,
         JiraIssue issue,
         CancellationToken cancellationToken)
     {
-        // Note: TOCTOU race — concurrent webhooks for the same story could both pass GetActiveRunAsync.
-        // A unique constraint on (ProjectId, JiraIssueId) in the TestRuns container prevents duplicate documents.
-        var activeRun = await _testRunRepository.GetActiveRunAsync(projectId, cancellationToken);
+        // TOCTOU race: concurrent webhooks for the same story could both pass GetActiveRunAsync.
+        // A unique constraint on (ProjectId, JiraIssueId, Status=Pending) in the TestRuns Cosmos container
+        // would prevent duplicate documents — configure this in infra/modules/cosmos.bicep before relying on it.
+        var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
         if (activeRun is not null)
         {
-            var alreadyQueued = await _runQueueRepository.ExistsAsync(projectId, issue.Id, cancellationToken);
+            var alreadyQueued = await _runQueueRepository.ExistsAsync(project.Id, issue.Id, cancellationToken);
             if (alreadyQueued)
             {
-                LogDuplicate(_logger, issue.Key, projectId);
+                LogDuplicate(_logger, issue.Key, project.Id);
                 return WebhookProcessResult.Queued;
             }
 
             var queued = new QueuedRun
             {
-                ProjectId = projectId,
-                UserId = userId,
+                ProjectId = project.Id,
+                UserId = project.UserId,
                 JiraIssueKey = issue.Key,
                 JiraIssueId = issue.Id
             };
             await _runQueueRepository.EnqueueAsync(queued, cancellationToken);
-            LogQueued(_logger, issue.Key, projectId);
+            LogQueued(_logger, issue.Key, project.Id);
             return WebhookProcessResult.Queued;
         }
 
         var testRun = new TestRun
         {
-            ProjectId = projectId,
-            UserId = userId,
+            ProjectId = project.Id,
+            UserId = project.UserId,
             JiraIssueKey = issue.Key,
             JiraIssueId = issue.Id,
             Status = TestRunStatus.Pending
@@ -155,13 +144,13 @@ public partial class JiraWebhookService : IJiraWebhookService
         await _jobSender.SendAsync(new TestRunJobMessage
         {
             TestRunId = created.Id,
-            ProjectId = projectId,
-            UserId = userId,
+            ProjectId = project.Id,
+            UserId = project.UserId,
             JiraIssueKey = issue.Key,
             JiraIssueId = issue.Id
         }, cancellationToken);
 
-        LogEnqueued(_logger, issue.Key, projectId, created.Id);
+        LogEnqueued(_logger, issue.Key, project.Id, created.Id);
         return WebhookProcessResult.Enqueued;
     }
 
@@ -176,12 +165,4 @@ public partial class JiraWebhookService : IJiraWebhookService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Enqueued test run {TestRunId} for {IssueKey} in project {ProjectId}")]
     private static partial void LogEnqueued(ILogger logger, string issueKey, string projectId, string testRunId);
-}
-
-public enum WebhookProcessResult
-{
-    Ignored,
-    Skipped,
-    Enqueued,
-    Queued
 }

@@ -65,6 +65,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var testRun = await _testRunRepository.GetByIdAsync(message.ProjectId, message.TestRunId, args.CancellationToken);
         if (testRun is null)
         {
+            // Dead-lettered without completing the run queue — OnRunCompletedAsync is still called so
+            // the next queued run is dispatched. If the queue is also empty, this is a no-op.
+            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             await args.DeadLetterMessageAsync(args.Message, "TestRunNotFound", $"TestRun {message.TestRunId} not found", args.CancellationToken);
             return;
         }

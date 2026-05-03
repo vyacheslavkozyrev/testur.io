@@ -14,12 +14,13 @@ public class RunQueueRepository : IRunQueueRepository
         _container = cosmosClient.GetContainer(databaseName, "RunQueue");
     }
 
-    public async Task<IReadOnlyList<QueuedRun>> GetQueueAsync(string projectId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<QueuedRun>> GetQueueAsync(string projectId, int limit = 100, CancellationToken cancellationToken = default)
     {
         var results = new List<QueuedRun>();
         var query = _container.GetItemLinqQueryable<QueuedRun>(requestOptions: new QueryRequestOptions
         {
-            PartitionKey = new PartitionKey(projectId)
+            PartitionKey = new PartitionKey(projectId),
+            MaxItemCount = limit
         })
         .Where(r => r.ProjectId == projectId)
         .OrderBy(r => r.QueuedAt)
@@ -55,8 +56,23 @@ public class RunQueueRepository : IRunQueueRepository
 
     public async Task<QueuedRun?> DequeueNextAsync(string projectId, CancellationToken cancellationToken = default)
     {
-        var queue = await GetQueueAsync(projectId, cancellationToken);
-        return queue.FirstOrDefault();
+        var query = _container.GetItemLinqQueryable<QueuedRun>(requestOptions: new QueryRequestOptions
+        {
+            PartitionKey = new PartitionKey(projectId),
+            MaxItemCount = 1
+        })
+        .Where(r => r.ProjectId == projectId)
+        .OrderBy(r => r.QueuedAt)
+        .ToFeedIterator();
+
+        while (query.HasMoreResults)
+        {
+            var page = await query.ReadNextAsync(cancellationToken);
+            var result = page.FirstOrDefault();
+            if (result is not null) return result;
+        }
+
+        return null;
     }
 
     public async Task DeleteAsync(string projectId, string id, CancellationToken cancellationToken = default)

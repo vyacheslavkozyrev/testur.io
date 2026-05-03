@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Logging;
+
 namespace Testurio.Worker;
 
-public class Worker : BackgroundService
+public partial class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
 
@@ -13,11 +15,11 @@ public class Worker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (_logger.IsEnabled(LogLevel.Information))
-            {
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            }
+            LogRunning(_logger, DateTimeOffset.UtcNow);
             await Task.Delay(1000, stoppingToken);
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Worker running at: {Time}")]
+    private static partial void LogRunning(ILogger logger, DateTimeOffset time);
 }

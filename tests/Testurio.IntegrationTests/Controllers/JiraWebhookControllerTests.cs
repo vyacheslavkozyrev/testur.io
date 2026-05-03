@@ -13,6 +13,7 @@ using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure;
 using Xunit;
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -23,7 +24,11 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
 
     private readonly ApiFactory _factory;
 
-    public JiraWebhookControllerTests(ApiFactory factory) => _factory = factory;
+    public JiraWebhookControllerTests(ApiFactory factory)
+    {
+        _factory = factory;
+        _factory.ResetMocks();
+    }
 
     private static string Sign(string body, string secret)
     {
@@ -116,7 +121,6 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var jobSender = _factory.Services.GetRequiredService<Mock<ITestRunJobSender>>();
 
         projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
-        projectRepo.Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync((TestRun?)null);
         testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
@@ -149,7 +153,6 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var jiraClient = _factory.Services.GetRequiredService<Mock<IJiraApiClient>>();
 
         projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
-        projectRepo.Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         jiraClient.Setup(c => c.PostCommentAsync(
@@ -173,6 +176,15 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
         private readonly Mock<ITestRunJobSender> _jobSender = new();
         private readonly Mock<IJiraApiClient> _jiraApiClient = new();
+
+        public void ResetMocks()
+        {
+            _projectRepo.Reset();
+            _testRunRepo.Reset();
+            _runQueueRepo.Reset();
+            _jobSender.Reset();
+            _jiraApiClient.Reset();
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -200,6 +212,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
             });
         }
     }

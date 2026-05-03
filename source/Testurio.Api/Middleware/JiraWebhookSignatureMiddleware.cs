@@ -37,6 +37,8 @@ public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
         if (project is null)
             return TypedResults.Unauthorized();
 
+        if (!httpContext.Request.Body.CanSeek)
+            return TypedResults.Unauthorized();
         httpContext.Request.Body.Position = 0;
         using var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true);
         var body = await reader.ReadToEndAsync(httpContext.RequestAborted);

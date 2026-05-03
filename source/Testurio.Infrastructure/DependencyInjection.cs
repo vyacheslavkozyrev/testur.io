@@ -74,9 +74,6 @@ public static class DependencyInjection
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
         });
 
-        // Production: swap PassthroughSecretResolver for KeyVaultSecretResolver backed by Azure Key Vault + Managed Identity.
-        services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
-
         return services;
     }
 }
