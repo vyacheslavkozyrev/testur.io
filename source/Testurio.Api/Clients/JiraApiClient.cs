@@ -17,7 +17,7 @@ public partial class JiraApiClient : IJiraApiClient
         _logger = logger;
     }
 
-    public virtual async Task PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
+    public virtual async Task<bool> PostCommentAsync(string baseUrl, string issueKey, string email, string apiToken, string commentBody, CancellationToken cancellationToken = default)
     {
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
         var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{issueKey}/comment");
@@ -47,7 +47,10 @@ public partial class JiraApiClient : IJiraApiClient
         if (!response.IsSuccessStatusCode)
         {
             LogCommentFailed(_logger, issueKey, (int)response.StatusCode);
+            return false;
         }
+
+        return true;
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to post comment on Jira issue {IssueKey}: HTTP {StatusCode}")]

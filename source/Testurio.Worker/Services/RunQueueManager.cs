@@ -34,8 +34,6 @@ public partial class RunQueueManager
             return;
         }
 
-        await _runQueueRepository.DeleteAsync(projectId, next.Id, cancellationToken);
-
         var testRun = new TestRun
         {
             ProjectId = projectId,
@@ -45,6 +43,8 @@ public partial class RunQueueManager
             Status = TestRunStatus.Pending
         };
         var created = await _testRunRepository.CreateAsync(testRun, cancellationToken);
+
+        await _runQueueRepository.DeleteAsync(projectId, next.Id, cancellationToken);
 
         await _jobSender.SendAsync(new TestRunJobMessage
         {

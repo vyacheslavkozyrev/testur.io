@@ -40,8 +40,8 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         JiraBaseUrl = "https://example.atlassian.net",
         JiraProjectKey = "PROJ",
         JiraEmail = "qa@example.com",
-        JiraApiToken = "token",
-        JiraWebhookSecret = WebhookSecret,
+        JiraApiTokenSecretRef = "token",
+        JiraWebhookSecretRef = WebhookSecret,
         InTestingStatusLabel = "In Testing"
     };
 
@@ -73,7 +73,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     {
         var body = JsonSerializer.Serialize(payload);
         var sig = signature ?? Sign(body, WebhookSecret);
-        var request = new HttpRequestMessage(HttpMethod.Post, "/webhooks/jira/proj1");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/v1/webhooks/jira/proj1");
         request.Headers.Add("X-Hub-Signature-256", sig);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         return await client.SendAsync(request);
@@ -87,7 +87,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     {
         var client = CreateClient();
         var body = JsonSerializer.Serialize(MakePayload());
-        var request = new HttpRequestMessage(HttpMethod.Post, "/webhooks/jira/proj1");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/v1/webhooks/jira/proj1");
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         var response = await client.SendAsync(request);
@@ -99,7 +99,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     public async Task PostWebhook_WithInvalidSignature_Returns401()
     {
         GetProjectRepoMock()
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeProject());
 
         var client = CreateClient();
@@ -115,6 +115,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var testRunRepo = _factory.Services.GetRequiredService<Mock<ITestRunRepository>>();
         var jobSender = _factory.Services.GetRequiredService<Mock<ITestRunJobSender>>();
 
+        projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         projectRepo.Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync((TestRun?)null);
         testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
@@ -131,7 +132,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
     public async Task PostWebhook_WrongIssueType_Returns200AndDoesNotEnqueue()
     {
         GetProjectRepoMock()
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeProject());
 
         var client = CreateClient();
@@ -147,13 +148,14 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var testRunRepo = _factory.Services.GetRequiredService<Mock<ITestRunRepository>>();
         var jiraClient = _factory.Services.GetRequiredService<Mock<IJiraApiClient>>();
 
+        projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         projectRepo.Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj1", It.IsAny<CancellationToken>())).ReturnsAsync(MakeProject());
         testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         jiraClient.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(true);
 
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload(description: null));

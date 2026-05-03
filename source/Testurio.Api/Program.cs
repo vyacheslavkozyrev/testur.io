@@ -7,11 +7,10 @@ using Testurio.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 builder.Services.AddInfrastructure();
-builder.Services.AddHttpClient();
-builder.Services.AddSingleton<IJiraApiClient>(sp =>
-    new JiraApiClient(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JiraApiClient>>()));
-builder.Services.AddScoped<JiraWebhookService>();
+builder.Services.AddHttpClient<IJiraApiClient, JiraApiClient>();
+builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 
 var app = builder.Build();
 
@@ -20,11 +19,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseExceptionHandler();
 app.UseHttpsRedirection();
 
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/webhooks"))
+    if (context.Request.Path.StartsWithSegments("/v1/webhooks"))
         context.Request.EnableBuffering();
     await next(context);
 });

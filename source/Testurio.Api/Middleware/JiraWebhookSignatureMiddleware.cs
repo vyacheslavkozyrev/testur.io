@@ -18,9 +18,9 @@ public static partial class JiraWebhookSignatureFilter
             return TypedResults.Unauthorized();
         }
 
-        var projectId = context.GetArgument<string>(0);
+        var projectId = httpContext.GetRouteValue("projectId") as string ?? string.Empty;
         var projectRepo = httpContext.RequestServices.GetRequiredService<IProjectRepository>();
-        var project = await projectRepo.GetByIdAsync(string.Empty, projectId, httpContext.RequestAborted);
+        var project = await projectRepo.GetByProjectIdAsync(projectId, httpContext.RequestAborted);
         if (project is null)
             return TypedResults.NotFound();
 
@@ -28,7 +28,7 @@ public static partial class JiraWebhookSignatureFilter
         var body = await new StreamReader(httpContext.Request.Body, Encoding.UTF8, leaveOpen: true).ReadToEndAsync(httpContext.RequestAborted);
         httpContext.Request.Body.Position = 0;
 
-        if (!IsValidSignature(body, signatureHeader!, project.JiraWebhookSecret))
+        if (!IsValidSignature(body, signatureHeader.ToString().Trim(), project.JiraWebhookSecretRef))
         {
             LogInvalidSignature(logger, projectId);
             return TypedResults.Unauthorized();
@@ -45,8 +45,8 @@ public static partial class JiraWebhookSignatureFilter
         var expectedHash = HMACSHA256.HashData(secretBytes, bodyBytes);
         var expectedSignature = $"sha256={Convert.ToHexString(expectedHash).ToLowerInvariant()}";
         return CryptographicOperations.FixedTimeEquals(
-            Encoding.ASCII.GetBytes(expectedSignature),
-            Encoding.ASCII.GetBytes(signatureHeader.ToString()));
+            Encoding.UTF8.GetBytes(expectedSignature),
+            Encoding.UTF8.GetBytes(signatureHeader));
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook received without X-Hub-Signature-256 header")]

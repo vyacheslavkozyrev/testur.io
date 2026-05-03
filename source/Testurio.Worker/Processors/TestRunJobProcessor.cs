@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
@@ -43,7 +42,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     private async Task OnMessageAsync(ProcessMessageEventArgs args)
     {
-        var message = JsonSerializer.Deserialize<TestRunJobMessage>(args.Message.Body.ToString());
+        var message = args.Message.Body.ToObjectFromJson<TestRunJobMessage>();
         if (message is null)
         {
             await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Could not deserialize message body", args.CancellationToken);
@@ -72,6 +71,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.CompletedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
+            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
             LogCompleted(_logger, message.TestRunId, message.ProjectId);
         }
@@ -79,12 +79,16 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         {
             LogFailed(_logger, message.TestRunId, message.ProjectId, ex);
             testRun.Status = TestRunStatus.Failed;
-            await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
+            try
+            {
+                await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
+            }
+            catch (Exception updateEx)
+            {
+                LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
+            }
             await args.AbandonMessageAsync(args.Message, cancellationToken: args.CancellationToken);
-            return;
         }
-
-        await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
     }
 
     private static Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
@@ -112,6 +116,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to process test run {TestRunId} for project {ProjectId}")]
     private static partial void LogFailed(ILogger logger, string testRunId, string projectId, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to update status to Failed for test run {TestRunId}")]
+    private static partial void LogStatusUpdateFailed(ILogger logger, string testRunId, Exception ex);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Service Bus processor error on {EntityPath}")]
     private static partial void LogServiceBusError(ILogger logger, string entityPath, Exception ex);

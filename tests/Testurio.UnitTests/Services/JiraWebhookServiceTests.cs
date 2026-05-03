@@ -34,8 +34,8 @@ public class JiraWebhookServiceTests
         JiraBaseUrl = "https://example.atlassian.net",
         JiraProjectKey = "PROJ",
         JiraEmail = "qa@example.com",
-        JiraApiToken = "token",
-        JiraWebhookSecret = "secret",
+        JiraApiTokenSecretRef = "token",
+        JiraWebhookSecretRef = "secret",
         InTestingStatusLabel = inTestingLabel
     };
 
@@ -73,7 +73,9 @@ public class JiraWebhookServiceTests
         var result = await sut.ProcessAsync("user1", "proj1", payload);
 
         Assert.Equal(WebhookProcessResult.Ignored, result);
+        _projectRepo.VerifyNoOtherCalls();
         _testRunRepo.VerifyNoOtherCalls();
+        _runQueueRepo.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -85,6 +87,9 @@ public class JiraWebhookServiceTests
         var result = await sut.ProcessAsync("user1", "proj1", payload);
 
         Assert.Equal(WebhookProcessResult.Ignored, result);
+        _projectRepo.VerifyNoOtherCalls();
+        _testRunRepo.VerifyNoOtherCalls();
+        _runQueueRepo.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -138,7 +143,7 @@ public class JiraWebhookServiceTests
 
         var result = await sut.ProcessAsync("user1", "proj1", payload);
 
-        Assert.Equal(WebhookProcessResult.Enqueued, result);
+        Assert.Equal(WebhookProcessResult.Queued, result);
         _runQueueRepo.Verify(r => r.EnqueueAsync(It.Is<QueuedRun>(q => q.JiraIssueId == "10001"), default), Times.Once);
         _jobSender.VerifyNoOtherCalls();
     }
@@ -159,7 +164,7 @@ public class JiraWebhookServiceTests
 
         var result = await sut.ProcessAsync("user1", "proj1", payload);
 
-        Assert.Equal(WebhookProcessResult.Enqueued, result);
+        Assert.Equal(WebhookProcessResult.Queued, result);
         _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default), Times.Never);
     }
 
@@ -171,7 +176,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(true);
 
         var payload = MakePayload(description: null);
         var sut = CreateSut();
@@ -191,7 +196,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(true);
 
         var payload = MakePayload(acceptanceCriteria: null);
         var sut = CreateSut();
@@ -210,7 +215,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync(true);
 
         var payload = MakePayload(description: null, acceptanceCriteria: null);
         var sut = CreateSut();

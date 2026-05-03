@@ -40,7 +40,8 @@ public class JiraIssueFields
     [JsonPropertyName("status")]
     public JiraStatus? Status { get; init; }
 
-    [JsonPropertyName("acceptance_criteria")]
+    // Jira stores acceptance criteria as a custom field — the key must match your Jira instance (e.g. "customfield_10016").
+    [JsonPropertyName("customfield_10016")]
     public string? AcceptanceCriteria { get; init; }
 }
 

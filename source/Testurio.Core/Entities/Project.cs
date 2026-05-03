@@ -9,7 +9,7 @@ public class Project
     public required string JiraBaseUrl { get; init; }
     public required string JiraProjectKey { get; init; }
     public required string JiraEmail { get; init; }
-    public required string JiraApiToken { get; init; }
-    public required string JiraWebhookSecret { get; init; }
+    public required string JiraApiTokenSecretRef { get; init; }
+    public required string JiraWebhookSecretRef { get; init; }
     public required string InTestingStatusLabel { get; init; }
 }

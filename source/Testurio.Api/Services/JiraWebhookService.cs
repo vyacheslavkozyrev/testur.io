@@ -6,7 +6,7 @@ using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Services;
 
-public partial class JiraWebhookService
+public partial class JiraWebhookService : IJiraWebhookService
 {
     private const string UserStoryIssueType = "Story";
     private const string SkipReasonIncompleteStory = "Skipped — incomplete story";
@@ -53,7 +53,7 @@ public partial class JiraWebhookService
         if (project is null)
             return WebhookProcessResult.Ignored;
 
-        var transitionedTo = payload.Transition?.To?.Name ?? fields.Status?.Name ?? string.Empty;
+        var transitionedTo = payload.Transition?.To?.Name ?? string.Empty;
         if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
 
@@ -64,8 +64,7 @@ public partial class JiraWebhookService
             return WebhookProcessResult.Skipped;
         }
 
-        await EnqueueOrQueueRunAsync(userId, projectId, project, issue, cancellationToken);
-        return WebhookProcessResult.Enqueued;
+        return await EnqueueOrQueueRunAsync(userId, projectId, project, issue, cancellationToken);
     }
 
     private static string? GetMissingParts(JiraIssueFields? fields)
@@ -103,18 +102,20 @@ public partial class JiraWebhookService
 
         var comment = $"Testurio skipped this test run because the story is missing: {missingParts}. Please update the story and move it back to \"In Testing\" to trigger a new run.";
         await _jiraApiClient.PostCommentAsync(
-            project.JiraBaseUrl, issue.Key, project.JiraEmail, project.JiraApiToken, comment, cancellationToken);
+            project.JiraBaseUrl, issue.Key, project.JiraEmail, project.JiraApiTokenSecretRef, comment, cancellationToken);
 
         LogSkipped(_logger, issue.Key, projectId, missingParts);
     }
 
-    private async Task EnqueueOrQueueRunAsync(
+    private async Task<WebhookProcessResult> EnqueueOrQueueRunAsync(
         string userId,
         string projectId,
         Project project,
         JiraIssue issue,
         CancellationToken cancellationToken)
     {
+        // Note: TOCTOU race — concurrent webhooks for the same story could both pass GetActiveRunAsync.
+        // A unique constraint on (ProjectId, JiraIssueId) in the TestRuns container prevents duplicate documents.
         var activeRun = await _testRunRepository.GetActiveRunAsync(projectId, cancellationToken);
         if (activeRun is not null)
         {
@@ -122,7 +123,7 @@ public partial class JiraWebhookService
             if (alreadyQueued)
             {
                 LogDuplicate(_logger, issue.Key, projectId);
-                return;
+                return WebhookProcessResult.Queued;
             }
 
             var queued = new QueuedRun
@@ -134,7 +135,7 @@ public partial class JiraWebhookService
             };
             await _runQueueRepository.EnqueueAsync(queued, cancellationToken);
             LogQueued(_logger, issue.Key, projectId);
-            return;
+            return WebhookProcessResult.Queued;
         }
 
         var testRun = new TestRun
@@ -157,6 +158,7 @@ public partial class JiraWebhookService
         }, cancellationToken);
 
         LogEnqueued(_logger, issue.Key, projectId, created.Id);
+        return WebhookProcessResult.Enqueued;
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Skipped test run for {IssueKey} in project {ProjectId}: missing {MissingParts}")]
@@ -176,5 +178,6 @@ public enum WebhookProcessResult
 {
     Ignored,
     Skipped,
-    Enqueued
+    Enqueued,
+    Queued
 }

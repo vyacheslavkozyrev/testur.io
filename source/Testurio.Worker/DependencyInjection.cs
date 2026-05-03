@@ -8,6 +8,7 @@ namespace Testurio.Worker;
 
 public class WorkerOptions
 {
+    [System.ComponentModel.DataAnnotations.Required]
     public required string TestRunJobQueueName { get; init; }
 }
 
@@ -20,6 +21,7 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        // Singleton: all dependencies (ITestRunRepository, IRunQueueRepository, ITestRunJobSender) are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
         services.AddSingleton(sp =>
