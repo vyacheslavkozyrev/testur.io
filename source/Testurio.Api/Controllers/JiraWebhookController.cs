@@ -9,7 +9,7 @@ public static class JiraWebhookController
 {
     public static IEndpointRouteBuilder MapJiraWebhooks(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/v1/webhooks/jira").AllowAnonymous();
+        var group = app.MapGroup(WebhookRouteConstants.JiraPrefix).AllowAnonymous();
 
         group.MapPost("/{projectId}", HandleWebhookAsync)
             .AddEndpointFilter<JiraWebhookSignatureFilter>()

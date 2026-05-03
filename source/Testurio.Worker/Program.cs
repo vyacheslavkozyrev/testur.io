@@ -10,6 +10,10 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }
+else
+{
+    builder.Services.AddSingleton<ISecretResolver, KeyVaultSecretResolver>();
+}
 
 var host = builder.Build();
 host.Run();

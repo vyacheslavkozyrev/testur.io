@@ -30,6 +30,7 @@ public class RunQueueRepository : IRunQueueRepository
         {
             var page = await query.ReadNextAsync(cancellationToken);
             results.AddRange(page);
+            if (results.Count >= limit) break;
         }
 
         return results.AsReadOnly();

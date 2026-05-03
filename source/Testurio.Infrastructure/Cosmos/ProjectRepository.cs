@@ -33,7 +33,7 @@ public class ProjectRepository : IProjectRepository
     // A dedicated indexing policy on 'id' or a lookup document keyed by projectId would eliminate the fan-out.
     public async Task<Project?> GetByProjectIdAsync(string projectId, CancellationToken cancellationToken = default)
     {
-        var query = _container.GetItemLinqQueryable<Project>(allowSynchronousQueryExecution: false,
+        using var query = _container.GetItemLinqQueryable<Project>(allowSynchronousQueryExecution: false,
             requestOptions: new QueryRequestOptions { MaxItemCount = 1 })
             .Where(p => p.Id == projectId)
             .ToFeedIterator();

@@ -18,6 +18,7 @@ using Xunit;
 
 namespace Testurio.IntegrationTests.Controllers;
 
+[Collection("JiraWebhookSerial")]
 public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTests.ApiFactory>
 {
     private const string WebhookSecret = "test-secret";

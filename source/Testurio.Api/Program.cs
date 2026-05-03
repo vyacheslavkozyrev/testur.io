@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Testurio.Api.Clients;
 using Testurio.Api.Controllers;
 using Testurio.Api.Middleware;
@@ -17,10 +18,14 @@ builder.Services.AddOptions<AzureAdB2COptions>()
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication()
-    .AddJwtBearer(opts =>
+    .AddJwtBearer();
+// Bind JWT Bearer options from the already-validated AzureAdB2COptions so a missing config key
+// fails at startup (via ValidateOnStart above) rather than silently producing null Authority/Audience.
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<AzureAdB2COptions>>((jwtOpts, b2cOpts) =>
     {
-        opts.Authority = builder.Configuration["AzureAdB2C:Authority"];
-        opts.Audience = builder.Configuration["AzureAdB2C:ClientId"];
+        jwtOpts.Authority = b2cOpts.Value.Authority;
+        jwtOpts.Audience = b2cOpts.Value.ClientId;
     });
 builder.Services.AddAuthorization();
 builder.Services.AddInfrastructure();
@@ -32,6 +37,10 @@ builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
+}
+else
+{
+    builder.Services.AddSingleton<ISecretResolver, KeyVaultSecretResolver>();
 }
 
 var app = builder.Build();
