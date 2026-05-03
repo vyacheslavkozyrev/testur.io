@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-04-29 | 3 stories, 11 ACs — POC scope                        |
 | Plan      | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
 | Implement | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
-| Review    | ✅ Complete | 2026-05-03 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed |
+| Review    | ✅ Complete | 2026-05-03 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed |
 | Test      | ⏳ Pending  |            |                                                      |
 
 ---
@@ -103,6 +103,28 @@ _Populated by `/implement 0001`_
 - `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs:76,88` — `_projectRepo.VerifyNoOtherCalls()` removed from early-exit tests (repository no longer injected)
 - `source/Testurio.Core/Repositories/IRunQueueRepository.cs:7` — `GetQueueAsync` signature updated with `int limit = 100` parameter
 - `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs:20` — `GetQueueAsync` updated to accept `limit` and pass it as `MaxItemCount` in `QueryRequestOptions` to cap Cosmos RU consumption
+
+### Status: Complete
+
+---
+
+## Review — 2026-05-03 (pass 4)
+
+### Blockers fixed
+- `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs:37` — `GetActiveRunAsync` only checked `Status == Active`; a freshly-created `Pending` run was invisible, allowing a concurrent webhook to start a second run. Predicate extended to `Active || Pending`
+- `source/Testurio.Api/Program.cs:13` — `AddJwtBearer()` called without configuration; JWT validation was silently a no-op in production. Added `AzureAdB2COptions` with `[Required]` Authority/ClientId fields, `ValidateDataAnnotations().ValidateOnStart()`, and bound them to the JWT Bearer handler. Integration test factory updated with placeholder config values
+
+### Warnings fixed
+- `source/Testurio.Api/Program.cs:19` — `JiraWebhookSignatureFilter` registered `AddScoped` but all its deps are Singleton; changed to `AddSingleton` to eliminate per-request allocation
+- `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs:40` — non-seekable body returned `401` (misleads monitoring); changed to throw `InvalidOperationException` which propagates as `500 ProblemDetails` via the registered exception handler
+- `source/Testurio.Api/Services/JiraWebhookService.cs:98` — `PostCommentAsync` return value was silently discarded; captured result and logs a warning if `false` (satisfies AC-009 observability)
+- `source/Testurio.Worker/Processors/TestRunJobProcessor.cs:88` — `OnRunCompletedAsync` was called before `CompleteMessageAsync`; a failure in queue dispatch would cause message redelivery and double-advance of the run queue. Swapped order: complete message first, then dispatch next run
+- `source/Testurio.Worker/Processors/TestRunJobProcessor.cs:98` — `UpdateAsync` in the failure catch block used `args.CancellationToken` which may already be cancelled on host shutdown, leaving runs permanently stuck in `Active`; changed to `CancellationToken.None`
+
+### Suggestions fixed
+- `source/Testurio.Infrastructure/Testurio.Infrastructure.csproj` — `Newtonsoft.Json` package reference removed (not used directly; Cosmos SDK bundled it); added `<AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>` to Infrastructure, Api, and Worker csproj files to suppress the transitive build-time check
+- `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs` — two test method names corrected: `ReturnsEnqueued` → `ReturnsQueued` to match the actual `WebhookProcessResult.Queued` assertion
+- `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs` — `ApiFactory` mocks exposed as typed properties (`ProjectRepoMock`, `TestRunRepoMock`, etc.) instead of being retrieved via the service container; removed `AddSingleton(mock)` registrations; tests access mocks directly via `_factory.ProjectRepoMock`
 
 ### Status: Complete
 
