@@ -17,7 +17,7 @@ builder.Services.AddOptions<AzureAdB2COptions>()
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
 // Bind JWT Bearer options from the already-validated AzureAdB2COptions so a missing config key
 // fails at startup (via ValidateOnStart above) rather than silently producing null Authority/Audience.

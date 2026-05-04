@@ -50,13 +50,14 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
         catch (JsonException)
         {
-            await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Message body is not valid JSON", args.CancellationToken);
+            // Use CancellationToken.None — the host may be shutting down but dead-lettering must complete.
+            await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Message body is not valid JSON", CancellationToken.None);
             return;
         }
 
         if (message is null)
         {
-            await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Could not deserialize message body", args.CancellationToken);
+            await args.DeadLetterMessageAsync(args.Message, "InvalidPayload", "Could not deserialize message body", CancellationToken.None);
             return;
         }
 
@@ -67,7 +68,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         {
             // Dead-letter first so the message is removed regardless of whether queue dispatch succeeds.
             // Then advance the run queue; if dispatch fails the dead-letter is already committed.
-            await args.DeadLetterMessageAsync(args.Message, "TestRunNotFound", $"TestRun {message.TestRunId} not found", args.CancellationToken);
+            // Use CancellationToken.None — host may be shutting down but dead-lettering must complete.
+            await args.DeadLetterMessageAsync(args.Message, "TestRunNotFound", $"TestRun {message.TestRunId} not found", CancellationToken.None);
             await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             return;
         }
