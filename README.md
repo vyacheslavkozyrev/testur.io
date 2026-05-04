@@ -39,16 +39,12 @@ Both commands must complete with no errors before continuing.
 
 Launch the Azure Cosmos DB Emulator from the Start menu. Wait until the tray icon turns green and the data explorer opens at `https://localhost:8081`.
 
-The emulator's fixed connection string is always:
-
-```
-AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b5n5FNMkj/F5NlvunFQ==;
-```
+Copy the connection string from the emulator's Quickstart page at `https://localhost:8081/_explorer/index.html` — use the **Primary Connection String** shown there.
 
 ### Step 4 — Create a Service Bus queue
 
 1. In the Azure portal, create a **Service Bus namespace** (Basic tier is fine)
-2. Inside it, create a **queue** named `test-run-jobs`
+2. Inside it, create a **queue** named `story-test-pipeline`
 3. Copy the **primary connection string** from Shared access policies → RootManageSharedAccessKey
 
 ### Step 5 — Configure the API
@@ -58,13 +54,13 @@ Configuration is loaded from `appsettings.json` → `appsettings.Development.jso
 ```bash
 cd source/Testurio.Api
 
-dotnet user-secrets set "AzureAdB2C:Authority" "https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/<policy>/v2.0"
-dotnet user-secrets set "AzureAdB2C:ClientId" "<your-app-registration-client-id>"
+dotnet user-secrets set "AzureAdB2C:Authority" "https://placeholder.b2clogin.com/placeholder.onmicrosoft.com/B2C_1_signupsignin/v2.0"
+dotnet user-secrets set "AzureAdB2C:ClientId" "00000000-0000-0000-0000-000000000000"
 
-dotnet user-secrets set "Infrastructure:CosmosConnectionString" "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b5n5FNMkj/F5NlvunFQ=="
+dotnet user-secrets set "Infrastructure:CosmosConnectionString" "<primary connection string from https://localhost:8081/_explorer/index.html>"
 dotnet user-secrets set "Infrastructure:CosmosDatabaseName" "testurio"
 dotnet user-secrets set "Infrastructure:ServiceBusConnectionString" "<your-service-bus-connection-string>"
-dotnet user-secrets set "Infrastructure:TestRunJobQueueName" "test-run-jobs"
+dotnet user-secrets set "Infrastructure:TestRunJobQueueName" "story-test-pipeline"
 ```
 
 ### Step 6 — Configure the Worker
@@ -72,17 +68,17 @@ dotnet user-secrets set "Infrastructure:TestRunJobQueueName" "test-run-jobs"
 ```bash
 cd source/Testurio.Worker
 
-dotnet user-secrets set "Infrastructure:CosmosConnectionString" "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b5n5FNMkj/F5NlvunFQ=="
+dotnet user-secrets set "Infrastructure:CosmosConnectionString" "<primary connection string from https://localhost:8081/_explorer/index.html>"
 dotnet user-secrets set "Infrastructure:CosmosDatabaseName" "testurio"
 dotnet user-secrets set "Infrastructure:ServiceBusConnectionString" "<your-service-bus-connection-string>"
-dotnet user-secrets set "Infrastructure:TestRunJobQueueName" "test-run-jobs"
+dotnet user-secrets set "Worker:TestRunJobQueueName" "story-test-pipeline"
 ```
 
 ### Step 7 — Run
 
 Open two terminals from the repository root.
 
-**Terminal 1 — API** (listens on `https://localhost:7102`):
+**Terminal 1 — API** (listens on `http://localhost:5225`):
 
 ```bash
 dotnet run --project source/Testurio.Api/Testurio.Api.csproj
@@ -97,7 +93,7 @@ dotnet run --project source/Testurio.Worker/Testurio.Worker.csproj
 ### Step 8 — Verify
 
 ```bash
-curl -k https://localhost:7102/openapi/v1.json
+curl http://localhost:5225/openapi/v1.json
 ```
 
 A JSON OpenAPI document confirms the API started cleanly. A startup config error would crash the process before it could respond.
