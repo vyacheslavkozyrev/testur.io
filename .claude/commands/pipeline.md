@@ -14,27 +14,25 @@ If `documents/features.md` does not exist, spawn the `research` agent (`.claude/
 
 If `documents/features.md` already exists, skip this step.
 
-## Step 1 — Specify
+## Step 1 — Pre-read Architecture
 
-Spawn the `specify` agent (`.claude/agents/specify.md`) with the feature number as the prompt.
+Read `documents/architecture.md`. Extract the **layer tag table** and the **implementation layer order** section (the table mapping tag to scope under "Implementation Layer Order"). Store this as `architectureLayerSummary`. You will inject it into the prompts for Steps 1, 2, and 3 so those agents do not need to re-read the full file.
 
-Wait for the agent to complete. Show the user a summary of the specification produced, then ask for confirmation before proceeding to the next step.
+## Step 2 — Specify + Plan
 
-## Step 2 — Plan
+Spawn the `specify-and-plan` agent (`.claude/agents/specify-and-plan.md`) with the feature number as the prompt. Append the `architectureLayerSummary` extracted in Step 0b to the prompt.
 
-Spawn the `plan` agent (`.claude/agents/plan.md`) with the feature number as the prompt.
-
-Wait for the agent to complete. Show the user a summary of the implementation plan produced, then ask for confirmation before proceeding to the next step.
+Wait for the agent to complete both the Specify and Plan phases before proceeding to the next step.
 
 ## Step 3 — Implement
 
-Spawn the `implement` agent (`.claude/agents/implement.md`) with the feature number as the prompt.
+Spawn the `implement` agent (`.claude/agents/implement.md`) with the feature number as the prompt. Append the `architectureLayerSummary` to the prompt.
 
 Wait for the agent to complete and all files to be written before proceeding to the next step.
 
 ## Step 4 — Code Review
 
-Spawn the `review` agent (`.claude/agents/review.md`) with the feature number as the prompt.
+Spawn the `review` agent (`.claude/agents/review.md`) with the feature number as the prompt. Append the `architectureLayerSummary` to the prompt.
 
 Wait for the review, all automated fixes, and the commit to complete before proceeding to the next step.
 

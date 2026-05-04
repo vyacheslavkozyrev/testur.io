@@ -1,6 +1,7 @@
 ---
 name: plan
 description: Review specification documentation and generate a sequential implementation plan task by task. Input: feature number (4-digit string or integer).
+model: haiku
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
@@ -16,9 +17,10 @@ The feature number is provided in your prompt. It must be a number (e.g. `1` or 
 
 Locate the matching folder in `specifications/` and read all documents from it (`stories.md`, `progress.md`, `plan.md`).
 
-Also read:
+Also read architecture context:
 
-- `documents/architecture.md` — to understand the current system structure, layers, and conventions before generating any tasks.
+- If the caller provided an `architectureLayerSummary`, use it as the architecture reference.
+- Otherwise read `documents/architecture.md` in full.
 
 ## Step 2 — Check Prerequisites
 

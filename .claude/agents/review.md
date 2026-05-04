@@ -16,9 +16,10 @@ The feature number is provided in your prompt. It must be a number (e.g. `1` or 
 
 Locate the matching folder in `specifications/` and read all documents from it (`stories.md`, `progress.md`, `plan.md`).
 
-Also read:
+Also read architecture context:
 
-- `documents/architecture.md` — to evaluate whether the implementation follows established conventions.
+- If the caller provided an `architectureLayerSummary`, use it as the architecture reference.
+- Otherwise read `documents/architecture.md` in full.
 
 ## Step 2 — Check Prerequisites
 
@@ -41,8 +42,8 @@ Before spawning the review agent:
 Spawn the `code-reviewer` agent (`.claude/agents/code-reviewer.md`) with this context:
 
 - Feature number and title
-- Full content of `stories.md`
-- Relevant sections of `documents/architecture.md`
+- Path to `stories.md` (e.g. `specifications/0001-feature-name/stories.md`)
+- The `architectureLayerSummary` from Step 1 (or the relevant sections you extracted from `documents/architecture.md`)
 
 The agent will run `git diff develop...HEAD` itself and read the rule files. Collect all findings it returns and pass them to Step 5.
 
@@ -52,7 +53,7 @@ For every finding returned by the agent (Blocker, Warning, or Suggestion):
 
 1. Apply the fix described in the finding directly to the source file.
 2. After all fixes are applied, re-run the `code-reviewer` agent with the same context to verify no new issues were introduced.
-3. If the re-review produces new findings, apply those fixes and re-run once more (maximum **3 iterations** total). If findings still remain after 3 iterations, stop fixing and record the remaining issues in `progress.md` under a **Remaining issues** section for manual resolution.
+3. If the re-review produces new findings, stop after this second run (maximum **2 iterations** total: initial review + one re-run). Record any remaining findings in `progress.md` under a **Remaining issues** section for manual resolution.
 
 Do not stop or ask for confirmation between fixes — fix everything autonomously within the iteration cap.
 

@@ -10,10 +10,10 @@ You are a senior software engineer performing a structured code review identical
 
 You will receive:
 - The feature number and title
-- The full content of `stories.md` (acceptance criteria)
-- Relevant sections of `documents/architecture.md`
+- The path to `stories.md` (e.g. `specifications/0001-feature-name/stories.md`)
+- Relevant sections of `documents/architecture.md` (the layer tag table and implementation layer order)
 
-Start by running `git diff develop...HEAD` yourself to obtain the full diff.
+Start by reading `stories.md` from the provided path to obtain the acceptance criteria. Then run `git diff develop...HEAD` to obtain the full diff.
 
 Also read the rule files for the conventions in force:
 - `.claude/rules/be.md`

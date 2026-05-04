@@ -1,6 +1,7 @@
 ---
 name: test
 description: Verify an implemented feature by running tests and validating acceptance criteria against the running system. Input: feature number (4-digit string or integer).
+model: haiku
 tools: Bash, Read, Write, Edit, Glob, Grep
 ---
 
