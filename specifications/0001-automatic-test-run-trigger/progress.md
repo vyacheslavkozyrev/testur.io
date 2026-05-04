@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-04-29 | 3 stories, 11 ACs — POC scope                        |
 | Plan      | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
 | Implement | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
-| Review    | ✅ Complete | 2026-05-03 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed. Meta: 3B/5W/3S fixed |
+| Review    | ✅ Complete | 2026-05-04 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed. Meta: 3B/5W/3S fixed. Pass 5 (2026-05-04): 1W/2W fixed |
 | Test      | ⏳ Pending  |            |                                                      |
 
 ---
@@ -148,6 +148,17 @@ _Populated by `/implement 0001`_
 - `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs:29` — `MaxItemCount` controls page size, not total row count; the accumulation loop returned all rows regardless of `limit`. Added `if (results.Count >= limit) break;` after each page (matches pattern in `TestRunRepository.GetByProjectAsync`).
 - `source/Testurio.Api/WebhookRouteConstants.cs` — Extracted `JiraPrefix` and `BufferingPathPrefix` as shared constants; both `RequestBodyBufferingMiddleware` and `JiraWebhookController` now reference them, eliminating the duplicated route-prefix string.
 - `source/Testurio.Api/Services/JiraWebhookService.cs:94` — `ResolveAsync` was called after `CreateAsync`; a Key Vault failure left an orphaned `Skipped` TestRun with no Jira comment. Reordered: resolve secret first, then write the record.
+
+### Status: Complete
+
+---
+
+## Review — 2026-05-04
+
+### Warnings fixed
+- `source/Testurio.Api/Program.cs:20` — `AddAuthentication()` called without specifying the default scheme; added `JwtBearerDefaults.AuthenticationScheme` argument to prevent ambiguous scheme resolution
+- `source/Testurio.Infrastructure/ServiceBus/TestRunJobSender.cs:26` — `SessionId = message.ProjectId` set on messages but processor uses `CreateProcessor` (non-session); per-project FIFO is already enforced by `RunQueueManager` at the application layer, so `SessionId` was removed to avoid incompatibility with a non-session-enabled queue
+- `source/Testurio.Worker/Processors/TestRunJobProcessor.cs:53,60,71` — `DeadLetterMessageAsync` calls in the JSON parse error and null-message paths used `args.CancellationToken` which may be cancelled on host shutdown; changed to `CancellationToken.None` for consistency with the established pattern
 
 ### Status: Complete
 
