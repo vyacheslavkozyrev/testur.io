@@ -14,7 +14,9 @@
       "Bash(dotnet *)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(git stash *)",
+      "Bash(git *)"
     ]
   },
   "enableAllProjectMcpServers": true

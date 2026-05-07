@@ -4,11 +4,12 @@
 
 | Phase     | Status      | Date       | Notes                                                |
 | --------- | ----------- | ---------- | ---------------------------------------------------- |
-| Specify   | ✅ Complete | 2026-04-29 | 3 stories, 11 ACs — POC scope                        |
-| Plan      | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
-| Implement | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
-| Review    | ✅ Complete | 2026-05-04 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed. Meta: 3B/5W/3S fixed. Pass 5 (2026-05-04): 1W/2W fixed |
-| Test      | ✅ Complete | 2026-05-06 | Unit: 12/12 passed. Integration: 5/5 passed. All 11 ACs covered. |
+| Specify      | ✅ Complete | 2026-04-29 | 3 stories, 11 ACs — POC scope                        |
+| Plan         | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
+| Implement    | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
+| Review       | ✅ Complete | 2026-05-04 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed. Meta: 3B/5W/3S fixed. Pass 5 (2026-05-04): 1W/2W fixed |
+| Test         | ✅ Complete | 2026-05-06 | Unit: 12/12 passed. Integration: 5/5 passed. All 11 ACs covered. |
+| Pull Request | ⏳ Pending  |            |                                                      |
 
 ---
 

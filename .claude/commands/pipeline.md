@@ -26,6 +26,7 @@ Parse the Phase Status table and identify the **first phase whose status is `⏳
 - If the resume point is **Implement** → skip to Step 3.
 - If the resume point is **Review** → skip to Step 4.
 - If the resume point is **Test** → skip to Step 5.
+- If the resume point is **Pull Request** → skip to Step 6.
 - If **all phases are ✅ Complete** → inform the user that the feature is already complete and stop.
 
 Do not spawn any agent for a phase that is already marked ✅ Complete.
@@ -52,4 +53,10 @@ Wait for the review, all automated fixes, and the commit to complete before proc
 
 Spawn the `test` agent (`.claude/agents/test.md`) with the feature number as the prompt.
 
-Wait for the agent to complete. Report the final test outcome to the user. If tests fail, surface the failures clearly and stop — do not mark the pipeline as complete until all tests pass.
+Wait for the agent to complete. Report the final test outcome to the user. If tests fail, surface the failures clearly and stop — do not proceed to the next step until all tests pass.
+
+## Step 6 — Pull Request
+
+Spawn the `pull-request` agent (`.claude/agents/pull-request.md`) with the feature number as the prompt.
+
+Wait for the agent to complete. Report the PR URL to the user.

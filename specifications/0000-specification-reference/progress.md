@@ -4,11 +4,12 @@
 
 | Phase     | Status      | Date       | Notes |
 | --------- | ----------- | ---------- | ----- |
-| Specify   | ✅ Complete | YYYY-MM-DD |       |
-| Plan      | ⏳ Pending  |            |       |
-| Implement | ⏳ Pending  |            |       |
-| Review    | ⏳ Pending  |            |       |
-| Test      | ⏳ Pending  |            |       |
+| Specify      | ✅ Complete | YYYY-MM-DD |       |
+| Plan         | ⏳ Pending  |            |       |
+| Implement    | ⏳ Pending  |            |       |
+| Review       | ⏳ Pending  |            |       |
+| Test         | ⏳ Pending  |            |       |
+| Pull Request | ⏳ Pending  |            |       |
 
 ---
 
