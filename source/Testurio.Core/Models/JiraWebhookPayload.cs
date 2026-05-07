@@ -44,9 +44,8 @@ public class JiraIssueFields
     public JiraStatus? Status { get; init; }
 
     // Jira stores acceptance criteria as a custom field — the key must match your Jira instance.
-    // Typed as JsonElement? because different Jira instances use different field types (string, ADF object, number).
     [JsonPropertyName("customfield_10016")]
-    public System.Text.Json.JsonElement? AcceptanceCriteria { get; init; }
+    public string? AcceptanceCriteria { get; init; }
 }
 
 public class JiraIssueType

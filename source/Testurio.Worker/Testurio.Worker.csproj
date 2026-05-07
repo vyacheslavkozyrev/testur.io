@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Testurio.Worker-952d5f9c-e797-4ddb-b11e-fb64d856b6f3</UserSecretsId>
     <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
+    <!-- Suppress Semantic Kernel experimental API diagnostics — SKEXP0010 is stable enough for production use -->
+    <NoWarn>$(NoWarn);SKEXP0010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
