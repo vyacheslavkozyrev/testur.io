@@ -7,6 +7,7 @@ using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Plugins.TestExecutorPlugin;
+using Testurio.Worker.Steps;
 
 namespace Testurio.UnitTests.Steps;
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Moq;
 using Moq.Protected;
@@ -100,13 +101,13 @@ public class TestRunPipelineTests
 
     private void SetupLlmResponse(string json)
     {
-        var chatMessage = new Microsoft.SemanticKernel.ChatMessageContent(
-            Microsoft.SemanticKernel.AuthorRole.Assistant, json);
+        var chatMessage = new ChatMessageContent(
+            AuthorRole.Assistant, json);
         _chatCompletion
             .Setup(c => c.GetChatMessageContentsAsync(
                 It.IsAny<ChatHistory>(),
-                It.IsAny<Microsoft.SemanticKernel.PromptExecutionSettings>(),
-                It.IsAny<Microsoft.SemanticKernel.Kernel>(),
+                It.IsAny<PromptExecutionSettings>(),
+                It.IsAny<Kernel>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync([chatMessage]);
     }
@@ -119,7 +120,7 @@ public class TestRunPipelineTests
                 "SendAsync",
                 ItExpr.IsAny<HttpRequestMessage>(),
                 ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync(new HttpResponseMessage(statusCode)
+            .ReturnsAsync(() => new HttpResponseMessage(statusCode)
             {
                 Content = new System.Net.Http.StringContent(body, System.Text.Encoding.UTF8, "application/json")
             });

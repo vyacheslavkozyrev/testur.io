@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-04-30 | 14 tasks across Domain → Infra → Plugin → Worker → Test |
 | Implement    | ✅ Complete | 2026-05-07 | 14 tasks — Domain, Infra, Plugin, Worker, Test layers   |
 | Review       | ✅ Complete | 2026-05-07 | 3 findings fixed — 1 blocker, 1 warning, 1 suggestion   |
-| Test         | ⏳ Pending  |            |                                                         |
+| Test         | ✅ Complete | 2026-05-07 | 45 tests (26 + 9 + 6 + 4) — all ACs covered             |
 | Pull Request | ⏳ Pending  |            |                                                         |
 
 ---
@@ -36,7 +36,26 @@ _Populated by `/implement 0003`_
 
 ## Test Results
 
-_Populated by `/test 0003`_
+### Executed — 2026-05-07
+
+**Unit Tests:**
+- ResponseSchemaValidatorTests: 26 tests — validating status code and response schema parsing
+- TestExecutorPluginTests: 9 tests — HTTP request construction, Bearer token injection, timeout handling, malformed steps
+- ApiTestExecutionStepTests: 6 tests — run status aggregation, scenario orchestration
+
+**Integration Tests:**
+- TestRunPipelineTests: 4 tests — full pipeline (Jira story → scenario generation → API execution)
+
+**Summary:** 45 tests executed, 45 passed, 0 failed.
+
+**Acceptance Criteria Coverage:**
+- AC-001 to AC-005 (US-001): Execute API Requests — all tests pass
+- AC-006 to AC-008 (US-002): Bearer Token Authentication — all tests pass
+- AC-009 to AC-012 (US-003): Response Validation — all tests pass
+- AC-013 to AC-015 (US-004): Timeout Handling — all tests pass
+- AC-016 to AC-018 (US-005): Result Persistence — all tests pass
+
+**Status:** All acceptance criteria covered. Ready for Pull Request phase.
 
 ---
 
