@@ -63,9 +63,6 @@ Continue in the same context — all files read above remain available.
 
 ## Step 7 — Load Architecture Context
 
-- If the caller provided an `architectureLayerSummary`, use it as the architecture reference.
-- Otherwise read `documents/architecture.md` in full.
-
 Cross-check `stories.md` (already in context) against other completed specifications in `specifications/` to identify any overlap or shared components. Note any dependencies on other features that must be implemented first.
 
 ## Step 8 — Generate Implementation Plan

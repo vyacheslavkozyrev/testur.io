@@ -14,13 +14,11 @@ If `documents/features.md` does not exist, spawn the `research` agent (`.claude/
 
 If `documents/features.md` already exists, skip this step.
 
-## Step 1 — Pre-read Architecture
+## Step 1 — Check Feature Progress
 
-Read `documents/architecture.md`. Extract the **layer tag table** and the **implementation layer order** section (the table mapping tag to scope under "Implementation Layer Order"). Store this as `architectureLayerSummary`. You will inject it into the prompts for Steps 1, 2, and 3 so those agents do not need to re-read the full file.
+Before spawning any agent, locate the progress file by globbing `specifications/<####>-*/progress.md` (e.g. `specifications/0002-*/progress.md`). **Do not glob just the folder** — the Glob tool only matches files, not directories. Read the matched file path.
 
-## Step 1a — Check Feature Progress
-
-Before spawning any agent, read `specifications/<####>-*/progress.md` for the given feature number (glob the folder name if needed).
+If no progress file is found, the feature has not been specified yet — proceed to Step 2.
 
 Parse the Phase Status table and identify the **first phase whose status is `⏳ Pending` or `🔄 In Progress`**. This is the resume point.
 
@@ -34,19 +32,19 @@ Do not spawn any agent for a phase that is already marked ✅ Complete.
 
 ## Step 2 — Specify + Plan
 
-Spawn the `specify-and-plan` agent (`.claude/agents/specify-and-plan.md`) with the feature number as the prompt. Append the `architectureLayerSummary` extracted in Step 0b to the prompt.
+Spawn the `specify-and-plan` agent (`.claude/agents/specify-and-plan.md`) with the feature number as the prompt.
 
 Wait for the agent to complete both the Specify and Plan phases before proceeding to the next step.
 
 ## Step 3 — Implement
 
-Spawn the `implement` agent (`.claude/agents/implement.md`) with the feature number as the prompt. Append the `architectureLayerSummary` to the prompt.
+Spawn the `implement` agent (`.claude/agents/implement.md`) with the feature number as the prompt.
 
 Wait for the agent to complete and all files to be written before proceeding to the next step.
 
 ## Step 4 — Code Review
 
-Spawn the `review` agent (`.claude/agents/review.md`) with the feature number as the prompt. Append the `architectureLayerSummary` to the prompt.
+Spawn the `review` agent (`.claude/agents/review.md`) with the feature number as the prompt.
 
 Wait for the review, all automated fixes, and the commit to complete before proceeding to the next step.
 

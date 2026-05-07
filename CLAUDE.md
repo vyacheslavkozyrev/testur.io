@@ -1,6 +1,6 @@
 # Testurio — Claude Code
 
-SaaS platform for automated software testing. See `documents/architecture.md` for full architecture detail.
+SaaS platform for automated software testing. Full architecture detail: @documents/architecture.md
 
 ## Source Layout
 

@@ -16,11 +16,6 @@ The feature number is provided in your prompt. It must be a number (e.g. `1` or 
 
 Locate the matching folder in `specifications/` and read all documents from it (`stories.md`, `progress.md`, `plan.md`).
 
-Also read architecture context:
-
-- If the caller provided an `architectureLayerSummary`, use it as the architecture reference.
-- Otherwise read `documents/architecture.md` in full.
-
 ## Step 2 — Check Prerequisites
 
 Read the feature's `progress.md`:
@@ -43,7 +38,7 @@ Spawn the `code-reviewer` agent (`.claude/agents/code-reviewer.md`) with this co
 
 - Feature number and title
 - Path to `stories.md` (e.g. `specifications/0001-feature-name/stories.md`)
-- The `architectureLayerSummary` from Step 1 (or the relevant sections you extracted from `documents/architecture.md`)
+- Relevant architecture context from `documents/architecture.md` (available in context via CLAUDE.md)
 
 The agent will run `git diff develop...HEAD` itself and read the rule files. Collect all findings it returns and pass them to Step 5.
 
