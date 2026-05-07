@@ -18,6 +18,20 @@ If `documents/features.md` already exists, skip this step.
 
 Read `documents/architecture.md`. Extract the **layer tag table** and the **implementation layer order** section (the table mapping tag to scope under "Implementation Layer Order"). Store this as `architectureLayerSummary`. You will inject it into the prompts for Steps 1, 2, and 3 so those agents do not need to re-read the full file.
 
+## Step 1a — Check Feature Progress
+
+Before spawning any agent, read `specifications/<####>-*/progress.md` for the given feature number (glob the folder name if needed).
+
+Parse the Phase Status table and identify the **first phase whose status is `⏳ Pending` or `🔄 In Progress`**. This is the resume point.
+
+- If the resume point is **Specify + Plan** → proceed to Step 2.
+- If the resume point is **Implement** → skip to Step 3.
+- If the resume point is **Review** → skip to Step 4.
+- If the resume point is **Test** → skip to Step 5.
+- If **all phases are ✅ Complete** → inform the user that the feature is already complete and stop.
+
+Do not spawn any agent for a phase that is already marked ✅ Complete.
+
 ## Step 2 — Specify + Plan
 
 Spawn the `specify-and-plan` agent (`.claude/agents/specify-and-plan.md`) with the feature number as the prompt. Append the `architectureLayerSummary` extracted in Step 0b to the prompt.
