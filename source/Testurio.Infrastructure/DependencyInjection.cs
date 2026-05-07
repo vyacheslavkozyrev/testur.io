@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.ServiceBus;
 
 namespace Testurio.Infrastructure;
@@ -73,6 +74,15 @@ public static class DependencyInjection
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
         });
+
+        services.AddSingleton<ITestScenarioRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestScenarioRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
 
         return services;
     }
