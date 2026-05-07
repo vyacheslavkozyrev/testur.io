@@ -5,7 +5,7 @@
 - [x] T001 [Domain] Create `TestScenario` entity — `source/Testurio.Core/Entities/TestScenario.cs`
 - [x] T002 [Domain] Create `TestScenarioStep` value object — `source/Testurio.Core/Models/TestScenarioStep.cs`
 - [x] T003 [Domain] Add `ITestScenarioRepository` interface — `source/Testurio.Core/Repositories/ITestScenarioRepository.cs`
-- [ ] T004 [Infra] Implement `TestScenarioRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestScenarioRepository.cs`
+- [x] T004 [Infra] Implement `TestScenarioRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestScenarioRepository.cs`
 - [ ] T005 [Infra] Implement `JiraStoryClient` (fetch story description and AC from Jira REST API) — `source/Testurio.Infrastructure/Jira/JiraStoryClient.cs`
 - [ ] T006 [Infra] Update DI registration with new repository and Jira client — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T007 [Config] Configure Semantic Kernel with Anthropic Claude connector — `source/Testurio.Worker/DependencyInjection.cs`
