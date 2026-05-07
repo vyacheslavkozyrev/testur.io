@@ -17,6 +17,13 @@ builder.Services.AddOptions<AzureAdB2COptions>()
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpLogging(o =>
+{
+    o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod
+        | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestPath
+        | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
+        | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer();
 // Bind JWT Bearer options from the already-validated AzureAdB2COptions so a missing config key
@@ -47,6 +54,7 @@ var app = builder.Build();
 
 // EnableBuffering must run before the request body is consumed — register it first.
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
+app.UseHttpLogging();
 
 if (app.Environment.IsDevelopment())
 {

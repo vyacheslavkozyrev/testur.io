@@ -12,6 +12,9 @@ public class JiraWebhookPayload
 
     [JsonPropertyName("transition")]
     public JiraTransition? Transition { get; init; }
+
+    [JsonPropertyName("changelog")]
+    public JiraChangelog? Changelog { get; init; }
 }
 
 public class JiraIssue
@@ -40,9 +43,10 @@ public class JiraIssueFields
     [JsonPropertyName("status")]
     public JiraStatus? Status { get; init; }
 
-    // Jira stores acceptance criteria as a custom field — the key must match your Jira instance (e.g. "customfield_10016").
+    // Jira stores acceptance criteria as a custom field — the key must match your Jira instance.
+    // Typed as JsonElement? because different Jira instances use different field types (string, ADF object, number).
     [JsonPropertyName("customfield_10016")]
-    public string? AcceptanceCriteria { get; init; }
+    public System.Text.Json.JsonElement? AcceptanceCriteria { get; init; }
 }
 
 public class JiraIssueType
@@ -67,4 +71,19 @@ public class JiraTransitionTo
 {
     [JsonPropertyName("name")]
     public string Name { get; init; } = string.Empty;
+}
+
+public class JiraChangelog
+{
+    [JsonPropertyName("items")]
+    public List<JiraChangelogItem> Items { get; init; } = [];
+}
+
+public class JiraChangelogItem
+{
+    [JsonPropertyName("field")]
+    public string Field { get; init; } = string.Empty;
+
+    [JsonPropertyName("toString")]
+    public string? ToString { get; init; }
 }
