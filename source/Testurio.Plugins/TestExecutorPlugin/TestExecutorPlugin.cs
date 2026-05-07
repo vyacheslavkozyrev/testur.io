@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
@@ -116,6 +115,7 @@ public partial class TestExecutorPlugin
                 var actualStatusCode = (int)response.StatusCode;
                 var actualBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 var actualHeaders = response.Headers
+                    .Concat(response.Content.Headers)
                     .ToDictionary(h => h.Key, h => string.Join(", ", h.Value));
 
                 // AC-009: validate status code.

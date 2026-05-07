@@ -33,22 +33,30 @@ public class StepResultRepository : IStepResultRepository
         return results.AsReadOnly();
     }
 
+    // Cosmos DB Transactional Batch has a hard limit of 100 operations per batch.
+    private const int CosmosTransactionalBatchLimit = 100;
+
     public async Task CreateBatchAsync(IEnumerable<StepResult> results, CancellationToken cancellationToken = default)
     {
         var list = results.ToList();
         if (list.Count == 0)
             return;
 
-        // All step results in a run share the same projectId partition key — use TransactionalBatch
-        // so either all are written or none are, ensuring consistent result data for the report writer.
+        // All step results in a run share the same projectId partition key.
+        // Chunk into groups of up to CosmosTransactionalBatchLimit (100) because Cosmos DB
+        // enforces a hard limit of 100 operations per TransactionalBatch.
         var partitionKey = new PartitionKey(list[0].ProjectId);
-        var batch = _container.CreateTransactionalBatch(partitionKey);
-        foreach (var result in list)
-            batch.CreateItem(result);
+        for (var offset = 0; offset < list.Count; offset += CosmosTransactionalBatchLimit)
+        {
+            var chunk = list.Skip(offset).Take(CosmosTransactionalBatchLimit);
+            var batch = _container.CreateTransactionalBatch(partitionKey);
+            foreach (var result in chunk)
+                batch.CreateItem(result);
 
-        using var response = await batch.ExecuteAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
-            throw new InvalidOperationException(
-                $"Cosmos transactional batch failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+            using var response = await batch.ExecuteAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException(
+                    $"Cosmos transactional batch failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+        }
     }
 }
