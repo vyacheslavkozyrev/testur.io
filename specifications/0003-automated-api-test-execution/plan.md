@@ -4,7 +4,7 @@
 
 - [x] T001 [Domain] Create `StepResult` entity — `source/Testurio.Core/Entities/StepResult.cs`
 - [x] T002 [Domain] Create `StepStatus` enum (Passed / Failed / Error / Timeout / Skipped) — `source/Testurio.Core/Enums/StepStatus.cs`
-- [ ] T003 [Domain] Add `IStepResultRepository` interface — `source/Testurio.Core/Repositories/IStepResultRepository.cs`
+- [x] T003 [Domain] Add `IStepResultRepository` interface — `source/Testurio.Core/Repositories/IStepResultRepository.cs`
 - [ ] T004 [Infra] Implement `StepResultRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/StepResultRepository.cs`
 - [ ] T005 [Infra] Implement `KeyVaultCredentialClient` (resolve Bearer token from project Key Vault secret reference) — `source/Testurio.Infrastructure/KeyVault/KeyVaultCredentialClient.cs`
 - [ ] T006 [Infra] Update DI registration with new repository and credential client — `source/Testurio.Infrastructure/DependencyInjection.cs`
