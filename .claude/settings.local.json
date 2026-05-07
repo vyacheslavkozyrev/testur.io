@@ -16,7 +16,8 @@
       "Bash(git commit *)",
       "Bash(xargs grep *)",
       "Bash(git stash *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(gh pr *)"
     ]
   },
   "enableAllProjectMcpServers": true
