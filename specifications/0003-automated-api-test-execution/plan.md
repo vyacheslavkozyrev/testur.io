@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Create `StepStatus` enum (Passed / Failed / Error / Timeout / Skipped) — `source/Testurio.Core/Enums/StepStatus.cs`
 - [x] T003 [Domain] Add `IStepResultRepository` interface — `source/Testurio.Core/Repositories/IStepResultRepository.cs`
 - [x] T004 [Infra] Implement `StepResultRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/StepResultRepository.cs`
-- [ ] T005 [Infra] Implement `KeyVaultCredentialClient` (resolve Bearer token from project Key Vault secret reference) — `source/Testurio.Infrastructure/KeyVault/KeyVaultCredentialClient.cs`
+- [x] T005 [Infra] Implement `KeyVaultCredentialClient` (resolve Bearer token from project Key Vault secret reference) — `source/Testurio.Infrastructure/KeyVault/KeyVaultCredentialClient.cs`
 - [ ] T006 [Infra] Update DI registration with new repository and credential client — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T007 [Plugin] Implement `ResponseSchemaValidator` (validate HTTP status code and response body schema against expected values) — `source/Testurio.Plugins/TestExecutorPlugin/ResponseSchemaValidator.cs`
 - [ ] T008 [Plugin] Implement `TestExecutorPlugin` (build HTTP requests from step definitions, inject Bearer token, enforce 10s timeout, invoke validator, record per-step outcome) — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
