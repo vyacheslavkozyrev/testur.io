@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-04-30 | 19 tasks across Domain → Infra → API → Worker → Test |
 | Implement | ✅ Complete | 2026-05-02 | 19 tasks — Domain → Infra → API → Worker → Test      |
 | Review    | ✅ Complete | 2026-05-04 | Pass 1: 9B/9W/7S fixed. Pass 2: 4B/6W/3S fixed. Pass 3: 6B/6W/5S fixed. Pass 4: 2B/5W/3S fixed. Meta: 3B/5W/3S fixed. Pass 5 (2026-05-04): 1W/2W fixed |
-| Test      | ⏳ Pending  |            |                                                      |
+| Test      | ✅ Complete | 2026-05-06 | Unit: 12/12 passed. Integration: 5/5 passed. All 11 ACs covered. |
 
 ---
 
@@ -166,7 +166,21 @@ _Populated by `/implement 0001`_
 
 ## Test Results
 
-_Populated by `/test 0001`_
+### 2026-05-06 — Full Test Suite Passing
+
+**Unit Tests (Testurio.UnitTests):** 12/12 Passed (224 ms)
+- JiraWebhookServiceTests: 8 tests covering event validation, filtering, enqueueing, queuing, and skip logic
+- RunQueueManagerTests: 4 tests covering queue dispatch, deduplication, and FIFO ordering
+
+**Integration Tests (Testurio.IntegrationTests):** 5/5 Passed (647 ms)
+- JiraWebhookControllerTests: 5 tests covering HTTP signature validation, webhook endpoint, and skip notification
+
+**Acceptance Criteria Coverage:** 11/11 ACs covered
+- US-001 (4 ACs): Webhook endpoint, filtering, signature validation, silent ignores
+- US-002 (3 ACs): Queue add, FIFO processing, deduplication
+- US-003 (4 ACs): Skip on missing data, Jira notification, history recording, re-trigger support
+
+**Status:** PASSED ✅
 
 ---
 
