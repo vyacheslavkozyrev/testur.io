@@ -48,12 +48,8 @@ public partial class JiraWebhookService : IJiraWebhookService
         if (fields?.IssueType?.Name != UserStoryIssueType)
             return WebhookProcessResult.Ignored;
 
-        var statusChange = payload.Changelog?.Items.FirstOrDefault(i => i.Field == "status");
-        if (statusChange is null)
-            return WebhookProcessResult.Ignored;
-
-        var transitionedTo = statusChange.ToString ?? string.Empty;
-        if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
+        var currentStatus = fields?.Status?.Name ?? string.Empty;
+        if (!string.Equals(currentStatus, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
 
         var missingParts = GetMissingParts(fields);

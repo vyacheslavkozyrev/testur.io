@@ -110,15 +110,19 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.Status = TestRunStatus.Failed;
             try
             {
-                // Use CancellationToken.None — the host may be shutting down (args.CancellationToken already
-                // cancelled) but the status-update write must complete to avoid a stuck Active/Pending record.
                 await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
             }
             catch (Exception updateEx)
             {
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
-            await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
+
+            // ScenarioGenerationException is a permanent failure — dead-letter so Service Bus
+            // does not retry and flood Claude with repeated calls for the same broken run.
+            if (ex is ScenarioGenerationException)
+                await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
+            else
+                await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
         }
     }
 

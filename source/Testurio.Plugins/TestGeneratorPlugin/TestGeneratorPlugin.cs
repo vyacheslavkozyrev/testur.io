@@ -47,7 +47,7 @@ public partial class TestGeneratorPlugin
         history.AddUserMessage(storyInput);
 
         var result = await _chatCompletion.GetChatMessageContentsAsync(history, cancellationToken: cancellationToken);
-        var responseText = string.Concat(result.Select(r => r.Content)).Trim();
+        var responseText = StripMarkdownFences(string.Concat(result.Select(r => r.Content)).Trim());
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -92,6 +92,19 @@ public partial class TestGeneratorPlugin
 
         LogGenerated(_logger, scenarios.Count, testRunId);
         return scenarios;
+    }
+
+    private static string StripMarkdownFences(string text)
+    {
+        if (!text.StartsWith("```", StringComparison.Ordinal))
+            return text;
+        var firstNewline = text.IndexOf('\n');
+        if (firstNewline < 0)
+            return text;
+        var body = text[(firstNewline + 1)..];
+        if (body.EndsWith("```", StringComparison.Ordinal))
+            body = body[..^3];
+        return body.Trim();
     }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Claude returned an empty scenario list for test run {TestRunId}")]

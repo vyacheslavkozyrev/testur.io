@@ -31,7 +31,7 @@ public partial class JiraStoryClient : IJiraStoryClient
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{email}:{apiToken}"));
         var request = new HttpRequestMessage(
             HttpMethod.Get,
-            $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{issueKey}?fields=description,customfield_10016");
+            $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{issueKey}?fields=description");
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -54,8 +54,7 @@ public partial class JiraStoryClient : IJiraStoryClient
             return null;
         }
 
-        var description = issue?.Fields?.Description;
-        var ac = issue?.Fields?.CustomField10016;
+        var description = ExtractAdfText(issue?.Fields?.Description);
 
         if (string.IsNullOrWhiteSpace(description))
             return null;
@@ -63,7 +62,7 @@ public partial class JiraStoryClient : IJiraStoryClient
         return new JiraStoryContent
         {
             Description = description,
-            AcceptanceCriteria = string.IsNullOrWhiteSpace(ac) ? string.Empty : ac
+            AcceptanceCriteria = string.Empty
         };
     }
 
@@ -82,10 +81,43 @@ public partial class JiraStoryClient : IJiraStoryClient
     private sealed class JiraFieldsResponse
     {
         [JsonPropertyName("description")]
-        public string? Description { get; init; }
+        public JsonElement? Description { get; init; }
+    }
 
-        // Jira stores acceptance criteria as a custom field — key matches the Jira instance configuration.
-        [JsonPropertyName("customfield_10016")]
-        public string? CustomField10016 { get; init; }
+    // Jira API v3 returns description/AC as Atlassian Document Format (ADF) — a nested JSON object.
+    // This walks the ADF tree and extracts all plain text content.
+    private static string ExtractAdfText(JsonElement? element)
+    {
+        if (element is null || element.Value.ValueKind == JsonValueKind.Null)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+        ExtractText(element.Value, sb);
+        return sb.ToString().Trim();
+    }
+
+    private static void ExtractText(JsonElement node, StringBuilder sb)
+    {
+        if (node.ValueKind == JsonValueKind.String)
+        {
+            sb.Append(node.GetString());
+            return;
+        }
+
+        if (node.ValueKind != JsonValueKind.Object)
+            return;
+
+        if (node.TryGetProperty("text", out var text) && text.ValueKind == JsonValueKind.String)
+            sb.Append(text.GetString());
+
+        if (node.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var child in content.EnumerateArray())
+            {
+                ExtractText(child, sb);
+                if (child.TryGetProperty("type", out var type) && type.GetString() is "paragraph" or "heading")
+                    sb.Append('\n');
+            }
+        }
     }
 }
