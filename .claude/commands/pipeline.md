@@ -2,44 +2,61 @@
 description: End-to-end feature development workflow — runs specify, plan, implement, review, and test in sequence for a given feature number.
 ---
 
-You are acting as an automated development agent. Execute each step below in sequence for the feature number provided in the input. If the input is not a number, stop immediately and inform the user that a valid feature number is required.
+The feature number is passed as the command argument (`$ARGUMENTS`). If it is not a number, stop immediately and inform the user that a valid feature number is required.
 
-The feature number is passed to every sub-command unchanged.
+Execute each step below in sequence by spawning the corresponding agent. Pass the feature number unchanged to every agent.
 
 ---
 
 ## Step 0 — Research (optional)
 
-If `documents/features.md` does not exist, call `/research` first and wait for the user to confirm the feature list before proceeding.
+If `documents/features.md` does not exist, spawn the `research` agent (`.claude/agents/research.md`) with no arguments and wait for it to complete. Then ask the user to confirm the feature list before proceeding.
 
 If `documents/features.md` already exists, skip this step.
 
-## Step 1 — Specify
+## Step 1 — Check Feature Progress
 
-Call `/specify` with the feature number.
+Before spawning any agent, locate the progress file by globbing `specifications/<####>-*/progress.md` (e.g. `specifications/0002-*/progress.md`). **Do not glob just the folder** — the Glob tool only matches files, not directories. Read the matched file path.
 
-Wait for the specification to be completed and the user to confirm before proceeding to the next step.
+If no progress file is found, the feature has not been specified yet — proceed to Step 2.
 
-## Step 2 — Plan
+Parse the Phase Status table and identify the **first phase whose status is `⏳ Pending` or `🔄 In Progress`**. This is the resume point.
 
-Call `/plan` with the feature number.
+- If the resume point is **Specify + Plan** → proceed to Step 2.
+- If the resume point is **Implement** → skip to Step 3.
+- If the resume point is **Review** → skip to Step 4.
+- If the resume point is **Test** → skip to Step 5.
+- If the resume point is **Pull Request** → skip to Step 6.
+- If **all phases are ✅ Complete** → inform the user that the feature is already complete and stop.
 
-Wait for the implementation plan to be completed and the user to confirm before proceeding to the next step.
+Do not spawn any agent for a phase that is already marked ✅ Complete.
+
+## Step 2 — Specify + Plan
+
+Spawn the `specify-and-plan` agent (`.claude/agents/specify-and-plan.md`) with the feature number as the prompt.
+
+Wait for the agent to complete both the Specify and Plan phases before proceeding to the next step.
 
 ## Step 3 — Implement
 
-Call `/implement` with the feature number.
+Spawn the `implement` agent (`.claude/agents/implement.md`) with the feature number as the prompt.
 
-Wait for implementation to be completed and all files written before proceeding to the next step.
+Wait for the agent to complete and all files to be written before proceeding to the next step.
 
 ## Step 4 — Code Review
 
-Call `/review` with the feature number.
+Spawn the `review` agent (`.claude/agents/review.md`) with the feature number as the prompt.
 
 Wait for the review, all automated fixes, and the commit to complete before proceeding to the next step.
 
 ## Step 5 — Test
 
-Call `/test` with the feature number.
+Spawn the `test` agent (`.claude/agents/test.md`) with the feature number as the prompt.
 
-Report the final test outcome to the user. If tests fail, surface the failures clearly and stop — do not mark the pipeline as complete until all tests pass.
+Wait for the agent to complete. Report the final test outcome to the user. If tests fail, surface the failures clearly and stop — do not proceed to the next step until all tests pass.
+
+## Step 6 — Pull Request
+
+Spawn the `pull-request` agent (`.claude/agents/pull-request.md`) with the feature number as the prompt.
+
+Wait for the agent to complete. Report the PR URL to the user.

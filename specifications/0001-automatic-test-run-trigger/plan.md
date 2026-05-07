@@ -2,25 +2,25 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `TestRun` entity — `source/Testurio.Core/Entities/TestRun.cs`
-- [ ] T002 [Domain] Create `QueuedRun` entity — `source/Testurio.Core/Entities/QueuedRun.cs`
-- [ ] T003 [Domain] Create `JiraWebhookPayload` model — `source/Testurio.Core/Models/JiraWebhookPayload.cs`
-- [ ] T004 [Domain] Add `ITestRunRepository` interface — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
-- [ ] T005 [Domain] Add `IRunQueueRepository` interface — `source/Testurio.Core/Repositories/IRunQueueRepository.cs`
-- [ ] T006 [Infra] Implement `TestRunRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
-- [ ] T007 [Infra] Implement `RunQueueRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs`
-- [ ] T008 [Infra] Implement `TestRunJobSender` (Service Bus) — `source/Testurio.Infrastructure/ServiceBus/TestRunJobSender.cs`
-- [ ] T009 [Infra] Register repositories and Service Bus sender in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T010 [App] Implement `JiraApiClient` (post comment to Jira issue) — `source/Testurio.Api/Clients/JiraApiClient.cs`
-- [ ] T011 [App] Implement `JiraWebhookService` (validate event, check description/AC, enqueue or skip) — `source/Testurio.Api/Services/JiraWebhookService.cs`
-- [ ] T012 [API] Add Jira webhook signature validation middleware — `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs`
-- [ ] T013 [API] Add `JiraWebhookController` with `POST /webhooks/jira/{projectId}` — `source/Testurio.Api/Controllers/JiraWebhookController.cs`
-- [ ] T014 [Worker] Implement `RunQueueManager` (FIFO processing, dedup, active run check) — `source/Testurio.Worker/Services/RunQueueManager.cs`
-- [ ] T015 [Worker] Implement `TestRunJobProcessor` (Service Bus consumer, dispatches to queue manager) — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T016 [Config] Register worker services and Service Bus consumer in DI — `source/Testurio.Worker/DependencyInjection.cs`
-- [ ] T017 [Test] Unit tests for `JiraWebhookService` — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
-- [ ] T018 [Test] Unit tests for `RunQueueManager` — `tests/Testurio.UnitTests/Services/RunQueueManagerTests.cs`
-- [ ] T019 [Test] Integration tests for `POST /webhooks/jira/{projectId}` — `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs`
+- [x] T001 [Domain] Create `TestRun` entity — `source/Testurio.Core/Entities/TestRun.cs`
+- [x] T002 [Domain] Create `QueuedRun` entity — `source/Testurio.Core/Entities/QueuedRun.cs`
+- [x] T003 [Domain] Create `JiraWebhookPayload` model — `source/Testurio.Core/Models/JiraWebhookPayload.cs`
+- [x] T004 [Domain] Add `ITestRunRepository` interface — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
+- [x] T005 [Domain] Add `IRunQueueRepository` interface — `source/Testurio.Core/Repositories/IRunQueueRepository.cs`
+- [x] T006 [Infra] Implement `TestRunRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+- [x] T007 [Infra] Implement `RunQueueRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/RunQueueRepository.cs`
+- [x] T008 [Infra] Implement `TestRunJobSender` (Service Bus) — `source/Testurio.Infrastructure/ServiceBus/TestRunJobSender.cs`
+- [x] T009 [Infra] Register repositories and Service Bus sender in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T010 [App] Implement `JiraApiClient` (post comment to Jira issue) — `source/Testurio.Api/Clients/JiraApiClient.cs`
+- [x] T011 [App] Implement `JiraWebhookService` (validate event, check description/AC, enqueue or skip) — `source/Testurio.Api/Services/JiraWebhookService.cs`
+- [x] T012 [API] Add Jira webhook signature validation middleware — `source/Testurio.Api/Middleware/JiraWebhookSignatureMiddleware.cs`
+- [x] T013 [API] Add `JiraWebhookController` with `POST /webhooks/jira/{projectId}` — `source/Testurio.Api/Controllers/JiraWebhookController.cs`
+- [x] T014 [Worker] Implement `RunQueueManager` (FIFO processing, dedup, active run check) — `source/Testurio.Worker/Services/RunQueueManager.cs`
+- [x] T015 [Worker] Implement `TestRunJobProcessor` (Service Bus consumer, dispatches to queue manager) — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T016 [Config] Register worker services and Service Bus consumer in DI — `source/Testurio.Worker/DependencyInjection.cs`
+- [x] T017 [Test] Unit tests for `JiraWebhookService` — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
+- [x] T018 [Test] Unit tests for `RunQueueManager` — `tests/Testurio.UnitTests/Services/RunQueueManagerTests.cs`
+- [x] T019 [Test] Integration tests for `POST /webhooks/jira/{projectId}` — `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs`
 
 ## Rationale
 

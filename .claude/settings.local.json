@@ -5,7 +5,19 @@
       "Skill(update-config)",
       "WebFetch(domain:ref.tools)",
       "WebFetch(domain:docs.ref.tools)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(git checkout *)",
+      "Bash(git push *)",
+      "Bash(git remote *)",
+      "Bash(dotnet new sln *)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(xargs grep *)",
+      "Bash(git stash *)",
+      "Bash(git *)",
+      "Bash(gh pr *)"
     ]
   },
   "enableAllProjectMcpServers": true
