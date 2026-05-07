@@ -109,6 +109,51 @@ A JSON OpenAPI document confirms the API started cleanly. A startup config error
 
 > In production, all secrets are fetched from Azure Key Vault via Managed Identity. The `PassthroughSecretResolver` used in development returns config values as-is — no Key Vault needed locally.
 
+## Testing Locally
+
+To exercise the full Jira → Worker pipeline locally:
+
+### Step 1 — Expose the API with ngrok
+
+```bash
+ngrok http 5225
+```
+
+Note the public URL (e.g. `https://abc123.ngrok-free.app`).
+
+### Step 2 — Create a project document in Cosmos
+
+Open the emulator at `https://localhost:8081/_explorer/index.html`, navigate to the `testurio` database → `projects` container, and insert:
+
+```json
+{
+  "id": "my-project",
+  "userId": "test-user",
+  "name": "My Project",
+  "productUrl": "https://myapp.com",
+  "jiraBaseUrl": "https://<your-org>.atlassian.net",
+  "jiraProjectKey": "PROJ",
+  "jiraEmail": "<your-jira-email>",
+  "jiraApiTokenSecretRef": "<your-jira-api-token>",
+  "jiraWebhookSecretRef": "my-webhook-secret",
+  "inTestingStatusLabel": "In Testing"
+}
+```
+
+Pick any string for `jiraWebhookSecretRef` — use the same value in Jira below.
+
+### Step 3 — Configure a Jira webhook
+
+1. In Jira: **Settings → System → Webhooks → Create a webhook**
+2. **URL:** `https://abc123.ngrok-free.app/v1/webhooks/jira/my-project`
+3. **Secret:** the same string as `jiraWebhookSecretRef`
+4. **Events:** Issue → updated (`jira:issue_updated`)
+5. Save
+
+### Step 4 — Trigger a run
+
+Move a User Story issue to your configured "In Testing" status in Jira. The Worker logs should show the job being picked up.
+
 ## Tests
 
 ```bash

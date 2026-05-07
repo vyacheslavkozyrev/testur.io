@@ -39,7 +39,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         JiraWebhookPayload payload,
         CancellationToken cancellationToken = default)
     {
-        if (payload.WebhookEvent != "jira:issue_transitioned" || payload.Issue is null)
+        if (payload.WebhookEvent != "jira:issue_updated" || payload.Issue is null)
             return WebhookProcessResult.Ignored;
 
         var issue = payload.Issue;
@@ -48,7 +48,11 @@ public partial class JiraWebhookService : IJiraWebhookService
         if (fields?.IssueType?.Name != UserStoryIssueType)
             return WebhookProcessResult.Ignored;
 
-        var transitionedTo = payload.Transition?.To?.Name ?? string.Empty;
+        var statusChange = payload.Changelog?.Items.FirstOrDefault(i => i.Field == "status");
+        if (statusChange is null)
+            return WebhookProcessResult.Ignored;
+
+        var transitionedTo = statusChange.ToString ?? string.Empty;
         if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
 
@@ -65,14 +69,9 @@ public partial class JiraWebhookService : IJiraWebhookService
     private static string? GetMissingParts(JiraIssueFields? fields)
     {
         bool missingDescription = string.IsNullOrWhiteSpace(fields?.Description);
-        bool missingAc = string.IsNullOrWhiteSpace(fields?.AcceptanceCriteria);
 
-        if (missingDescription && missingAc)
-            return "description and acceptance criteria";
         if (missingDescription)
             return "description";
-        if (missingAc)
-            return "acceptance criteria";
         return null;
     }
 
