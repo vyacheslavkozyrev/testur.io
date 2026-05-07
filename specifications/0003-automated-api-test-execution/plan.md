@@ -7,7 +7,7 @@
 - [x] T003 [Domain] Add `IStepResultRepository` interface — `source/Testurio.Core/Repositories/IStepResultRepository.cs`
 - [x] T004 [Infra] Implement `StepResultRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/StepResultRepository.cs`
 - [x] T005 [Infra] Implement `KeyVaultCredentialClient` (resolve Bearer token from project Key Vault secret reference) — `source/Testurio.Infrastructure/KeyVault/KeyVaultCredentialClient.cs`
-- [ ] T006 [Infra] Update DI registration with new repository and credential client — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T006 [Infra] Update DI registration with new repository and credential client — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T007 [Plugin] Implement `ResponseSchemaValidator` (validate HTTP status code and response body schema against expected values) — `source/Testurio.Plugins/TestExecutorPlugin/ResponseSchemaValidator.cs`
 - [ ] T008 [Plugin] Implement `TestExecutorPlugin` (build HTTP requests from step definitions, inject Bearer token, enforce 10s timeout, invoke validator, record per-step outcome) — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
 - [ ] T009 [Worker] Implement `ApiTestExecutionStep` (for each scenario dispatch all steps in parallel, collect results, persist, aggregate run status, trigger report step) — `source/Testurio.Worker/Steps/ApiTestExecutionStep.cs`
