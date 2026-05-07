@@ -9,7 +9,7 @@
 - [x] T005 [Infra] Implement `JiraStoryClient` (fetch story description and AC from Jira REST API) — `source/Testurio.Infrastructure/Jira/JiraStoryClient.cs`
 - [x] T006 [Infra] Update DI registration with new repository and Jira client — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [x] T007 [Config] Configure Semantic Kernel with Anthropic Claude connector — `source/Testurio.Worker/DependencyInjection.cs`
-- [ ] T008 [Plugin] Implement `StoryParserPlugin` (extract description and AC from Jira story payload) — `source/Testurio.Plugins/StoryParserPlugin/StoryParserPlugin.cs`
+- [x] T008 [Plugin] Implement `StoryParserPlugin` (extract description and AC from Jira story payload) — `source/Testurio.Plugins/StoryParserPlugin/StoryParserPlugin.cs`
 - [ ] T009 [Plugin] Implement `TestGeneratorPlugin` (call Claude via Semantic Kernel, hardcoded system prompt, deserialise response to `TestScenario` list) — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [ ] T010 [Worker] Implement `ScenarioGenerationStep` (orchestrate: fetch story → parse → generate → persist → trigger next step or fail run) — `source/Testurio.Worker/Steps/ScenarioGenerationStep.cs`
 - [ ] T011 [Worker] Integrate `ScenarioGenerationStep` into `TestRunJobProcessor` after queue dispatch — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`

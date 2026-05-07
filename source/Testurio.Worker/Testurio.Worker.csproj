@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Testurio.Core\Testurio.Core.csproj" />
     <ProjectReference Include="..\Testurio.Infrastructure\Testurio.Infrastructure.csproj" />
+    <ProjectReference Include="..\Testurio.Plugins\Testurio.Plugins.csproj" />
   </ItemGroup>
 </Project>
