@@ -13,7 +13,7 @@ namespace Testurio.Plugins.TestExecutorPlugin;
 /// per-step outcomes. All steps are dispatched in parallel and all scenarios are attempted
 /// regardless of individual step outcomes (AC-003, AC-004).
 /// </summary>
-public sealed partial class TestExecutorPlugin
+public partial class TestExecutorPlugin
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
 
@@ -35,7 +35,7 @@ public sealed partial class TestExecutorPlugin
     /// Executes all steps for a single scenario in parallel, returning one <see cref="StepResult"/>
     /// per step. Never throws — malformed, timed-out, or failed steps are captured as results.
     /// </summary>
-    public async Task<IReadOnlyList<StepResult>> ExecuteScenarioAsync(
+    public virtual async Task<IReadOnlyList<StepResult>> ExecuteScenarioAsync(
         TestScenario scenario,
         string baseUrl,
         string? bearerToken,
