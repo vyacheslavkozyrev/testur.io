@@ -13,7 +13,7 @@
 - [x] T009 [Worker] Implement `ApiTestExecutionStep` (for each scenario dispatch all steps in parallel, collect results, persist, aggregate run status, trigger report step) — `source/Testurio.Worker/Steps/ApiTestExecutionStep.cs`
 - [x] T010 [Worker] Integrate `ApiTestExecutionStep` into `TestRunJobProcessor` after `ScenarioGenerationStep` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [x] T011 [Test] Unit tests for `ResponseSchemaValidator` (status mismatch, schema mismatch, both pass) — `tests/Testurio.UnitTests/Plugins/ResponseSchemaValidatorTests.cs`
-- [ ] T012 [Test] Unit tests for `TestExecutorPlugin` (happy path, timeout, missing auth, malformed step definition) — `tests/Testurio.UnitTests/Plugins/TestExecutorPluginTests.cs`
+- [x] T012 [Test] Unit tests for `TestExecutorPlugin` (happy path, timeout, missing auth, malformed step definition) — `tests/Testurio.UnitTests/Plugins/TestExecutorPluginTests.cs`
 - [ ] T013 [Test] Unit tests for `ApiTestExecutionStep` (run status aggregation, all-pass and partial-fail scenarios) — `tests/Testurio.UnitTests/Steps/ApiTestExecutionStepTests.cs`
 - [ ] T014 [Test] Integration tests for the full pipeline (trigger → generate → execute) — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
 
