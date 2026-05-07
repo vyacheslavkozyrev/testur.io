@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-04-29 | 5 stories, 18 ACs — POC scope                           |
 | Plan      | ✅ Complete | 2026-04-30 | 14 tasks across Domain → Infra → Plugin → Worker → Test |
 | Implement    | ✅ Complete | 2026-05-07 | 14 tasks — Domain, Infra, Plugin, Worker, Test layers   |
-| Review       | ⏳ Pending  |            |                                                         |
+| Review       | ✅ Complete | 2026-05-07 | 3 findings fixed — 1 blocker, 1 warning, 1 suggestion   |
 | Test         | ⏳ Pending  |            |                                                         |
 | Pull Request | ⏳ Pending  |            |                                                         |
 
@@ -19,9 +19,18 @@ _Populated by `/implement 0003`_
 
 ---
 
-## Review
+## Review — 2026-05-07
 
-_Populated by `/review 0003`_
+### Blockers fixed
+- `source/Testurio.Infrastructure/Cosmos/StepResultRepository.cs`:39 — `CreateBatchAsync` passed all items to a single `TransactionalBatch`, which would throw at runtime for runs with more than 100 steps (Cosmos DB hard limit). Fixed by chunking the input list into slices of ≤100 items and executing a separate batch per chunk.
+
+### Warnings fixed
+- `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`:117 — `response.Headers` omitted content headers (`Content-Type`, `Content-Length`, etc.), partially violating AC-012 ("actual response headers captured"). Fixed by concatenating `response.Content.Headers` before building the dictionary.
+
+### Suggestions fixed
+- `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`:2 — Unused `using System.Text;` import removed (compiler warning).
+
+### Status: Complete
 
 ---
 
