@@ -6,7 +6,9 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.KeyVault;
 using Testurio.Plugins.StoryParserPlugin;
+using Testurio.Plugins.TestExecutorPlugin;
 using Testurio.Plugins.TestGeneratorPlugin;
 using Testurio.Worker.Processors;
 using Testurio.Worker.Services;
@@ -63,6 +65,25 @@ public static class DependencyInjection
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestGeneratorPlugin>>();
             return new TestGeneratorPlugin(chatCompletion, logger);
         });
+
+        // TestExecutorPlugin needs an HttpClient — register via named HttpClient factory.
+        // ResponseSchemaValidator is stateless and can be Singleton.
+        services.AddSingleton<ResponseSchemaValidator>();
+        services.AddHttpClient<TestExecutorPlugin>()
+            .ConfigureHttpClient(client =>
+            {
+                // Default timeout is overridden per-request inside the plugin (10-second per-step timeout).
+                // Set an outer safety timeout of 5 minutes to guard against edge cases.
+                client.Timeout = TimeSpan.FromMinutes(5);
+            });
+
+        // ApiTestExecutionStep is Transient: depends on Transient TestExecutorPlugin (scoped to the HttpClient factory).
+        services.AddTransient<ApiTestExecutionStep>(sp => new ApiTestExecutionStep(
+            sp.GetRequiredService<TestExecutorPlugin>(),
+            sp.GetRequiredService<KeyVaultCredentialClient>(),
+            sp.GetRequiredService<IStepResultRepository>(),
+            sp.GetRequiredService<ITestRunRepository>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ApiTestExecutionStep>>()));
 
         // ScenarioGenerationStep is Transient: depends on Transient plugins.
         services.AddTransient<ScenarioGenerationStep>(sp => new ScenarioGenerationStep(

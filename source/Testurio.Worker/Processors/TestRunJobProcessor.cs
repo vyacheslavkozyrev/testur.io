@@ -90,10 +90,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.StartedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
-            // Pipeline execution placeholder — plugins (StoryParser, TestGenerator, TestExecutor, ReportWriter) wired in future features
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
-            testRun.Status = TestRunStatus.Completed;
+            // ApiTestExecutionStep (feature 0003) sets testRun.Status to Completed or Failed.
+            // Only record the completion timestamp here — do not override the pipeline-determined status.
             testRun.CompletedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
@@ -135,14 +135,20 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             throw new InvalidOperationException($"Project {testRun.ProjectId} not found for user {testRun.UserId}");
         }
 
-        // Step 1: Generate test scenarios from the Jira story (AC-001 to AC-014).
+        // Step 1: Generate test scenarios from the Jira story (feature 0002).
         // Resolve ScenarioGenerationStep (Transient) fresh per-message to avoid capturing a stale instance.
         // ScenarioGenerationStep marks the run as Failed and throws on any error — the outer
         // catch in OnMessageAsync will then abandon the message and advance the queue.
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
-        await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
+        var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
-        // Steps 2-4: TestExecutor → ReportWriter wired in features 0003-0004.
+        // Step 2: Execute API tests against the product URL (feature 0003).
+        // ApiTestExecutionStep is Transient — resolve fresh per-message.
+        // It sets the run status (Completed/Failed) and persists all step results.
+        var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
+        await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
+
+        // Step 3: ReportWriter wired in feature 0004.
     }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
