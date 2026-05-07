@@ -4,11 +4,14 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Interfaces;
+using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.Jira;
 
 public partial class JiraStoryClient : IJiraStoryClient
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly HttpClient _httpClient;
     private readonly ILogger<JiraStoryClient> _logger;
 
@@ -43,10 +46,7 @@ public partial class JiraStoryClient : IJiraStoryClient
         JiraIssueResponse? issue;
         try
         {
-            issue = JsonSerializer.Deserialize<JiraIssueResponse>(body, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            issue = JsonSerializer.Deserialize<JiraIssueResponse>(body, JsonOptions);
         }
         catch (JsonException ex)
         {

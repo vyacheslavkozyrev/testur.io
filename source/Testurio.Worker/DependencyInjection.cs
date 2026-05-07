@@ -83,10 +83,11 @@ public static class DependencyInjection
             var sbClient = sp.GetRequiredService<ServiceBusClient>();
             var testRunRepo = sp.GetRequiredService<ITestRunRepository>();
             var projectRepo = sp.GetRequiredService<IProjectRepository>();
-            var scenarioStep = sp.GetRequiredService<ScenarioGenerationStep>();
+            // Pass IServiceProvider so the processor can resolve ScenarioGenerationStep (Transient)
+            // per-message, avoiding a captive-dependency bug where a Transient is frozen inside a Singleton.
             var queueManager = sp.GetRequiredService<RunQueueManager>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, scenarioStep, queueManager, logger);
+            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();

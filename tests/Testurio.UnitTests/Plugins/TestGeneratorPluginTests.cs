@@ -38,13 +38,14 @@ public class TestGeneratorPluginTests
         SetupChatResponse(json);
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         Assert.Single(result);
         Assert.Equal("POST /orders returns 201", result[0].Title);
         Assert.Single(result[0].Steps);
         Assert.Equal("run1", result[0].TestRunId);
         Assert.Equal("proj1", result[0].ProjectId);
+        Assert.Equal("user1", result[0].UserId);
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class TestGeneratorPluginTests
         SetupChatResponse(json);
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         Assert.Equal(2, result.Count);
         Assert.Equal(2, result[1].Steps.Count);
@@ -80,7 +81,7 @@ public class TestGeneratorPluginTests
         SetupChatResponse("[]");
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         Assert.Empty(result);
     }
@@ -91,7 +92,7 @@ public class TestGeneratorPluginTests
         SetupChatResponse(string.Empty);
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         Assert.Empty(result);
     }
@@ -102,7 +103,7 @@ public class TestGeneratorPluginTests
         SetupChatResponse("this is not json");
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         Assert.Empty(result);
     }
@@ -125,7 +126,7 @@ public class TestGeneratorPluginTests
         SetupChatResponse(json);
         var sut = CreateSut();
 
-        var result = await sut.GenerateAsync("run1", "proj1", "story input");
+        var result = await sut.GenerateAsync("run1", "proj1", "user1", "story input");
 
         var steps = result[0].Steps;
         Assert.Equal(1, steps[0].Order);
@@ -143,6 +144,6 @@ public class TestGeneratorPluginTests
         var sut = CreateSut();
 
         await Assert.ThrowsAsync<HttpRequestException>(() =>
-            sut.GenerateAsync("run1", "proj1", "story input"));
+            sut.GenerateAsync("run1", "proj1", "user1", "story input"));
     }
 }

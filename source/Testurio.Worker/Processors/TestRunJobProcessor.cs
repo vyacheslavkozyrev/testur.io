@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Repositories;
@@ -14,7 +15,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ServiceBusProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;
     private readonly IProjectRepository _projectRepository;
-    private readonly ScenarioGenerationStep _scenarioGenerationStep;
+    // IServiceProvider is used to resolve ScenarioGenerationStep (Transient) per-message,
+    // preventing a captive-dependency bug where a Transient would be frozen inside this Singleton.
+    private readonly IServiceProvider _serviceProvider;
     private readonly RunQueueManager _runQueueManager;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
@@ -23,7 +26,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         string queueName,
         ITestRunRepository testRunRepository,
         IProjectRepository projectRepository,
-        ScenarioGenerationStep scenarioGenerationStep,
+        IServiceProvider serviceProvider,
         RunQueueManager runQueueManager,
         ILogger<TestRunJobProcessor> logger)
     {
@@ -34,7 +37,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         });
         _testRunRepository = testRunRepository;
         _projectRepository = projectRepository;
-        _scenarioGenerationStep = scenarioGenerationStep;
+        _serviceProvider = serviceProvider;
         _runQueueManager = runQueueManager;
         _logger = logger;
 
@@ -129,9 +132,11 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
 
         // Step 1: Generate test scenarios from the Jira story (AC-001 to AC-014).
+        // Resolve ScenarioGenerationStep (Transient) fresh per-message to avoid capturing a stale instance.
         // ScenarioGenerationStep marks the run as Failed and throws on any error — the outer
         // catch in OnMessageAsync will then abandon the message and advance the queue.
-        await _scenarioGenerationStep.ExecuteAsync(testRun, project, cancellationToken);
+        var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
+        await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
         // Steps 2-4: TestExecutor → ReportWriter wired in features 0003-0004.
     }

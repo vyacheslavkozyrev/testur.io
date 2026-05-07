@@ -41,9 +41,20 @@ public class TestScenarioRepository : ITestScenarioRepository
 
     public async Task CreateBatchAsync(IEnumerable<TestScenario> scenarios, CancellationToken cancellationToken = default)
     {
-        foreach (var scenario in scenarios)
-        {
-            await _container.CreateItemAsync(scenario, new PartitionKey(scenario.ProjectId), cancellationToken: cancellationToken);
-        }
+        var list = scenarios.ToList();
+        if (list.Count == 0)
+            return;
+
+        // All scenarios in a batch share the same projectId partition key — use TransactionalBatch
+        // so either all scenarios are written or none are (AC-007: persist before proceeding).
+        var partitionKey = new PartitionKey(list[0].ProjectId);
+        var batch = _container.CreateTransactionalBatch(partitionKey);
+        foreach (var scenario in list)
+            batch.CreateItem(scenario);
+
+        using var response = await batch.ExecuteAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            throw new InvalidOperationException(
+                $"Cosmos transactional batch failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
     }
 }

@@ -24,6 +24,8 @@ public partial class TestGeneratorPlugin
             - "expectedResult": string — what the response or system state should be
         """;
 
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly IChatCompletionService _chatCompletion;
     private readonly ILogger<TestGeneratorPlugin> _logger;
 
@@ -36,6 +38,7 @@ public partial class TestGeneratorPlugin
     public async Task<IReadOnlyList<TestScenario>> GenerateAsync(
         string testRunId,
         string projectId,
+        string userId,
         string storyInput,
         CancellationToken cancellationToken = default)
     {
@@ -44,7 +47,7 @@ public partial class TestGeneratorPlugin
         history.AddUserMessage(storyInput);
 
         var result = await _chatCompletion.GetChatMessageContentsAsync(history, cancellationToken: cancellationToken);
-        var responseText = string.Concat(result.Select(r => r.Content));
+        var responseText = string.Concat(result.Select(r => r.Content)).Trim();
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -55,10 +58,7 @@ public partial class TestGeneratorPlugin
         List<GeneratedScenarioDto>? dtos;
         try
         {
-            dtos = JsonSerializer.Deserialize<List<GeneratedScenarioDto>>(responseText, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            dtos = JsonSerializer.Deserialize<List<GeneratedScenarioDto>>(responseText, JsonOptions);
         }
         catch (JsonException ex)
         {
@@ -76,6 +76,7 @@ public partial class TestGeneratorPlugin
         {
             TestRunId = testRunId,
             ProjectId = projectId,
+            UserId = userId,
             Title = dto.Title,
             Steps = dto.Steps
                 .OrderBy(s => s.Order)

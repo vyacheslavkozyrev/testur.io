@@ -70,7 +70,7 @@ public partial class ScenarioGenerationStep
         IReadOnlyList<TestScenario> scenarios;
         try
         {
-            scenarios = await _testGenerator.GenerateAsync(testRun.Id, testRun.ProjectId, promptInput, cancellationToken);
+            scenarios = await _testGenerator.GenerateAsync(testRun.Id, testRun.ProjectId, testRun.UserId, promptInput, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -96,15 +96,11 @@ public partial class ScenarioGenerationStep
     {
         testRun.Status = TestRunStatus.Failed;
         testRun.SkipReason = $"Failed — scenario generation error: {errorDetail}";
-        try
-        {
-            // Use CancellationToken.None so the status write completes even if the pipeline token is cancelled.
-            await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            LogStatusUpdateFailed(_logger, testRun.Id, ex);
-        }
+
+        // Use CancellationToken.None so the status write completes even if the pipeline token is cancelled.
+        // Let the exception propagate — the processor's outer catch will log it and abandon the message,
+        // ensuring AC-011/AC-013 failures are visible rather than silently swallowed.
+        await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
 
         LogFailed(_logger, testRun.Id, errorDetail);
     }
@@ -117,9 +113,6 @@ public partial class ScenarioGenerationStep
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Scenario generation failed for test run {TestRunId}: {ErrorDetail}")]
     private static partial void LogFailed(ILogger logger, string testRunId, string errorDetail);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to update run status to Failed for test run {TestRunId}")]
-    private static partial void LogStatusUpdateFailed(ILogger logger, string testRunId, Exception ex);
 }
 
 public class ScenarioGenerationException : Exception
