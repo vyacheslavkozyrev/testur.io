@@ -7,6 +7,10 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);SKEXP0010</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.4" />
@@ -24,6 +28,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\source\Testurio.Api\Testurio.Api.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Worker\Testurio.Worker.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Plugins\Testurio.Plugins.csproj" />
   </ItemGroup>
 
 </Project>

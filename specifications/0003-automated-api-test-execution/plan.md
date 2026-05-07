@@ -15,7 +15,7 @@
 - [x] T011 [Test] Unit tests for `ResponseSchemaValidator` (status mismatch, schema mismatch, both pass) — `tests/Testurio.UnitTests/Plugins/ResponseSchemaValidatorTests.cs`
 - [x] T012 [Test] Unit tests for `TestExecutorPlugin` (happy path, timeout, missing auth, malformed step definition) — `tests/Testurio.UnitTests/Plugins/TestExecutorPluginTests.cs`
 - [x] T013 [Test] Unit tests for `ApiTestExecutionStep` (run status aggregation, all-pass and partial-fail scenarios) — `tests/Testurio.UnitTests/Steps/ApiTestExecutionStepTests.cs`
-- [ ] T014 [Test] Integration tests for the full pipeline (trigger → generate → execute) — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
+- [x] T014 [Test] Integration tests for the full pipeline (trigger → generate → execute) — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
 
 ## Rationale
 
