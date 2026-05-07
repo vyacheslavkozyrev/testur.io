@@ -3,8 +3,14 @@ using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
+using Testurio.Core.Interfaces;
+using Testurio.Core.Repositories;
+using Testurio.Plugins.StoryParserPlugin;
+using Testurio.Plugins.TestGeneratorPlugin;
 using Testurio.Worker.Processors;
 using Testurio.Worker.Services;
+using Testurio.Worker.Steps;
 
 namespace Testurio.Worker;
 
@@ -48,6 +54,26 @@ public static class DependencyInjection
             return builder.Build();
         });
 
+        // Plugin registrations — Transient because Kernel is Transient.
+        services.AddTransient<StoryParserPlugin>();
+        services.AddTransient<TestGeneratorPlugin>(sp =>
+        {
+            var kernel = sp.GetRequiredService<Kernel>();
+            var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestGeneratorPlugin>>();
+            return new TestGeneratorPlugin(chatCompletion, logger);
+        });
+
+        // ScenarioGenerationStep is Transient: depends on Transient plugins.
+        services.AddTransient<ScenarioGenerationStep>(sp => new ScenarioGenerationStep(
+            sp.GetRequiredService<IJiraStoryClient>(),
+            sp.GetRequiredService<ISecretResolver>(),
+            sp.GetRequiredService<StoryParserPlugin>(),
+            sp.GetRequiredService<TestGeneratorPlugin>(),
+            sp.GetRequiredService<ITestScenarioRepository>(),
+            sp.GetRequiredService<ITestRunRepository>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ScenarioGenerationStep>>()));
+
         // Singleton: all dependencies (ITestRunRepository, IRunQueueRepository, ITestRunJobSender) are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -55,10 +81,12 @@ public static class DependencyInjection
         {
             var opts = sp.GetRequiredService<IOptions<WorkerOptions>>().Value;
             var sbClient = sp.GetRequiredService<ServiceBusClient>();
-            var testRunRepo = sp.GetRequiredService<Testurio.Core.Repositories.ITestRunRepository>();
+            var testRunRepo = sp.GetRequiredService<ITestRunRepository>();
+            var projectRepo = sp.GetRequiredService<IProjectRepository>();
+            var scenarioStep = sp.GetRequiredService<ScenarioGenerationStep>();
             var queueManager = sp.GetRequiredService<RunQueueManager>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, queueManager, logger);
+            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, scenarioStep, queueManager, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();

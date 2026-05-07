@@ -5,6 +5,7 @@ using Testurio.Core.Entities;
 using Testurio.Core.Repositories;
 using Testurio.Core.Models;
 using Testurio.Worker.Services;
+using Testurio.Worker.Steps;
 
 namespace Testurio.Worker.Processors;
 
@@ -12,6 +13,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;
+    private readonly IProjectRepository _projectRepository;
+    private readonly ScenarioGenerationStep _scenarioGenerationStep;
     private readonly RunQueueManager _runQueueManager;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
@@ -19,6 +22,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ServiceBusClient serviceBusClient,
         string queueName,
         ITestRunRepository testRunRepository,
+        IProjectRepository projectRepository,
+        ScenarioGenerationStep scenarioGenerationStep,
         RunQueueManager runQueueManager,
         ILogger<TestRunJobProcessor> logger)
     {
@@ -28,6 +33,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             MaxConcurrentCalls = 1
         });
         _testRunRepository = testRunRepository;
+        _projectRepository = projectRepository;
+        _scenarioGenerationStep = scenarioGenerationStep;
         _runQueueManager = runQueueManager;
         _logger = logger;
 
@@ -112,10 +119,21 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
     }
 
-    private static Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
+    private async Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
     {
-        // Placeholder — full pipeline wired via Testurio.Plugins in subsequent features
-        return Task.CompletedTask;
+        // Load the full project config in a single Cosmos read (architecture requirement).
+        var project = await _projectRepository.GetByIdAsync(testRun.UserId, testRun.ProjectId, cancellationToken);
+        if (project is null)
+        {
+            throw new InvalidOperationException($"Project {testRun.ProjectId} not found for user {testRun.UserId}");
+        }
+
+        // Step 1: Generate test scenarios from the Jira story (AC-001 to AC-014).
+        // ScenarioGenerationStep marks the run as Failed and throws on any error — the outer
+        // catch in OnMessageAsync will then abandon the message and advance the queue.
+        await _scenarioGenerationStep.ExecuteAsync(testRun, project, cancellationToken);
+
+        // Steps 2-4: TestExecutor → ReportWriter wired in features 0003-0004.
     }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)

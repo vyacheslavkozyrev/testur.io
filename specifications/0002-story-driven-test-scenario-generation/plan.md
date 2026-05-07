@@ -12,7 +12,7 @@
 - [x] T008 [Plugin] Implement `StoryParserPlugin` (extract description and AC from Jira story payload) — `source/Testurio.Plugins/StoryParserPlugin/StoryParserPlugin.cs`
 - [x] T009 [Plugin] Implement `TestGeneratorPlugin` (call Claude via Semantic Kernel, hardcoded system prompt, deserialise response to `TestScenario` list) — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [x] T010 [Worker] Implement `ScenarioGenerationStep` (orchestrate: fetch story → parse → generate → persist → trigger next step or fail run) — `source/Testurio.Worker/Steps/ScenarioGenerationStep.cs`
-- [ ] T011 [Worker] Integrate `ScenarioGenerationStep` into `TestRunJobProcessor` after queue dispatch — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T011 [Worker] Integrate `ScenarioGenerationStep` into `TestRunJobProcessor` after queue dispatch — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [ ] T012 [Test] Unit tests for `StoryParserPlugin` — `tests/Testurio.UnitTests/Plugins/StoryParserPluginTests.cs`
 - [ ] T013 [Test] Unit tests for `TestGeneratorPlugin` — `tests/Testurio.UnitTests/Plugins/TestGeneratorPluginTests.cs`
 - [ ] T014 [Test] Unit tests for `ScenarioGenerationStep` (including failure and empty-response paths) — `tests/Testurio.UnitTests/Steps/ScenarioGenerationStepTests.cs`
