@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `TestScenario` entity — `source/Testurio.Core/Entities/TestScenario.cs`
+- [x] T001 [Domain] Create `TestScenario` entity — `source/Testurio.Core/Entities/TestScenario.cs`
 - [ ] T002 [Domain] Create `TestScenarioStep` value object — `source/Testurio.Core/Models/TestScenarioStep.cs`
 - [ ] T003 [Domain] Add `ITestScenarioRepository` interface — `source/Testurio.Core/Repositories/ITestScenarioRepository.cs`
 - [ ] T004 [Infra] Implement `TestScenarioRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/TestScenarioRepository.cs`
