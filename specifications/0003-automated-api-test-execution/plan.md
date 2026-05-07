@@ -9,7 +9,7 @@
 - [x] T005 [Infra] Implement `KeyVaultCredentialClient` (resolve Bearer token from project Key Vault secret reference) — `source/Testurio.Infrastructure/KeyVault/KeyVaultCredentialClient.cs`
 - [x] T006 [Infra] Update DI registration with new repository and credential client — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [x] T007 [Plugin] Implement `ResponseSchemaValidator` (validate HTTP status code and response body schema against expected values) — `source/Testurio.Plugins/TestExecutorPlugin/ResponseSchemaValidator.cs`
-- [ ] T008 [Plugin] Implement `TestExecutorPlugin` (build HTTP requests from step definitions, inject Bearer token, enforce 10s timeout, invoke validator, record per-step outcome) — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
+- [x] T008 [Plugin] Implement `TestExecutorPlugin` (build HTTP requests from step definitions, inject Bearer token, enforce 10s timeout, invoke validator, record per-step outcome) — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
 - [ ] T009 [Worker] Implement `ApiTestExecutionStep` (for each scenario dispatch all steps in parallel, collect results, persist, aggregate run status, trigger report step) — `source/Testurio.Worker/Steps/ApiTestExecutionStep.cs`
 - [ ] T010 [Worker] Integrate `ApiTestExecutionStep` into `TestRunJobProcessor` after `ScenarioGenerationStep` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [ ] T011 [Test] Unit tests for `ResponseSchemaValidator` (status mismatch, schema mismatch, both pass) — `tests/Testurio.UnitTests/Plugins/ResponseSchemaValidatorTests.cs`
