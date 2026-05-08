@@ -36,7 +36,7 @@ public partial class BlobStorageClient
     /// <param name="content">Raw text content to upload.</param>
     /// <param name="cancellationToken">Propagated to the Azure SDK.</param>
     /// <returns>Absolute URL of the uploaded blob, or null if the upload failed.</returns>
-    public async Task<string?> UploadAsync(
+    public virtual async Task<string?> UploadAsync(
         string blobName,
         string content,
         CancellationToken cancellationToken = default)
