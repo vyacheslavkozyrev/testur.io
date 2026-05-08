@@ -11,6 +11,7 @@ using Testurio.Plugins.StoryParserPlugin;
 using Testurio.Plugins.TestExecutorPlugin;
 using Testurio.Plugins.TestGeneratorPlugin;
 using Testurio.Worker.Processors;
+using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
 
 namespace Testurio.Worker;
@@ -56,6 +57,9 @@ public static class DependencyInjection
             return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
 
+        // Singleton: all dependencies are also Singleton.
+        services.AddSingleton<RunQueueManager>();
+
         // Scenario generation pipeline (feature 0002).
         services.AddSingleton<StoryParserPlugin>();
         services.AddSingleton<TestGeneratorPlugin>();
@@ -96,9 +100,10 @@ public static class DependencyInjection
             var sbClient = sp.GetRequiredService<ServiceBusClient>();
             var testRunRepo = sp.GetRequiredService<ITestRunRepository>();
             var projectRepo = sp.GetRequiredService<IProjectRepository>();
+            var queueManager = sp.GetRequiredService<RunQueueManager>();
             var reportDeliveryStep = sp.GetRequiredService<ReportDeliveryStep>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, reportDeliveryStep, logger);
+            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, reportDeliveryStep, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();

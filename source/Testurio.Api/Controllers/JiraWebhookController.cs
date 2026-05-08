@@ -30,7 +30,7 @@ public static class JiraWebhookController
 
         return result switch
         {
-            WebhookProcessResult.Enqueued => TypedResults.Accepted((string?)null),
+            WebhookProcessResult.Enqueued or WebhookProcessResult.Queued => TypedResults.Accepted((string?)null),
             _ => TypedResults.Ok()
         };
     }

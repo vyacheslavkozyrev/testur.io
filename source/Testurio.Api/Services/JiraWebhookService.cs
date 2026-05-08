@@ -13,6 +13,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     private const string SkipReasonIncompleteStory = "Skipped — incomplete story";
 
     private readonly ITestRunRepository _testRunRepository;
+    private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
@@ -20,12 +21,14 @@ public partial class JiraWebhookService : IJiraWebhookService
 
     public JiraWebhookService(
         ITestRunRepository testRunRepository,
+        IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
         ILogger<JiraWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
+        _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
@@ -61,7 +64,7 @@ public partial class JiraWebhookService : IJiraWebhookService
             return WebhookProcessResult.Skipped;
         }
 
-        return await DispatchRunAsync(project, issue, cancellationToken);
+        return await EnqueueOrQueueRunAsync(project, issue, cancellationToken);
     }
 
     private static string? GetMissingParts(JiraIssueFields? fields)
@@ -104,11 +107,36 @@ public partial class JiraWebhookService : IJiraWebhookService
         LogSkipped(_logger, issue.Key, project.Id, missingParts);
     }
 
-    private async Task<WebhookProcessResult> DispatchRunAsync(
+    private async Task<WebhookProcessResult> EnqueueOrQueueRunAsync(
         Project project,
         JiraIssue issue,
         CancellationToken cancellationToken)
     {
+        // TOCTOU race: concurrent webhooks for the same story could both pass GetActiveRunAsync.
+        // A unique constraint on (ProjectId, JiraIssueId, Status=Pending) in the TestRuns Cosmos container
+        // would prevent duplicate documents — configure this in infra/modules/cosmos.bicep before relying on it.
+        var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
+        if (activeRun is not null)
+        {
+            var alreadyQueued = await _runQueueRepository.ExistsAsync(project.Id, issue.Id, cancellationToken);
+            if (alreadyQueued)
+            {
+                LogDuplicate(_logger, issue.Key, project.Id);
+                return WebhookProcessResult.Queued;
+            }
+
+            var queued = new QueuedRun
+            {
+                ProjectId = project.Id,
+                UserId = project.UserId,
+                JiraIssueKey = issue.Key,
+                JiraIssueId = issue.Id
+            };
+            await _runQueueRepository.EnqueueAsync(queued, cancellationToken);
+            LogQueued(_logger, issue.Key, project.Id);
+            return WebhookProcessResult.Queued;
+        }
+
         var testRun = new TestRun
         {
             ProjectId = project.Id,
@@ -137,6 +165,12 @@ public partial class JiraWebhookService : IJiraWebhookService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Skipped test run for {IssueKey} in project {ProjectId}: missing {MissingParts}")]
     private static partial void LogSkipped(ILogger logger, string issueKey, string projectId, string missingParts);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Duplicate webhook ignored for {IssueKey} in project {ProjectId}")]
+    private static partial void LogDuplicate(ILogger logger, string issueKey, string projectId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Queued {IssueKey} in project {ProjectId} (active run in progress)")]
+    private static partial void LogQueued(ILogger logger, string issueKey, string projectId);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Enqueued test run {TestRunId} for {IssueKey} in project {ProjectId}")]
     private static partial void LogEnqueued(ILogger logger, string issueKey, string projectId, string testRunId);

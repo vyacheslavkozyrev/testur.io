@@ -1,6 +1,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 
 namespace Testurio.Infrastructure.Cosmos;
@@ -25,6 +26,26 @@ public class TestRunRepository : ITestRunRepository
         {
             return null;
         }
+    }
+
+    public async Task<TestRun?> GetActiveRunAsync(string projectId, CancellationToken cancellationToken = default)
+    {
+        var query = _container.GetItemLinqQueryable<TestRun>(requestOptions: new QueryRequestOptions
+        {
+            PartitionKey = new PartitionKey(projectId),
+            MaxItemCount = 1
+        })
+        .Where(r => r.ProjectId == projectId && (r.Status == TestRunStatus.Active || r.Status == TestRunStatus.Pending))
+        .ToFeedIterator();
+
+        while (query.HasMoreResults)
+        {
+            var page = await query.ReadNextAsync(cancellationToken);
+            var result = page.FirstOrDefault();
+            if (result is not null) return result;
+        }
+
+        return null;
     }
 
     public async Task<IReadOnlyList<TestRun>> GetByProjectAsync(string projectId, int limit = 50, CancellationToken cancellationToken = default)

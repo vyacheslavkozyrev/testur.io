@@ -4,5 +4,6 @@ public enum WebhookProcessResult
 {
     Ignored,
     Skipped,
-    Enqueued
+    Enqueued,
+    Queued
 }
