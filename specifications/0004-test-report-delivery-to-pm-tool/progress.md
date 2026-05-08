@@ -9,6 +9,7 @@
 | Implement | ✅ Complete | 2026-05-07 | 11 tasks — domain types, infra, plugins, worker, tests |
 | Review    | ✅ Complete | 2026-05-07 | 3 findings fixed — blocker, warning x2        |
 | Test      | ✅ Complete | 2026-05-07 | All 20 tests pass — 16 ACs fully covered     |
+| Pull Request | ✅ Complete | 2026-05-07 | https://github.com/vyacheslavkozyrev/testur.io/pull/4 |
 
 ---
 
