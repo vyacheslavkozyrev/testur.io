@@ -34,9 +34,11 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new CosmosClient(opts.CosmosConnectionString, new CosmosClientOptions
             {
-                SerializerOptions = new CosmosSerializationOptions
+                UseSystemTextJsonSerializerWithOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
                 }
             });
         });
