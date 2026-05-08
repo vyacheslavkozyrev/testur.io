@@ -18,6 +18,11 @@ public partial class BlobStorageClient
     private readonly string _containerName;
     private readonly ILogger<BlobStorageClient> _logger;
 
+    // Guards the one-time container creation check.  BlobStorageClient is Singleton,
+    // so this flag is set once per process lifetime — subsequent uploads skip the
+    // CreateIfNotExistsAsync round-trip (one extra API call per upload otherwise).
+    private volatile bool _containerEnsured;
+
     public BlobStorageClient(
         BlobServiceClient serviceClient,
         string containerName,
@@ -44,9 +49,14 @@ public partial class BlobStorageClient
         try
         {
             var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
-            await containerClient.CreateIfNotExistsAsync(
-                publicAccessType: PublicAccessType.None,
-                cancellationToken: cancellationToken);
+
+            if (!_containerEnsured)
+            {
+                await containerClient.CreateIfNotExistsAsync(
+                    publicAccessType: PublicAccessType.None,
+                    cancellationToken: cancellationToken);
+                _containerEnsured = true;
+            }
 
             var blobClient = containerClient.GetBlobClient(blobName);
             using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));

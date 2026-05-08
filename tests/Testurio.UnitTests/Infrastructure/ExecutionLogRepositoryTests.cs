@@ -5,10 +5,12 @@ using Testurio.Core.Repositories;
 namespace Testurio.UnitTests.Infrastructure;
 
 /// <summary>
-/// Unit tests for <see cref="IExecutionLogRepository"/> behavioral contract.
-/// These tests exercise the contract through a mock implementation, verifying
-/// that callers interact with the repository correctly. Cosmos DB integration is
-/// covered by the integration test suite.
+/// Unit tests for the <see cref="IExecutionLogRepository"/> contract as seen by callers.
+/// These tests verify call signatures and expected interactions via a mock — they do NOT
+/// exercise <see cref="Testurio.Infrastructure.Cosmos.ExecutionLogRepository"/> directly.
+/// Cosmos-specific behaviour (LINQ ordering, transactional batch delete idempotency,
+/// blob URL pass-through on retrieval) requires a live Cosmos emulator integration test
+/// which is out of scope for the unit test suite.
 /// </summary>
 public class ExecutionLogRepositoryTests
 {

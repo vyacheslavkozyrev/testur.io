@@ -76,8 +76,8 @@ public static class DependencyInjection
             .AddTypedClient<TestExecutorPlugin>((httpClient, sp) => new TestExecutorPlugin(
                 httpClient,
                 sp.GetRequiredService<ResponseSchemaValidator>(),
-                sp.GetRequiredService<LogPersistenceService>(),
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestExecutorPlugin>>()));
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestExecutorPlugin>>(),
+                sp.GetRequiredService<LogPersistenceService>()));
         services.AddSingleton<ResponseSchemaValidator>();
 
         // Report pipeline (feature 0004).

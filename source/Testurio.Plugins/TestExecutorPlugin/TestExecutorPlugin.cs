@@ -15,21 +15,17 @@ public partial class TestExecutorPlugin
     private readonly LogPersistenceService? _logPersistence;
     private readonly ILogger<TestExecutorPlugin> _logger;
 
+    /// <param name="logPersistence">
+    /// Optional.  When supplied (production DI), an <see cref="ExecutionLogEntry"/> is emitted
+    /// after every step (AC-001 – AC-004).  When null (tests that do not exercise log capture),
+    /// <see cref="EmitLogEntryAsync"/> is a no-op so the plugin degrades gracefully rather than
+    /// silently — callers that need log capture must explicitly wire the service.
+    /// </param>
     public TestExecutorPlugin(
         HttpClient httpClient,
         ResponseSchemaValidator validator,
-        ILogger<TestExecutorPlugin> logger)
-    {
-        _httpClient = httpClient;
-        _validator = validator;
-        _logger = logger;
-    }
-
-    public TestExecutorPlugin(
-        HttpClient httpClient,
-        ResponseSchemaValidator validator,
-        LogPersistenceService logPersistence,
-        ILogger<TestExecutorPlugin> logger)
+        ILogger<TestExecutorPlugin> logger,
+        LogPersistenceService? logPersistence = null)
     {
         _httpClient = httpClient;
         _validator = validator;
@@ -161,6 +157,12 @@ public partial class TestExecutorPlugin
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            // Pipeline-level cancellation (host shutdown or job cancellation).
+            // Log emission is intentionally skipped here: the pipeline is aborting and
+            // there is no guarantee that the log repository is still reachable.
+            // AC-002 covers Timeout and Error outcomes from within a live execution;
+            // mid-flight pipeline cancellation is considered an infrastructure event,
+            // not a step outcome, and is not expected to produce a log entry.
             throw;
         }
         catch (Exception ex)

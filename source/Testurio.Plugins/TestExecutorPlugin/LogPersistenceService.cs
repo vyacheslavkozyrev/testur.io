@@ -91,8 +91,15 @@ public partial class LogPersistenceService
         if (bytes.Length <= BlobStorageClient.InlineThresholdBytes)
             return content;
 
-        // Decode only up to the threshold, avoiding splitting a multi-byte character.
-        return System.Text.Encoding.UTF8.GetString(bytes, 0, BlobStorageClient.InlineThresholdBytes);
+        // Walk back from the threshold boundary to the start of a complete UTF-8 codepoint.
+        // Continuation bytes have the pattern 10xxxxxx (0x80–0xBF); a leading byte is 0xxxxxxx
+        // or 11xxxxxx.  Slicing blindly at InlineThresholdBytes can land mid-sequence and
+        // produce a malformed string.
+        var limit = BlobStorageClient.InlineThresholdBytes;
+        while (limit > 0 && (bytes[limit] & 0xC0) == 0x80)
+            limit--;
+
+        return System.Text.Encoding.UTF8.GetString(bytes, 0, limit);
     }
 
     [LoggerMessage(Level = LogLevel.Warning,

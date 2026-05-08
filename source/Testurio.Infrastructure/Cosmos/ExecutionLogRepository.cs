@@ -37,12 +37,17 @@ public class ExecutionLogRepository : IExecutionLogRepository
     {
         var results = new List<ExecutionLogEntry>();
 
+        // PartitionKey option already scopes the query to projectId — the extra
+        // e.ProjectId == projectId predicate is redundant and removed to avoid
+        // implying a cross-partition filter is required.
+        // Note: a composite index on (testRunId, stepIndex) should be provisioned
+        // on the ExecutionLogs container for this OrderBy to be served from the index.
         var query = _container
             .GetItemLinqQueryable<ExecutionLogEntry>(requestOptions: new QueryRequestOptions
             {
                 PartitionKey = new PartitionKey(projectId)
             })
-            .Where(e => e.ProjectId == projectId && e.TestRunId == testRunId)
+            .Where(e => e.TestRunId == testRunId)
             .OrderBy(e => e.StepIndex)
             .ToFeedIterator();
 
@@ -62,13 +67,13 @@ public class ExecutionLogRepository : IExecutionLogRepository
         int stepIndex,
         CancellationToken cancellationToken = default)
     {
+        // PartitionKey already scopes to projectId — e.ProjectId predicate removed.
         var query = _container
             .GetItemLinqQueryable<ExecutionLogEntry>(requestOptions: new QueryRequestOptions
             {
                 PartitionKey = new PartitionKey(projectId)
             })
             .Where(e =>
-                e.ProjectId == projectId &&
                 e.TestRunId == testRunId &&
                 e.ScenarioId == scenarioId &&
                 e.StepIndex == stepIndex)
@@ -95,12 +100,13 @@ public class ExecutionLogRepository : IExecutionLogRepository
         // to share the same logical partition — which they do here (projectId).
         var ids = new List<string>();
 
+        // PartitionKey already scopes to projectId — e.ProjectId predicate removed.
         var idQuery = _container
             .GetItemLinqQueryable<ExecutionLogEntry>(requestOptions: new QueryRequestOptions
             {
                 PartitionKey = new PartitionKey(projectId)
             })
-            .Where(e => e.ProjectId == projectId && e.TestRunId == testRunId)
+            .Where(e => e.TestRunId == testRunId)
             .Select(e => e.Id)
             .ToFeedIterator();
 
@@ -121,7 +127,10 @@ public class ExecutionLogRepository : IExecutionLogRepository
                 batch.DeleteItem(id);
 
             using var response = await batch.ExecuteAsync(cancellationToken);
-            if (!response.IsSuccessStatusCode)
+            // 404 means items were already deleted (e.g. a previous attempt succeeded
+            // partially before a transient failure).  Treat this as idempotent success
+            // so callers can retry safely without leaving orphaned entries.
+            if (!response.IsSuccessStatusCode && (int)response.StatusCode != 404)
                 throw new InvalidOperationException(
                     $"Cosmos delete batch for run {testRunId} failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
         }

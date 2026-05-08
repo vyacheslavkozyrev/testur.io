@@ -42,6 +42,11 @@ public class ExecutionLogEntry
     // — Response —
 
     /// <summary>HTTP response status code; null on timeout or pre-send error.</summary>
+    // ResponseStatusCode, ResponseBodyInline, ResponseBodyBlobUrl, ErrorDetail, and
+    // ResponseTruncated use mutable setters because LogPersistenceService applies the
+    // inline/blob routing decision after the entry is constructed (the response body is
+    // known at construction time but the routing outcome is not).  A future refactor could
+    // return a new record copy from RouteResponseBodyAsync instead of mutating in-place.
     public int? ResponseStatusCode { get; set; }
 
     /// <summary>All response headers serialised as name→value pairs.</summary>
