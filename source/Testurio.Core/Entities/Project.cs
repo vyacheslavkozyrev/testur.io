@@ -12,4 +12,5 @@ public class Project
     public required string JiraApiTokenSecretRef { get; init; }
     public required string JiraWebhookSecretRef { get; init; }
     public required string InTestingStatusLabel { get; init; }
+    public string? BearerTokenSecretRef { get; init; }
 }

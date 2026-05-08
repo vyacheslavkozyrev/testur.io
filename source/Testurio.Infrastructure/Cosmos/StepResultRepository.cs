@@ -41,4 +41,28 @@ public class StepResultRepository : IStepResultRepository
         var response = await _container.CreateItemAsync(stepResult, new PartitionKey(stepResult.ProjectId), cancellationToken: cancellationToken);
         return response.Resource;
     }
+
+    // Cosmos DB TransactionalBatch has a hard limit of 100 operations per batch.
+    private const int CosmosTransactionalBatchLimit = 100;
+
+    public async Task CreateBatchAsync(IEnumerable<StepResult> results, CancellationToken cancellationToken = default)
+    {
+        var list = results.ToList();
+        if (list.Count == 0)
+            return;
+
+        var partitionKey = new PartitionKey(list[0].ProjectId);
+        for (var offset = 0; offset < list.Count; offset += CosmosTransactionalBatchLimit)
+        {
+            var chunk = list.Skip(offset).Take(CosmosTransactionalBatchLimit);
+            var batch = _container.CreateTransactionalBatch(partitionKey);
+            foreach (var result in chunk)
+                batch.CreateItem(result);
+
+            using var response = await batch.ExecuteAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException(
+                    $"Cosmos transactional batch failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+        }
+    }
 }

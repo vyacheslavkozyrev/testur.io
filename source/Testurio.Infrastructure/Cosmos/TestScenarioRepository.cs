@@ -41,4 +41,27 @@ public class TestScenarioRepository : ITestScenarioRepository
         var response = await _container.CreateItemAsync(scenario, new PartitionKey(scenario.ProjectId), cancellationToken: cancellationToken);
         return response.Resource;
     }
+
+    private const int CosmosTransactionalBatchLimit = 100;
+
+    public async Task CreateBatchAsync(IEnumerable<TestScenario> scenarios, CancellationToken cancellationToken = default)
+    {
+        var list = scenarios.ToList();
+        if (list.Count == 0)
+            return;
+
+        var partitionKey = new PartitionKey(list[0].ProjectId);
+        for (var offset = 0; offset < list.Count; offset += CosmosTransactionalBatchLimit)
+        {
+            var chunk = list.Skip(offset).Take(CosmosTransactionalBatchLimit);
+            var batch = _container.CreateTransactionalBatch(partitionKey);
+            foreach (var scenario in chunk)
+                batch.CreateItem(scenario);
+
+            using var response = await batch.ExecuteAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException(
+                    $"Cosmos transactional batch failed with status {(int)response.StatusCode}: {response.ErrorMessage}");
+        }
+    }
 }

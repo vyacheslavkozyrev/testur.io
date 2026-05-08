@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
@@ -14,6 +15,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;
+    private readonly IProjectRepository _projectRepository;
+    // IServiceProvider is used to resolve Transient steps per-message,
+    // preventing a captive-dependency bug where a Transient would be frozen inside this Singleton.
+    private readonly IServiceProvider _serviceProvider;
     private readonly RunQueueManager _runQueueManager;
     private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly ILogger<TestRunJobProcessor> _logger;
@@ -22,6 +27,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ServiceBusClient serviceBusClient,
         string queueName,
         ITestRunRepository testRunRepository,
+        IProjectRepository projectRepository,
+        IServiceProvider serviceProvider,
         RunQueueManager runQueueManager,
         ReportDeliveryStep reportDeliveryStep,
         ILogger<TestRunJobProcessor> logger)
@@ -32,6 +39,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             MaxConcurrentCalls = 1
         });
         _testRunRepository = testRunRepository;
+        _projectRepository = projectRepository;
+        _serviceProvider = serviceProvider;
         _runQueueManager = runQueueManager;
         _reportDeliveryStep = reportDeliveryStep;
         _logger = logger;
@@ -85,13 +94,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.StartedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
-            // Pipeline: StoryParser (0002) → TestGenerator (0002) → ApiTestExecution (0003) → ReportDelivery (0004)
-            // ReportDeliveryStep sets the terminal run status (Completed or ReportDeliveryFailed) before returning.
+            // Full pipeline: ScenarioGeneration (0002) → ApiTestExecution (0003) → ReportDelivery (0004).
+            // ReportDeliveryStep sets the terminal run status (Completed or ReportDeliveryFailed).
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
-            // Complete the message before dispatching the next queued run so that a failure in
-            // OnRunCompletedAsync does not cause this message to be redelivered and the run queue
-            // to be advanced a second time.
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
             await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             LogCompleted(_logger, message.TestRunId, message.ProjectId);
@@ -102,22 +108,37 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.Status = TestRunStatus.Failed;
             try
             {
-                // Use CancellationToken.None — the host may be shutting down (args.CancellationToken already
-                // cancelled) but the status-update write must complete to avoid a stuck Active/Pending record.
                 await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
             }
             catch (Exception updateEx)
             {
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
-            await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
+
+            // ScenarioGenerationException is a permanent failure — dead-letter so Service Bus
+            // does not retry and flood the LLM with repeated calls for the same broken run.
+            if (ex is ScenarioGenerationException)
+                await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
+            else
+                await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
         }
     }
 
     private async Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
     {
-        // StoryParser and TestGenerator steps (feature 0002) and ApiTestExecution step (feature 0003)
-        // will be inserted here before ReportDeliveryStep when those features are implemented.
+        var project = await _projectRepository.GetByIdAsync(testRun.UserId, testRun.ProjectId, cancellationToken);
+        if (project is null)
+            throw new InvalidOperationException($"Project {testRun.ProjectId} not found for user {testRun.UserId}");
+
+        // Step 1: Parse story and generate test scenarios (feature 0002).
+        var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
+        var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
+
+        // Step 2: Execute API tests against the product URL (feature 0003).
+        var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
+        await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
+
+        // Step 3: Build and post the report to Jira (feature 0004).
         await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
     }
 

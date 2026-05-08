@@ -3,7 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.KeyVault;
 using Testurio.Plugins.ReportWriterPlugin;
+using Testurio.Plugins.StoryParserPlugin;
+using Testurio.Plugins.TestExecutorPlugin;
+using Testurio.Plugins.TestGeneratorPlugin;
 using Testurio.Worker.Processors;
 using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
@@ -28,7 +32,20 @@ public static class DependencyInjection
         // Singleton: all dependencies (ITestRunRepository, IRunQueueRepository, ITestRunJobSender) are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
-        // Report pipeline — all registered as Singleton to match repository lifetimes.
+        // Scenario generation pipeline (features 0002).
+        services.AddSingleton<StoryParserPlugin>();
+        services.AddSingleton<TestGeneratorPlugin>();
+        services.AddSingleton<KeyVaultCredentialClient>();
+        // ScenarioGenerationStep and ApiTestExecutionStep are Transient — resolved fresh per-message
+        // to avoid a captive-dependency bug inside the Singleton TestRunJobProcessor.
+        services.AddTransient<ScenarioGenerationStep>();
+        services.AddTransient<ApiTestExecutionStep>();
+
+        // HTTP client for API test execution.
+        services.AddHttpClient<TestExecutorPlugin>();
+        services.AddSingleton<ResponseSchemaValidator>();
+
+        // Report pipeline (feature 0004).
         services.AddSingleton<ReportBuilderService>();
         services.AddSingleton<ReportWriterPlugin>(sp => new ReportWriterPlugin(
             sp.GetRequiredService<ITestRunRepository>(),
@@ -46,10 +63,11 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<WorkerOptions>>().Value;
             var sbClient = sp.GetRequiredService<ServiceBusClient>();
             var testRunRepo = sp.GetRequiredService<ITestRunRepository>();
+            var projectRepo = sp.GetRequiredService<IProjectRepository>();
             var queueManager = sp.GetRequiredService<RunQueueManager>();
             var reportDeliveryStep = sp.GetRequiredService<ReportDeliveryStep>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, queueManager, reportDeliveryStep, logger);
+            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, reportDeliveryStep, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
