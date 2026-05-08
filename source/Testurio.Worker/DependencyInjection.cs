@@ -1,9 +1,9 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Plugins.StoryParserPlugin;
@@ -21,12 +21,10 @@ public class WorkerOptions
     public required string TestRunJobQueueName { get; init; }
 }
 
-public class LlmOptions
+public class ClaudeOptions
 {
     [System.ComponentModel.DataAnnotations.Required]
     public required string ModelId { get; init; }
-    [System.ComponentModel.DataAnnotations.Required]
-    public required string Endpoint { get; init; }
     [System.ComponentModel.DataAnnotations.Required]
     public required string ApiKey { get; init; }
 }
@@ -40,26 +38,28 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddOptions<LlmOptions>()
-            .BindConfiguration("Llm")
+        services.AddOptions<ClaudeOptions>()
+            .BindConfiguration("Claude")
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Semantic Kernel — OpenAI-compatible endpoint backed by vLLM.
-        services.AddSingleton(sp =>
+        // Anthropic Claude API client for scenario generation.
+        services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
         {
-            var opts = sp.GetRequiredService<IOptions<LlmOptions>>().Value;
-            return Kernel.CreateBuilder()
-                .AddOpenAIChatCompletion(opts.ModelId, new Uri(opts.Endpoint), opts.ApiKey)
-                .Build();
+            var opts = sp.GetRequiredService<IOptions<ClaudeOptions>>().Value;
+            client.DefaultRequestHeaders.Add("x-api-key", opts.ApiKey);
+        })
+        .AddTypedClient<ILlmGenerationClient>((client, sp) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<ClaudeOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
+            return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
-        services.AddSingleton(sp =>
-            sp.GetRequiredService<Kernel>().GetRequiredService<Microsoft.SemanticKernel.ChatCompletion.IChatCompletionService>());
 
-        // Singleton: all dependencies (ITestRunRepository, IRunQueueRepository, ITestRunJobSender) are also Singleton.
+        // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
-        // Scenario generation pipeline (features 0002).
+        // Scenario generation pipeline (feature 0002).
         services.AddSingleton<StoryParserPlugin>();
         services.AddSingleton<TestGeneratorPlugin>();
         services.AddSingleton<KeyVaultCredentialClient>();
@@ -68,7 +68,7 @@ public static class DependencyInjection
         services.AddTransient<ScenarioGenerationStep>();
         services.AddTransient<ApiTestExecutionStep>();
 
-        // HTTP client for API test execution.
+        // HTTP client for API test execution (feature 0003).
         services.AddHttpClient<TestExecutorPlugin>();
         services.AddSingleton<ResponseSchemaValidator>();
 

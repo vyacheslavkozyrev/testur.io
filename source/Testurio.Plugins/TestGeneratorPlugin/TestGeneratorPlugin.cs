@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.ChatCompletion;
 using Testurio.Core.Entities;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 
 namespace Testurio.Plugins.TestGeneratorPlugin;
@@ -29,12 +28,12 @@ public partial class TestGeneratorPlugin
 
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
-    private readonly IChatCompletionService _chatCompletion;
+    private readonly ILlmGenerationClient _llmClient;
     private readonly ILogger<TestGeneratorPlugin> _logger;
 
-    public TestGeneratorPlugin(IChatCompletionService chatCompletion, ILogger<TestGeneratorPlugin> logger)
+    public TestGeneratorPlugin(ILlmGenerationClient llmClient, ILogger<TestGeneratorPlugin> logger)
     {
-        _chatCompletion = chatCompletion;
+        _llmClient = llmClient;
         _logger = logger;
     }
 
@@ -45,12 +44,8 @@ public partial class TestGeneratorPlugin
         string storyInput,
         CancellationToken cancellationToken = default)
     {
-        var history = new ChatHistory();
-        history.AddSystemMessage(SystemPrompt);
-        history.AddUserMessage(storyInput);
-
-        var result = await _chatCompletion.GetChatMessageContentsAsync(history, cancellationToken: cancellationToken);
-        var responseText = StripMarkdownFences(string.Concat(result.Select(r => r.Content)).Trim());
+        var responseText = await _llmClient.CompleteAsync(SystemPrompt, storyInput, cancellationToken);
+        responseText = StripMarkdownFences(responseText);
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -112,10 +107,10 @@ public partial class TestGeneratorPlugin
         return body.Trim();
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "LLM returned an empty scenario list for test run {TestRunId}")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Claude returned an empty scenario list for test run {TestRunId}")]
     private static partial void LogEmptyResponse(ILogger logger, string testRunId);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to deserialize LLM response for test run {TestRunId}")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to deserialize Claude response for test run {TestRunId}")]
     private static partial void LogDeserializationFailed(ILogger logger, string testRunId, Exception ex);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Generated {Count} test scenarios for test run {TestRunId}")]

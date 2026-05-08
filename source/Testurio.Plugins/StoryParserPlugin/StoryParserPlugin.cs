@@ -1,5 +1,3 @@
-using Microsoft.SemanticKernel;
-
 namespace Testurio.Plugins.StoryParserPlugin;
 
 public class StoryParserPlugin
@@ -16,7 +14,6 @@ public class StoryParserPlugin
         };
     }
 
-    [KernelFunction("parse_story")]
     public string FormatPromptInput(string description, string acceptanceCriteria)
     {
         var parsed = Parse(description, acceptanceCriteria);
