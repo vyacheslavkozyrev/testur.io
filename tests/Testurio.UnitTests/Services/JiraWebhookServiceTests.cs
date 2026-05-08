@@ -16,7 +16,6 @@ namespace Testurio.UnitTests.Services;
 public class JiraWebhookServiceTests
 {
     private readonly Mock<ITestRunRepository> _testRunRepo = new();
-    private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
     private readonly Mock<ITestRunJobSender> _jobSender = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
@@ -29,7 +28,6 @@ public class JiraWebhookServiceTests
 
     private JiraWebhookService CreateSut() => new(
         _testRunRepo.Object,
-        _runQueueRepo.Object,
         _jobSender.Object,
         _jiraApiClient.Object,
         _secretResolver.Object,
@@ -87,7 +85,6 @@ public class JiraWebhookServiceTests
 
         Assert.Equal(WebhookProcessResult.Ignored, result);
         _testRunRepo.VerifyNoOtherCalls();
-        _runQueueRepo.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -100,7 +97,6 @@ public class JiraWebhookServiceTests
 
         Assert.Equal(WebhookProcessResult.Ignored, result);
         _testRunRepo.VerifyNoOtherCalls();
-        _runQueueRepo.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -115,9 +111,8 @@ public class JiraWebhookServiceTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenNoActiveRun_EnqueuesJobAndReturnsEnqueued()
+    public async Task ProcessAsync_EnqueuesJobAndReturnsEnqueued()
     {
-        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync((TestRun?)null);
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jobSender.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), default)).Returns(Task.CompletedTask);
@@ -129,46 +124,6 @@ public class JiraWebhookServiceTests
 
         Assert.Equal(WebhookProcessResult.Enqueued, result);
         _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
-    }
-
-    [Fact]
-    public async Task ProcessAsync_WhenActiveRunExists_AddsToQueueAndReturnsQueued()
-    {
-        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
-        {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
-        });
-        _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(false);
-        _runQueueRepo.Setup(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default))
-            .ReturnsAsync((QueuedRun q, CancellationToken _) => q);
-
-        var payload = MakePayload();
-        var sut = CreateSut();
-
-        var result = await sut.ProcessAsync(MakeProject(), payload);
-
-        Assert.Equal(WebhookProcessResult.Queued, result);
-        _runQueueRepo.Verify(r => r.EnqueueAsync(It.Is<QueuedRun>(q => q.JiraIssueId == "10001"), default), Times.Once);
-        _jobSender.VerifyNoOtherCalls();
-    }
-
-    [Fact]
-    public async Task ProcessAsync_WhenDuplicateInQueue_ReturnsQueuedWithoutAddingDuplicate()
-    {
-        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
-        {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
-        });
-        _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(true);
-
-        var payload = MakePayload();
-        var sut = CreateSut();
-
-        var result = await sut.ProcessAsync(MakeProject(), payload);
-
-        Assert.Equal(WebhookProcessResult.Queued, result);
-        _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default), Times.Never);
-        _jobSender.VerifyNoOtherCalls();
     }
 
     [Fact]

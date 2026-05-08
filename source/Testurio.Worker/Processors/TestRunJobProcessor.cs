@@ -6,20 +6,18 @@ using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 using Testurio.Core.Models;
-using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
 
 namespace Testurio.Worker.Processors;
 
 public partial class TestRunJobProcessor : IAsyncDisposable
 {
-    private readonly ServiceBusProcessor _processor;
+    private readonly ServiceBusSessionProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;
     private readonly IProjectRepository _projectRepository;
     // IServiceProvider is used to resolve Transient steps per-message,
     // preventing a captive-dependency bug where a Transient would be frozen inside this Singleton.
     private readonly IServiceProvider _serviceProvider;
-    private readonly RunQueueManager _runQueueManager;
     private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
@@ -29,19 +27,18 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ITestRunRepository testRunRepository,
         IProjectRepository projectRepository,
         IServiceProvider serviceProvider,
-        RunQueueManager runQueueManager,
         ReportDeliveryStep reportDeliveryStep,
         ILogger<TestRunJobProcessor> logger)
     {
-        _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
+        _processor = serviceBusClient.CreateSessionProcessor(queueName, new ServiceBusSessionProcessorOptions
         {
             AutoCompleteMessages = false,
-            MaxConcurrentCalls = 1
+            MaxConcurrentSessions = 8,
+            MaxConcurrentCallsPerSession = 1
         });
         _testRunRepository = testRunRepository;
         _projectRepository = projectRepository;
         _serviceProvider = serviceProvider;
-        _runQueueManager = runQueueManager;
         _reportDeliveryStep = reportDeliveryStep;
         _logger = logger;
 
@@ -55,7 +52,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     public Task StopAsync(CancellationToken cancellationToken) =>
         _processor.StopProcessingAsync(cancellationToken);
 
-    private async Task OnMessageAsync(ProcessMessageEventArgs args)
+    private async Task OnMessageAsync(ProcessSessionMessageEventArgs args)
     {
         TestRunJobMessage? message;
         try
@@ -80,11 +77,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var testRun = await _testRunRepository.GetByIdAsync(message.ProjectId, message.TestRunId, args.CancellationToken);
         if (testRun is null)
         {
-            // Dead-letter first so the message is removed regardless of whether queue dispatch succeeds.
-            // Then advance the run queue; if dispatch fails the dead-letter is already committed.
-            // Use CancellationToken.None — host may be shutting down but dead-lettering must complete.
             await args.DeadLetterMessageAsync(args.Message, "TestRunNotFound", $"TestRun {message.TestRunId} not found", CancellationToken.None);
-            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             return;
         }
 
@@ -99,7 +92,6 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
-            await _runQueueManager.OnRunCompletedAsync(message.ProjectId, args.CancellationToken);
             LogCompleted(_logger, message.TestRunId, message.ProjectId);
         }
         catch (Exception ex)

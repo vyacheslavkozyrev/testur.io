@@ -20,11 +20,10 @@ public partial class TestRunJobSender : ITestRunJobSender
     public virtual async Task SendAsync(TestRunJobMessage message, CancellationToken cancellationToken = default)
     {
         var body = JsonSerializer.Serialize(message);
-        // MessageId enables Service Bus duplicate detection on retries.
-        // Session ordering is not used — per-project FIFO is enforced by RunQueueManager at the application layer.
         var sbMessage = new ServiceBusMessage(body)
         {
-            MessageId = message.TestRunId
+            SessionId = message.ProjectId,
+            MessageId = $"{message.ProjectId}_{message.JiraIssueId}"
         };
 
         await _sender.SendMessageAsync(sbMessage, cancellationToken);
