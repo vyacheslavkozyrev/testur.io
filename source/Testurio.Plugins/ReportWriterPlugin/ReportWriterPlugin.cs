@@ -86,7 +86,7 @@ public partial class ReportWriterPlugin
             return ReportDeliveryResult.Failure(msg);
         }
 
-        var posted = await _jiraApiClient.PostCommentAsync(
+        var commentResult = await _jiraApiClient.PostCommentAsync(
             project.JiraBaseUrl,
             run.JiraIssueKey,
             project.JiraEmail,
@@ -94,9 +94,13 @@ public partial class ReportWriterPlugin
             commentBody,
             cancellationToken);
 
-        if (!posted)
+        if (!commentResult.IsSuccess)
         {
-            var msg = $"Jira API rejected comment post for issue {run.JiraIssueKey}";
+            // Include HTTP status code and Jira error body in the failure message so the
+            // caller can persist it in TestRun.DeliveryError for run-history visibility (AC-014).
+            var msg = commentResult.StatusCode > 0
+                ? $"Jira API rejected comment post for issue {run.JiraIssueKey}: HTTP {commentResult.StatusCode} — {commentResult.ErrorDetail}"
+                : $"Network error posting comment for issue {run.JiraIssueKey}: {commentResult.ErrorDetail}";
             LogDeliveryFailed(_logger, testRunId, run.JiraIssueKey);
             return ReportDeliveryResult.Failure(msg);
         }

@@ -7,6 +7,8 @@ using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 using Testurio.Plugins.ReportWriterPlugin;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — bring it into scope for cleaner setup calls.
+
 namespace Testurio.UnitTests.Plugins;
 
 public class ReportWriterPluginTests
@@ -89,7 +91,7 @@ public class ReportWriterPluginTests
         _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
         _jiraApiClient.Setup(c => c.PostCommentAsync(
             "https://example.atlassian.net", "PROJ-1", "qa@example.com", "api-token",
-            It.IsAny<string>(), default)).ReturnsAsync(true);
+            It.IsAny<string>(), default)).ReturnsAsync(JiraCommentResult.Success());
 
         var sut = CreateSut();
         var result = await sut.DeliverAsync("proj1", "run1");
@@ -108,10 +110,10 @@ public class ReportWriterPluginTests
         _scenarioRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<TestScenario>());
         _stepResultRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<StepResult>());
         _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
-        // Simulate Jira returning false (non-2xx — e.g. 404)
+        // Simulate Jira returning non-2xx — e.g. 404
         _jiraApiClient.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string>(), default)).ReturnsAsync(false);
+            It.IsAny<string>(), default)).ReturnsAsync(JiraCommentResult.Failure(404, "Issue does not exist"));
 
         var sut = CreateSut();
         var result = await sut.DeliverAsync("proj1", "run1");
@@ -131,10 +133,10 @@ public class ReportWriterPluginTests
         _scenarioRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<TestScenario>());
         _stepResultRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<StepResult>());
         _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("bad-token");
-        // Simulate auth failure (false return from PostCommentAsync)
+        // Simulate auth failure (401 from PostCommentAsync)
         _jiraApiClient.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), "bad-token",
-            It.IsAny<string>(), default)).ReturnsAsync(false);
+            It.IsAny<string>(), default)).ReturnsAsync(JiraCommentResult.Failure(401, "Unauthorized"));
 
         var sut = CreateSut();
         var result = await sut.DeliverAsync("proj1", "run1");

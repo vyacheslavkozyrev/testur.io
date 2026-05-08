@@ -9,6 +9,8 @@ using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 using Xunit;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+
 namespace Testurio.UnitTests.Services;
 
 public class JiraWebhookServiceTests
@@ -175,7 +177,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
 
         var payload = MakePayload(description: null);
         var sut = CreateSut();
@@ -193,7 +195,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
 
         var payload = MakePayload(acceptanceCriteria: null);
         var sut = CreateSut();
@@ -210,7 +212,7 @@ public class JiraWebhookServiceTests
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
         _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
 
         var payload = MakePayload(description: null, acceptanceCriteria: null);
         var sut = CreateSut();

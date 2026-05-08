@@ -17,6 +17,8 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+
 namespace Testurio.IntegrationTests.Controllers;
 
 [Collection("JiraWebhookSerial")]
@@ -152,7 +154,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         _factory.JiraApiClientMock.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
 
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload(description: null));

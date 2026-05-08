@@ -9,6 +9,8 @@ using Testurio.Core.Repositories;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Worker.Steps;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — imported for mock setup.
+
 namespace Testurio.IntegrationTests.Pipeline;
 
 /// <summary>
@@ -103,7 +105,7 @@ public class TestRunPipelineTests
         _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
         _jiraApiClient.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(),
-            It.Is<string>(s => s.Contains("Passed")), default)).ReturnsAsync(true);
+            It.Is<string>(s => s.Contains("Passed")), default)).ReturnsAsync(JiraCommentResult.Success());
 
         TestRun? updatedRun = null;
         _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
@@ -137,7 +139,8 @@ public class TestRunPipelineTests
         _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
         _jiraApiClient.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JiraCommentResult.Failure(503, "Service Unavailable"));
 
         TestRun? updatedRun = null;
         _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
@@ -152,6 +155,8 @@ public class TestRunPipelineTests
         Assert.NotNull(updatedRun);
         Assert.Equal(TestRunStatus.ReportDeliveryFailed, updatedRun!.Status);
         Assert.NotNull(updatedRun.DeliveryError);
+        // DeliveryError must include the HTTP status code for run-history diagnostics (AC-014).
+        Assert.Contains("503", updatedRun.DeliveryError);
         Assert.NotNull(updatedRun.CompletedAt);
     }
 
@@ -186,7 +191,7 @@ public class TestRunPipelineTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), default))
             .Callback<string, string, string, string, string, CancellationToken>((_, _, _, _, body, _) => postedComment = body)
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
         _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
 
