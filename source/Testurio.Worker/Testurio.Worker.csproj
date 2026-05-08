@@ -6,11 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Testurio.Worker-952d5f9c-e797-4ddb-b11e-fb64d856b6f3</UserSecretsId>
     <AzureCosmosDisableNewtonsoftJsonCheck>true</AzureCosmosDisableNewtonsoftJsonCheck>
+    <NoWarn>$(NoWarn);SKEXP0010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.12" />
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.32.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -8,6 +8,7 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.ServiceBus;
+using Testurio.Infrastructure.KeyVault;
 
 namespace Testurio.Infrastructure;
 
@@ -90,6 +91,7 @@ public static class DependencyInjection
         });
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
+        services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
 
         return services;
     }

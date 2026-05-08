@@ -1,6 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.SemanticKernel;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.KeyVault;
@@ -20,6 +21,16 @@ public class WorkerOptions
     public required string TestRunJobQueueName { get; init; }
 }
 
+public class LlmOptions
+{
+    [System.ComponentModel.DataAnnotations.Required]
+    public required string ModelId { get; init; }
+    [System.ComponentModel.DataAnnotations.Required]
+    public required string Endpoint { get; init; }
+    [System.ComponentModel.DataAnnotations.Required]
+    public required string ApiKey { get; init; }
+}
+
 public static class DependencyInjection
 {
     public static IServiceCollection AddWorkerServices(this IServiceCollection services)
@@ -28,6 +39,22 @@ public static class DependencyInjection
             .BindConfiguration("Worker")
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        services.AddOptions<LlmOptions>()
+            .BindConfiguration("Llm")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Semantic Kernel — OpenAI-compatible endpoint backed by vLLM.
+        services.AddSingleton(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<LlmOptions>>().Value;
+            return Kernel.CreateBuilder()
+                .AddOpenAIChatCompletion(opts.ModelId, new Uri(opts.Endpoint), opts.ApiKey)
+                .Build();
+        });
+        services.AddSingleton(sp =>
+            sp.GetRequiredService<Kernel>().GetRequiredService<Microsoft.SemanticKernel.ChatCompletion.IChatCompletionService>());
 
         // Singleton: all dependencies (ITestRunRepository, IRunQueueRepository, ITestRunJobSender) are also Singleton.
         services.AddSingleton<RunQueueManager>();
