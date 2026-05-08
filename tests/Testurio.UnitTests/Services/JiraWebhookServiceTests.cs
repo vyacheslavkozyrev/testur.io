@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Api.Services;
@@ -46,6 +47,9 @@ public class JiraWebhookServiceTests
         InTestingStatusLabel = inTestingLabel
     };
 
+    private static JsonElement? ToJsonElement(string? value) =>
+        value is null ? null : JsonSerializer.Deserialize<JsonElement>($"\"{value}\"");
+
     private static JiraWebhookPayload MakePayload(
         string issueType = "Story",
         string transitionTo = "In Testing",
@@ -64,7 +68,7 @@ public class JiraWebhookServiceTests
                     IssueType = new JiraIssueType { Name = issueType },
                     Status = new JiraStatus { Name = transitionTo },
                     Description = description,
-                    AcceptanceCriteria = acceptanceCriteria
+                    AcceptanceCriteria = ToJsonElement(acceptanceCriteria)
                 }
             },
             Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }

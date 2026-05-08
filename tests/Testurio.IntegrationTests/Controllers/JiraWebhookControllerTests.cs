@@ -52,6 +52,9 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         InTestingStatusLabel = "In Testing"
     };
 
+    private static JsonElement? ToJsonElement(string? value) =>
+        value is null ? null : JsonSerializer.Deserialize<JsonElement>($"\"{value}\"");
+
     private static JiraWebhookPayload MakePayload(
         string issueType = "Story",
         string transitionTo = "In Testing",
@@ -68,7 +71,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 IssueType = new JiraIssueType { Name = issueType },
                 Status = new JiraStatus { Name = transitionTo },
                 Description = description,
-                AcceptanceCriteria = ac
+                AcceptanceCriteria = ToJsonElement(ac)
             }
         },
         Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }
