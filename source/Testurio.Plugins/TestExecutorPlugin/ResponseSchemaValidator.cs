@@ -68,7 +68,12 @@ public sealed partial class ResponseSchemaValidator
         foreach (var property in schemaElement.EnumerateObject())
         {
             var fieldName = property.Name;
-            var expectedTypeName = property.Value.GetString() ?? string.Empty;
+            // Schema values are expected to be type-name strings (e.g. "string", "number").
+            // Claude sometimes emits nested objects for complex fields — skip type validation in that case
+            // so presence is still checked but the unknown sub-schema doesn't throw.
+            var expectedTypeName = property.Value.ValueKind == JsonValueKind.String
+                ? property.Value.GetString() ?? string.Empty
+                : string.Empty;
 
             if (!TryGetProperty(actualElement, fieldName, out var actualProperty))
             {
