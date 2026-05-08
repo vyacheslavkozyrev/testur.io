@@ -67,6 +67,20 @@ public static class DependencyInjection
             return new RunQueueRepository(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<ITestScenarioRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestScenarioRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<IStepResultRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new StepResultRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<ITestRunJobSender>(sp =>
         {
             var client = sp.GetRequiredService<ServiceBusClient>();

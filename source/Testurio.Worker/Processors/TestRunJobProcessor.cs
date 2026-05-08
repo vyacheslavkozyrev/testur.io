@@ -6,6 +6,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 using Testurio.Core.Models;
 using Testurio.Worker.Services;
+using Testurio.Worker.Steps;
 
 namespace Testurio.Worker.Processors;
 
@@ -14,6 +15,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ServiceBusProcessor _processor;
     private readonly ITestRunRepository _testRunRepository;
     private readonly RunQueueManager _runQueueManager;
+    private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -21,6 +23,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         string queueName,
         ITestRunRepository testRunRepository,
         RunQueueManager runQueueManager,
+        ReportDeliveryStep reportDeliveryStep,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -30,6 +33,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         });
         _testRunRepository = testRunRepository;
         _runQueueManager = runQueueManager;
+        _reportDeliveryStep = reportDeliveryStep;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -81,12 +85,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.StartedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
-            // Pipeline execution placeholder — plugins (StoryParser, TestGenerator, TestExecutor, ReportWriter) wired in future features
+            // Pipeline: StoryParser (0002) → TestGenerator (0002) → ApiTestExecution (0003) → ReportDelivery (0004)
+            // ReportDeliveryStep sets the terminal run status (Completed or ReportDeliveryFailed) before returning.
             await ExecutePipelineAsync(testRun, args.CancellationToken);
-
-            testRun.Status = TestRunStatus.Completed;
-            testRun.CompletedAt = DateTimeOffset.UtcNow;
-            await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
             // Complete the message before dispatching the next queued run so that a failure in
             // OnRunCompletedAsync does not cause this message to be redelivered and the run queue
@@ -113,10 +114,11 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
     }
 
-    private static Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
+    private async Task ExecutePipelineAsync(TestRun testRun, CancellationToken cancellationToken)
     {
-        // Placeholder — full pipeline wired via Testurio.Plugins in subsequent features
-        return Task.CompletedTask;
+        // StoryParser and TestGenerator steps (feature 0002) and ApiTestExecution step (feature 0003)
+        // will be inserted here before ReportDeliveryStep when those features are implemented.
+        await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
     }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
