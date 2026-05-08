@@ -86,6 +86,7 @@ public static class DependencyInjection
             sp.GetRequiredService<ITestRunRepository>(),
             sp.GetRequiredService<ITestScenarioRepository>(),
             sp.GetRequiredService<IStepResultRepository>(),
+            sp.GetRequiredService<IExecutionLogRepository>(),
             sp.GetRequiredService<IProjectRepository>(),
             sp.GetRequiredService<IJiraApiClient>(),
             sp.GetRequiredService<ISecretResolver>(),
