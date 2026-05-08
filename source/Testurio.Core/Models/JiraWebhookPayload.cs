@@ -80,5 +80,5 @@ public class JiraChangelogItem
     public string Field { get; init; } = string.Empty;
 
     [JsonPropertyName("toString")]
-    public string? ToString { get; init; }
+    public new string? ToString { get; init; }
 }
