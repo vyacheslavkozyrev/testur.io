@@ -2,7 +2,7 @@
 name: Testurio — Architecture
 version: 0.4.0
 status: draft
-updated: 2026-04-26
+updated: 2026-05-08
 tags: [technical, architecture]
 ---
 
@@ -51,16 +51,18 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
                                     │  .NET Worker Service                 │
                                     │  (Azure Container Apps)              │
                                     │                                      │
-                                    │  ┌──────────────┐                   │
-                                    │  │ Story Parser │                   │
-                                    │  ├──────────────┤                   │
-                                    │  │ Test Generator│─────────────────┐│
-                                    │  ├──────────────┤                  ││
-                                    │  │ Test Executor│  Playwright      ││
-                                    │  ├──────────────┤                  ││
-                                    │  │ Report Writer│  ADO / Jira API  ││
-                                    │  └──────────────┘                  ││
-                                    └────────────────────────────────────┼─┘
+                                    │  ┌──────────────────┐               │
+                                    │  │  Story Parser    │               │
+                                    │  ├──────────────────┤               │
+                                    │  │ Memory Retriever │◄─────────────┼──── Azure AI Search
+                                    │  ├──────────────────┤               │    (vector index)
+                                    │  │  Test Generator  │─────────────┐│
+                                    │  ├──────────────────┤             ││
+                                    │  │  Test Executor   │  Playwright ││
+                                    │  ├──────────────────┤             ││
+                                    │  │  Report Writer   │  ADO/Jira   ││
+                                    │  └──────────────────┘             ││
+                                    └───────────────────────────────────┼─┘
                                                                          │ HTTP (OpenAI-compatible)
                                            ┌─────────────────────────────▼──────────────┐
                                            │  AKS Cluster — GPU Node Pool               │
@@ -94,6 +96,7 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
 | Secrets                      | Azure Key Vault + Managed Identity      |
 | Worker egress / static IPs   | Azure NAT Gateway (fixed egress IPs)    |
 | Webhook auth / rate limiting | Azure API Management                    |
+| Memory / vector search       | Azure AI Search (vector index)          |
 | Observability                | Azure Application Insights              |
 | Container registry           | Azure Container Registry                |
 | CDN / edge                   | Azure Front Door                        |
@@ -150,10 +153,50 @@ No client-visible tenant ID is required — the authenticated identity is the te
 1. Webhook received → job enqueued to Service Bus
 2. Worker dequeues job → loads project config from Cosmos
 3. **Story Parser** — extracts description + acceptance criteria
-4. **Test Generator** — calls vLLM via Semantic Kernel, produces test scenarios
-5. **Test Executor** — runs scenarios against `product_url`, applying `auth_settings`; execution mode depends on `test_type`: HTTP client for API testing (POC), Playwright browser automation for UI E2E (MVP), or both
-6. **Report Writer** — posts results to ADO / Jira; writes result record to Cosmos
-7. Statistics become visible in the portal immediately
+4. **Memory Retriever** — queries Azure AI Search for semantically similar past scenarios from this project; injects top-K results as few-shot examples for the next stage
+5. **Test Generator** — calls vLLM via Semantic Kernel, produces test scenarios (augmented by retrieved examples)
+6. **Test Executor** — runs scenarios against `product_url`, applying `auth_settings`; execution mode depends on `test_type`: HTTP client for API testing (POC), Playwright browser automation for UI E2E (MVP), or both
+7. **Report Writer** — posts results to ADO / Jira; writes result record to Cosmos; indexes the run's scenarios and outcomes into Azure AI Search for future retrieval
+8. Statistics become visible in the portal immediately
+
+---
+
+## Memory Layer
+
+The memory layer enables the pipeline to improve over time by learning from past test runs across all projects.
+
+### Architecture
+
+Two-tier design:
+
+| Tier | Store | Scope | Purpose |
+|------|-------|-------|---------|
+| **Short-term** | Azure Cosmos DB (`TestResults` container) | Per project | Last N test runs loaded at job start; already available |
+| **Long-term** | Azure AI Search (vector index) | Cross-project | Semantic retrieval of successful scenario patterns |
+
+### How It Works
+
+After each run, **Report Writer** embeds every generated test scenario together with its outcome (pass / fail / flagged) and indexes it into Azure AI Search. The embedding model is `text-embedding-3-small` via the OpenAI-compatible endpoint.
+
+At the start of the next run, **Memory Retriever** embeds the parsed story and retrieves the top-K most semantically similar past scenarios scoped to the same `userId`. These are injected into the TestGenerator prompt as few-shot examples, steering the model toward patterns that have worked before and away from ones that consistently fail.
+
+### Vector Index Schema
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | string | `{projectId}_{runId}_{scenarioIndex}` |
+| `userId` | string | Partition / filter key — never cross-tenant |
+| `projectId` | string | Narrow retrieval to same project by default |
+| `storyEmbedding` | vector(1536) | Embedding of the source story text |
+| `scenarioText` | string | Generated test scenario |
+| `outcome` | string | `passed` \| `failed` \| `flagged` |
+| `createdAt` | datetime | For TTL and recency weighting |
+
+Retrieval always filters by `userId` — cross-tenant memory leakage is not possible by construction.
+
+### Rollout Note
+
+The memory layer adds value only after several hundred indexed runs. Ship v1 without activating retrieval; turn it on per-project once sufficient signal exists. The indexing path (Report Writer → AI Search) should be wired from day one so data accumulates immediately.
 
 ---
 
@@ -261,9 +304,10 @@ testur.io/
 │   ├── Testurio.Core/             # Domain models, interfaces
 │   ├── Testurio.Plugins/          # Semantic Kernel plugins
 │   │   ├── StoryParserPlugin/
+│   │   ├── MemoryRetrieverPlugin/   # embeds story, fetches similar past scenarios from AI Search
 │   │   ├── TestGeneratorPlugin/     # calls vLLM via SK
 │   │   ├── TestExecutorPlugin/      # HTTP client (API, POC) + Playwright (UI E2E, MVP)
-│   │   └── ReportWriterPlugin/      # ADO / Jira REST client
+│   │   └── ReportWriterPlugin/      # ADO / Jira REST client; indexes run into AI Search
 │   └── Testurio.Infrastructure/   # Cosmos, Blob, Service Bus, Stripe clients
 ├── tests/
 │   ├── Testurio.UnitTests/
@@ -300,6 +344,8 @@ testur.io/
 **Spot GPU nodes** — test generation is async and latency-tolerant. Spot eviction causes a brief delay, not a failure.
 
 **Logical multi-tenancy over physical isolation** — all clients share a single Cosmos DB account. Tenant isolation is enforced by `userId` as the partition key on every container, combined with API-layer auth (Azure AD B2C token validation on every request). No client can access another's data. Physical per-tenant accounts (one Cosmos account per client) are explicitly out of scope for v1 — they would multiply operational overhead linearly with client count and are only justified for enterprise compliance requirements.
+
+**Global memory layer via Azure AI Search** — past test scenarios and outcomes are embedded and indexed after every run. The `MemoryRetriever` plugin retrieves semantically similar examples before TestGenerator runs, injecting them as few-shot context. Retrieval is always scoped to `userId`, preventing cross-tenant leakage. Indexing is wired from v1; retrieval activates per-project once sufficient signal accumulates (~hundreds of runs).
 
 **NAT Gateway for static egress IPs** — all worker outbound traffic routes through a single NAT Gateway, giving Testurio a predictable, publishable IP range. This makes IP allowlisting a reliable, zero-credential option for clients. Credentials (Basic Auth, header tokens) are stored exclusively in Key Vault; only a secret reference lives in the project document in Cosmos DB.
 
