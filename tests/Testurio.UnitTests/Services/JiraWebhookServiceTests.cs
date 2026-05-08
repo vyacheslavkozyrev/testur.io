@@ -62,8 +62,7 @@ public class JiraWebhookServiceTests
                 {
                     IssueType = new JiraIssueType { Name = issueType },
                     Status = new JiraStatus { Name = transitionTo },
-                    Description = description,
-                    AcceptanceCriteria = acceptanceCriteria
+                    Description = description
                 }
             },
             Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }

@@ -66,8 +66,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             {
                 IssueType = new JiraIssueType { Name = issueType },
                 Status = new JiraStatus { Name = transitionTo },
-                Description = description,
-                AcceptanceCriteria = ac
+                Description = description
             }
         },
         Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }

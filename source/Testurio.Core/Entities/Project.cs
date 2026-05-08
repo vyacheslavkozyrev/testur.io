@@ -12,4 +12,10 @@ public class Project
     public required string JiraApiTokenSecretRef { get; init; }
     public required string JiraWebhookSecretRef { get; init; }
     public required string InTestingStatusLabel { get; init; }
+
+    /// <summary>
+    /// Key Vault secret reference for the Bearer token used to authenticate API test requests.
+    /// Null when no authentication is required (AC-007).
+    /// </summary>
+    public string? BearerTokenSecretRef { get; init; }
 }

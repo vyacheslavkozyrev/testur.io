@@ -17,7 +17,15 @@
       "Bash(xargs grep *)",
       "Bash(git stash *)",
       "Bash(git *)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(git ls-tree *)",
+      "Bash(git merge *)",
+      "Bash(taskkill /IM \"Testurio.Worker.exe\" /F)",
+      "Bash(taskkill /IM \"Testurio.Api.exe\" /F)",
+      "Bash(wmic process *)",
+      "Bash(taskkill /PID 90196 /F)",
+      "Bash(taskkill /PID 99628 /F)",
+      "Bash(powershell *)"
     ]
   },
   "enableAllProjectMcpServers": true
