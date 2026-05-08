@@ -58,7 +58,7 @@ public class JiraWebhookServiceTests
     {
         return new JiraWebhookPayload
         {
-            WebhookEvent = "jira:issue_transitioned",
+            WebhookEvent = "jira:issue_updated",
             Issue = new JiraIssue
             {
                 Id = "10001",
@@ -71,14 +71,17 @@ public class JiraWebhookServiceTests
                     AcceptanceCriteria = ToJsonElement(acceptanceCriteria)
                 }
             },
-            Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
+            }
         };
     }
 
     [Fact]
     public async Task ProcessAsync_WhenEventIsNotTransitioned_ReturnsIgnored()
     {
-        var payload = new JiraWebhookPayload { WebhookEvent = "jira:issue_updated", Issue = MakePayload().Issue, Transition = MakePayload().Transition };
+        var payload = new JiraWebhookPayload { WebhookEvent = "jira:issue_created", Issue = MakePayload().Issue };
         var sut = CreateSut();
 
         var result = await sut.ProcessAsync(MakeProject(), payload);

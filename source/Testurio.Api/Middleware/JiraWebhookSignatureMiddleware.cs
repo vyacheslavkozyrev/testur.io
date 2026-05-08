@@ -26,7 +26,7 @@ public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
     {
         var httpContext = context.HttpContext;
 
-        if (!httpContext.Request.Headers.TryGetValue("X-Hub-Signature", out var signatureHeader) || string.IsNullOrWhiteSpace(signatureHeader))
+        if (!httpContext.Request.Headers.TryGetValue("X-Hub-Signature-256", out var signatureHeader) || string.IsNullOrWhiteSpace(signatureHeader))
         {
             LogMissingSignature(_logger);
             return TypedResults.Unauthorized();
