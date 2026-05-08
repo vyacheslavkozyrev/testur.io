@@ -218,7 +218,7 @@ public partial class TestExecutorPlugin
         RegexOptions.IgnoreCase)]
     private static partial Regex StepDefinitionPattern();
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Malformed step definition '{Description}' in scenario {ScenarioId} — cannot parse HTTP method and path")]
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Non-HTTP step '{Description}' in scenario {ScenarioId} — skipped (no HTTP method/path found)")]
     private static partial void LogMalformedStep(ILogger logger, string description, string scenarioId);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Step '{Url}' timed out after {ElapsedMs} ms in scenario {ScenarioId}")]
