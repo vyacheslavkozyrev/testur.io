@@ -6,7 +6,9 @@ using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.ServiceBus;
+using Testurio.Infrastructure.KeyVault;
 
 namespace Testurio.Infrastructure;
 
@@ -32,9 +34,11 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new CosmosClient(opts.CosmosConnectionString, new CosmosClientOptions
             {
-                SerializerOptions = new CosmosSerializationOptions
+                UseSystemTextJsonSerializerWithOptions = new System.Text.Json.JsonSerializerOptions
                 {
-                    PropertyNamingPolicy = CosmosPropertyNamingPolicy.CamelCase
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
                 }
             });
         });
@@ -66,6 +70,20 @@ public static class DependencyInjection
             return new RunQueueRepository(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<ITestScenarioRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestScenarioRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<IStepResultRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new StepResultRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<ITestRunJobSender>(sp =>
         {
             var client = sp.GetRequiredService<ServiceBusClient>();
@@ -73,6 +91,9 @@ public static class DependencyInjection
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
         });
+
+        services.AddHttpClient<IJiraApiClient, JiraApiClient>();
+        services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
 
         return services;
     }

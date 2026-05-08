@@ -10,11 +10,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
+
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
 
 namespace Testurio.IntegrationTests.Controllers;
 
@@ -51,6 +54,9 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         InTestingStatusLabel = "In Testing"
     };
 
+    private static JsonElement? ToJsonElement(string? value) =>
+        value is null ? null : JsonSerializer.Deserialize<JsonElement>($"\"{value}\"");
+
     private static JiraWebhookPayload MakePayload(
         string issueType = "Story",
         string transitionTo = "In Testing",
@@ -67,7 +73,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 IssueType = new JiraIssueType { Name = issueType },
                 Status = new JiraStatus { Name = transitionTo },
                 Description = description,
-                AcceptanceCriteria = ac
+                AcceptanceCriteria = ToJsonElement(ac)
             }
         },
         Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }
@@ -148,7 +154,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         _factory.JiraApiClientMock.Setup(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .ReturnsAsync(JiraCommentResult.Success());
 
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload(description: null));

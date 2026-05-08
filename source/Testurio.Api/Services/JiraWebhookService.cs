@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -98,7 +99,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         var comment = $"Testurio skipped this test run because the story is missing: {missingParts}. Please update the story and move it back to \"In Testing\" to trigger a new run.";
         var posted = await _jiraApiClient.PostCommentAsync(
             project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
-        if (!posted)
+        if (!posted.IsSuccess)
             LogCommentPostFailed(_logger, issue.Key, project.Id);
 
         LogSkipped(_logger, issue.Key, project.Id, missingParts);

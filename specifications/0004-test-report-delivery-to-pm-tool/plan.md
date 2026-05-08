@@ -2,17 +2,17 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `ReportDeliveryFailed` value to `TestRunStatus` enum — `source/Testurio.Core/Enums/TestRunStatus.cs`
-- [ ] T002 [Infra] Move `JiraApiClient` from `Testurio.Api` to `Testurio.Infrastructure` and extend with `PostCommentAsync` — `source/Testurio.Infrastructure/Jira/JiraApiClient.cs`
-- [ ] T003 [Infra] Update DI registration to expose `JiraApiClient` from infrastructure layer — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T004 [Infra] Remove or stub the now-relocated `JiraApiClient` reference in `Testurio.Api` — `source/Testurio.Api/Clients/JiraApiClient.cs`
-- [ ] T005 [Plugin] Implement `ReportBuilderService` (assemble Jira markdown: summary header, failures section for failed runs, full scenario/step breakdown) — `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs`
-- [ ] T006 [Plugin] Implement `ReportWriterPlugin` (load run, scenario, and step result data; call builder; post comment via `JiraApiClient`; handle delivery failure and update run status) — `source/Testurio.Plugins/ReportWriterPlugin/ReportWriterPlugin.cs`
-- [ ] T007 [Worker] Implement `ReportDeliveryStep` (invoke `ReportWriterPlugin`, update run status on success or failure, log delivery error to Application Insights) — `source/Testurio.Worker/Steps/ReportDeliveryStep.cs`
-- [ ] T008 [Worker] Integrate `ReportDeliveryStep` into `TestRunJobProcessor` after `ApiTestExecutionStep` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T009 [Test] Unit tests for `ReportBuilderService` (passed run format, failed run format with failures section, timeout/error step rendering) — `tests/Testurio.UnitTests/Plugins/ReportBuilderServiceTests.cs`
-- [ ] T010 [Test] Unit tests for `ReportWriterPlugin` (successful delivery, Jira 404, Jira auth error, delivery failure status update) — `tests/Testurio.UnitTests/Plugins/ReportWriterPluginTests.cs`
-- [ ] T011 [Test] Integration tests extending 0003's pipeline test to cover the full flow (trigger → generate → execute → report) — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
+- [x] T001 [Domain] Add `ReportDeliveryFailed` value to `TestRunStatus` enum — `source/Testurio.Core/Enums/TestRunStatus.cs`
+- [x] T002 [Infra] Move `JiraApiClient` from `Testurio.Api` to `Testurio.Infrastructure` and extend with `PostCommentAsync` — `source/Testurio.Infrastructure/Jira/JiraApiClient.cs`
+- [x] T003 [Infra] Update DI registration to expose `JiraApiClient` from infrastructure layer — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T004 [Infra] Remove or stub the now-relocated `JiraApiClient` reference in `Testurio.Api` — `source/Testurio.Api/Clients/JiraApiClient.cs`
+- [x] T005 [Plugin] Implement `ReportBuilderService` (assemble Jira markdown: summary header, failures section for failed runs, full scenario/step breakdown) — `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs`
+- [x] T006 [Plugin] Implement `ReportWriterPlugin` (load run, scenario, and step result data; call builder; post comment via `JiraApiClient`; handle delivery failure and update run status) — `source/Testurio.Plugins/ReportWriterPlugin/ReportWriterPlugin.cs`
+- [x] T007 [Worker] Implement `ReportDeliveryStep` (invoke `ReportWriterPlugin`, update run status on success or failure, log delivery error to Application Insights) — `source/Testurio.Worker/Steps/ReportDeliveryStep.cs`
+- [x] T008 [Worker] Integrate `ReportDeliveryStep` into `TestRunJobProcessor` after `ApiTestExecutionStep` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T009 [Test] Unit tests for `ReportBuilderService` (passed run format, failed run format with failures section, timeout/error step rendering) — `tests/Testurio.UnitTests/Plugins/ReportBuilderServiceTests.cs`
+- [x] T010 [Test] Unit tests for `ReportWriterPlugin` (successful delivery, Jira 404, Jira auth error, delivery failure status update) — `tests/Testurio.UnitTests/Plugins/ReportWriterPluginTests.cs`
+- [x] T011 [Test] Integration tests extending 0003's pipeline test to cover the full flow (trigger → generate → execute → report) — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
 
 ## Rationale
 
