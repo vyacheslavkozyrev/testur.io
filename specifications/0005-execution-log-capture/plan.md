@@ -2,8 +2,8 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `ExecutionLogEntry` entity (scenario ID, step index, step title, timestamp, HTTP method, URL, request headers, request body, response status, response headers, response body or blob URL, duration, error detail, truncation flag) — `source/Testurio.Core/Entities/ExecutionLogEntry.cs`
-- [ ] T002 [Domain] Add `IExecutionLogRepository` interface (persist, get by run ID, get by step ID, delete by run ID) — `source/Testurio.Core/Repositories/IExecutionLogRepository.cs`
+- [x] T001 [Domain] Create `ExecutionLogEntry` entity (scenario ID, step index, step title, timestamp, HTTP method, URL, request headers, request body, response status, response headers, response body or blob URL, duration, error detail, truncation flag) — `source/Testurio.Core/Entities/ExecutionLogEntry.cs`
+- [x] T002 [Domain] Add `IExecutionLogRepository` interface (persist, get by run ID, get by step ID, delete by run ID) — `source/Testurio.Core/Repositories/IExecutionLogRepository.cs`
 - [ ] T003 [Infra] Implement `BlobStorageClient` (upload response body, return URL; truncate and flag on upload failure) — `source/Testurio.Infrastructure/Blob/BlobStorageClient.cs`
 - [ ] T004 [Infra] Implement `ExecutionLogRepository` (Cosmos DB — store inline body ≤10 KB, blob URL reference above threshold; resolve URL transparently on retrieval) — `source/Testurio.Infrastructure/Cosmos/ExecutionLogRepository.cs`
 - [ ] T005 [Infra] Update DI registration with blob client and log repository — `source/Testurio.Infrastructure/DependencyInjection.cs`
