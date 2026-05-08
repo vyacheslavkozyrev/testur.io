@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Add `IExecutionLogRepository` interface (persist, get by run ID, get by step ID, delete by run ID) — `source/Testurio.Core/Repositories/IExecutionLogRepository.cs`
 - [x] T003 [Infra] Implement `BlobStorageClient` (upload response body, return URL; truncate and flag on upload failure) — `source/Testurio.Infrastructure/Blob/BlobStorageClient.cs`
 - [x] T004 [Infra] Implement `ExecutionLogRepository` (Cosmos DB — store inline body ≤10 KB, blob URL reference above threshold; resolve URL transparently on retrieval) — `source/Testurio.Infrastructure/Cosmos/ExecutionLogRepository.cs`
-- [ ] T005 [Infra] Update DI registration with blob client and log repository — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T005 [Infra] Update DI registration with blob client and log repository — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T006 [Plugin] Implement `LogPersistenceService` (decide inline vs blob, upload to blob if needed, persist `ExecutionLogEntry`, absorb failures non-fatally and record system warning) — `source/Testurio.Plugins/TestExecutorPlugin/LogPersistenceService.cs`
 - [ ] T007 [Plugin] Extend `TestExecutorPlugin` to capture raw request/response data per step and emit an `ExecutionLogEntry` to `LogPersistenceService` after each step completes — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
 - [ ] T008 [Plugin] Extend `ReportBuilderService` to accept an optional log section and append per-step log blocks (request, response, blob URL or truncation notice) as Jira markdown code blocks below the scenario breakdown — `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs`
