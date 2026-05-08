@@ -89,7 +89,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var body = JsonSerializer.Serialize(payload);
         var sig = signature ?? Sign(body, WebhookSecret);
         var request = new HttpRequestMessage(HttpMethod.Post, "/v1/webhooks/jira/proj1");
-        request.Headers.Add("X-Hub-Signature-256", sig);
+        request.Headers.Add("X-Hub-Signature", sig);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         return await client.SendAsync(request);
     }
