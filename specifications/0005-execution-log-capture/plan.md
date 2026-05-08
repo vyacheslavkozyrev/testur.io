@@ -15,7 +15,7 @@
 - [x] T011 [Test] Unit tests for `LogPersistenceService` (inline path, blob path, blob upload failure with truncation, persistence failure is non-fatal) — `tests/Testurio.UnitTests/Plugins/LogPersistenceServiceTests.cs`
 - [x] T012 [Test] Unit tests for `ExecutionLogRepository` (persist, retrieve by run ID, retrieve by step ID, blob URL resolution) — `tests/Testurio.UnitTests/Infrastructure/ExecutionLogRepositoryTests.cs`
 - [x] T013 [Test] Unit tests for `ReportBuilderService` log section (inline body rendered, blob URL substituted, all runs include log blocks) — `tests/Testurio.UnitTests/Plugins/ReportBuilderServiceLogTests.cs`
-- [ ] T014 [Test] Integration tests extending pipeline test to cover full flow with log capture and log-enriched report — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
+- [x] T014 [Test] Integration tests extending pipeline test to cover full flow with log capture and log-enriched report — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
 
 ## Rationale
 
