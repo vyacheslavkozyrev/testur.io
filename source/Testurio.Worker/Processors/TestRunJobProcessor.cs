@@ -2,6 +2,7 @@ using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 using Testurio.Core.Models;
 using Testurio.Worker.Services;

@@ -1,6 +1,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Cosmos.Linq;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 
 namespace Testurio.Infrastructure.Cosmos;

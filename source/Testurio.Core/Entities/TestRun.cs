@@ -1,3 +1,5 @@
+using Testurio.Core.Enums;
+
 namespace Testurio.Core.Entities;
 
 public class TestRun
@@ -12,13 +14,5 @@ public class TestRun
     public DateTimeOffset? StartedAt { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
     public string? SkipReason { get; set; }
-}
-
-public enum TestRunStatus
-{
-    Pending,
-    Active,
-    Completed,
-    Failed,
-    Skipped
+    public string? DeliveryError { get; set; }
 }
