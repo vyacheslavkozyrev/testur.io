@@ -25,8 +25,18 @@ Never skip ahead — each layer depends on the previous:
 
 ## Dependency Injection
 - Register all dependencies via DI — no service locator, no static accessors
-- Use **keyed services** (`services.AddKeyedScoped<T>(key)`) when multiple implementations of an interface coexist (e.g., different storage backends)
-- Validate `IOptions<T>` at startup with `services.AddOptions<T>().Bind(...).ValidateDataAnnotations().ValidateOnStart()`
+- Use **keyed services** when multiple implementations of an interface coexist:
+  ```csharp
+  services.AddKeyedScoped<IStorageClient, CosmosClient>("cosmos");
+  services.AddKeyedScoped<IStorageClient, BlobClient>("blob");
+  ```
+- Validate `IOptions<T>` at startup:
+  ```csharp
+  services.AddOptions<CosmosOptions>()
+      .Bind(config.GetSection("Cosmos"))
+      .ValidateDataAnnotations()
+      .ValidateOnStart();
+  ```
 
 ## Async & Performance
 - All I/O must be `async`/`await` — no `.Result` or `.Wait()` calls
@@ -38,22 +48,42 @@ Never skip ahead — each layer depends on the previous:
 
 ## Logging & Observability
 - Use `ILogger<T>` injected via DI — never `LogManager.GetLogger` or static loggers
-- Use **compile-time log source generation** (`[LoggerMessage]` attribute) for all high-frequency log calls
-- Instrument with **OpenTelemetry** (traces + metrics + logs) — export to Azure Monitor via `UseAzureMonitor()`
-- Include `traceId`/`spanId` in structured log output for distributed trace correlation
+- Use compile-time source generation for high-frequency log calls:
+  ```csharp
+  [LoggerMessage(Level = LogLevel.Information, Message = "Test run {RunId} started")]
+  static partial void LogTestRunStarted(ILogger logger, Guid runId);
+  ```
+- Instrument with OpenTelemetry — export to Azure Monitor via `UseAzureMonitor()`
 - Never log passwords, tokens, PII, or request bodies containing sensitive fields
 
-## LLM / Semantic Kernel
-- All LLM calls go through **Semantic Kernel** — never call vLLM directly
-- Register using the OpenAI-compatible endpoint:
+## LLM / Claude API
+- All LLM calls use the **Anthropic C# SDK** — `dotnet add package Anthropic`
+- Register as a singleton; key is loaded from Key Vault via `IConfiguration`:
   ```csharp
-  builder.AddOpenAIChatCompletion(
-      modelId: "llama-3.1-8b-testcases",
-      endpoint: new Uri("http://vllm-service.llm.svc.cluster.local/v1"),
-      apiKey: "internal-token"
-  );
+  services.AddSingleton<AnthropicClient>(_ =>
+      new AnthropicClient { ApiKey = config["Anthropic:ApiKey"] });
   ```
-- Worker pipeline stages are discrete SK plugins — do not merge: `StoryParser` → `TestGenerator` → `TestExecutor` → `ReportWriter`
+- Every LLM call uses adaptive thinking and streaming for long outputs:
+  ```csharp
+  using Anthropic;
+  using Anthropic.Models.Messages;
+
+  var response = await _client.Messages.Create(new MessageCreateParams
+  {
+      Model     = Model.ClaudeOpus4_7,
+      MaxTokens = 16000,
+      Thinking  = new ThinkingConfigAdaptive(),
+      Messages  = [new() { Role = Role.User, Content = prompt }],
+  }, ct);
+
+  foreach (var block in response.Content)
+  {
+      if (block.TryPickText(out TextBlock? text))
+          result = text.Text;
+  }
+  ```
+- Worker pipeline stages are discrete classes — do not merge: `StoryParser` → `TestGenerator` → `TestExecutor` → `ReportWriter`
+- Never call the Anthropic API from `Testurio.Api` — LLM work belongs in `Testurio.Worker` only
 
 ## Security & Multi-Tenancy
 - Every API endpoint validates the Azure AD B2C JWT and extracts `userId` before any data access
@@ -65,6 +95,5 @@ Never skip ahead — each layer depends on the previous:
 
 ## Infrastructure
 - All Azure resources defined in **Bicep** under `infra/modules/` — one file per service
-- Kubernetes manifests for vLLM in `infra/k8s/`
 - Never provision per-tenant Azure resources
 - Use `MapStaticAssets()` instead of `UseStaticFiles()` for static file serving (build-time compression + SHA-256 ETags)

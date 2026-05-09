@@ -18,7 +18,9 @@
       "Bash(taskkill /F /PID 45604 /PID 161372)",
       "Bash(powershell *)",
       "Bash(git stash *)",
-      "Bash(gh pr *)"
+      "Bash(gh pr *)",
+      "Bash(git cherry-pick *)",
+      "Skill(claude-api)"
     ]
   },
   "enableAllProjectMcpServers": true

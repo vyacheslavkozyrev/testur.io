@@ -2,7 +2,7 @@
 name: Testurio — Architecture
 version: 0.4.0
 status: draft
-updated: 2026-04-26
+updated: 2026-05-09
 tags: [technical, architecture]
 ---
 
@@ -61,17 +61,11 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
                                     │  │ Report Writer│  ADO / Jira API  ││
                                     │  └──────────────┘                  ││
                                     └────────────────────────────────────┼─┘
-                                                                         │ HTTP (OpenAI-compatible)
+                                                                         │ HTTPS (Anthropic SDK)
                                            ┌─────────────────────────────▼──────────────┐
-                                           │  AKS Cluster — GPU Node Pool               │
-                                           │  (NC-series, NVIDIA A100 spot)             │
-                                           │  ┌──────────────────────────────────────┐  │
-                                           │  │  vLLM Pod                            │  │
-                                           │  │  Base: Llama 3.1 8B                  │  │
-                                           │  │  Adapter: LoRA (test cases)          │  │
-                                           │  │  API: OpenAI-compatible REST          │  │
-                                           │  └──────────────────────────────────────┘  │
-                                           │  ClusterIP service (internal only)         │
+                                           │  Anthropic Claude API                      │
+                                           │  Model: claude-opus-4-7                    │
+                                           │  Adaptive thinking enabled                 │
                                            └────────────────────────────────────────────┘
 ```
 
@@ -87,8 +81,7 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
 | Payments                     | Stripe (external) via API               |
 | Message queue                | Azure Service Bus (Standard+)           |
 | Worker / test pipeline       | Azure Container Apps                    |
-| LLM inference                | AKS GPU node pool — vLLM                |
-| Agent orchestration          | Semantic Kernel (.NET)                  |
+| LLM inference                | Anthropic Claude API (`claude-opus-4-7`) |
 | Data storage                 | Azure Cosmos DB                         |
 | Screenshots / test artifacts | Azure Blob Storage                      |
 | Secrets                      | Azure Key Vault + Managed Identity      |
@@ -150,7 +143,7 @@ No client-visible tenant ID is required — the authenticated identity is the te
 1. Webhook received → job enqueued to Service Bus
 2. Worker dequeues job → loads project config from Cosmos
 3. **Story Parser** — extracts description + acceptance criteria
-4. **Test Generator** — calls vLLM via Semantic Kernel, produces test scenarios
+4. **Test Generator** — calls Claude API (`claude-opus-4-7`), produces test scenarios
 5. **Test Executor** — runs scenarios against `product_url`, applying `auth_settings`; execution mode depends on `test_type`: HTTP client for API testing (POC), Playwright browser automation for UI E2E (MVP), or both
 6. **Report Writer** — posts results to ADO / Jira; writes result record to Cosmos
 7. Statistics become visible in the portal immediately
@@ -219,34 +212,29 @@ Credentials are never stored in Cosmos DB directly — only a Key Vault secret r
 
 ### Model
 
-- **Base model**: Llama 3.1 8B (Meta, open weights)
-- **Fine-tuning method**: LoRA / QLoRA trained on domain-specific test case data
-- **Format**: Safetensors (HF) or GGUF for quantized variants
+- **Provider**: Anthropic Claude API
+- **Model**: `claude-opus-4-7`
+- **Thinking**: adaptive thinking enabled on every call
 
-### Inference Server
-
-- **Runtime**: vLLM
-- **API**: OpenAI-compatible (`/v1/chat/completions`) — no Semantic Kernel changes needed
-- **LoRA support**: adapter versioning without redeploying the base model
-
-### AKS GPU Node Pool
-
-```
-Node SKU:    Standard_NC24ads_A100_v4  (1x NVIDIA A100 40GB)
-Node count:  1–3 (cluster autoscaler)
-Spot:        Yes — ~65% cost reduction
-Taints:      sku=gpu:NoSchedule
-```
-
-### Semantic Kernel Integration
+### SDK Integration
 
 ```csharp
-builder.AddOpenAIChatCompletion(
-    modelId: "llama-3.1-8b-testcases",
-    endpoint: new Uri("http://vllm-service.llm.svc.cluster.local/v1"),
-    apiKey: "internal-token"
-);
+// Registration (Testurio.Worker DI setup)
+services.AddSingleton<AnthropicClient>(_ =>
+    new AnthropicClient { ApiKey = config["Anthropic:ApiKey"] });
+
+// Usage inside a pipeline stage
+var response = await _client.Messages.Create(new MessageCreateParams
+{
+    Model     = Model.ClaudeOpus4_7,
+    MaxTokens = 16000,
+    Thinking  = new ThinkingConfigAdaptive(),
+    Messages  = [new() { Role = Role.User, Content = prompt }],
+}, ct);
 ```
+
+- API key stored in Azure Key Vault; loaded at startup via Managed Identity
+- No self-hosted GPU infrastructure required
 
 ---
 
@@ -259,9 +247,9 @@ testur.io/
 │   ├── Testurio.Api/              # ASP.NET Core — portal API + webhooks
 │   ├── Testurio.Worker/           # .NET Worker Service — test pipeline
 │   ├── Testurio.Core/             # Domain models, interfaces
-│   ├── Testurio.Plugins/          # Semantic Kernel plugins
+│   ├── Testurio.Plugins/          # Pipeline stage implementations
 │   │   ├── StoryParserPlugin/
-│   │   ├── TestGeneratorPlugin/     # calls vLLM via SK
+│   │   ├── TestGeneratorPlugin/     # calls Claude API (claude-opus-4-7)
 │   │   ├── TestExecutorPlugin/      # HTTP client (API, POC) + Playwright (UI E2E, MVP)
 │   │   └── ReportWriterPlugin/      # ADO / Jira REST client
 │   └── Testurio.Infrastructure/   # Cosmos, Blob, Service Bus, Stripe clients
@@ -271,16 +259,14 @@ testur.io/
 └── infra/
     ├── main.bicep
     ├── modules/
-    │   ├── aks.bicep                # AKS cluster + GPU node pool
     │   ├── staticwebapp.bicep
     │   ├── appservice.bicep
     │   ├── servicebus.bicep
     │   ├── cosmos.bicep
     │   ├── adb2c.bicep
     │   └── apim.bicep
-    └── k8s/
-        ├── vllm-deployment.yaml
-        └── vllm-service.yaml
+    └── modules/
+        └── (one .bicep file per Azure service)
 ```
 
 ---
@@ -295,9 +281,7 @@ testur.io/
 
 **Cosmos DB** stores users, projects, and test results in a single account with separate containers. The per-project document includes all configuration, making it easy to load everything a worker job needs in one read.
 
-**vLLM over Ollama** — concurrent batching handles multiple simultaneous webhook triggers. LoRA adapters allow model updates without container rebuilds.
-
-**Spot GPU nodes** — test generation is async and latency-tolerant. Spot eviction causes a brief delay, not a failure.
+**Claude API over self-hosted LLM** — no GPU infrastructure to provision, scale, or maintain. Anthropic manages availability and model updates; the worker simply calls the API. Adaptive thinking is enabled on every generation call for higher-quality test scenarios.
 
 **Logical multi-tenancy over physical isolation** — all clients share a single Cosmos DB account. Tenant isolation is enforced by `userId` as the partition key on every container, combined with API-layer auth (Azure AD B2C token validation on every request). No client can access another's data. Physical per-tenant accounts (one Cosmos account per client) are explicitly out of scope for v1 — they would multiply operational overhead linearly with client count and are only justified for enterprise compliance requirements.
 
@@ -311,4 +295,3 @@ testur.io/
 - Load / performance testing
 - Test case version history
 - Team / multi-user accounts
-- Multi-GPU / tensor-parallel inference
