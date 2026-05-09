@@ -20,7 +20,10 @@
       "Bash(git stash *)",
       "Bash(gh pr *)",
       "Bash(git cherry-pick *)",
-      "Skill(claude-api)"
+      "Skill(claude-api)",
+      "Bash(awk '{print $NF}')",
+      "Bash(grep -E \"\\\\.\\(cs|tsx\\)$\")",
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")"
     ]
   },
   "enableAllProjectMcpServers": true
