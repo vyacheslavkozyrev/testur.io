@@ -32,11 +32,7 @@ _Populated by `/test [####]`_
 
 ## Amendments
 
-_Populated when spec or plan changes after initial approval. Format:_
-
-```
-### Amendment — YYYY-MM-DD
-**Changed**: [which documents were updated]
-**Reason**: [why the change was needed]
-**Impact**: [phases that need to re-run as a result]
-```
+### Amendment — 2026-05-09
+**Changed**: `stories.md` and `plan.md` fully rewritten
+**Reason**: Clarified requirements introduced: richer 7-value `RunStatus` enum, SSE real-time updates (replacing polling), global quota bar (not per-card), card sort order by latest run activity, empty-state CTA panel, card navigation to `/projects/:id/history`, and navigation contract constants for feature 0011
+**Impact**: Implement phase must use the rewritten plan; no implementation work had begun so no rework is required
