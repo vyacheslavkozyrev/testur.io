@@ -4,8 +4,8 @@
 
 | Phase     | Status      | Date       | Notes |
 | --------- | ----------- | ---------- | ----- |
-| Specify   | Complete | 2026-05-09 |       |
-| Plan      | Pending  |            |       |
+| Specify   | ✅ Complete | 2026-05-09 | 8 stories, 46 ACs — template upload/replace/remove, tokens, attachments, rendering |
+| Plan      | ✅ Complete | 2026-05-09 | 32 tasks — Blob Storage, template service, renderer, API endpoints, UI components, tests |
 | Implement | Pending  |            |       |
 | Review    | Pending  |            |       |
 | Test      | Pending  |            |       |
