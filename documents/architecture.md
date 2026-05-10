@@ -1,8 +1,8 @@
 ---
 name: Testurio — Architecture
-version: 0.4.0
+version: 0.5.0
 status: draft
-updated: 2026-05-09
+updated: 2026-05-10
 tags: [technical, architecture]
 ---
 
@@ -48,25 +48,42 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
              │  - Projects     │    └──────────┬───────────┘
              │  - Test results │               │
              └─────────────────┘    ┌──────────▼───────────────────────────┐
-                                    │  .NET Worker Service                 │
-                                    │  (Azure Container Apps)              │
-                                    │                                      │
-                                    │  ┌──────────────┐                   │
-                                    │  │ Story Parser │                   │
-                                    │  ├──────────────┤                   │
-                                    │  │ Test Generator│─────────────────┐│
-                                    │  ├──────────────┤                  ││
-                                    │  │ Test Executor│  Playwright      ││
-                                    │  ├──────────────┤                  ││
-                                    │  │ Report Writer│  ADO / Jira API  ││
-                                    │  └──────────────┘                  ││
-                                    └────────────────────────────────────┼─┘
-                                                                         │ HTTPS (Anthropic SDK)
-                                           ┌─────────────────────────────▼──────────────┐
-                                           │  Anthropic Claude API                      │
-                                           │  Model: claude-opus-4-7                    │
-                                           │  Adaptive thinking enabled                 │
-                                           └────────────────────────────────────────────┘
+                                    │  .NET Worker Service                          │
+                                    │  (Azure Container Apps)                       │
+                                    │                                               │
+                                    │  ┌──────────────────────────────────────────┐ │
+                                    │  │ 1. StoryParser                           │ │
+                                    │  │    template check → AI fallback → warn   │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 2. AgentRouter                           │ │
+                                    │  │    resolve test_type → pick generators   │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 3. MemoryRetrieval                       │ │
+                                    │  │    embed story → vector search → top-3   │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 4. Generators  [parallel]                │ │
+                                    │  │    ApiTestGenerator + UiE2eTestGenerator  │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 5. ExecutorRouter                        │ │
+                                    │  │    HttpExecutor (api)                    │ │
+                                    │  │    PlaywrightExecutor (ui_e2e)           │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 6. ReportWriter                          │ │
+                                    │  │    AI verdict → post to ADO / Jira       │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 7. FeedbackLoop                          │ │
+                                    │  │    update passRate → soft-delete         │ │
+                                    │  ├──────────────────────────────────────────┤ │
+                                    │  │ 8. MemoryWriter                          │ │
+                                    │  │    embed + upsert effective scenarios    │ │
+                                    │  └──────────────────────────────────────────┘ │
+                                    └──────────────────────────────┬────────────────┘
+                                                                   │ HTTPS (Anthropic SDK)
+                                           ┌───────────────────────▼────────────────┐
+                                           │  Anthropic Claude API                  │
+                                           │  Model: claude-opus-4-7                │
+                                           │  Adaptive thinking enabled             │
+                                           └────────────────────────────────────────┘
 ```
 
 ---
@@ -140,13 +157,33 @@ No client-visible tenant ID is required — the authenticated identity is the te
 
 ## Testing Pipeline (async)
 
-1. Webhook received → job enqueued to Service Bus
-2. Worker dequeues job → loads project config from Cosmos
-3. **Story Parser** — extracts description + acceptance criteria
-4. **Test Generator** — calls Claude API (`claude-opus-4-7`), produces test scenarios
-5. **Test Executor** — runs scenarios against `product_url`, applying `auth_settings`; execution mode depends on `test_type`: HTTP client for API testing (POC), Playwright browser automation for UI E2E (MVP), or both
-6. **Report Writer** — posts results to ADO / Jira; writes result record to Cosmos
-7. Statistics become visible in the portal immediately
+Webhook received → Service Bus → Worker dequeues → 8-stage pipeline:
+
+1. **StoryParser** (`Testurio.Pipeline.StoryParser`)
+   Detects whether the raw story matches the Testurio template. If yes: parses directly into structured JSON (title, description, acceptance_criteria, entities, actions, edge_cases). If no: calls Claude to convert it, posts a warning comment to the originating ADO/Jira ticket, then continues with the converted story.
+
+2. **AgentRouter** (`Testurio.Pipeline.AgentRouter`)
+   Reads the project `test_types` config (`api | ui_e2e | both`), resolves which generator agents to invoke, and coordinates their parallel execution.
+
+3. **MemoryRetrieval** (`Testurio.Pipeline.MemoryRetrieval`)
+   Embeds the parsed story text via Azure OpenAI `text-embedding-3-small`, then runs a Cosmos DiskANN vector search scoped to `userId + testType`. Returns the top-3 most semantically similar past scenarios per enabled test type.
+
+4. **Generators — parallel** (`Testurio.Pipeline.Generators`)
+   MVP: `ApiTestGeneratorAgent` and `UiE2eTestGeneratorAgent` run in parallel. Each receives the parsed story, top-3 memory examples, and project config; calls Claude API with adaptive thinking; outputs a typed scenario JSON array.
+
+5. **ExecutorRouter** (`Testurio.Pipeline.Executors`)
+   Routes generated scenarios to the correct executor:
+   - `HttpExecutor` — API scenarios: sends HTTP requests, validates status codes, JSON paths, and headers
+   - `PlaywrightExecutor` — UI E2E scenarios: browser automation, captures screenshots at each step
+
+6. **ReportWriter** (`Testurio.Pipeline.ReportWriter`)
+   Claude writes a structured verdict report (PASSED / FAILED), listing each scenario with result, duration, and failure diffs. Posts it as a comment to the originating ADO/Jira ticket and writes a `TestResult` record to Cosmos.
+
+7. **FeedbackLoop** (`Testurio.Pipeline.FeedbackLoop`)
+   Updates `passRate` on any memory entries that were reused in this run (weighted average up on pass, down on fail). Triggers soft-delete (`isDeleted: true`) when `passRate < 0.5` after `runCount >= 5`.
+
+8. **MemoryWriter** (`Testurio.Pipeline.MemoryWriter`)
+   For all-pass runs: generates the story embedding and upserts the scenario to the Cosmos `TestMemory` container. Supports cross-project opt-in (anonymized `userId` via SHA-256 hash, `projectId: null`).
 
 ---
 
@@ -197,7 +234,7 @@ For environments where firewall rules cannot be modified, the project stores cre
 
 | Field                | Description                                                   |
 | -------------------- | ------------------------------------------------------------- |
-| `test_type`          | `api` \| `ui_e2e` \| `both` — controls which executor runs    |
+| `test_type`          | `api` \| `ui_e2e` \| `both` (MVP); extended to `smoke \| a11y \| visual \| performance` post-MVP |
 | `access_mode`        | `ip_allowlist` \| `basic_auth` \| `header_token`              |
 | `basic_auth_user`    | Username (Basic Auth mode only); stored in Key Vault          |
 | `basic_auth_pass`    | Password (Basic Auth mode only); stored in Key Vault          |
@@ -243,31 +280,73 @@ var response = await _client.Messages.Create(new MessageCreateParams
 ```
 testur.io/
 ├── source/
-│   ├── Testurio.Web/              # Next.js — public site + user portal
-│   ├── Testurio.Api/              # ASP.NET Core — portal API + webhooks
-│   ├── Testurio.Worker/           # .NET Worker Service — test pipeline
-│   ├── Testurio.Core/             # Domain models, interfaces
-│   ├── Testurio.Plugins/          # Pipeline stage implementations
-│   │   ├── StoryParserPlugin/
-│   │   ├── TestGeneratorPlugin/     # calls Claude API (claude-opus-4-7)
-│   │   ├── TestExecutorPlugin/      # HTTP client (API, POC) + Playwright (UI E2E, MVP)
-│   │   └── ReportWriterPlugin/      # ADO / Jira REST client
-│   └── Testurio.Infrastructure/   # Cosmos, Blob, Service Bus, Stripe clients
+│   ├── Testurio.Web/                        # Next.js — public site + user portal
+│   ├── Testurio.Api/                        # ASP.NET Core — portal API + webhooks
+│   ├── Testurio.Worker/                     # .NET Worker Service — orchestrator only, no pipeline logic
+│   ├── Testurio.Core/                       # Domain models, interfaces for all pipeline stages
+│   ├── Testurio.Infrastructure/             # Cosmos, Blob, Service Bus, Stripe, embedding client
+│   │
+│   ├── Testurio.Pipeline.StoryParser/       # Stage 1 — template detection, AI fallback, PM warning
+│   ├── Testurio.Pipeline.AgentRouter/       # Stage 2 — resolve test_type, coordinate parallel generators
+│   ├── Testurio.Pipeline.MemoryRetrieval/   # Stage 3 — embed story, vector search, return top-k examples
+│   ├── Testurio.Pipeline.Generators/        # Stage 4 — ApiTestGeneratorAgent, UiE2eTestGeneratorAgent
+│   ├── Testurio.Pipeline.Executors/         # Stage 5 — HttpExecutor, PlaywrightExecutor
+│   ├── Testurio.Pipeline.ReportWriter/      # Stage 6 — AI verdict, ADO / Jira post-back
+│   ├── Testurio.Pipeline.FeedbackLoop/      # Stage 7 — passRate updates, soft-delete
+│   └── Testurio.Pipeline.MemoryWriter/      # Stage 8 — embed + upsert effective scenarios
 ├── tests/
 │   ├── Testurio.UnitTests/
 │   └── Testurio.IntegrationTests/
 └── infra/
     ├── main.bicep
-    ├── modules/
-    │   ├── staticwebapp.bicep
-    │   ├── appservice.bicep
-    │   ├── servicebus.bicep
-    │   ├── cosmos.bicep
-    │   ├── adb2c.bicep
-    │   └── apim.bicep
     └── modules/
-        └── (one .bicep file per Azure service)
+        ├── staticwebapp.bicep
+        ├── appservice.bicep
+        ├── servicebus.bicep
+        ├── cosmos.bicep
+        ├── adb2c.bicep
+        └── apim.bicep
 ```
+
+Each `Testurio.Pipeline.*` project exposes a single interface defined in `Testurio.Core`. `Testurio.Worker` depends only on those interfaces; concrete implementations are registered via DI at startup.
+
+---
+
+## Memory Architecture
+
+### Cosmos DB Container: `TestMemory`
+
+Partition key: `userId`. Stores effective test scenarios with semantic embeddings used as few-shot examples in future generation calls.
+
+| Field | Description |
+|-------|-------------|
+| `id` | UUID v4 |
+| `userId` | B2C OID — partition key |
+| `projectId` | Project UUID, or `null` for cross-project shared memory |
+| `testType` | `api \| ui_e2e` (MVP); extended post-MVP |
+| `storyEmbedding` | `float32[1536]` — Azure OpenAI `text-embedding-3-small` |
+| `storyText` | Original parsed story text used for similarity search |
+| `scenarioText` | Serialized scenario JSON |
+| `passRate` | 0.0–1.0 — quality signal updated on each reuse |
+| `runCount` | Number of times this scenario has been reused |
+| `lastUsedAt` | ISO 8601 timestamp |
+| `isDeleted` | Soft-delete flag |
+
+**Vector index (DiskANN):** path `/storyEmbedding`, cosine distance, 1536 dimensions.
+
+### Memory Quality Loop
+
+| Event | Action |
+|-------|--------|
+| All assertions pass | `store_memory` called; `passRate = 1.0`, `runCount++` |
+| Scenario reused and passes | `passRate` weighted average updated upward |
+| Scenario reused and fails | `passRate` decremented |
+| `passRate < 0.5` after `runCount >= 5` | `isDeleted: true` |
+| Cross-project opt-in | `projectId: null`, `userId` SHA-256 hashed |
+
+### Embedding Service
+
+`IEmbeddingService` is registered in `Testurio.Infrastructure` and injected into both `MemoryRetrieval` and `MemoryWriter`. Calls Azure OpenAI `text-embedding-3-small` (1536 dimensions, cheap, no additional infrastructure).
 
 ---
 
@@ -292,6 +371,5 @@ testur.io/
 ## Non-Goals (v1)
 
 - Mobile app testing
-- Load / performance testing
 - Test case version history
 - Team / multi-user accounts
