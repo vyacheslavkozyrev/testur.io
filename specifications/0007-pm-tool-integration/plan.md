@@ -8,7 +8,7 @@ Add enum types and configuration records to model ADO and Jira connections. File
 ### T002 — [x] [Domain] Add PM tool API interfaces to Core
 Define service contracts for interacting with PM tools. Files: `source/Testurio.Core/Interfaces/IADOClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync), `source/Testurio.Core/Interfaces/IJiraClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync).
 
-### T003 — [Infra] Create ADO REST client implementation
+### T003 — [x] [Infra] Create ADO REST client implementation
 Implement Azure DevOps API client. Files: `source/Testurio.Infrastructure/ADO/ADOClient.cs` (full ADO REST v4.1 integration), `source/Testurio.Infrastructure/ADO/Models/ADOProjectResponse.cs`, `source/Testurio.Infrastructure/ADO/Models/ADOUserResponse.cs`.
 
 ### T004 — [Infra] Create Jira REST client implementation
