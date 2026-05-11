@@ -11,7 +11,7 @@ Define service contracts for interacting with PM tools. Files: `source/Testurio.
 ### T003 — [x] [Infra] Create ADO REST client implementation
 Implement Azure DevOps API client. Files: `source/Testurio.Infrastructure/ADO/ADOClient.cs` (full ADO REST v4.1 integration), `source/Testurio.Infrastructure/ADO/Models/ADOProjectResponse.cs`, `source/Testurio.Infrastructure/ADO/Models/ADOUserResponse.cs`.
 
-### T004 — [Infra] Create Jira REST client implementation
+### T004 — [x] [Infra] Create Jira REST client implementation
 Implement Jira API client. Files: `source/Testurio.Infrastructure/Jira/JiraAdditionalClient.cs` (extends existing JiraApiClient from 0004 with GetProjectAsync, TestConnectionAsync, DeregisterWebhookAsync), `source/Testurio.Infrastructure/Jira/Models/JiraProjectResponse.cs`.
 
 ### T005 — [Infra] Add webhook secret generation and storage
