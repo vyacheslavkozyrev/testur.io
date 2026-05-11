@@ -18,7 +18,7 @@
 - [x] T014 [UI] Create project delete confirmation dialog — `source/Testurio.Web/src/components/ProjectDeleteDialog/ProjectDeleteDialog.tsx`
 - [x] T015 [UI] Add project settings page — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [x] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
-- [ ] T017 [UI] Register routes — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T017 [UI] Register routes — `source/Testurio.Web/src/routes/routes.tsx`
 - [ ] T018 [Test] Backend unit tests — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
 - [ ] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
 - [ ] T020 [Test] Frontend component tests — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.test.tsx`
