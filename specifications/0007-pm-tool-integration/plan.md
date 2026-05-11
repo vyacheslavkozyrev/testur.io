@@ -29,13 +29,13 @@ Orchestrate PM tool configuration save, test, and removal. Files: `source/Testur
 ### T009 — [x] [App] Create DTOs for PM tool configuration
 Define request and response models. Files: `source/Testurio.Api/DTOs/SaveADOConnectionRequest.cs`, `source/Testurio.Api/DTOs/SaveJiraConnectionRequest.cs`, `source/Testurio.Api/DTOs/PMToolConnectionResponse.cs`, `source/Testurio.Api/DTOs/TestConnectionResponse.cs`, `source/Testurio.Api/DTOs/WebhookSetupResponse.cs`.
 
-### T010 — [API] Add PM tool connection endpoints
+### T010 — [x] [API] Add PM tool connection endpoints
 Create routes for configuration, testing, and removal. Files: `source/Testurio.Api/Program.cs` (add route group `/v1/projects/{projectId}/integrations` with POST/PUT/DELETE/GET and POST test), routing logic maps to `PMToolConnectionService`.
 
-### T011 — [API] Add webhook info endpoint
+### T011 — [x] [API] Add webhook info endpoint
 Create route to retrieve webhook URL and secret display state. Files: `source/Testurio.Api/Program.cs` (extend integrations group with GET `/webhook-setup` returning `WebhookSetupResponse`).
 
-### T012 — [API] Add integration status endpoint
+### T012 — [x] [API] Add integration status endpoint
 Create route to retrieve current PM tool integration state. Files: `source/Testurio.Api/Program.cs` (GET `/v1/projects/{projectId}/integrations` returning integration status, tool name, identifiers, auth method).
 
 ### T013 — [Config] Register PM tool clients and services in DI
