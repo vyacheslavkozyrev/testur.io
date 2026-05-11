@@ -41,7 +41,7 @@ Create route to retrieve current PM tool integration state. Files: `source/Testu
 ### T013 — [x] [Config] Register PM tool clients and services in DI
 Register all infrastructure and application services. Files: `source/Testurio.Api/Program.cs` and/or `source/Testurio.Infrastructure/DependencyInjection.cs` (AddScoped<IADOClient, ADOClient>(), AddScoped<IJiraClient, JiraAdditionalClient>(), AddScoped<IPMToolConnectionService, PMToolConnectionService>(), AddSingleton<WebhookSecretGenerator>()).
 
-### T014 — [UI] Create PM tool types and DTOs
+### T014 — [x] [UI] Create PM tool types and DTOs
 Define TypeScript interfaces matching backend models. Files: `source/Testurio.Web/src/types/pmTool.types.ts` (PMToolType, ADOConnection, JiraConnection, TestConnectionResult, WebhookSetupInfo, IntegrationStatus).
 
 ### T015 — [UI] Create PM tool API service
