@@ -57,7 +57,7 @@ describe('ADOConnectionForm', () => {
     expect(screen.getByLabelText(/Organization URL/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Project Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Team/i)).toBeInTheDocument();
-    expect(screen.getByText(/In Testing/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/"In Testing" Status Name/i)).toBeInTheDocument();
     expect(screen.getByText('Auth Method')).toBeInTheDocument();
   });
 
@@ -67,7 +67,7 @@ describe('ADOConnectionForm', () => {
         <ADOConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
       </Wrapper>,
     );
-    expect(screen.getByLabelText(/Personal Access Token/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Personal Access Token/, { selector: 'input' })).toBeInTheDocument();
   });
 
   it('shows validation error when Organization URL is missing on submit', async () => {
@@ -117,7 +117,7 @@ describe('ADOConnectionForm', () => {
     // Find the "In Testing" Status Name field by placeholder or label
     const inTestingFields = screen.getAllByRole('textbox');
     await user.type(inTestingFields[3], 'In Testing');
-    await user.type(screen.getByLabelText(/Personal Access Token/i), 'my-pat');
+    await user.type(screen.getByLabelText(/Personal Access Token/, { selector: 'input' }), 'my-pat');
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 

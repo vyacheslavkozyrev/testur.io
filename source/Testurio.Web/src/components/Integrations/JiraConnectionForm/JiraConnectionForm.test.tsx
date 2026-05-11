@@ -67,7 +67,7 @@ describe('JiraConnectionForm', () => {
       </Wrapper>,
     );
     expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/API Token/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^API Token/, { selector: 'input' })).toBeInTheDocument();
   });
 
   it('shows validation error when Base URL is missing on submit', async () => {
@@ -113,7 +113,7 @@ describe('JiraConnectionForm', () => {
     await user.type(screen.getByLabelText(/Base URL/i), 'https://myorg.atlassian.net');
     await user.type(screen.getByLabelText(/Project Key/i), 'PROJ');
     // Leave email empty
-    await user.type(screen.getByLabelText(/API Token/i), 'my-token');
+    await user.type(screen.getByLabelText(/^API Token/, { selector: 'input' }), 'my-token');
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => {
@@ -135,7 +135,7 @@ describe('JiraConnectionForm', () => {
     const textboxes = screen.getAllByRole('textbox');
     await user.type(textboxes[2], 'In Testing'); // inTestingStatus
     await user.type(screen.getByLabelText(/Email Address/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/API Token/i), 'my-token');
+    await user.type(screen.getByLabelText(/^API Token/, { selector: 'input' }), 'my-token');
 
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
 
