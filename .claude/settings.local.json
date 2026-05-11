@@ -19,13 +19,11 @@
       "Bash(powershell *)",
       "Bash(git stash *)",
       "Bash(gh pr *)",
-      "Bash(Remove-Item -Recurse -Force \"D:/projects/testur.io/source/Testurio.Core/obj\")",
-      "Bash(taskkill /F /IM dotnet.exe)",
-      "Bash(tasklist)",
-      "Bash(taskkill /F /IM dotnet.exe /T)",
-      "Bash(pkill -9 dotnet)",
-      "Bash(wmic process *)",
-      "Bash(git revert *)"
+      "Bash(git cherry-pick *)",
+      "Skill(claude-api)",
+      "Bash(awk '{print $NF}')",
+      "Bash(grep -E \"\\\\.\\(cs|tsx\\)$\")",
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")"
     ]
   },
   "enableAllProjectMcpServers": true

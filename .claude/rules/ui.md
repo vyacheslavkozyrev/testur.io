@@ -1,73 +1,233 @@
 # UI Rules — Testurio.Web (Next.js / React)
 
 ## Language
+TypeScript only — no `.js` files under `Testurio.Web/src`. Every file must have explicit types; avoid `any`.
 
-- TypeScript only — no `.js` files under `Testurio.Web/src`
+```tsx
+// ✅
+interface ProjectCardProps {
+  project: ProjectDto;
+  onDelete: (id: string) => void;
+}
+
+// ❌ — inferred any, no explicit return type
+const handler = (e) => setOpen(e.target.value);
+```
 
 ## Data Fetching
+All server state goes through React Query. No raw `fetch`/`axios` inside components. Every endpoint has an MSW mock handler.
 
-- Use **React Query** (`@tanstack/react-query`) for all server state — no raw `fetch`/`axios` calls inside components
-- Every API endpoint must have an **MSW** mock handler
+```ts
+// src/services/project/projectService.ts
+import apiClient from '@/services/apiClient';
+import type { ProjectDto, CreateProjectRequest } from '@/types/project.types';
+
+export const projectService = {
+  list:   ()                         => apiClient.get<ProjectDto[]>('/v1/projects').then(r => r.data),
+  get:    (id: string)               => apiClient.get<ProjectDto>(`/v1/projects/${id}`).then(r => r.data),
+  create: (body: CreateProjectRequest) => apiClient.post<ProjectDto>('/v1/projects', body).then(r => r.data),
+  delete: (id: string)               => apiClient.delete(`/v1/projects/${id}`),
+};
+```
+
+```ts
+// src/mocks/handlers/project.ts
+import { http, HttpResponse } from 'msw';
+import type { ProjectDto } from '@/types/project.types';
+
+const mockProject: ProjectDto = { id: '1', name: 'Demo', productUrl: 'https://example.com' };
+
+export const projectHandlers = [
+  http.get('/v1/projects',      () => HttpResponse.json([mockProject])),
+  http.get('/v1/projects/:id',  () => HttpResponse.json(mockProject)),
+  http.post('/v1/projects',     () => HttpResponse.json(mockProject, { status: 201 })),
+  http.delete('/v1/projects/:id', () => new HttpResponse(null, { status: 204 })),
+];
+```
 
 ## React Query
+All queries and mutations live in dedicated hooks under `src/hooks/`. Never call `useQuery`/`useMutation` directly inside a component.
 
-- All queries live in dedicated hooks under `src/hooks/` (e.g. `useEntity.ts`) — never call `useQuery`/`useMutation` directly inside components
-- Query keys must be arrays and defined as constants in the hook file: `const ENTITY_KEYS = { all: ['entity'] as const, detail: (id: string) => ['entity', id] as const }`
-- Always type the `useQuery` and `useMutation` generics explicitly: `useQuery<EntityDto[], ApiError>(...)`
-- Use `useMutation` for all write operations (create, update, delete); invalidate relevant query keys in `onSuccess`
-- Do not store server data in local `useState` — let React Query own it
+```ts
+// src/hooks/useProject.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { projectService } from '@/services/project/projectService';
+import type { ProjectDto, CreateProjectRequest } from '@/types/project.types';
+import type { ApiError } from '@/types/api.types';
+
+export const PROJECT_KEYS = {
+  all:    ['projects']              as const,
+  detail: (id: string) => ['projects', id] as const,
+};
+
+export function useProjects() {
+  return useQuery<ProjectDto[], ApiError>({
+    queryKey: PROJECT_KEYS.all,
+    queryFn:  projectService.list,
+  });
+}
+
+export function useProject(id: string) {
+  return useQuery<ProjectDto, ApiError>({
+    queryKey: PROJECT_KEYS.detail(id),
+    queryFn:  () => projectService.get(id),
+    enabled:  Boolean(id),
+  });
+}
+
+export function useCreateProject() {
+  const qc = useQueryClient();
+  return useMutation<ProjectDto, ApiError, CreateProjectRequest>({
+    mutationFn: projectService.create,
+    onSuccess:  () => qc.invalidateQueries({ queryKey: PROJECT_KEYS.all }),
+  });
+}
+
+export function useDeleteProject() {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: projectService.delete,
+    onSuccess:  () => qc.invalidateQueries({ queryKey: PROJECT_KEYS.all }),
+  });
+}
+```
+
+Never copy server data into `useState` — let React Query own it:
+
+```tsx
+// ❌
+const { data } = useProjects();
+const [projects, setProjects] = useState(data);  // stale copy
+
+// ✅
+const { data: projects, isPending, isError } = useProjects();
+```
 
 ## File Naming
-
-- `PascalCase` — components, pages
-- `camelCase` — services, hooks, types
+- `PascalCase` — components, pages: `ProjectCard.tsx`, `ProjectPage.tsx`
+- `camelCase` — services, hooks, types: `projectService.ts`, `useProject.ts`, `project.types.ts`
 
 ## useCallback
+Wrap handlers passed as props. Deps array must list every outer-scope value the function reads or writes:
 
-- Wrap event handlers and callbacks passed as props in `useCallback`
-- Deps array must list every value from the outer scope the function reads or writes
-- Do not wrap callbacks that are only used locally within the same component and never passed down
+```tsx
+// ✅ — passed as prop, deps complete
+const handleDelete = useCallback((id: string) => {
+  deleteProject.mutate(id);
+}, [deleteProject]);
+
+return <ProjectList onDelete={handleDelete} />;
+
+// ❌ — no need to wrap; used only locally, never passed down
+const toggleOpen = () => setOpen(o => !o);
+```
 
 ## useMemo
+Use for expensive derived values — filtered lists, formatted data, computed configs. Never for primitives:
 
-- Use `useMemo` for expensive derived values (filtered lists, formatted data, computed configs)
-- Do not use `useMemo` for primitive values or simple property reads — the overhead outweighs the benefit
-- Deps array must be exhaustive — same rules as `useCallback`
+```tsx
+// ✅ — filters a potentially large list
+const activeProjects = useMemo(
+  () => projects?.filter(p => p.status === 'active') ?? [],
+  [projects],
+);
+
+// ❌ — primitive; useMemo overhead exceeds benefit
+const label = useMemo(() => project.name.toUpperCase(), [project.name]);
+```
 
 ## MUI
+Import from specific subpaths — never barrel imports. Use `theme` for all spacing, palette, and typography:
 
-- Use **MUI (Material UI)** component library — do not bring in other UI component libraries
-- Import from specific subpaths to keep bundle size small: `import Button from '@mui/material/Button'`, not `import { Button } from '@mui/material'`
-- Use the MUI `theme` for all spacing, palette, and typography values — no hardcoded px/color values
-- Extend the theme in one place (`src/theme/theme.ts`) — never patch it inside components
+```tsx
+// ✅
+import Box      from '@mui/material/Box';
+import Button   from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+
+// ❌
+import { Box, Button, Typography } from '@mui/material';
+```
+
+Extend the theme in one place:
+
+```ts
+// src/theme/theme.ts
+import { createTheme } from '@mui/material/styles';
+
+export const theme = createTheme({
+  palette: {
+    primary: { main: '#1976d2' },
+  },
+  typography: {
+    fontFamily: 'Inter, sans-serif',
+  },
+});
+```
+
+Never call `createTheme` or override theme tokens inside a component.
 
 ## Styles
+Define styles as a `getStyles` function using `useMemo`, co-located at the bottom of the file. Call it at the top of the component:
 
-- Define styles as a separate `getStyles` function using `useMemo`, co-located at the bottom of the component file:
-  ```tsx
-  const getStyles = (theme: Theme) =>
-    useMemo(
-      () => ({
-        root: { padding: theme.spacing(2) },
-      }),
-      [theme],
-    );
-  ```
-- Call it at the top of the component: `const styles = getStyles(theme)`
-- **No inline styles** — `style={{ ... }}` props are forbidden
-- Use `sx` prop only for one-off overrides that are not worth extracting; never for layout or repeated patterns
+```tsx
+import { useTheme, type Theme } from '@mui/material/styles';
+import { useMemo } from 'react';
+
+export default function ProjectCard({ project }: ProjectCardProps) {
+  const theme = useTheme();
+  const styles = getStyles(theme);
+
+  return (
+    <Box sx={styles.root}>
+      <Typography sx={styles.title}>{project.name}</Typography>
+    </Box>
+  );
+}
+
+// co-located at the bottom of the file
+const getStyles = (theme: Theme) =>
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useMemo(() => ({
+    root:  { padding: theme.spacing(2), borderRadius: theme.shape.borderRadius },
+    title: { ...theme.typography.h6, color: theme.palette.text.primary },
+  }), [theme]);
+```
+
+No `style={{ ... }}` props. Use `sx` only for true one-off overrides, never for layout or repeated patterns.
 
 ## Localization
+All user-visible strings go through `i18next`. No hardcoded string literals in components or pages:
 
-- All user-visible strings must use `i18next` — no hardcoded string literals in components or pages
-- Translation files live in `src/locales/<lang>/<feature>.json` — one file per feature per language
-- English (`en`) is the source language; add keys there first before adding other languages
-- Key naming: `<feature>.<context>.<element>` — e.g. `testRun.table.emptyState`
-- Never reuse keys across features — each feature owns its namespace
-- Plurals and interpolations must use i18next standard format (`_one`/`_other`, `{{variable}}`)
+```json
+// src/locales/en/project.json
+{
+  "list": {
+    "title": "Projects",
+    "emptyState": "No projects yet. Create one to get started.",
+    "deleteConfirm": "Delete \"{{name}}\"?"
+  },
+  "status": {
+    "active_one":  "{{count}} active project",
+    "active_other": "{{count}} active projects"
+  }
+}
+```
+
+```tsx
+// inside a component
+import { useTranslation } from 'react-i18next';
+
+const { t } = useTranslation('project');
+
+<Typography>{t('list.title')}</Typography>
+<Typography>{t('list.deleteConfirm', { name: project.name })}</Typography>
+<Typography>{t('status.active', { count: activeProjects.length })}</Typography>
+```
+
+Key naming: `<feature>.<context>.<element>`. Never reuse keys across features.
 
 ## Per-Feature File Order
-
 Implement in this sequence:
 
 1. `src/types/entity.types.ts`
