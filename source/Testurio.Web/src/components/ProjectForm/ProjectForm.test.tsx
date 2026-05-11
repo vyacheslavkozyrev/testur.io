@@ -60,7 +60,7 @@ describe('ProjectForm', () => {
         <ProjectForm isSubmitting={false} onSubmit={onSubmit} />
       </Wrapper>,
     );
-    expect(screen.getByText('Create Project')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Create Project' })).toBeInTheDocument();
   });
 
   it('renders edit title and pre-fills fields when project is provided', () => {
@@ -70,7 +70,7 @@ describe('ProjectForm', () => {
         <ProjectForm project={mockProject} isSubmitting={false} onSubmit={onSubmit} />
       </Wrapper>,
     );
-    expect(screen.getByText('Edit Project')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Edit Project' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Existing Project')).toBeInTheDocument();
     expect(screen.getByDisplayValue('https://existing.example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Smoke tests.')).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe('ProjectForm', () => {
       </Wrapper>,
     );
 
-    fireEvent.click(screen.getByText('Create Project'));
+    fireEvent.click(screen.getByRole('button', { name: /create project/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Project name is required.')).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe('ProjectForm', () => {
     await user.type(screen.getByLabelText('Project Name *'), 'My Project');
     await user.type(screen.getByLabelText('Product URL *'), 'not-a-url');
     await user.type(screen.getByLabelText('Testing Strategy *'), 'Some strategy');
-    fireEvent.click(screen.getByText('Create Project'));
+    fireEvent.click(screen.getByRole('button', { name: /create project/i }));
 
     await waitFor(() => {
       expect(screen.getByText('Product URL must be a valid URL starting with http:// or https://.'))
@@ -125,7 +125,7 @@ describe('ProjectForm', () => {
     await user.type(screen.getByLabelText('Project Name *'), 'New Project');
     await user.type(screen.getByLabelText('Product URL *'), 'https://app.example.com');
     await user.type(screen.getByLabelText('Testing Strategy *'), 'API contracts only.');
-    fireEvent.click(screen.getByText('Create Project'));
+    fireEvent.click(screen.getByRole('button', { name: /create project/i }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({
@@ -157,7 +157,7 @@ describe('ProjectForm', () => {
       </Wrapper>,
     );
 
-    await user.click(screen.getByText('Cancel'));
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
