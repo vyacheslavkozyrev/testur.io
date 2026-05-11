@@ -47,7 +47,7 @@ public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
         var body = await reader.ReadToEndAsync(httpContext.RequestAborted);
         httpContext.Request.Body.Position = 0;
 
-        var secret = await _secretResolver.ResolveAsync(project.JiraWebhookSecretRef, httpContext.RequestAborted);
+        var secret = await _secretResolver.ResolveAsync(project.JiraWebhookSecretRef!, httpContext.RequestAborted);
         var isValid = signatureHeader.Any(v => IsValidSignature(body, v!.Trim(), secret));
         if (!isValid)
         {

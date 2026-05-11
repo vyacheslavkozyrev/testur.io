@@ -53,3 +53,15 @@ Wait for the review, all automated fixes, and the commit to complete before proc
 Spawn the `test` agent (`.claude/agents/test.md`) with the feature number as the prompt.
 
 Wait for the agent to complete. Report the final test outcome to the user. If tests fail, surface the failures clearly and stop — do not mark the pipeline as complete until all tests pass.
+
+## Step 6 — Open Pull Request
+
+Once all tests pass, open a pull request from the feature branch to `develop`:
+
+1. Push the feature branch: `git push -u origin <branch-name>`
+2. Create the PR with `gh pr create --base develop --head <branch-name>` using a body that includes:
+   - A **Summary** section (bullet points of what was built)
+   - A **Test plan** section (checklist of tests run and their outcome, plus any deferred items)
+   - A **Related** section noting upstream dependencies and downstream features that depend on this one
+
+Return the PR URL to the user.

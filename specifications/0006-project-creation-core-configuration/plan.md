@@ -2,27 +2,27 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `Project` entity — `source/Testurio.Core/Entities/Project.cs`
-- [ ] T002 [Domain] Add `IProjectRepository` interface — `source/Testurio.Core/Interfaces/IProjectRepository.cs`
-- [ ] T003 [Infra] Implement `ProjectRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
-- [ ] T004 [Infra] Register repository in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T005 [Infra] Add Key Vault namespace provisioning helper — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
-- [ ] T006 [App] Create `ProjectDto` and `CreateProjectRequest` / `UpdateProjectRequest` — `source/Testurio.Api/DTOs/ProjectDto.cs`
-- [ ] T007 [App] Implement `ProjectService` (CRUD + soft delete, Key Vault namespace init) — `source/Testurio.Api/Services/ProjectService.cs`
-- [ ] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
-- [ ] T009 [UI] Add API types — `source/Testurio.Web/src/types/project.types.ts`
-- [ ] T010 [UI] Add API client — `source/Testurio.Web/src/services/project/projectService.ts`
-- [ ] T011 [UI] Add React Query hook — `source/Testurio.Web/src/hooks/useProject.ts`
-- [ ] T012 [UI] Add MSW mock handler — `source/Testurio.Web/src/mocks/handlers/project.ts`
-- [ ] T013 [UI] Create project form component (shared create/edit) — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
-- [ ] T014 [UI] Create project delete confirmation dialog — `source/Testurio.Web/src/components/ProjectDeleteDialog/ProjectDeleteDialog.tsx`
-- [ ] T015 [UI] Add project settings page — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
-- [ ] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
-- [ ] T017 [UI] Register routes — `source/Testurio.Web/src/routes/routes.tsx`
-- [ ] T018 [Test] Backend unit tests — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
-- [ ] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
-- [ ] T020 [Test] Frontend component tests — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.test.tsx`
-- [ ] T021 [Test] E2E tests — `source/Testurio.Web/e2e/project-creation.spec.ts`
+- [x] T001 [Domain] Create `Project` entity — `source/Testurio.Core/Entities/Project.cs`
+- [x] T002 [Domain] Add `IProjectRepository` interface — `source/Testurio.Core/Repositories/IProjectRepository.cs`
+- [x] T003 [Infra] Implement `ProjectRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Cosmos/ProjectRepository.cs`
+- [x] T004 [Infra] Register repository in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T005 [Infra] Add Key Vault namespace provisioning helper — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
+- [x] T006 [App] Create `ProjectDto` and `CreateProjectRequest` / `UpdateProjectRequest` — `source/Testurio.Api/DTOs/ProjectDto.cs`
+- [x] T007 [App] Implement `ProjectService` (CRUD + soft delete, Key Vault namespace init) — `source/Testurio.Api/Services/ProjectService.cs`
+- [x] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
+- [x] T009 [UI] Add API types — `source/Testurio.Web/src/types/project.types.ts`
+- [x] T010 [UI] Add API client — `source/Testurio.Web/src/services/project/projectService.ts`
+- [x] T011 [UI] Add React Query hook — `source/Testurio.Web/src/hooks/useProject.ts`
+- [x] T012 [UI] Add MSW mock handler — `source/Testurio.Web/src/mocks/handlers/project.ts`
+- [x] T013 [UI] Create project form component (shared create/edit) — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
+- [x] T014 [UI] Create project delete confirmation dialog — `source/Testurio.Web/src/components/ProjectDeleteDialog/ProjectDeleteDialog.tsx`
+- [x] T015 [UI] Add project settings page — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
+- [x] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
+- [x] T017 [UI] Register routes — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T018 [Test] Backend unit tests — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
+- [x] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
+- [x] T020 [Test] Frontend component tests — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.test.tsx`
+- [ ] T021 [Test] E2E tests — `source/Testurio.Web/e2e/project-creation.spec.ts` _(out of scope for this implement phase)_
 
 ## Rationale
 

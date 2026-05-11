@@ -77,7 +77,7 @@ public partial class ReportWriterPlugin
         string apiToken;
         try
         {
-            apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
+            apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef!, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -87,9 +87,9 @@ public partial class ReportWriterPlugin
         }
 
         var commentResult = await _jiraApiClient.PostCommentAsync(
-            project.JiraBaseUrl,
+            project.JiraBaseUrl!,
             run.JiraIssueKey,
-            project.JiraEmail,
+            project.JiraEmail!,
             apiToken,
             commentBody,
             cancellationToken);

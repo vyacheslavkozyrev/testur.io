@@ -58,6 +58,7 @@ public class TestRunPipelineTests
         UserId = "user1",
         Name = "Test Project",
         ProductUrl = "https://app.example.com",
+        TestingStrategy = "API and UI tests",
         JiraBaseUrl = "https://example.atlassian.net",
         JiraProjectKey = "PROJ",
         JiraEmail = "qa@example.com",
