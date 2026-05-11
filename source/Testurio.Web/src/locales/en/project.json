@@ -29,6 +29,9 @@
       "cancel": "Cancel"
     }
   },
+  "create": {
+    "pageTitle": "New Project"
+  },
   "settings": {
     "title": "{{name}} — Settings",
     "loadError": "Failed to load project. Please try again.",

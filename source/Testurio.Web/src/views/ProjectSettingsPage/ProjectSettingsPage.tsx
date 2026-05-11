@@ -1,5 +1,7 @@
+'use client';
+
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -13,17 +15,18 @@ import { useProject, useUpdateProject, useDeleteProject } from '@/hooks/useProje
 import type { UpdateProjectRequest } from '@/types/project.types';
 
 export default function ProjectSettingsPage() {
-  const { projectId = '' } = useParams<{ projectId: string }>();
+  const { projectId } = useParams<{ projectId: string }>();
   const { t } = useTranslation('project');
-  const navigate = useNavigate();
+  const router = useRouter();
   const theme = useTheme();
   const styles = getStyles(theme);
 
-  const { data: project, isPending, isError } = useProject(projectId);
+  const { data: project, isPending, isError } = useProject(projectId ?? '');
   const updateProject = useUpdateProject(projectId);
   const deleteProject = useDeleteProject();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
 
   const handleUpdate = useCallback(
     (data: UpdateProjectRequest) => {
@@ -36,10 +39,10 @@ export default function ProjectSettingsPage() {
     deleteProject.mutate(projectId, {
       onSuccess: () => {
         setDeleteDialogOpen(false);
-        navigate('/projects');
+        router.push('/projects');
       },
     });
-  }, [deleteProject, projectId, navigate]);
+  }, [deleteProject, projectId, router]);
 
   const handleDeleteCancel = useCallback(() => {
     setDeleteDialogOpen(false);
