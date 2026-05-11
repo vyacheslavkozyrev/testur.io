@@ -50,7 +50,7 @@ Implement client-side API calls. Files: `source/Testurio.Web/src/services/pmTool
 ### T016 — [x] [UI] Create MSW mock handlers for PM tool endpoints
 Mock backend responses for development and testing. Files: `source/Testurio.Web/src/mocks/handlers/pmTool.ts` (handlers for all PM tool endpoints with realistic responses and error scenarios).
 
-### T017 — [UI] Create React Query hooks for PM tool management
+### T017 — [x] [UI] Create React Query hooks for PM tool management
 Implement query and mutation hooks. Files: `source/Testurio.Web/src/hooks/usePMToolConnection.ts` (useIntegrationStatus, useSaveADOConnection, useSaveJiraConnection, useTestConnection, useRemoveConnection, useWebhookSetup, useRegenerateWebhookSecret, PM_TOOL_KEYS), follow React Query v5 patterns with proper cache invalidation.
 
 ### T018 — [UI] Create ADO connection form component
