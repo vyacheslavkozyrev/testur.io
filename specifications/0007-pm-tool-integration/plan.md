@@ -44,7 +44,7 @@ Register all infrastructure and application services. Files: `source/Testurio.Ap
 ### T014 — [x] [UI] Create PM tool types and DTOs
 Define TypeScript interfaces matching backend models. Files: `source/Testurio.Web/src/types/pmTool.types.ts` (PMToolType, ADOConnection, JiraConnection, TestConnectionResult, WebhookSetupInfo, IntegrationStatus).
 
-### T015 — [UI] Create PM tool API service
+### T015 — [x] [UI] Create PM tool API service
 Implement client-side API calls. Files: `source/Testurio.Web/src/services/pmTool/pmToolService.ts` (saveADOConnection, saveJiraConnection, testConnection, removeConnection, getWebhookSetup, getIntegrationStatus), all methods use apiClient with proper error handling.
 
 ### T016 — [UI] Create MSW mock handlers for PM tool endpoints
