@@ -17,7 +17,7 @@ Implement Jira API client. Files: `source/Testurio.Infrastructure/Jira/JiraAddit
 ### T005 — [x] [Infra] Add webhook secret generation and storage
 Create utility for generating and persisting webhook secrets. Files: `source/Testurio.Infrastructure/Security/WebhookSecretGenerator.cs` (GenerateSecret(), ValidateSignature()), register in DI.
 
-### T006 — [Infra] Extend ProjectRepository for PM tool queries
+### T006 — [x] [Infra] Extend ProjectRepository for PM tool queries
 Add specialized queries for retrieving PM tool config. Files: `source/Testurio.Infrastructure/Cosmos/ProjectRepository.cs` (add GetByProjectIdAndUserIdAsync if not present, ensure partition-key enforcement).
 
 ### T007 — [App] Create PM tool connection validator
