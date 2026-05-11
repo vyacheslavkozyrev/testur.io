@@ -7,6 +7,8 @@ public class Project
     public required string Name { get; set; }
     public required string ProductUrl { get; set; }
     public required string TestingStrategy { get; set; }
+    /// <summary>Optional free-text prompt appended after the testing strategy when calling the TestGenerator. Null means no custom guidance.</summary>
+    public string? CustomPrompt { get; set; }
     public bool IsDeleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

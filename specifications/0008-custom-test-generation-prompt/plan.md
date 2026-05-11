@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `customPrompt` nullable string field to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
+- [x] T001 [Domain] Add `customPrompt` nullable string field to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
 - [ ] T002 [Infra] Update Cosmos DB project document mapping to include `customPrompt` — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
 - [ ] T003 [App] Update `CreateProjectRequest` and `UpdateProjectRequest` DTOs with optional `customPrompt` field (max 5,000 chars) — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [ ] T004 [App] Update `ProjectService.CreateAsync` and `ProjectService.UpdateAsync` to persist `customPrompt` — `source/Testurio.Api/Services/ProjectService.cs`
