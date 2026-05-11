@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `Project` entity — `source/Testurio.Core/Entities/Project.cs`
+- [x] T001 [Domain] Create `Project` entity — `source/Testurio.Core/Entities/Project.cs`
 - [ ] T002 [Domain] Add `IProjectRepository` interface — `source/Testurio.Core/Interfaces/IProjectRepository.cs`
 - [ ] T003 [Infra] Implement `ProjectRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
 - [ ] T004 [Infra] Register repository in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`

@@ -84,7 +84,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     {
         // Resolve the secret before writing the TestRun — a Key Vault failure leaves no orphaned record
         // and Jira will re-deliver the webhook so the operation can be retried.
-        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
+        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef!, cancellationToken);
 
         var testRun = new TestRun
         {
@@ -98,7 +98,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         await _testRunRepository.CreateAsync(testRun, cancellationToken);
         var comment = $"Testurio skipped this test run because the story is missing: {missingParts}. Please update the story and move it back to \"In Testing\" to trigger a new run.";
         var posted = await _jiraApiClient.PostCommentAsync(
-            project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
+            project.JiraBaseUrl!, issue.Key, project.JiraEmail!, apiToken, comment, cancellationToken);
         if (!posted.IsSuccess)
             LogCommentPostFailed(_logger, issue.Key, project.Id);
 
