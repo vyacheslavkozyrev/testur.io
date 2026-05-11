@@ -34,7 +34,10 @@ export default function ProjectSettingsPage() {
 
   const handleDeleteConfirm = useCallback(() => {
     deleteProject.mutate(projectId, {
-      onSuccess: () => navigate('/projects'),
+      onSuccess: () => {
+        setDeleteDialogOpen(false);
+        navigate('/projects');
+      },
     });
   }, [deleteProject, projectId, navigate]);
 

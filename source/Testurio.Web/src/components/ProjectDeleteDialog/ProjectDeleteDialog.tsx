@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -25,16 +24,8 @@ export default function ProjectDeleteDialog({
 }: ProjectDeleteDialogProps) {
   const { t } = useTranslation('project');
 
-  const handleConfirm = useCallback(() => {
-    onConfirm();
-  }, [onConfirm]);
-
-  const handleCancel = useCallback(() => {
-    onCancel();
-  }, [onCancel]);
-
   return (
-    <Dialog open={open} onClose={isDeleting ? undefined : handleCancel} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={isDeleting ? undefined : onCancel} maxWidth="xs" fullWidth>
       <DialogTitle>{t('deleteDialog.title')}</DialogTitle>
       <DialogContent>
         <DialogContentText>
@@ -42,11 +33,11 @@ export default function ProjectDeleteDialog({
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel} disabled={isDeleting}>
+        <Button onClick={onCancel} disabled={isDeleting}>
           {t('deleteDialog.actions.cancel')}
         </Button>
         <Button
-          onClick={handleConfirm}
+          onClick={onConfirm}
           color="error"
           variant="contained"
           disabled={isDeleting}

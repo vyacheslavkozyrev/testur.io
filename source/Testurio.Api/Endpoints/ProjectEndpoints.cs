@@ -66,23 +66,29 @@ public static class ProjectEndpoints
         CancellationToken cancellationToken)
     {
         var userId = user.GetUserId();
-        var updated = await projectService.UpdateAsync(userId, projectId, request, cancellationToken);
-        return updated is null
-            ? TypedResults.NotFound()
-            : TypedResults.Ok(updated);
+        var (result, dto) = await projectService.UpdateAsync(userId, projectId, request, cancellationToken);
+        return result switch
+        {
+            ProjectOperationResult.Forbidden => TypedResults.Forbid(),
+            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
+            _                                => TypedResults.Ok(dto!),
+        };
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteProjectAsync(
+    private static async Task<Results<NoContent, NotFound, ForbidHttpResult>> DeleteProjectAsync(
         string projectId,
         ClaimsPrincipal user,
         IProjectService projectService,
         CancellationToken cancellationToken)
     {
         var userId = user.GetUserId();
-        var deleted = await projectService.DeleteAsync(userId, projectId, cancellationToken);
-        return deleted
-            ? TypedResults.NoContent()
-            : TypedResults.NotFound();
+        var result = await projectService.DeleteAsync(userId, projectId, cancellationToken);
+        return result switch
+        {
+            ProjectOperationResult.Forbidden => TypedResults.Forbid(),
+            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
+            _                                => TypedResults.NoContent(),
+        };
     }
 }
 

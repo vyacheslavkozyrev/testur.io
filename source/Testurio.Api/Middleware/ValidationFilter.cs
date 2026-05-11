@@ -11,19 +11,24 @@ internal sealed class ValidationFilter<T> : IEndpointFilter
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
     {
         var target = ctx.Arguments.OfType<T>().FirstOrDefault();
-        if (target is not null)
-        {
-            var errors = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(target, new ValidationContext(target), errors, validateAllProperties: true))
-            {
-                var problemErrors = errors
-                    .GroupBy(e => string.Join(",", e.MemberNames))
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(e => e.ErrorMessage ?? "Invalid value.").ToArray());
 
-                return TypedResults.ValidationProblem(problemErrors);
-            }
+        // If the body could not be bound at all, reject immediately with a descriptive error.
+        if (target is null)
+        {
+            return TypedResults.ValidationProblem(
+                new Dictionary<string, string[]> { ["body"] = ["Request body is required."] });
+        }
+
+        var errors = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(target, new ValidationContext(target), errors, validateAllProperties: true))
+        {
+            var problemErrors = errors
+                .GroupBy(e => string.Join(",", e.MemberNames))
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage ?? "Invalid value.").ToArray());
+
+            return TypedResults.ValidationProblem(problemErrors);
         }
 
         return await next(ctx);

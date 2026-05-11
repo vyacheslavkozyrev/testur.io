@@ -164,6 +164,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     {
         var existing = MakeProject();
         _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         _factory.ProjectRepoMock
@@ -184,7 +187,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     public async Task UpdateProject_Returns404_WhenNotFound()
     {
         _factory.ProjectRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByProjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
         var client = CreateAuthenticatedClient();
@@ -194,12 +197,30 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateProject_Returns403_WhenProjectBelongsToDifferentUser()
+    {
+        var otherUserProject = MakeProject(userId: "other-user-oid");
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var client = CreateAuthenticatedClient();
+        var request = new UpdateProjectRequest("X", "https://x.com", "Y");
+        var response = await client.PutAsJsonAsync("/v1/projects/proj-001", request);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ─── DELETE /v1/projects/{id} ────────────────────────────────────────────
 
     [Fact]
     public async Task DeleteProject_Returns204_WhenDeleted()
     {
         var existing = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
         _factory.ProjectRepoMock
             .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
@@ -217,13 +238,27 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     public async Task DeleteProject_Returns404_WhenNotFound()
     {
         _factory.ProjectRepoMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByProjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
         var client = CreateAuthenticatedClient();
         var response = await client.DeleteAsync("/v1/projects/does-not-exist");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteProject_Returns403_WhenProjectBelongsToDifferentUser()
+    {
+        var otherUserProject = MakeProject(userId: "other-user-oid");
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.DeleteAsync("/v1/projects/proj-001");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     // ─── Auth guard ──────────────────────────────────────────────────────────

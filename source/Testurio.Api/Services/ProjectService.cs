@@ -6,18 +6,34 @@ using Testurio.Infrastructure.KeyVault;
 
 namespace Testurio.Api.Services;
 
+/// <summary>
+/// Discriminated result for service operations that must distinguish
+/// "not found" from "found but belongs to a different user".
+/// </summary>
+public enum ProjectOperationResult
+{
+    Success,
+    NotFound,
+    Forbidden,
+}
+
 public interface IProjectService
 {
     Task<IReadOnlyList<ProjectDto>> ListAsync(string userId, CancellationToken cancellationToken = default);
     Task<ProjectDto?> GetAsync(string userId, string projectId, CancellationToken cancellationToken = default);
     Task<ProjectDto> CreateAsync(string userId, CreateProjectRequest request, CancellationToken cancellationToken = default);
-    Task<ProjectDto?> UpdateAsync(string userId, string projectId, UpdateProjectRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates a project's core fields.
+    /// Returns <c>null</c> on Success, and the result discriminator for NotFound / Forbidden.
+    /// </summary>
+    Task<(ProjectOperationResult Result, ProjectDto? Dto)> UpdateAsync(string userId, string projectId, UpdateProjectRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Soft-deletes the project by setting isDeleted = true.
-    /// Returns <c>false</c> when the project does not exist or belongs to another user.
+    /// Returns the result discriminator so callers can return the correct HTTP status.
     /// </summary>
-    Task<bool> DeleteAsync(string userId, string projectId, CancellationToken cancellationToken = default);
+    Task<ProjectOperationResult> DeleteAsync(string userId, string projectId, CancellationToken cancellationToken = default);
 }
 
 public partial class ProjectService : IProjectService
@@ -63,11 +79,21 @@ public partial class ProjectService : IProjectService
         return ToDto(created);
     }
 
-    public async Task<ProjectDto?> UpdateAsync(string userId, string projectId, UpdateProjectRequest request, CancellationToken cancellationToken = default)
+    public async Task<(ProjectOperationResult Result, ProjectDto? Dto)> UpdateAsync(string userId, string projectId, UpdateProjectRequest request, CancellationToken cancellationToken = default)
     {
+        // First check if the project exists at all (cross-partition lookup) so we can
+        // distinguish "not found" from "belongs to a different user" (AC-018).
+        var anyProject = await _projectRepository.GetByProjectIdAsync(projectId, cancellationToken);
+        if (anyProject is null)
+            return (ProjectOperationResult.NotFound, null);
+
+        if (anyProject.UserId != userId)
+            return (ProjectOperationResult.Forbidden, null);
+
+        // Project belongs to the requesting user — load it via the partition-scoped path for correctness.
         var existing = await _projectRepository.GetByIdAsync(userId, projectId, cancellationToken);
         if (existing is null)
-            return null;
+            return (ProjectOperationResult.NotFound, null); // soft-deleted between the two reads
 
         existing.Name = request.Name;
         existing.ProductUrl = request.ProductUrl;
@@ -76,21 +102,30 @@ public partial class ProjectService : IProjectService
 
         var updated = await _projectRepository.UpdateAsync(existing, cancellationToken);
         LogProjectUpdated(_logger, updated.Id, userId);
-        return ToDto(updated);
+        return (ProjectOperationResult.Success, ToDto(updated));
     }
 
-    public async Task<bool> DeleteAsync(string userId, string projectId, CancellationToken cancellationToken = default)
+    public async Task<ProjectOperationResult> DeleteAsync(string userId, string projectId, CancellationToken cancellationToken = default)
     {
+        // Cross-partition lookup to distinguish "not found" from "forbidden" (AC-031).
+        var anyProject = await _projectRepository.GetByProjectIdAsync(projectId, cancellationToken);
+        if (anyProject is null)
+            return ProjectOperationResult.NotFound;
+
+        if (anyProject.UserId != userId)
+            return ProjectOperationResult.Forbidden;
+
+        // Confirmed owner — load via partition-scoped path for the actual update.
         var existing = await _projectRepository.GetByIdAsync(userId, projectId, cancellationToken);
         if (existing is null)
-            return false;
+            return ProjectOperationResult.NotFound; // soft-deleted between the two reads
 
         existing.IsDeleted = true;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
         await _projectRepository.UpdateAsync(existing, cancellationToken);
         LogProjectDeleted(_logger, projectId, userId);
-        return true;
+        return ProjectOperationResult.Success;
     }
 
     private static ProjectDto ToDto(Project project) => new(

@@ -112,61 +112,95 @@ public class ProjectServiceTests
     // ─── UpdateAsync ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task UpdateAsync_ReturnsUpdatedDto_WhenProjectExists()
+    public async Task UpdateAsync_ReturnsSuccess_WhenProjectBelongsToUser()
     {
         var existing = MakeProject();
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
         _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project p, CancellationToken _) => p);
 
         var request = new UpdateProjectRequest("Updated Name", "https://updated.example.com", "E2E focus.");
-        var result = await _sut.UpdateAsync("user-1", "proj-1", request);
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
 
-        Assert.NotNull(result);
-        Assert.Equal("Updated Name", result!.Name);
-        Assert.Equal("https://updated.example.com", result.ProductUrl);
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.NotNull(dto);
+        Assert.Equal("Updated Name", dto!.Name);
+        Assert.Equal("https://updated.example.com", dto.ProductUrl);
     }
 
     [Fact]
-    public async Task UpdateAsync_ReturnsNull_WhenProjectNotFound()
+    public async Task UpdateAsync_ReturnsForbidden_WhenProjectBelongsToDifferentUser()
     {
-        _repository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        var otherUserProject = MakeProject(userId: "other-user");
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var request = new UpdateProjectRequest("X", "https://x.com", "Y");
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Forbidden, result);
+        Assert.Null(dto);
+        _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsNotFound_WhenProjectDoesNotExist()
+    {
+        _repository.Setup(r => r.GetByProjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
-        var result = await _sut.UpdateAsync("user-1", "proj-999", new UpdateProjectRequest("X", "https://x.com", "Y"));
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-999", new UpdateProjectRequest("X", "https://x.com", "Y"));
 
-        Assert.Null(result);
+        Assert.Equal(ProjectOperationResult.NotFound, result);
+        Assert.Null(dto);
     }
 
     // ─── DeleteAsync ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task DeleteAsync_SetsIsDeleted_AndReturnsTrue()
+    public async Task DeleteAsync_SetsIsDeleted_AndReturnsSuccess()
     {
         var existing = MakeProject();
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
         _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project p, CancellationToken _) => p);
 
-        var deleted = await _sut.DeleteAsync("user-1", "proj-1");
+        var result = await _sut.DeleteAsync("user-1", "proj-1");
 
-        Assert.True(deleted);
+        Assert.Equal(ProjectOperationResult.Success, result);
         _repository.Verify(r => r.UpdateAsync(
             It.Is<Project>(p => p.IsDeleted == true),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task DeleteAsync_ReturnsFalse_WhenProjectNotFound()
+    public async Task DeleteAsync_ReturnsForbidden_WhenProjectBelongsToDifferentUser()
     {
-        _repository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        var otherUserProject = MakeProject(userId: "other-user");
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var result = await _sut.DeleteAsync("user-1", "proj-1");
+
+        Assert.Equal(ProjectOperationResult.Forbidden, result);
+        _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsNotFound_WhenProjectDoesNotExist()
+    {
+        _repository.Setup(r => r.GetByProjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project?)null);
 
-        var deleted = await _sut.DeleteAsync("user-1", "proj-999");
+        var result = await _sut.DeleteAsync("user-1", "proj-999");
 
-        Assert.False(deleted);
+        Assert.Equal(ProjectOperationResult.NotFound, result);
         _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
