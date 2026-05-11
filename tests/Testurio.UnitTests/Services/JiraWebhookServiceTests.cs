@@ -41,6 +41,7 @@ public class JiraWebhookServiceTests
         UserId = "user1",
         Name = "Test Project",
         ProductUrl = "https://app.example.com",
+        TestingStrategy = "API and UI tests",
         JiraBaseUrl = "https://example.atlassian.net",
         JiraProjectKey = "PROJ",
         JiraEmail = "qa@example.com",
@@ -60,7 +61,7 @@ public class JiraWebhookServiceTests
     {
         return new JiraWebhookPayload
         {
-            WebhookEvent = "jira:issue_transitioned",
+            WebhookEvent = "jira:issue_updated",
             Issue = new JiraIssue
             {
                 Id = "10001",
@@ -73,14 +74,17 @@ public class JiraWebhookServiceTests
                     AcceptanceCriteria = ToJsonElement(acceptanceCriteria)
                 }
             },
-            Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
+            }
         };
     }
 
     [Fact]
     public async Task ProcessAsync_WhenEventIsNotTransitioned_ReturnsIgnored()
     {
-        var payload = new JiraWebhookPayload { WebhookEvent = "jira:issue_updated", Issue = MakePayload().Issue, Transition = MakePayload().Transition };
+        var payload = new JiraWebhookPayload { WebhookEvent = "jira:issue_created", Issue = MakePayload().Issue };
         var sut = CreateSut();
 
         var result = await sut.ProcessAsync(MakeProject(), payload);
@@ -190,36 +194,19 @@ public class JiraWebhookServiceTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenAcceptanceCriteriaMissing_SkipsAndPostsComment()
+    public async Task ProcessAsync_WhenAcceptanceCriteriaFieldNull_StillEnqueues()
     {
+        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync((TestRun?)null);
         _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
-        _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .ReturnsAsync(JiraCommentResult.Success());
+        _jobSender.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), default)).Returns(Task.CompletedTask);
 
         var payload = MakePayload(acceptanceCriteria: null);
         var sut = CreateSut();
 
         var result = await sut.ProcessAsync(MakeProject(), payload);
 
-        Assert.Equal(WebhookProcessResult.Skipped, result);
-        _jiraApiClient.Verify(c => c.PostCommentAsync(It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(), It.Is<string>(s => s.Contains("acceptance criteria")), default), Times.Once);
-    }
-
-    [Fact]
-    public async Task ProcessAsync_WhenBothMissing_SkipsAndPostsCommentMentioningBoth()
-    {
-        _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
-            .ReturnsAsync((TestRun r, CancellationToken _) => r);
-        _jiraApiClient.Setup(c => c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), default))
-            .ReturnsAsync(JiraCommentResult.Success());
-
-        var payload = MakePayload(description: null, acceptanceCriteria: null);
-        var sut = CreateSut();
-
-        var result = await sut.ProcessAsync(MakeProject(), payload);
-
-        Assert.Equal(WebhookProcessResult.Skipped, result);
-        _jiraApiClient.Verify(c => c.PostCommentAsync(It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(), It.Is<string>(s => s.Contains("description and acceptance criteria")), default), Times.Once);
+        Assert.Equal(WebhookProcessResult.Enqueued, result);
+        _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
     }
 }

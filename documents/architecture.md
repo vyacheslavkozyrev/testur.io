@@ -90,23 +90,24 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
 
 ## Azure Services Map
 
-| Purpose                      | Service                                 |
-| ---------------------------- | --------------------------------------- |
-| Public website + user portal | Azure Static Web Apps (Next.js / React) |
-| API (portal + webhooks)      | Azure App Service — ASP.NET Core        |
-| Authentication               | Azure AD B2C                            |
-| Payments                     | Stripe (external) via API               |
-| Message queue                | Azure Service Bus (Standard+)           |
-| Worker / test pipeline       | Azure Container Apps                    |
+| Purpose                      | Service                                  |
+| ---------------------------- | ---------------------------------------- |
+| Public website + user portal | Azure Static Web Apps (Next.js / React)  |
+| API (portal + webhooks)      | Azure App Service — ASP.NET Core         |
+| Authentication               | Azure AD B2C                             |
+| Payments                     | Stripe (external) via API                |
+| Message queue                | Azure Service Bus (Standard+)            |
+| Worker / test pipeline       | Azure Container Apps                     |
 | LLM inference                | Anthropic Claude API (`claude-opus-4-7`) |
-| Data storage                 | Azure Cosmos DB                         |
-| Screenshots / test artifacts | Azure Blob Storage                      |
-| Secrets                      | Azure Key Vault + Managed Identity      |
-| Worker egress / static IPs   | Azure NAT Gateway (fixed egress IPs)    |
-| Webhook auth / rate limiting | Azure API Management                    |
-| Observability                | Azure Application Insights              |
-| Container registry           | Azure Container Registry                |
-| CDN / edge                   | Azure Front Door                        |
+| Data storage                 | Azure Cosmos DB                          |
+| Screenshots / test artifacts | Azure Blob Storage                       |
+| Secrets                      | Azure Key Vault + Managed Identity       |
+| Worker egress / static IPs   | Azure NAT Gateway (fixed egress IPs)     |
+| Webhook auth / rate limiting | Azure API Management                     |
+| Memory / vector search       | Azure AI Search (vector index)           |
+| Observability                | Azure Application Insights               |
+| Container registry           | Azure Container Registry                 |
+| CDN / edge                   | Azure Front Door                         |
 
 ---
 
@@ -232,14 +233,14 @@ For environments where firewall rules cannot be modified, the project stores cre
 
 ### Project Config Fields
 
-| Field                | Description                                                   |
-| -------------------- | ------------------------------------------------------------- |
+| Field                | Description                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
 | `test_type`          | `api` \| `ui_e2e` \| `both` (MVP); extended to `smoke \| a11y \| visual \| performance` post-MVP |
-| `access_mode`        | `ip_allowlist` \| `basic_auth` \| `header_token`              |
-| `basic_auth_user`    | Username (Basic Auth mode only); stored in Key Vault          |
-| `basic_auth_pass`    | Password (Basic Auth mode only); stored in Key Vault          |
-| `header_token_name`  | Header name (header token mode only), e.g. `X-Testurio-Token` |
-| `header_token_value` | Header value (header token mode only); stored in Key Vault    |
+| `access_mode`        | `ip_allowlist` \| `basic_auth` \| `header_token`                                                 |
+| `basic_auth_user`    | Username (Basic Auth mode only); stored in Key Vault                                             |
+| `basic_auth_pass`    | Password (Basic Auth mode only); stored in Key Vault                                             |
+| `header_token_name`  | Header name (header token mode only), e.g. `X-Testurio-Token`                                    |
+| `header_token_value` | Header value (header token mode only); stored in Key Vault                                       |
 
 Credentials are never stored in Cosmos DB directly — only a Key Vault secret reference is persisted in the project document.
 
@@ -318,31 +319,31 @@ Each `Testurio.Pipeline.*` project exposes a single interface defined in `Testur
 
 Partition key: `userId`. Stores effective test scenarios with semantic embeddings used as few-shot examples in future generation calls.
 
-| Field | Description |
-|-------|-------------|
-| `id` | UUID v4 |
-| `userId` | B2C OID — partition key |
-| `projectId` | Project UUID, or `null` for cross-project shared memory |
-| `testType` | `api \| ui_e2e` (MVP); extended post-MVP |
+| Field            | Description                                             |
+| ---------------- | ------------------------------------------------------- |
+| `id`             | UUID v4                                                 |
+| `userId`         | B2C OID — partition key                                 |
+| `projectId`      | Project UUID, or `null` for cross-project shared memory |
+| `testType`       | `api \| ui_e2e` (MVP); extended post-MVP                |
 | `storyEmbedding` | `float32[1536]` — Azure OpenAI `text-embedding-3-small` |
-| `storyText` | Original parsed story text used for similarity search |
-| `scenarioText` | Serialized scenario JSON |
-| `passRate` | 0.0–1.0 — quality signal updated on each reuse |
-| `runCount` | Number of times this scenario has been reused |
-| `lastUsedAt` | ISO 8601 timestamp |
-| `isDeleted` | Soft-delete flag |
+| `storyText`      | Original parsed story text used for similarity search   |
+| `scenarioText`   | Serialized scenario JSON                                |
+| `passRate`       | 0.0–1.0 — quality signal updated on each reuse          |
+| `runCount`       | Number of times this scenario has been reused           |
+| `lastUsedAt`     | ISO 8601 timestamp                                      |
+| `isDeleted`      | Soft-delete flag                                        |
 
 **Vector index (DiskANN):** path `/storyEmbedding`, cosine distance, 1536 dimensions.
 
 ### Memory Quality Loop
 
-| Event | Action |
-|-------|--------|
-| All assertions pass | `store_memory` called; `passRate = 1.0`, `runCount++` |
-| Scenario reused and passes | `passRate` weighted average updated upward |
-| Scenario reused and fails | `passRate` decremented |
-| `passRate < 0.5` after `runCount >= 5` | `isDeleted: true` |
-| Cross-project opt-in | `projectId: null`, `userId` SHA-256 hashed |
+| Event                                  | Action                                                |
+| -------------------------------------- | ----------------------------------------------------- |
+| All assertions pass                    | `store_memory` called; `passRate = 1.0`, `runCount++` |
+| Scenario reused and passes             | `passRate` weighted average updated upward            |
+| Scenario reused and fails              | `passRate` decremented                                |
+| `passRate < 0.5` after `runCount >= 5` | `isDeleted: true`                                     |
+| Cross-project opt-in                   | `projectId: null`, `userId` SHA-256 hashed            |
 
 ### Embedding Service
 
@@ -363,6 +364,8 @@ Partition key: `userId`. Stores effective test scenarios with semantic embedding
 **Claude API over self-hosted LLM** — no GPU infrastructure to provision, scale, or maintain. Anthropic manages availability and model updates; the worker simply calls the API. Adaptive thinking is enabled on every generation call for higher-quality test scenarios.
 
 **Logical multi-tenancy over physical isolation** — all clients share a single Cosmos DB account. Tenant isolation is enforced by `userId` as the partition key on every container, combined with API-layer auth (Azure AD B2C token validation on every request). No client can access another's data. Physical per-tenant accounts (one Cosmos account per client) are explicitly out of scope for v1 — they would multiply operational overhead linearly with client count and are only justified for enterprise compliance requirements.
+
+**Global memory layer via Azure AI Search** — past test scenarios and outcomes are embedded and indexed after every run. The `MemoryRetriever` plugin retrieves semantically similar examples before TestGenerator runs, injecting them as few-shot context. Retrieval is always scoped to `userId`, preventing cross-tenant leakage. Indexing is wired from v1; retrieval activates per-project once sufficient signal accumulates (~hundreds of runs).
 
 **NAT Gateway for static egress IPs** — all worker outbound traffic routes through a single NAT Gateway, giving Testurio a predictable, publishable IP range. This makes IP allowlisting a reliable, zero-credential option for clients. Credentials (Basic Auth, header tokens) are stored exclusively in Key Vault; only a secret reference lives in the project document in Cosmos DB.
 

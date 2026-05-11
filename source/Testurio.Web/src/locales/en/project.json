@@ -1,0 +1,45 @@
+{
+  "form": {
+    "titleCreate": "Create Project",
+    "titleEdit": "Edit Project",
+    "fields": {
+      "name": "Project Name",
+      "productUrl": "Product URL",
+      "testingStrategy": "Testing Strategy"
+    },
+    "validation": {
+      "nameRequired": "Project name is required.",
+      "nameMaxLength": "Project name must not exceed 200 characters.",
+      "productUrlRequired": "Product URL is required.",
+      "productUrlInvalid": "Product URL must be a valid URL starting with http:// or https://.",
+      "testingStrategyRequired": "Testing strategy is required.",
+      "testingStrategyMaxLength": "Testing strategy must not exceed 500 characters."
+    },
+    "actions": {
+      "create": "Create Project",
+      "save": "Save Changes",
+      "cancel": "Cancel"
+    }
+  },
+  "deleteDialog": {
+    "title": "Delete Project",
+    "message": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "actions": {
+      "confirm": "Delete",
+      "cancel": "Cancel"
+    }
+  },
+  "create": {
+    "pageTitle": "New Project"
+  },
+  "settings": {
+    "title": "{{name}} — Settings",
+    "loadError": "Failed to load project. Please try again.",
+    "saveError": "Failed to save changes. Please try again.",
+    "saveSuccess": "Changes saved successfully.",
+    "dangerZone": {
+      "title": "Danger Zone",
+      "deleteButton": "Delete Project"
+    }
+  }
+}

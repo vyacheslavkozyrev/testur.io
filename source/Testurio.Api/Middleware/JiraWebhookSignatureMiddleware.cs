@@ -47,7 +47,7 @@ public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
         var body = await reader.ReadToEndAsync(httpContext.RequestAborted);
         httpContext.Request.Body.Position = 0;
 
-        var secret = await _secretResolver.ResolveAsync(project.JiraWebhookSecretRef, httpContext.RequestAborted);
+        var secret = await _secretResolver.ResolveAsync(project.JiraWebhookSecretRef!, httpContext.RequestAborted);
         var isValid = signatureHeader.Any(v => IsValidSignature(body, v!.Trim(), secret));
         if (!isValid)
         {
@@ -73,7 +73,7 @@ public sealed partial class JiraWebhookSignatureFilter : IEndpointFilter
     [LoggerMessage(Level = LogLevel.Error, Message = "Jira webhook request body is not seekable — RequestBodyBufferingMiddleware may not be registered")]
     private static partial void LogBodyNotSeekable(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook received without X-Hub-Signature-256 header")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook received without X-Hub-Signature header")]
     private static partial void LogMissingSignature(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Jira webhook HMAC validation failed for project {ProjectId}")]

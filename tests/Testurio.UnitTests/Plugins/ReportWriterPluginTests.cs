@@ -16,15 +16,25 @@ public class ReportWriterPluginTests
     private readonly Mock<ITestRunRepository> _testRunRepo = new();
     private readonly Mock<ITestScenarioRepository> _scenarioRepo = new();
     private readonly Mock<IStepResultRepository> _stepResultRepo = new();
+    private readonly Mock<IExecutionLogRepository> _executionLogRepo = new();
     private readonly Mock<IProjectRepository> _projectRepo = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly ReportBuilderService _reportBuilder = new();
 
+    public ReportWriterPluginTests()
+    {
+        // Default: no log entries — tests that don't care about logs stay unaffected.
+        _executionLogRepo
+            .Setup(r => r.GetByRunAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ExecutionLogEntry>());
+    }
+
     private ReportWriterPlugin CreateSut() => new(
         _testRunRepo.Object,
         _scenarioRepo.Object,
         _stepResultRepo.Object,
+        _executionLogRepo.Object,
         _projectRepo.Object,
         _jiraApiClient.Object,
         _secretResolver.Object,
@@ -48,6 +58,7 @@ public class ReportWriterPluginTests
         UserId = "user1",
         Name = "Test Project",
         ProductUrl = "https://app.example.com",
+        TestingStrategy = "API and UI tests",
         JiraBaseUrl = "https://example.atlassian.net",
         JiraProjectKey = "PROJ",
         JiraEmail = "qa@example.com",

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
+using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Plugins.StoryParserPlugin;
@@ -69,7 +70,14 @@ public static class DependencyInjection
         services.AddTransient<ApiTestExecutionStep>();
 
         // HTTP client for API test execution (feature 0003).
-        services.AddHttpClient<TestExecutorPlugin>();
+        // Feature 0005: register LogPersistenceService and wire it into TestExecutorPlugin.
+        services.AddSingleton<LogPersistenceService>();
+        services.AddHttpClient<TestExecutorPlugin>()
+            .AddTypedClient<TestExecutorPlugin>((httpClient, sp) => new TestExecutorPlugin(
+                httpClient,
+                sp.GetRequiredService<ResponseSchemaValidator>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestExecutorPlugin>>(),
+                sp.GetRequiredService<LogPersistenceService>()));
         services.AddSingleton<ResponseSchemaValidator>();
 
         // Report pipeline (feature 0004).
@@ -78,6 +86,7 @@ public static class DependencyInjection
             sp.GetRequiredService<ITestRunRepository>(),
             sp.GetRequiredService<ITestScenarioRepository>(),
             sp.GetRequiredService<IStepResultRepository>(),
+            sp.GetRequiredService<IExecutionLogRepository>(),
             sp.GetRequiredService<IProjectRepository>(),
             sp.GetRequiredService<IJiraApiClient>(),
             sp.GetRequiredService<ISecretResolver>(),

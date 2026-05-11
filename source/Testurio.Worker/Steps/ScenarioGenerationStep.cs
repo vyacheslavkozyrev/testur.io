@@ -48,13 +48,13 @@ public partial class ScenarioGenerationStep
         LogStarting(_logger, testRun.Id, testRun.JiraIssueKey);
 
         // Resolve the Jira API token from Key Vault.
-        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
+        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef!, cancellationToken);
 
         // Fetch the story content from Jira.
         var storyContent = await _jiraStoryClient.GetStoryContentAsync(
-            project.JiraBaseUrl,
+            project.JiraBaseUrl!,
             testRun.JiraIssueKey,
-            project.JiraEmail,
+            project.JiraEmail!,
             apiToken,
             cancellationToken);
 

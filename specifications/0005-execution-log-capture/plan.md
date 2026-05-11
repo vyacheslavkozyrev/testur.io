@@ -2,20 +2,20 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `ExecutionLogEntry` entity (scenario ID, step index, step title, timestamp, HTTP method, URL, request headers, request body, response status, response headers, response body or blob URL, duration, error detail, truncation flag) — `source/Testurio.Core/Entities/ExecutionLogEntry.cs`
-- [ ] T002 [Domain] Add `IExecutionLogRepository` interface (persist, get by run ID, get by step ID, delete by run ID) — `source/Testurio.Core/Repositories/IExecutionLogRepository.cs`
-- [ ] T003 [Infra] Implement `BlobStorageClient` (upload response body, return URL; truncate and flag on upload failure) — `source/Testurio.Infrastructure/Blob/BlobStorageClient.cs`
-- [ ] T004 [Infra] Implement `ExecutionLogRepository` (Cosmos DB — store inline body ≤10 KB, blob URL reference above threshold; resolve URL transparently on retrieval) — `source/Testurio.Infrastructure/Cosmos/ExecutionLogRepository.cs`
-- [ ] T005 [Infra] Update DI registration with blob client and log repository — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T006 [Plugin] Implement `LogPersistenceService` (decide inline vs blob, upload to blob if needed, persist `ExecutionLogEntry`, absorb failures non-fatally and record system warning) — `source/Testurio.Plugins/TestExecutorPlugin/LogPersistenceService.cs`
-- [ ] T007 [Plugin] Extend `TestExecutorPlugin` to capture raw request/response data per step and emit an `ExecutionLogEntry` to `LogPersistenceService` after each step completes — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
-- [ ] T008 [Plugin] Extend `ReportBuilderService` to accept an optional log section and append per-step log blocks (request, response, blob URL or truncation notice) as Jira markdown code blocks below the scenario breakdown — `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs`
-- [ ] T009 [Worker] Extend `ApiTestExecutionStep` to collect log entries from `TestExecutorPlugin` and pass them to `LogPersistenceService` after each scenario completes — `source/Testurio.Worker/Steps/ApiTestExecutionStep.cs`
-- [ ] T010 [Worker] Extend `ReportDeliveryStep` to load execution logs via `IExecutionLogRepository` and pass them to `ReportBuilderService` as the log section — `source/Testurio.Worker/Steps/ReportDeliveryStep.cs`
-- [ ] T011 [Test] Unit tests for `LogPersistenceService` (inline path, blob path, blob upload failure with truncation, persistence failure is non-fatal) — `tests/Testurio.UnitTests/Plugins/LogPersistenceServiceTests.cs`
-- [ ] T012 [Test] Unit tests for `ExecutionLogRepository` (persist, retrieve by run ID, retrieve by step ID, blob URL resolution) — `tests/Testurio.UnitTests/Infrastructure/ExecutionLogRepositoryTests.cs`
-- [ ] T013 [Test] Unit tests for `ReportBuilderService` log section (inline body rendered, blob URL substituted, all runs include log blocks) — `tests/Testurio.UnitTests/Plugins/ReportBuilderServiceLogTests.cs`
-- [ ] T014 [Test] Integration tests extending pipeline test to cover full flow with log capture and log-enriched report — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
+- [x] T001 [Domain] Create `ExecutionLogEntry` entity (scenario ID, step index, step title, timestamp, HTTP method, URL, request headers, request body, response status, response headers, response body or blob URL, duration, error detail, truncation flag) — `source/Testurio.Core/Entities/ExecutionLogEntry.cs`
+- [x] T002 [Domain] Add `IExecutionLogRepository` interface (persist, get by run ID, get by step ID, delete by run ID) — `source/Testurio.Core/Repositories/IExecutionLogRepository.cs`
+- [x] T003 [Infra] Implement `BlobStorageClient` (upload response body, return URL; truncate and flag on upload failure) — `source/Testurio.Infrastructure/Blob/BlobStorageClient.cs`
+- [x] T004 [Infra] Implement `ExecutionLogRepository` (Cosmos DB — store inline body ≤10 KB, blob URL reference above threshold; resolve URL transparently on retrieval) — `source/Testurio.Infrastructure/Cosmos/ExecutionLogRepository.cs`
+- [x] T005 [Infra] Update DI registration with blob client and log repository — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T006 [Plugin] Implement `LogPersistenceService` (decide inline vs blob, upload to blob if needed, persist `ExecutionLogEntry`, absorb failures non-fatally and record system warning) — `source/Testurio.Plugins/TestExecutorPlugin/LogPersistenceService.cs`
+- [x] T007 [Plugin] Extend `TestExecutorPlugin` to capture raw request/response data per step and emit an `ExecutionLogEntry` to `LogPersistenceService` after each step completes — `source/Testurio.Plugins/TestExecutorPlugin/TestExecutorPlugin.cs`
+- [x] T008 [Plugin] Extend `ReportBuilderService` to accept an optional log section and append per-step log blocks (request, response, blob URL or truncation notice) as Jira markdown code blocks below the scenario breakdown — `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs`
+- [x] T009 [Worker] Extend `ApiTestExecutionStep` to collect log entries from `TestExecutorPlugin` and pass them to `LogPersistenceService` after each scenario completes — `source/Testurio.Worker/Steps/ApiTestExecutionStep.cs`
+- [x] T010 [Worker] Extend `ReportDeliveryStep` to load execution logs via `IExecutionLogRepository` and pass them to `ReportBuilderService` as the log section — `source/Testurio.Worker/Steps/ReportDeliveryStep.cs`
+- [x] T011 [Test] Unit tests for `LogPersistenceService` (inline path, blob path, blob upload failure with truncation, persistence failure is non-fatal) — `tests/Testurio.UnitTests/Plugins/LogPersistenceServiceTests.cs`
+- [x] T012 [Test] Unit tests for `ExecutionLogRepository` (persist, retrieve by run ID, retrieve by step ID, blob URL resolution) — `tests/Testurio.UnitTests/Infrastructure/ExecutionLogRepositoryTests.cs`
+- [x] T013 [Test] Unit tests for `ReportBuilderService` log section (inline body rendered, blob URL substituted, all runs include log blocks) — `tests/Testurio.UnitTests/Plugins/ReportBuilderServiceLogTests.cs`
+- [x] T014 [Test] Integration tests extending pipeline test to cover full flow with log capture and log-enriched report — `tests/Testurio.IntegrationTests/Pipeline/TestRunPipelineTests.cs`
 
 ## Rationale
 
