@@ -75,12 +75,7 @@ public static class IntegrationEndpoints
         var (result, dto, errors) = await integrationService.SaveADOConnectionAsync(userId, projectId, request, cancellationToken);
 
         if (errors is { Count: > 0 })
-        {
-            var problemErrors = errors
-                .Select((e, i) => (Key: i.ToString(), Value: e))
-                .ToDictionary(t => t.Key, t => new[] { t.Value });
-            return TypedResults.ValidationProblem(problemErrors);
-        }
+            return TypedResults.ValidationProblem(errors);
 
         return result switch
         {
@@ -104,12 +99,7 @@ public static class IntegrationEndpoints
         var (result, dto, errors) = await integrationService.SaveJiraConnectionAsync(userId, projectId, request, cancellationToken);
 
         if (errors is { Count: > 0 })
-        {
-            var problemErrors = errors
-                .Select((e, i) => (Key: i.ToString(), Value: e))
-                .ToDictionary(t => t.Key, t => new[] { t.Value });
-            return TypedResults.ValidationProblem(problemErrors);
-        }
+            return TypedResults.ValidationProblem(errors);
 
         return result switch
         {
@@ -209,12 +199,7 @@ public static class IntegrationEndpoints
         var (result, dto, errors) = await integrationService.UpdateTokenAsync(userId, projectId, request, cancellationToken);
 
         if (errors is { Count: > 0 })
-        {
-            var problemErrors = errors
-                .Select((e, i) => (Key: i.ToString(), Value: e))
-                .ToDictionary(t => t.Key, t => new[] { t.Value });
-            return TypedResults.ValidationProblem(problemErrors);
-        }
+            return TypedResults.ValidationProblem(errors);
 
         return result switch
         {

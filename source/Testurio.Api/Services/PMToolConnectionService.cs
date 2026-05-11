@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Testurio.Api.DTOs;
@@ -10,33 +11,6 @@ using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Security;
 
 namespace Testurio.Api.Services;
-
-public interface IPMToolConnectionService
-{
-    Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
-        SaveADOConnectionAsync(string userId, string projectId, SaveADOConnectionRequest request, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
-        SaveJiraConnectionAsync(string userId, string projectId, SaveJiraConnectionRequest request, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, TestConnectionResponse? Response)>
-        TestConnectionAsync(string userId, string projectId, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto)>
-        RemoveConnectionAsync(string userId, string projectId, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, WebhookSetupResponse? Response)>
-        GetWebhookSetupAsync(string userId, string projectId, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, WebhookSetupResponse? Response)>
-        RegenerateWebhookSecretAsync(string userId, string projectId, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto)>
-        GetIntegrationStatusAsync(string userId, string projectId, CancellationToken cancellationToken = default);
-
-    Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
-        UpdateTokenAsync(string userId, string projectId, UpdateTokenRequest request, CancellationToken cancellationToken = default);
-}
 
 public partial class PMToolConnectionService : IPMToolConnectionService
 {
@@ -68,13 +42,10 @@ public partial class PMToolConnectionService : IPMToolConnectionService
 
     // ─── Save ADO ──────────────────────────────────────────────────────────────
 
-    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
+    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IDictionary<string, string[]>? ValidationErrors)>
         SaveADOConnectionAsync(string userId, string projectId, SaveADOConnectionRequest request, CancellationToken cancellationToken = default)
     {
-        var validationErrors = ADOConnectionValidator.Validate(request)
-            .Select(v => v.ErrorMessage ?? "Invalid value.")
-            .ToList();
-
+        var validationErrors = ToErrorDictionary(ADOConnectionValidator.Validate(request));
         if (validationErrors.Count > 0)
             return (ProjectOperationResult.Success, null, validationErrors);
 
@@ -137,13 +108,10 @@ public partial class PMToolConnectionService : IPMToolConnectionService
 
     // ─── Save Jira ─────────────────────────────────────────────────────────────
 
-    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
+    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IDictionary<string, string[]>? ValidationErrors)>
         SaveJiraConnectionAsync(string userId, string projectId, SaveJiraConnectionRequest request, CancellationToken cancellationToken = default)
     {
-        var validationErrors = JiraConnectionValidator.Validate(request)
-            .Select(v => v.ErrorMessage ?? "Invalid value.")
-            .ToList();
-
+        var validationErrors = ToErrorDictionary(JiraConnectionValidator.Validate(request));
         if (validationErrors.Count > 0)
             return (ProjectOperationResult.Success, null, validationErrors);
 
@@ -454,11 +422,12 @@ public partial class PMToolConnectionService : IPMToolConnectionService
 
     // ─── Update Token ──────────────────────────────────────────────────────────
 
-    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IReadOnlyList<string>? ValidationErrors)>
+    public async Task<(ProjectOperationResult Result, PMToolConnectionResponse? Dto, IDictionary<string, string[]>? ValidationErrors)>
         UpdateTokenAsync(string userId, string projectId, UpdateTokenRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Token))
-            return (ProjectOperationResult.Success, null, ["Token is required."]);
+            return (ProjectOperationResult.Success, null,
+                new Dictionary<string, string[]> { ["Token"] = ["Token is required."] });
 
         var (opResult, project) = await LoadOwnedProject(userId, projectId, cancellationToken);
         if (opResult != ProjectOperationResult.Success || project is null)
@@ -495,6 +464,39 @@ public partial class PMToolConnectionService : IPMToolConnectionService
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Converts a sequence of <see cref="ValidationResult"/> objects to the
+    /// <see cref="IDictionary{TKey,TValue}"/> format expected by <see cref="TypedResults.ValidationProblem"/>.
+    /// Each MemberName becomes a key; multiple errors for the same field are grouped.
+    /// Results with no member names are stored under the empty-string key ("").
+    /// </summary>
+    private static IDictionary<string, string[]> ToErrorDictionary(
+        IEnumerable<ValidationResult> results)
+    {
+        var dict = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var r in results)
+        {
+            var message = r.ErrorMessage ?? "Invalid value.";
+            var members = r.MemberNames?.ToList();
+            if (members is null || members.Count == 0)
+            {
+                if (!dict.TryGetValue(string.Empty, out var list0))
+                    dict[string.Empty] = list0 = [];
+                list0.Add(message);
+            }
+            else
+            {
+                foreach (var m in members)
+                {
+                    if (!dict.TryGetValue(m, out var list))
+                        dict[m] = list = [];
+                    list.Add(message);
+                }
+            }
+        }
+        return dict.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+    }
 
     private async Task<(ProjectOperationResult, Project?)> LoadOwnedProject(
         string userId, string projectId, CancellationToken ct)

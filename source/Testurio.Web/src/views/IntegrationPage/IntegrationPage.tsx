@@ -45,7 +45,8 @@ export default function IntegrationPage() {
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
 
   const isConfigured = integration?.pmTool !== null;
-  const webhookEnabled = isConfigured && Boolean(integration?.webhookSecretUri);
+  // webhookSetup is fetched whenever a PM tool is configured; no separate flag needed.
+  const webhookEnabled = isConfigured;
 
   const { data: webhookSetup, isPending: isWebhookPending } = useWebhookSetup(
     projectId ?? '',
