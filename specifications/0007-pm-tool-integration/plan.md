@@ -20,7 +20,7 @@ Create utility for generating and persisting webhook secrets. Files: `source/Tes
 ### T006 — [x] [Infra] Extend ProjectRepository for PM tool queries
 Add specialized queries for retrieving PM tool config. Files: `source/Testurio.Infrastructure/Cosmos/ProjectRepository.cs` (add GetByProjectIdAndUserIdAsync if not present, ensure partition-key enforcement).
 
-### T007 — [App] Create PM tool connection validator
+### T007 — [x] [App] Create PM tool connection validator
 Validate ADO and Jira connection form inputs. Files: `source/Testurio.Api/Validators/ADOConnectionValidator.cs`, `source/Testurio.Api/Validators/JiraConnectionValidator.cs`, `source/Testurio.Api/Validators/PMToolConnectionValidator.cs` (base class).
 
 ### T008 — [App] Create PM tool connection service
