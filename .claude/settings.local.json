@@ -23,7 +23,12 @@
       "Skill(claude-api)",
       "Bash(awk '{print $NF}')",
       "Bash(grep -E \"\\\\.\\(cs|tsx\\)$\")",
-      "Bash(grep -E \"\\\\.\\(cs\\)$\")"
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")",
+      "Bash(taskkill /F /IM Testurio.Api.exe)",
+      "Bash(taskkill /F /IM Testurio.Worker.exe)",
+      "PowerShell(Stop-Process *)",
+      "Bash(npx jest *)",
+      "Bash(npm test *)"
     ]
   },
   "enableAllProjectMcpServers": true
