@@ -1,9 +1,10 @@
-# User Stories — Project Dashboard (0010)
+# User Stories — Project Dashboard — Snapshot (0010)
 
 ## Out of Scope
 
 The following are explicitly **not** part of this feature:
 
+- Real-time SSE run status updates — covered by feature 0043
 - Per-project test history content and trend charts — covered by feature 0011
 - The Settings button on the per-project history page — feature 0011 owns and implements it; feature 0010 only defines the navigation route constant it targets
 - Plan-tier quota enforcement logic — the dashboard displays quota usage but enforcement is covered by feature 0021
@@ -34,7 +35,7 @@ The following are explicitly **not** part of this feature:
 
 #### Edge Cases
 
-- A project whose most recent run has status `running` shows an animated badge; subsequent SSE events (US-003) update it in place without a full page reload
+- A project whose most recent run has status `running` shows an animated badge; the badge updates when the user manually re-fetches or when feature 0043 SSE updates are wired in
 - A project with `latestRun: null` renders the `never_run` badge and shows no timestamp
 - If the API returns an empty projects array (user has no projects), the empty state (US-002) is displayed instead of the card grid
 
@@ -60,33 +61,7 @@ The following are explicitly **not** part of this feature:
 
 ---
 
-### US-003: Real-Time Run Status Updates via SSE
-
-**As a** QA lead with the dashboard open
-**I want to** see run status badges update automatically as test runs progress
-**So that** I do not need to manually refresh the page to know whether a run has passed or failed
-
-#### Acceptance Criteria
-
-- [ ] AC-013: The frontend opens a persistent SSE connection to `GET /v1/stats/dashboard/stream` immediately after the initial dashboard snapshot is loaded
-- [ ] AC-014: The SSE endpoint pushes a `DashboardUpdatedEvent` JSON payload whenever a run status changes for any project belonging to the authenticated user; the payload contains at minimum: `projectId`, `latestRun` (with `runId`, `status`, `startedAt`, `completedAt`)
-- [ ] AC-015: On receiving a `DashboardUpdatedEvent`, the React state for the affected project card is updated in place — the correct card's badge and timestamp reflect the new status without a full page reload or re-fetch
-- [ ] AC-016: If the SSE connection drops (network interruption, server restart), the client attempts to reconnect with exponential back-off (initial delay 1 s, max delay 30 s, max 5 attempts); the user sees a subtle "Reconnecting…" indicator during this period
-- [ ] AC-017: If all reconnect attempts fail, the client falls back to a one-time re-fetch of `GET /v1/stats/dashboard` and stops attempting SSE; the user sees a "Live updates unavailable — data may be stale" warning
-- [ ] AC-018: The SSE connection is closed and cleaned up when the user navigates away from `/dashboard`
-- [ ] AC-019: The SSE endpoint at `GET /v1/stats/dashboard/stream` requires a valid Azure AD B2C JWT; a missing or invalid token returns `401 Unauthorized` and the stream is not opened
-- [ ] AC-020: The SSE endpoint only pushes events for projects belonging to the authenticated user's `userId`; events for other users are never sent on the same connection
-- [ ] AC-021: The API fans out SSE events by consuming Service Bus messages posted by the Worker when a run status changes; the Worker does not call the SSE endpoint directly
-
-#### Edge Cases
-
-- Two browser tabs open for the same user each maintain independent SSE connections; both receive the same events
-- A `DashboardUpdatedEvent` for a `projectId` not currently in the card list (e.g. a project added in another tab) triggers a re-fetch of the full snapshot rather than attempting to insert a card mid-stream
-- The SSE connection must not be re-opened if the component is still mounted and the connection is healthy
-
----
-
-### US-004: Global Quota Usage Display
+### US-003: Global Quota Usage Display
 
 **As a** QA lead
 **I want to** see my plan's test run quota usage at the top of the dashboard
@@ -94,13 +69,13 @@ The following are explicitly **not** part of this feature:
 
 #### Acceptance Criteria
 
-- [ ] AC-022: A quota usage bar or indicator is displayed globally at the top of the dashboard page, above the card grid; it is not embedded inside individual project cards
-- [ ] AC-023: The indicator shows: "X / Y runs used today" where X is `usedToday` and Y is `dailyLimit`, plus a `resetsAt` label ("Resets at midnight UTC" or a formatted local time equivalent)
-- [ ] AC-024: The `GET /v1/stats/dashboard` response includes a `quotaUsage` object with fields: `usedToday` (integer), `dailyLimit` (integer), `resetsAt` (ISO 8601 UTC timestamp for next midnight UTC)
-- [ ] AC-025: When `usedToday` equals `dailyLimit`, the indicator is highlighted in amber to warn the user; when `usedToday` exceeds `dailyLimit` the indicator is highlighted in red (defensive — quota enforcement by feature 0021 should prevent this)
-- [ ] AC-026: When no active subscription plan exists, `dailyLimit` is `0` and the indicator displays "No active plan" instead of a numeric ratio
-- [ ] AC-027: The quota counter reflects only runs triggered since midnight UTC on the current calendar day; runs from prior days are excluded
-- [ ] AC-028: The quota indicator is updated by SSE events only if the `DashboardUpdatedEvent` payload includes a `quotaUsage` delta; otherwise it retains the value from the last full snapshot fetch
+- [ ] AC-013: A quota usage bar or indicator is displayed globally at the top of the dashboard page, above the card grid; it is not embedded inside individual project cards
+- [ ] AC-014: The indicator shows: "X / Y runs used today" where X is `usedToday` and Y is `dailyLimit`, plus a `resetsAt` label ("Resets at midnight UTC" or a formatted local time equivalent)
+- [ ] AC-015: The `GET /v1/stats/dashboard` response includes a `quotaUsage` object with fields: `usedToday` (integer), `dailyLimit` (integer), `resetsAt` (ISO 8601 UTC timestamp for next midnight UTC)
+- [ ] AC-016: When `usedToday` equals `dailyLimit`, the indicator is highlighted in amber to warn the user; when `usedToday` exceeds `dailyLimit` the indicator is highlighted in red (defensive — quota enforcement by feature 0021 should prevent this)
+- [ ] AC-017: When no active subscription plan exists, `dailyLimit` is `0` and the indicator displays "No active plan" instead of a numeric ratio
+- [ ] AC-018: The quota counter reflects only runs triggered since midnight UTC on the current calendar day; runs from prior days are excluded
+- [ ] AC-019: The quota indicator reflects the value from the last successful snapshot fetch; real-time quota increments via SSE are handled by feature 0043
 
 #### Edge Cases
 
@@ -109,7 +84,7 @@ The following are explicitly **not** part of this feature:
 
 ---
 
-### US-005: Card Navigation to Per-Project History Page
+### US-004: Card Navigation to Per-Project History Page
 
 **As a** QA lead
 **I want to** click a project card to open that project's test history
@@ -117,11 +92,11 @@ The following are explicitly **not** part of this feature:
 
 #### Acceptance Criteria
 
-- [ ] AC-029: Clicking anywhere on a project card navigates to the per-project history page at `/projects/:id/history` where `:id` is the `projectId`
-- [ ] AC-030: The route path `/projects/:id/history` is defined as a named route constant in `source/Testurio.Web/src/routes/routes.tsx` so that feature 0011 can import and own the page component registered at that path
-- [ ] AC-031: The card click target covers the entire card surface; no sub-element (e.g. the status badge) intercepts or cancels the click
-- [ ] AC-032: The browser back button from `/projects/:id/history` returns the user to `/dashboard` and restores the previous scroll position
-- [ ] AC-033: Card navigation uses client-side routing (Next.js `Link` or `router.push`) — not a full page reload
+- [ ] AC-020: Clicking anywhere on a project card navigates to the per-project history page at `/projects/:id/history` where `:id` is the `projectId`
+- [ ] AC-021: The route path `/projects/:id/history` is defined as a named route constant in `source/Testurio.Web/src/routes/routes.tsx` so that feature 0011 can import and own the page component registered at that path
+- [ ] AC-022: The card click target covers the entire card surface; no sub-element (e.g. the status badge) intercepts or cancels the click
+- [ ] AC-023: The browser back button from `/projects/:id/history` returns the user to `/dashboard` and restores the previous scroll position
+- [ ] AC-024: Card navigation uses client-side routing (Next.js `Link` or `router.push`) — not a full page reload
 
 #### Edge Cases
 
@@ -129,7 +104,7 @@ The following are explicitly **not** part of this feature:
 
 ---
 
-### US-006: Navigation Contract for Settings Button (Feature 0011 Dependency)
+### US-005: Navigation Contract for Settings Button (Feature 0011 Dependency)
 
 **As a** feature 0011 implementer
 **I want** a defined route constant for the project settings page
@@ -137,9 +112,9 @@ The following are explicitly **not** part of this feature:
 
 #### Acceptance Criteria
 
-- [ ] AC-034: `source/Testurio.Web/src/routes/routes.tsx` exports a named constant `PROJECT_SETTINGS_ROUTE` with value `/projects/:id/settings` in addition to the history route constant
-- [ ] AC-035: The route constant is exported as a plain string template or a builder function `(id: string) => string` so that feature 0011 can construct the concrete URL at render time
-- [ ] AC-036: Feature 0010 does NOT register a page component at `/projects/:id/settings` — the route constant is a navigation target only; the settings page component is owned by the feature that implements project configuration (feature 0006 or its amendment)
+- [ ] AC-025: `source/Testurio.Web/src/routes/routes.tsx` exports a named constant `PROJECT_SETTINGS_ROUTE` with value `/projects/:id/settings` in addition to the history route constant
+- [ ] AC-026: The route constant is exported as a plain string template or a builder function `(id: string) => string` so that feature 0011 can construct the concrete URL at render time
+- [ ] AC-027: Feature 0010 does NOT register a page component at `/projects/:id/settings` — the route constant is a navigation target only; the settings page component is owned by the feature that implements project configuration (feature 0006 or its amendment)
 
 #### Edge Cases
 
@@ -147,7 +122,7 @@ The following are explicitly **not** part of this feature:
 
 ---
 
-### US-007: Dashboard API Security and Data Isolation
+### US-006: Dashboard API Security and Data Isolation
 
 **As a** QA lead
 **I want to** be confident that the dashboard only shows data belonging to my account
@@ -155,12 +130,11 @@ The following are explicitly **not** part of this feature:
 
 #### Acceptance Criteria
 
-- [ ] AC-037: `GET /v1/stats/dashboard` requires a valid Azure AD B2C JWT; a missing or invalid token returns `401 Unauthorized`
-- [ ] AC-038: `GET /v1/stats/dashboard/stream` requires a valid Azure AD B2C JWT; a missing or invalid token returns `401 Unauthorized` and the SSE stream is not opened
-- [ ] AC-039: The `userId` extracted from the JWT is used as the Cosmos DB partition key for all queries in both endpoints; no query is issued without this scope
-- [ ] AC-040: Neither endpoint ever returns projects, run results, quota data, or SSE events belonging to a different `userId`
-- [ ] AC-041: Soft-deleted projects (`isDeleted: true`) are excluded from both the snapshot response and SSE events
-- [ ] AC-042: The snapshot endpoint returns `200 OK` with an empty `projects` array when the authenticated user has no active projects
+- [ ] AC-028: `GET /v1/stats/dashboard` requires a valid Azure AD B2C JWT; a missing or invalid token returns `401 Unauthorized`
+- [ ] AC-029: The `userId` extracted from the JWT is used as the Cosmos DB partition key for all queries; no query is issued without this scope
+- [ ] AC-030: The snapshot endpoint never returns projects, run results, or quota data belonging to a different `userId`
+- [ ] AC-031: Soft-deleted projects (`isDeleted: true`) are excluded from both the snapshot response
+- [ ] AC-032: The snapshot endpoint returns `200 OK` with an empty `projects` array when the authenticated user has no active projects
 
 #### Edge Cases
 

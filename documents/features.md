@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.4.0
+version: 1.5.0
 status: draft
-updated: 2026-05-10
+updated: 2026-05-11
 tags: [features, business, product]
 ---
 
@@ -177,9 +177,15 @@ Each subscription plan defines a maximum number of test run triggers per day. Wh
 
 ## MVP — Statistics & Dashboard
 
-**[0010]: Project Dashboard** `MVP`
+**[0010]: Project Dashboard — Snapshot** `MVP`
 _Business Outcome: Gives the QA lead an at-a-glance view of testing health across all products._
-User sees a summary of all projects and the status of their most recent test runs on a single screen. This makes it easy to spot failures or stalled runs without opening each project individually.
+User sees a card grid of all projects sorted by most recent activity, each showing its latest run status badge, product URL, and testing strategy. A global quota usage bar sits above the grid. An empty state guides new users to create their first project. Cards navigate to per-project history. Real-time updates are added by feature 0043.
+
+---
+
+**[0043]: Project Dashboard — Real-Time Updates** `MVP`
+_Business Outcome: Eliminates manual refreshing by keeping run status badges current as the test pipeline progresses._
+Run status badges on the dashboard update automatically via Server-Sent Events as the Worker moves through pipeline stages. The client reconnects with exponential back-off on disconnect and falls back to a one-time snapshot re-fetch if all attempts fail. Depends on feature 0010.
 
 ---
 
