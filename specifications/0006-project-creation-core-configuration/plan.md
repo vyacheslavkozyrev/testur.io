@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Add `IProjectRepository` interface — `source/Testurio.Core/Interfaces/IProjectRepository.cs`
 - [x] T003 [Infra] Implement `ProjectRepository` (Cosmos DB) — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
 - [x] T004 [Infra] Register repository in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T005 [Infra] Add Key Vault namespace provisioning helper — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
+- [x] T005 [Infra] Add Key Vault namespace provisioning helper — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
 - [ ] T006 [App] Create `ProjectDto` and `CreateProjectRequest` / `UpdateProjectRequest` — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [ ] T007 [App] Implement `ProjectService` (CRUD + soft delete, Key Vault namespace init) — `source/Testurio.Api/Services/ProjectService.cs`
 - [ ] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
