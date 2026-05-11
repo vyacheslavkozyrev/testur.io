@@ -1,0 +1,109 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "page": {
+    "title": "Integrations",
+    "description": "Connect your project to a PM tool to receive status-change events and post test reports automatically.",
+    "selectTool": "Choose a PM tool to connect:",
+    "connectAdo": "Connect Azure DevOps",
+    "connectJira": "Connect Jira",
+    "dangerZone": "Danger Zone",
+    "saveError": "Failed to save the connection. Please check your input and try again.",
+    "loadError": "Failed to load integration settings. Please try again."
+  },
+  "status": {
+    "notConfigured": "No PM tool connection configured.",
+    "addConnection": "Add a connection",
+    "tool": "PM Tool",
+    "identifier": "Project",
+    "authMethod": "Auth Method",
+    "toolAdo": "Azure DevOps",
+    "toolJira": "Jira",
+    "updateToken": "Update Token",
+    "authErrorMessage": "Your PM tool token is invalid or expired — update it below to restore the integration."
+  },
+  "ado": {
+    "formTitle": "Connect Azure DevOps",
+    "fields": {
+      "orgUrl": "Organization URL",
+      "projectName": "Project Name",
+      "team": "Team",
+      "inTestingStatus": "\"In Testing\" Status Name",
+      "authMethod": "Auth Method",
+      "pat": "Personal Access Token",
+      "oAuthToken": "OAuth Token"
+    },
+    "authMethods": {
+      "pat": "Personal Access Token (PAT)",
+      "oAuth": "OAuth"
+    },
+    "validation": {
+      "orgUrlRequired": "Organization URL is required.",
+      "orgUrlInvalid": "Organization URL must be a valid URL starting with http:// or https://.",
+      "projectNameRequired": "Project Name is required.",
+      "teamRequired": "Team is required.",
+      "inTestingStatusRequired": "\"In Testing\" status name is required.",
+      "authMethodRequired": "Auth method is required.",
+      "patRequired": "Personal Access Token is required.",
+      "oAuthTokenRequired": "OAuth token is required."
+    }
+  },
+  "jira": {
+    "formTitle": "Connect Jira",
+    "fields": {
+      "baseUrl": "Base URL",
+      "projectKey": "Project Key",
+      "inTestingStatus": "\"In Testing\" Status Name",
+      "authMethod": "Auth Method",
+      "email": "Email Address",
+      "apiToken": "API Token",
+      "pat": "Personal Access Token"
+    },
+    "authMethods": {
+      "apiToken": "API Token + Email",
+      "pat": "Personal Access Token (PAT)"
+    },
+    "validation": {
+      "baseUrlRequired": "Base URL is required.",
+      "baseUrlInvalid": "Base URL must be a valid URL starting with http:// or https://.",
+      "projectKeyRequired": "Project Key is required.",
+      "inTestingStatusRequired": "\"In Testing\" status name is required.",
+      "authMethodRequired": "Auth method is required.",
+      "emailRequired": "Email is required when API Token auth is selected.",
+      "emailInvalid": "Please enter a valid email address.",
+      "apiTokenRequired": "API Token is required.",
+      "patRequired": "Personal Access Token is required."
+    }
+  },
+  "testConnection": {
+    "button": "Test Connection",
+    "success": "Connection successful.",
+    "authError": "Authentication failed — check your token.",
+    "unreachable": "Connection failed — check the URL."
+  },
+  "webhookSetup": {
+    "title": "Webhook Setup",
+    "urlLabel": "Webhook URL",
+    "secretLabel": "Webhook Secret",
+    "copyUrl": "Copy webhook URL",
+    "copySecret": "Copy webhook secret",
+    "copied": "Copied!",
+    "secretMaskedInfo": "The webhook secret is masked after the first view. Use \"Regenerate\" to create a new one.",
+    "regenerate": "Regenerate Secret",
+    "instructionsAdo": "In Azure DevOps, go to Project Settings → Service Hooks → Create Subscription → Web Hooks. Paste the webhook URL above and set the secret to the value above.",
+    "instructionsJira": "In Jira, go to Settings → System → WebHooks. Paste the webhook URL above. Testurio validates requests using the shared secret shown above.",
+    "regenerateDialog": {
+      "title": "Regenerate Webhook Secret",
+      "message": "This will immediately invalidate the current webhook secret. You must update the webhook configuration in your PM tool with the new secret, otherwise webhook events will be rejected.",
+      "confirm": "Regenerate"
+    }
+  },
+  "remove": {
+    "button": "Remove Integration",
+    "dialogTitle": "Remove PM Tool Integration",
+    "warning": "Removing the integration will immediately stop any active test run for this project, clear any queued test jobs, and deregister the webhook from your PM tool. This action cannot be undone.",
+    "confirm": "Remove Integration"
+  }
+}

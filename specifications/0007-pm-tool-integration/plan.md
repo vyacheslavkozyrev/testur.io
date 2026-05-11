@@ -53,31 +53,31 @@ Mock backend responses for development and testing. Files: `source/Testurio.Web/
 ### T017 — [x] [UI] Create React Query hooks for PM tool management
 Implement query and mutation hooks. Files: `source/Testurio.Web/src/hooks/usePMToolConnection.ts` (useIntegrationStatus, useSaveADOConnection, useSaveJiraConnection, useTestConnection, useRemoveConnection, useWebhookSetup, useRegenerateWebhookSecret, PM_TOOL_KEYS), follow React Query v5 patterns with proper cache invalidation.
 
-### T018 — [UI] Create ADO connection form component
+### T018 — [x] [UI] Create ADO connection form component
 Build form for Azure DevOps configuration. Files: `source/Testurio.Web/src/components/Integrations/ADOConnectionForm/ADOConnectionForm.tsx` (required fields: org URL, project name, team, In Testing status, auth method selector, validation, form state management).
 
-### T019 — [UI] Create Jira connection form component
+### T019 — [x] [UI] Create Jira connection form component
 Build form for Jira configuration. Files: `source/Testurio.Web/src/components/Integrations/JiraConnectionForm/JiraConnectionForm.tsx` (required fields: base URL, project key, In Testing status, auth method selector with email+token or PAT options, validation).
 
-### T020 — [UI] Create test connection button component
+### T020 — [x] [UI] Create test connection button component
 Build reusable button with result indicator. Files: `source/Testurio.Web/src/components/Integrations/TestConnectionButton/TestConnectionButton.tsx` (button, success/auth-error/unreachable indicators, loading state, error messages).
 
-### T021 — [UI] Create webhook setup display component
+### T021 — [x] [UI] Create webhook setup display component
 Build panel showing webhook URL and secret. Files: `source/Testurio.Web/src/components/Integrations/WebhookSetupPanel/WebhookSetupPanel.tsx` (URL display with copy button, secret masked/plaintext toggle, regenerate button with warning, tool-specific instructions, copy-to-clipboard functionality).
 
-### T022 — [UI] Create integration status card component
+### T022 — [x] [UI] Create integration status card component
 Build summary card showing current integration state. Files: `source/Testurio.Web/src/components/Integrations/IntegrationStatusCard/IntegrationStatusCard.tsx` (not configured state, configured state with tool name/identifier, auth error alert with token update form).
 
-### T023 — [UI] Create integration removal dialog
+### T023 — [x] [UI] Create integration removal dialog
 Build confirmation and removal flow. Files: `source/Testurio.Web/src/components/Integrations/RemoveIntegrationDialog/RemoveIntegrationDialog.tsx` (confirmation warning about active runs and queued jobs, removal execution, success feedback).
 
-### T024 — [UI] Create Integrations settings page
+### T024 — [x] [UI] Create Integrations settings page
 Assemble all components into unified settings view. Files: `source/Testurio.Web/src/pages/ProjectSettings/Integrations/IntegrationPage.tsx` (renders status card, connection forms, test button, webhook setup, removal dialog as appropriate to current state).
 
-### T025 — [UI] Add translations for PM tool integration
+### T025 — [x] [UI] Add translations for PM tool integration
 Localize all user-facing text. Files: `source/Testurio.Web/src/locales/en/pmTool.json` (connection labels, field names, instructions, error messages, success messages, auth method options, tool-specific steps).
 
-### T026 — [UI] Register integration routes in main router
+### T026 — [x] [UI] Register integration routes in main router
 Wire page into navigation. Files: `source/Testurio.Web/src/routes/routes.tsx` (add route for project integrations page under authenticated project settings area).
 
 ### T027 — [Test] Create PM tool connection service unit tests
