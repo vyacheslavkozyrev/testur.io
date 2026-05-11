@@ -12,7 +12,7 @@
 - [x] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
 - [x] T009 [UI] Add API types — `source/Testurio.Web/src/types/project.types.ts`
 - [x] T010 [UI] Add API client — `source/Testurio.Web/src/services/project/projectService.ts`
-- [ ] T011 [UI] Add React Query hook — `source/Testurio.Web/src/hooks/useProject.ts`
+- [x] T011 [UI] Add React Query hook — `source/Testurio.Web/src/hooks/useProject.ts`
 - [ ] T012 [UI] Add MSW mock handler — `source/Testurio.Web/src/mocks/handlers/project.ts`
 - [ ] T013 [UI] Create project form component (shared create/edit) — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
 - [ ] T014 [UI] Create project delete confirmation dialog — `source/Testurio.Web/src/components/ProjectDeleteDialog/ProjectDeleteDialog.tsx`
