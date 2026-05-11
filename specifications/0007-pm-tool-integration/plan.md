@@ -80,19 +80,19 @@ Localize all user-facing text. Files: `source/Testurio.Web/src/locales/en/pmTool
 ### T026 — [x] [UI] Register integration routes in main router
 Wire page into navigation. Files: `source/Testurio.Web/src/routes/routes.tsx` (add route for project integrations page under authenticated project settings area).
 
-### T027 — [Test] Create PM tool connection service unit tests
+### T027 — [x] [Test] Create PM tool connection service unit tests
 Test validation, secret management, and service logic. Files: `tests/Testurio.UnitTests/Services/PMToolConnectionServiceTests.cs` (SaveADOConnectionAsync, SaveJiraConnectionAsync, TestConnectionAsync with success/auth-error/unreachable, RemoveConnectionAsync, WebhookSecretAsync, all US stories' ACs).
 
-### T028 — [Test] Create PM tool API integration tests
+### T028 — [x] [Test] Create PM tool API integration tests
 Test endpoint behavior and multi-tenancy. Files: `tests/Testurio.IntegrationTests/Controllers/PMToolIntegrationTests.cs` (POST/PUT/DELETE/GET integrations, webhook setup, test connection, cross-tenant forbidden checks).
 
-### T029 — [Test] Create PM tool React Query hook tests
+### T029 — [x] [Test] Create PM tool React Query hook tests
 Test query behavior and cache invalidation. Files: `source/Testurio.Web/src/hooks/__tests__/usePMToolConnection.test.ts` (query invalidation on mutation, error state handling, loading states).
 
-### T030 — [Test] Create integration form component tests
+### T030 — [x] [Test] Create integration form component tests
 Test form validation and submission. Files: `source/Testurio.Web/src/components/Integrations/ADOConnectionForm/ADOConnectionForm.test.tsx`, `source/Testurio.Web/src/components/Integrations/JiraConnectionForm/JiraConnectionForm.test.tsx` (field presence, validation display, submission).
 
-### T031 — [Test] Create webhook setup component tests
+### T031 — [x] [Test] Create webhook setup component tests
 Test secret masking, copy, regenerate flows. Files: `source/Testurio.Web/src/components/Integrations/WebhookSetupPanel/WebhookSetupPanel.test.tsx` (URL and secret rendering, copy-to-clipboard, regenerate confirmation, mask/plaintext toggle).
 
 ## Rationale
