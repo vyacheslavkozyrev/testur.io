@@ -36,6 +36,13 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         jwtOpts.Audience = b2cOpts.Value.ClientId;
     });
 builder.Services.AddAuthorization();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevPortal", policy =>
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
@@ -66,6 +73,10 @@ app.UseExceptionHandler();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
+}
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevPortal");
 }
 app.UseAuthentication();
 app.UseAuthorization();
