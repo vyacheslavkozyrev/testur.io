@@ -14,7 +14,7 @@ Implement Azure DevOps API client. Files: `source/Testurio.Infrastructure/ADO/AD
 ### T004 — [x] [Infra] Create Jira REST client implementation
 Implement Jira API client. Files: `source/Testurio.Infrastructure/Jira/JiraAdditionalClient.cs` (extends existing JiraApiClient from 0004 with GetProjectAsync, TestConnectionAsync, DeregisterWebhookAsync), `source/Testurio.Infrastructure/Jira/Models/JiraProjectResponse.cs`.
 
-### T005 — [Infra] Add webhook secret generation and storage
+### T005 — [x] [Infra] Add webhook secret generation and storage
 Create utility for generating and persisting webhook secrets. Files: `source/Testurio.Infrastructure/Security/WebhookSecretGenerator.cs` (GenerateSecret(), ValidateSignature()), register in DI.
 
 ### T006 — [Infra] Extend ProjectRepository for PM tool queries
