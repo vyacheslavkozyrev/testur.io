@@ -47,7 +47,7 @@ Define TypeScript interfaces matching backend models. Files: `source/Testurio.We
 ### T015 — [x] [UI] Create PM tool API service
 Implement client-side API calls. Files: `source/Testurio.Web/src/services/pmTool/pmToolService.ts` (saveADOConnection, saveJiraConnection, testConnection, removeConnection, getWebhookSetup, getIntegrationStatus), all methods use apiClient with proper error handling.
 
-### T016 — [UI] Create MSW mock handlers for PM tool endpoints
+### T016 — [x] [UI] Create MSW mock handlers for PM tool endpoints
 Mock backend responses for development and testing. Files: `source/Testurio.Web/src/mocks/handlers/pmTool.ts` (handlers for all PM tool endpoints with realistic responses and error scenarios).
 
 ### T017 — [UI] Create React Query hooks for PM tool management
