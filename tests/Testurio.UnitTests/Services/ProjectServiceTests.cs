@@ -1,0 +1,172 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Testurio.Api.DTOs;
+using Testurio.Api.Services;
+using Testurio.Core.Entities;
+using Testurio.Core.Repositories;
+
+namespace Testurio.UnitTests.Services;
+
+public class ProjectServiceTests
+{
+    private readonly Mock<IProjectRepository> _repository = new();
+    private readonly ProjectService _sut;
+
+    public ProjectServiceTests()
+    {
+        _sut = new ProjectService(_repository.Object, NullLogger<ProjectService>.Instance);
+    }
+
+    private static Project MakeProject(string userId = "user-1", string projectId = "proj-1") => new()
+    {
+        Id = projectId,
+        UserId = userId,
+        Name = "My App",
+        ProductUrl = "https://app.example.com",
+        TestingStrategy = "Focus on API contracts.",
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow,
+    };
+
+    // ─── ListAsync ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListAsync_ReturnsProjectDtos_ForUser()
+    {
+        var userId = "user-1";
+        var projects = new[] { MakeProject(userId) };
+        _repository.Setup(r => r.ListByUserAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(projects);
+
+        var result = await _sut.ListAsync(userId);
+
+        Assert.Single(result);
+        Assert.Equal("My App", result[0].Name);
+        Assert.Equal("proj-1", result[0].ProjectId);
+    }
+
+    [Fact]
+    public async Task ListAsync_ReturnsEmptyList_WhenNoProjects()
+    {
+        _repository.Setup(r => r.ListByUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Project>());
+
+        var result = await _sut.ListAsync("user-1");
+
+        Assert.Empty(result);
+    }
+
+    // ─── GetAsync ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetAsync_ReturnsDto_WhenProjectExists()
+    {
+        var project = MakeProject();
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _sut.GetAsync("user-1", "proj-1");
+
+        Assert.NotNull(result);
+        Assert.Equal("proj-1", result.ProjectId);
+    }
+
+    [Fact]
+    public async Task GetAsync_ReturnsNull_WhenProjectNotFound()
+    {
+        _repository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        var result = await _sut.GetAsync("user-1", "proj-999");
+
+        Assert.Null(result);
+    }
+
+    // ─── CreateAsync ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreateAsync_PersistsProject_WithCorrectFields()
+    {
+        var userId = "user-1";
+        var request = new CreateProjectRequest("New Project", "https://new.example.com", "Smoke tests only.");
+
+        _repository.Setup(r => r.CreateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var result = await _sut.CreateAsync(userId, request);
+
+        Assert.Equal("New Project", result.Name);
+        Assert.Equal("https://new.example.com", result.ProductUrl);
+        Assert.Equal("Smoke tests only.", result.TestingStrategy);
+
+        _repository.Verify(r => r.CreateAsync(
+            It.Is<Project>(p =>
+                p.UserId == userId &&
+                p.Name == "New Project" &&
+                p.ProductUrl == "https://new.example.com" &&
+                p.TestingStrategy == "Smoke tests only." &&
+                p.IsDeleted == false),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    // ─── UpdateAsync ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsUpdatedDto_WhenProjectExists()
+    {
+        var existing = MakeProject();
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var request = new UpdateProjectRequest("Updated Name", "https://updated.example.com", "E2E focus.");
+        var result = await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        Assert.NotNull(result);
+        Assert.Equal("Updated Name", result!.Name);
+        Assert.Equal("https://updated.example.com", result.ProductUrl);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsNull_WhenProjectNotFound()
+    {
+        _repository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        var result = await _sut.UpdateAsync("user-1", "proj-999", new UpdateProjectRequest("X", "https://x.com", "Y"));
+
+        Assert.Null(result);
+    }
+
+    // ─── DeleteAsync ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task DeleteAsync_SetsIsDeleted_AndReturnsTrue()
+    {
+        var existing = MakeProject();
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var deleted = await _sut.DeleteAsync("user-1", "proj-1");
+
+        Assert.True(deleted);
+        _repository.Verify(r => r.UpdateAsync(
+            It.Is<Project>(p => p.IsDeleted == true),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ReturnsFalse_WhenProjectNotFound()
+    {
+        _repository.Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project?)null);
+
+        var deleted = await _sut.DeleteAsync("user-1", "proj-999");
+
+        Assert.False(deleted);
+        _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+}
