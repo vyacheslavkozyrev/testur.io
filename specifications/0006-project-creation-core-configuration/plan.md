@@ -22,7 +22,7 @@
 - [x] T018 [Test] Backend unit tests — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
 - [x] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
 - [x] T020 [Test] Frontend component tests — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.test.tsx`
-- [ ] T021 [Test] E2E tests — `source/Testurio.Web/e2e/project-creation.spec.ts`
+- [ ] T021 [Test] E2E tests — `source/Testurio.Web/e2e/project-creation.spec.ts` _(out of scope for this implement phase)_
 
 ## Rationale
 
