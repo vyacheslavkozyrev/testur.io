@@ -23,10 +23,10 @@ Add specialized queries for retrieving PM tool config. Files: `source/Testurio.I
 ### T007 — [x] [App] Create PM tool connection validator
 Validate ADO and Jira connection form inputs. Files: `source/Testurio.Api/Validators/ADOConnectionValidator.cs`, `source/Testurio.Api/Validators/JiraConnectionValidator.cs`, `source/Testurio.Api/Validators/PMToolConnectionValidator.cs` (base class).
 
-### T008 — [App] Create PM tool connection service
+### T008 — [x] [App] Create PM tool connection service
 Orchestrate PM tool configuration save, test, and removal. Files: `source/Testurio.Api/Services/IPMToolConnectionService.cs`, `source/Testurio.Api/Services/PMToolConnectionService.cs` (SaveADOConnectionAsync, SaveJiraConnectionAsync, TestConnectionAsync, RemoveConnectionAsync, GenerateWebhookSecretAsync, RegenerateWebhookSecretAsync).
 
-### T009 — [App] Create DTOs for PM tool configuration
+### T009 — [x] [App] Create DTOs for PM tool configuration
 Define request and response models. Files: `source/Testurio.Api/DTOs/SaveADOConnectionRequest.cs`, `source/Testurio.Api/DTOs/SaveJiraConnectionRequest.cs`, `source/Testurio.Api/DTOs/PMToolConnectionResponse.cs`, `source/Testurio.Api/DTOs/TestConnectionResponse.cs`, `source/Testurio.Api/DTOs/WebhookSetupResponse.cs`.
 
 ### T010 — [API] Add PM tool connection endpoints
