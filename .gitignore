@@ -9,8 +9,10 @@
 
 # Ignore build results
 
+**/out
 **/dist
 
 # Ignore dependencies
 
+**/.next
 **/node_modules

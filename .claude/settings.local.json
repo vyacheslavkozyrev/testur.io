@@ -28,7 +28,26 @@
       "Bash(taskkill /F /IM Testurio.Worker.exe)",
       "PowerShell(Stop-Process *)",
       "Bash(npx jest *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k: d[k] for k in ['scripts','dependencies'] if k in d}, indent=2\\)\\)\")",
+      "Bash(npm install *)",
+      "Bash(npx msw *)",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(kill %1)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :3000)",
+      "Bash(taskkill *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/projects/abc/settings)",
+      "Bash(curl -s http://localhost:3001/)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(cmd /c \"rd /s /q \"\"D:\\\\projects\\\\testur.io\\\\source\\\\Testurio.Web\\\\src\\\\app\\\\[[...slug]]\"\"\")",
+      "PowerShell(\"done\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/projects/abc-123/settings)",
+      "PowerShell(New-Item *)",
+      "Bash(git rm *)"
     ]
   },
   "enableAllProjectMcpServers": true
