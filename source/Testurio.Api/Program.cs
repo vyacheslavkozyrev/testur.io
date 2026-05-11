@@ -19,6 +19,11 @@ if (!builder.Environment.IsDevelopment())
     b2cOptions.ValidateOnStart();
 
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    opts.SerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+});
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<Testurio.Api.Middleware.GlobalExceptionHandler>();
 builder.Services.AddHttpLogging(o =>

@@ -8,7 +8,7 @@ public class Project
     public required string UserId { get; init; }
     public required string Name { get; set; }
     public required string ProductUrl { get; set; }
-    public required string TestingStrategy { get; set; }
+    public string TestingStrategy { get; set; } = string.Empty;
     public bool IsDeleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

@@ -6,6 +6,7 @@ import pmToolEn from '@/locales/en/pmTool.json';
 i18n.use(initReactI18next).init({
   lng: 'en',
   fallbackLng: 'en',
+  initImmediate: false,
   interpolation: { escapeValue: false },
   resources: {
     en: {

@@ -67,11 +67,8 @@ public partial class PMToolConnectionService : IPMToolConnectionService
             var secret = _webhookSecretGenerator.GenerateSecret();
             webhookSecretUri = ProjectSecretNamespace.SecretName(projectId, "webhookSecret");
             webhookSecretViewed = false;
-            // In production, this would write to Key Vault. The passthrough resolver stores it in-memory.
-            // The actual Key Vault write is done by the KeyVaultCredentialClient at the infrastructure level.
-            // For now we store the secret reference; the secret value flows via the resolver.
+            await _secretResolver.StoreAsync(webhookSecretUri, secret, cancellationToken);
             LogWebhookSecretGenerated(_logger, projectId);
-            _ = secret; // The raw secret value is only returned to the user on the webhook-setup endpoint.
         }
 
         var credential = request.AuthMethod == ADOAuthMethod.Pat ? request.Pat : request.OAuthToken;
@@ -99,7 +96,7 @@ public partial class PMToolConnectionService : IPMToolConnectionService
 
         project.UpdatedAt = DateTimeOffset.UtcNow;
 
-        _ = credential; // In production, write credential to Key Vault at tokenSecretUri.
+        await _secretResolver.StoreAsync(tokenSecretUri, credential!, cancellationToken);
 
         var updated = await _projectRepository.UpdateAsync(project, cancellationToken);
         LogADOConnectionSaved(_logger, projectId, userId);
@@ -127,8 +124,8 @@ public partial class PMToolConnectionService : IPMToolConnectionService
             var secret = _webhookSecretGenerator.GenerateSecret();
             webhookSecretUri = ProjectSecretNamespace.SecretName(projectId, "webhookSecret");
             webhookSecretViewed = false;
+            await _secretResolver.StoreAsync(webhookSecretUri, secret, cancellationToken);
             LogWebhookSecretGenerated(_logger, projectId);
-            _ = secret;
         }
 
         var apiTokenSecretUri = request.AuthMethod == JiraAuthMethod.ApiToken
@@ -162,6 +159,13 @@ public partial class PMToolConnectionService : IPMToolConnectionService
         project.AdoTokenSecretUri = null;
 
         project.UpdatedAt = DateTimeOffset.UtcNow;
+
+        if (apiTokenSecretUri is not null)
+            await _secretResolver.StoreAsync(apiTokenSecretUri, request.ApiToken!, cancellationToken);
+        if (emailSecretUri is not null)
+            await _secretResolver.StoreAsync(emailSecretUri, request.Email!, cancellationToken);
+        if (patSecretUri is not null)
+            await _secretResolver.StoreAsync(patSecretUri, request.Pat!, cancellationToken);
 
         var updated = await _projectRepository.UpdateAsync(project, cancellationToken);
         LogJiraConnectionSaved(_logger, projectId, userId);
@@ -395,8 +399,7 @@ public partial class PMToolConnectionService : IPMToolConnectionService
 
         var secret = _webhookSecretGenerator.GenerateSecret();
         var webhookSecretUri = ProjectSecretNamespace.SecretName(projectId, "webhookSecret");
-        // In production, overwrite the Key Vault secret at webhookSecretUri with the new value.
-        _ = secret; // Placeholder — actual Key Vault write omitted at this layer.
+        await _secretResolver.StoreAsync(webhookSecretUri, secret, cancellationToken);
 
         project.WebhookSecretUri = webhookSecretUri;
         project.WebhookSecretViewed = false;
@@ -503,14 +506,23 @@ public partial class PMToolConnectionService : IPMToolConnectionService
     {
         var anyProject = await _projectRepository.GetByProjectIdAsync(projectId, ct);
         if (anyProject is null)
+        {
+            _logger.LogWarning("LoadOwnedProject: cross-partition query returned null for projectId={ProjectId}", projectId);
             return (ProjectOperationResult.NotFound, null);
+        }
 
         if (anyProject.UserId != userId)
+        {
+            _logger.LogWarning("LoadOwnedProject: userId mismatch — doc.UserId={DocUserId} request.UserId={UserId}", anyProject.UserId, userId);
             return (ProjectOperationResult.Forbidden, null);
+        }
 
         var project = await _projectRepository.GetByIdAsync(userId, projectId, ct);
         if (project is null)
+        {
+            _logger.LogWarning("LoadOwnedProject: point read returned null for userId={UserId} projectId={ProjectId}", userId, projectId);
             return (ProjectOperationResult.NotFound, null);
+        }
 
         return (ProjectOperationResult.Success, project);
     }
