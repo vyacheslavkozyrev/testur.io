@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using Azure.Messaging.ServiceBus;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.ServiceBus;
@@ -18,6 +20,8 @@ public class InfrastructureOptions
     [Required] public required string CosmosDatabaseName { get; init; }
     [Required] public required string ServiceBusConnectionString { get; init; }
     [Required] public required string TestRunJobQueueName { get; init; }
+    [Required] public required string BlobStorageConnectionString { get; init; }
+    [Required] public required string ExecutionLogsBlobContainerName { get; init; }
 }
 
 public static class DependencyInjection
@@ -90,6 +94,27 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
+        });
+
+        services.AddSingleton(sp =>
+        {
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new BlobServiceClient(opts.BlobStorageConnectionString);
+        });
+
+        services.AddSingleton<BlobStorageClient>(sp =>
+        {
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BlobStorageClient>>();
+            return new BlobStorageClient(serviceClient, opts.ExecutionLogsBlobContainerName, logger);
+        });
+
+        services.AddSingleton<IExecutionLogRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new ExecutionLogRepository(cosmos, opts.CosmosDatabaseName);
         });
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();

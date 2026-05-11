@@ -23,9 +23,21 @@ public class TestRunPipelineTests
     private readonly Mock<ITestRunRepository> _testRunRepo = new();
     private readonly Mock<ITestScenarioRepository> _scenarioRepo = new();
     private readonly Mock<IStepResultRepository> _stepResultRepo = new();
+    private readonly Mock<IExecutionLogRepository> _executionLogRepo = new();
     private readonly Mock<IProjectRepository> _projectRepo = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+
+    /// <summary>
+    /// Sets up <see cref="_executionLogRepo"/> to return an empty list — call this in tests that
+    /// do not need specific log entries so the default does not override test-specific setups.
+    /// </summary>
+    private void SetupEmptyExecutionLogs()
+    {
+        _executionLogRepo
+            .Setup(r => r.GetByRunAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ExecutionLogEntry>());
+    }
 
     private ReportDeliveryStep CreateReportDeliveryStep()
     {
@@ -34,6 +46,7 @@ public class TestRunPipelineTests
             _testRunRepo.Object,
             _scenarioRepo.Object,
             _stepResultRepo.Object,
+            _executionLogRepo.Object,
             _projectRepo.Object,
             _jiraApiClient.Object,
             _secretResolver.Object,
@@ -98,6 +111,7 @@ public class TestRunPipelineTests
         var project = MakeProject();
         var scenario = MakeScenario();
         var step = MakeStep(StepStatus.Passed);
+        SetupEmptyExecutionLogs();
 
         _testRunRepo.Setup(r => r.GetByIdAsync("proj1", "run1", default)).ReturnsAsync(run);
         _projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", default)).ReturnsAsync(project);
@@ -132,6 +146,7 @@ public class TestRunPipelineTests
         // Arrange: execution succeeds but Jira comment post fails
         var run = MakeRun(TestRunStatus.Completed);
         var project = MakeProject();
+        SetupEmptyExecutionLogs();
 
         _testRunRepo.Setup(r => r.GetByIdAsync("proj1", "run1", default)).ReturnsAsync(run);
         _projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", default)).ReturnsAsync(project);
@@ -168,6 +183,7 @@ public class TestRunPipelineTests
         var run = MakeRun(TestRunStatus.Failed);
         var project = MakeProject();
         var scenario = MakeScenario();
+        SetupEmptyExecutionLogs();
         var failedStep = MakeStep(StepStatus.Failed);
         failedStep = new StepResult
         {
@@ -205,5 +221,140 @@ public class TestRunPipelineTests
         Assert.Contains("Failures", postedComment);
         Assert.Contains("Add item to cart", postedComment);
         Assert.Contains("POST /api/cart", postedComment);
+    }
+
+    // — Feature 0005: execution log capture integration —
+
+    [Fact]
+    public async Task Pipeline_WithLogEntries_ReportCommentIncludesExecutionLogSection()
+    {
+        // Arrange: a completed run with one log entry containing an inline response body.
+        var run = MakeRun(TestRunStatus.Completed);
+        var project = MakeProject();
+        var scenario = MakeScenario();
+        var step = MakeStep(StepStatus.Passed);
+        var logEntry = new ExecutionLogEntry
+        {
+            TestRunId = "run1",
+            ProjectId = "proj1",
+            UserId = "user1",
+            ScenarioId = "s1",
+            StepIndex = 0,
+            StepTitle = "POST /api/cart",
+            HttpMethod = "POST",
+            RequestUrl = "https://app.example.com/api/cart",
+            ResponseStatusCode = 200,
+            ResponseBodyInline = "{\"cartId\":\"c1\"}",
+            DurationMs = 80
+        };
+
+        string? postedComment = null;
+        _testRunRepo.Setup(r => r.GetByIdAsync("proj1", "run1", default)).ReturnsAsync(run);
+        _projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", default)).ReturnsAsync(project);
+        _scenarioRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { scenario });
+        _stepResultRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { step });
+        _executionLogRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { logEntry });
+        _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
+        _jiraApiClient.Setup(c => c.PostCommentAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), default))
+            .Callback<string, string, string, string, string, CancellationToken>((_, _, _, _, body, _) => postedComment = body)
+            .ReturnsAsync(JiraCommentResult.Success());
+        _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRun r, CancellationToken _) => r);
+
+        // Act
+        var reportStep = CreateReportDeliveryStep();
+        await reportStep.ExecuteAsync(run);
+
+        // Assert — comment includes the execution log section (AC-012, AC-013)
+        Assert.NotNull(postedComment);
+        Assert.Contains("Execution Logs", postedComment);
+        Assert.Contains("POST /api/cart", postedComment);
+        Assert.Contains("{\"cartId\":\"c1\"}", postedComment);
+        // Log section must follow the full breakdown (AC-012)
+        Assert.True(
+            postedComment!.IndexOf("Execution Logs", StringComparison.Ordinal) >
+            postedComment.IndexOf("Full Scenario Breakdown", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Pipeline_WithBlobStoredLogEntry_ReportIncludesBlobUrl()
+    {
+        // Arrange: log entry with large body stored in blob storage (AC-014).
+        var run = MakeRun(TestRunStatus.Completed);
+        var project = MakeProject();
+        var scenario = MakeScenario();
+        var step = MakeStep(StepStatus.Passed);
+        var logEntry = new ExecutionLogEntry
+        {
+            TestRunId = "run1",
+            ProjectId = "proj1",
+            UserId = "user1",
+            ScenarioId = "s1",
+            StepIndex = 0,
+            StepTitle = "POST /api/cart",
+            HttpMethod = "POST",
+            RequestUrl = "https://app.example.com/api/cart",
+            ResponseStatusCode = 200,
+            ResponseBodyInline = null,
+            ResponseBodyBlobUrl = "https://blob.example.com/logs/run1/s1/0.txt",
+            DurationMs = 90
+        };
+
+        string? postedComment = null;
+        _testRunRepo.Setup(r => r.GetByIdAsync("proj1", "run1", default)).ReturnsAsync(run);
+        _projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", default)).ReturnsAsync(project);
+        _scenarioRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { scenario });
+        _stepResultRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { step });
+        _executionLogRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(new[] { logEntry });
+        _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
+        _jiraApiClient.Setup(c => c.PostCommentAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), default))
+            .Callback<string, string, string, string, string, CancellationToken>((_, _, _, _, body, _) => postedComment = body)
+            .ReturnsAsync(JiraCommentResult.Success());
+        _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRun r, CancellationToken _) => r);
+
+        // Act
+        var reportStep = CreateReportDeliveryStep();
+        await reportStep.ExecuteAsync(run);
+
+        // Assert — blob URL included in comment (AC-014)
+        Assert.NotNull(postedComment);
+        Assert.Contains("https://blob.example.com/logs/run1/s1/0.txt", postedComment);
+    }
+
+    [Fact]
+    public async Task Pipeline_WithNoLogEntries_ReportDoesNotIncludeLogSection()
+    {
+        // Arrange: run with no log entries — log section must be omitted.
+        var run = MakeRun(TestRunStatus.Completed);
+        var project = MakeProject();
+
+        string? postedComment = null;
+        _testRunRepo.Setup(r => r.GetByIdAsync("proj1", "run1", default)).ReturnsAsync(run);
+        _projectRepo.Setup(r => r.GetByProjectIdAsync("proj1", default)).ReturnsAsync(project);
+        _scenarioRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<TestScenario>());
+        _stepResultRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default)).ReturnsAsync(Array.Empty<StepResult>());
+        _executionLogRepo.Setup(r => r.GetByRunAsync("proj1", "run1", default))
+            .ReturnsAsync(Array.Empty<ExecutionLogEntry>());
+        _secretResolver.Setup(r => r.ResolveAsync("secret-ref", default)).ReturnsAsync("api-token");
+        _jiraApiClient.Setup(c => c.PostCommentAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<string>(), default))
+            .Callback<string, string, string, string, string, CancellationToken>((_, _, _, _, body, _) => postedComment = body)
+            .ReturnsAsync(JiraCommentResult.Success());
+        _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRun r, CancellationToken _) => r);
+
+        // Act
+        var reportStep = CreateReportDeliveryStep();
+        await reportStep.ExecuteAsync(run);
+
+        // Assert — no log section appended
+        Assert.NotNull(postedComment);
+        Assert.DoesNotContain("Execution Logs", postedComment);
     }
 }

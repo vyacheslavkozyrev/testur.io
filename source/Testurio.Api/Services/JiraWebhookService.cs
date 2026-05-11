@@ -69,9 +69,7 @@ public partial class JiraWebhookService : IJiraWebhookService
 
     private static string? GetMissingParts(JiraIssueFields? fields)
     {
-        bool missingDescription = string.IsNullOrWhiteSpace(fields?.Description);
-
-        if (missingDescription)
+        if (string.IsNullOrWhiteSpace(fields?.Description))
             return "description";
         return null;
     }

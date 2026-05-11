@@ -59,6 +59,10 @@ public partial class ApiTestExecutionStep
             LogExecutingScenario(_logger, scenario.Title, scenario.Id, testRun.Id);
 
             // AC-001/AC-003: all steps in a scenario run in parallel; all are attempted.
+            // T009 (feature 0005): log persistence is handled per-step inside TestExecutorPlugin
+            // via LogPersistenceService rather than collected here per-scenario.  This satisfies
+            // AC-004 (persistence failure per step does not affect other steps or step results)
+            // without requiring this step to aggregate and re-emit log entries.
             var scenarioResults = await _testExecutorPlugin.ExecuteScenarioAsync(
                 scenario, project.ProductUrl, bearerToken, cancellationToken);
 

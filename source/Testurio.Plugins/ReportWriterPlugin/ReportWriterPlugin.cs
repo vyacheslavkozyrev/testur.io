@@ -7,7 +7,7 @@ using Testurio.Core.Repositories;
 namespace Testurio.Plugins.ReportWriterPlugin;
 
 /// <summary>
-/// Loads run, scenario, and step result data; builds a Jira markdown report;
+/// Loads run, scenario, step result, and execution log data; builds a Jira markdown report;
 /// and posts it as a comment on the originating Jira issue.
 /// Sets run status to <see cref="TestRunStatus.ReportDeliveryFailed"/> on any
 /// Jira API error (AC-013, AC-014).
@@ -17,6 +17,7 @@ public partial class ReportWriterPlugin
     private readonly ITestRunRepository _testRunRepository;
     private readonly ITestScenarioRepository _scenarioRepository;
     private readonly IStepResultRepository _stepResultRepository;
+    private readonly IExecutionLogRepository _executionLogRepository;
     private readonly IProjectRepository _projectRepository;
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
@@ -27,6 +28,7 @@ public partial class ReportWriterPlugin
         ITestRunRepository testRunRepository,
         ITestScenarioRepository scenarioRepository,
         IStepResultRepository stepResultRepository,
+        IExecutionLogRepository executionLogRepository,
         IProjectRepository projectRepository,
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
@@ -36,6 +38,7 @@ public partial class ReportWriterPlugin
         _testRunRepository = testRunRepository;
         _scenarioRepository = scenarioRepository;
         _stepResultRepository = stepResultRepository;
+        _executionLogRepository = executionLogRepository;
         _projectRepository = projectRepository;
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
@@ -71,8 +74,14 @@ public partial class ReportWriterPlugin
 
         var scenarios = await _scenarioRepository.GetByRunAsync(projectId, testRunId, cancellationToken);
         var stepResults = await _stepResultRepository.GetByRunAsync(projectId, testRunId, cancellationToken);
+        var logEntries = await _executionLogRepository.GetByRunAsync(projectId, testRunId, cancellationToken);
 
-        var commentBody = _reportBuilder.Build(run, scenarios, stepResults);
+        // AC-012, AC-013, AC-014, AC-015: append log section to every report (no toggle at POC).
+        var logSection = logEntries.Count > 0
+            ? _reportBuilder.BuildLogSection(logEntries, scenarios)
+            : null;
+
+        var commentBody = _reportBuilder.Build(run, scenarios, stepResults, logSection);
 
         string apiToken;
         try

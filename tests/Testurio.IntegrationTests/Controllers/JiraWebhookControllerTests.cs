@@ -64,7 +64,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         string? description = "A description",
         string? ac = "Given/when/then") => new()
     {
-        WebhookEvent = "jira:issue_transitioned",
+        WebhookEvent = "jira:issue_updated",
         Issue = new JiraIssue
         {
             Id = "10001",
@@ -77,7 +77,10 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 AcceptanceCriteria = ToJsonElement(ac)
             }
         },
-        Transition = new JiraTransition { To = new JiraTransitionTo { Name = transitionTo } }
+        Changelog = new JiraChangelog
+        {
+            Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
+        }
     };
 
     private HttpClient CreateClient() => _factory.CreateClient();
@@ -87,7 +90,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var body = JsonSerializer.Serialize(payload);
         var sig = signature ?? Sign(body, WebhookSecret);
         var request = new HttpRequestMessage(HttpMethod.Post, "/v1/webhooks/jira/proj1");
-        request.Headers.Add("X-Hub-Signature-256", sig);
+        request.Headers.Add("X-Hub-Signature", sig);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         return await client.SendAsync(request);
     }
@@ -199,6 +202,8 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
+                    ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
+                    ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });

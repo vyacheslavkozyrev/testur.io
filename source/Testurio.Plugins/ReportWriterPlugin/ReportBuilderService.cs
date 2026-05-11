@@ -4,6 +4,7 @@ using Testurio.Core.Enums;
 
 namespace Testurio.Plugins.ReportWriterPlugin;
 
+
 /// <summary>
 /// Assembles a Jira markdown comment string from test run data.
 /// Pure, stateless service — no I/O, no side effects.
@@ -170,5 +171,108 @@ public class ReportBuilderService
             StepStatus.Failed => $"Status mismatch — expected {step.ExpectedStatusCode}, got {step.ActualStatusCode?.ToString() ?? "N/A"}",
             _ => step.Status.ToString()
         };
+    }
+
+    // — Execution log section (AC-012 – AC-015) —
+
+    /// <summary>
+    /// Builds a pre-formatted log section from a list of <see cref="ExecutionLogEntry"/> records.
+    /// The returned string is intended to be passed as <paramref name="logSection"/> in <see cref="Build"/>.
+    /// </summary>
+    /// <param name="logEntries">All log entries for the run, ordered by scenario and step index.</param>
+    /// <param name="scenarios">Scenarios for the run — used to group log entries by scenario title.</param>
+    public string BuildLogSection(
+        IReadOnlyList<ExecutionLogEntry> logEntries,
+        IReadOnlyList<TestScenario> scenarios)
+    {
+        if (logEntries.Count == 0)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("*Execution Logs*");
+        sb.AppendLine();
+
+        // Group entries by scenario for readable output.
+        var grouped = logEntries
+            .GroupBy(e => e.ScenarioId)
+            .ToList();
+
+        foreach (var group in grouped)
+        {
+            var scenario = scenarios.FirstOrDefault(s => s.Id == group.Key);
+            var scenarioTitle = scenario?.Title ?? group.Key;
+
+            sb.AppendLine($"*{scenarioTitle}*");
+            sb.AppendLine();
+
+            foreach (var entry in group.OrderBy(e => e.StepIndex))
+            {
+                AppendLogEntry(sb, entry);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static void AppendLogEntry(StringBuilder sb, ExecutionLogEntry entry)
+    {
+        sb.AppendLine($"  *Step {entry.StepIndex}: {entry.StepTitle}*");
+        sb.AppendLine();
+
+        // — Request —
+        sb.AppendLine("    *Request*");
+        sb.AppendLine($"    {{code}}");
+        sb.AppendLine($"{entry.HttpMethod} {entry.RequestUrl}");
+        foreach (var (name, value) in entry.RequestHeaders)
+            sb.AppendLine($"{name}: {value}");
+        if (!string.IsNullOrWhiteSpace(entry.RequestBody))
+        {
+            sb.AppendLine();
+            sb.AppendLine(entry.RequestBody);
+        }
+        sb.AppendLine($"    {{code}}");
+        sb.AppendLine();
+
+        // — Response —
+        sb.AppendLine("    *Response*");
+        sb.AppendLine($"    {{code}}");
+
+        var status = entry.ResponseStatusCode.HasValue
+            ? entry.ResponseStatusCode.Value.ToString()
+            : "(no response)";
+        sb.AppendLine($"Status: {status}");
+
+        foreach (var (name, value) in entry.ResponseHeaders)
+            sb.AppendLine($"{name}: {value}");
+
+        sb.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(entry.ResponseBodyBlobUrl))
+        {
+            // AC-014: blob-stored body — include reference URL instead of inlining.
+            sb.AppendLine($"[Response body stored in blob: {entry.ResponseBodyBlobUrl}]");
+        }
+        else if (entry.ResponseTruncated)
+        {
+            // AC-008: blob upload failed — show truncation notice.
+            sb.AppendLine("[Response body truncated — blob upload failed]");
+            if (!string.IsNullOrWhiteSpace(entry.ResponseBodyInline))
+                sb.AppendLine(entry.ResponseBodyInline);
+        }
+        else if (!string.IsNullOrWhiteSpace(entry.ResponseBodyInline))
+        {
+            sb.AppendLine(entry.ResponseBodyInline);
+        }
+        else
+        {
+            sb.AppendLine("(empty)");
+        }
+
+        sb.AppendLine($"    {{code}}");
+
+        if (!string.IsNullOrWhiteSpace(entry.ErrorDetail))
+            sb.AppendLine($"    *Error:* {entry.ErrorDetail}");
+
+        sb.AppendLine();
     }
 }
