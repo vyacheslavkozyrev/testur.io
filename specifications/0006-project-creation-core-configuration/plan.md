@@ -9,7 +9,7 @@
 - [x] T005 [Infra] Add Key Vault namespace provisioning helper — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
 - [x] T006 [App] Create `ProjectDto` and `CreateProjectRequest` / `UpdateProjectRequest` — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [x] T007 [App] Implement `ProjectService` (CRUD + soft delete, Key Vault namespace init) — `source/Testurio.Api/Services/ProjectService.cs`
-- [ ] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
+- [x] T008 [API] Register project endpoints — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
 - [ ] T009 [UI] Add API types — `source/Testurio.Web/src/types/project.types.ts`
 - [ ] T010 [UI] Add API client — `source/Testurio.Web/src/services/project/projectService.ts`
 - [ ] T011 [UI] Add React Query hook — `source/Testurio.Web/src/hooks/useProject.ts`

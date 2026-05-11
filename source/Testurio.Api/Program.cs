@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Testurio.Api.Controllers;
+using Testurio.Api.Endpoints;
 using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 using Testurio.Core.Interfaces;
@@ -36,6 +37,7 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 
@@ -68,6 +70,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapJiraWebhooks();
+app.MapProjectEndpoints();
 
 app.Run();
 
