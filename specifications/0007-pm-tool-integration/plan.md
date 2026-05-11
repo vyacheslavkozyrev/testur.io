@@ -38,7 +38,7 @@ Create route to retrieve webhook URL and secret display state. Files: `source/Te
 ### T012 — [x] [API] Add integration status endpoint
 Create route to retrieve current PM tool integration state. Files: `source/Testurio.Api/Program.cs` (GET `/v1/projects/{projectId}/integrations` returning integration status, tool name, identifiers, auth method).
 
-### T013 — [Config] Register PM tool clients and services in DI
+### T013 — [x] [Config] Register PM tool clients and services in DI
 Register all infrastructure and application services. Files: `source/Testurio.Api/Program.cs` and/or `source/Testurio.Infrastructure/DependencyInjection.cs` (AddScoped<IADOClient, ADOClient>(), AddScoped<IJiraClient, JiraAdditionalClient>(), AddScoped<IPMToolConnectionService, PMToolConnectionService>(), AddSingleton<WebhookSecretGenerator>()).
 
 ### T014 — [UI] Create PM tool types and DTOs

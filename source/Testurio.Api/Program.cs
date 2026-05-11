@@ -8,6 +8,7 @@ using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,8 +57,17 @@ builder.Services.AddCors(options =>
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IPMToolConnectionService, PMToolConnectionService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
+builder.Services.AddOptions<PMToolConnectionServiceOptions>()
+    .BindConfiguration("PMTool")
+    .Configure(opts =>
+    {
+        // Default to the public API base URL; overridden in appsettings.
+        if (string.IsNullOrWhiteSpace(opts.ApiBaseUrl))
+            opts.ApiBaseUrl = "https://api.testur.io";
+    });
 
 if (builder.Environment.IsDevelopment())
 {
@@ -93,6 +103,7 @@ app.UseAuthorization();
 
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
+app.MapIntegrationEndpoints();
 
 app.Run();
 
