@@ -5,7 +5,7 @@
 ### T001 — [x] [Domain] Add PM tool configuration value objects to Project entity
 Add enum types and configuration records to model ADO and Jira connections. Files: `source/Testurio.Core/Entities/Project.cs` (extend with `pmTool`, `adoOrgUrl`, `adoProjectName`, `adoTeam`, `adoInTestingStatus`, `adoAuthMethod`, `adoTokenSecretUri`, `jiraBaseUrl`, `jiraProjectKey`, `jiraInTestingStatus`, `jiraAuthMethod`, `jiraApiTokenSecretUri`, `jiraEmailSecretUri`, `webhookSecret`, `integrationStatus` properties), `source/Testurio.Core/Enums/PMToolType.cs` (`ado`, `jira`), `source/Testurio.Core/Enums/ADOAuthMethod.cs` (`pat`, `oauth`), `source/Testurio.Core/Enums/JiraAuthMethod.cs` (`apiToken`, `pat`), `source/Testurio.Core/Enums/IntegrationStatus.cs` (`none`, `active`, `authError`).
 
-### T002 — [Domain] Add PM tool API interfaces to Core
+### T002 — [x] [Domain] Add PM tool API interfaces to Core
 Define service contracts for interacting with PM tools. Files: `source/Testurio.Core/Interfaces/IADOClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync), `source/Testurio.Core/Interfaces/IJiraClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync).
 
 ### T003 — [Infra] Create ADO REST client implementation
