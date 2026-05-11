@@ -17,6 +17,7 @@ builder.Services.AddOptions<AzureAdB2COptions>()
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<Testurio.Api.Middleware.GlobalExceptionHandler>();
 builder.Services.AddHttpLogging(o =>
 {
     o.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestMethod

@@ -20,7 +20,7 @@
 - [x] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
 - [x] T017 [UI] Register routes — `source/Testurio.Web/src/routes/routes.tsx`
 - [x] T018 [Test] Backend unit tests — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
-- [ ] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
+- [x] T019 [Test] Backend integration tests — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
 - [ ] T020 [Test] Frontend component tests — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.test.tsx`
 - [ ] T021 [Test] E2E tests — `source/Testurio.Web/e2e/project-creation.spec.ts`
 

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Testurio.Api.DTOs;
+using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 
 namespace Testurio.Api.Endpoints;
@@ -14,8 +15,10 @@ public static class ProjectEndpoints
 
         projects.MapGet("/", ListProjectsAsync).WithName("ListProjects");
         projects.MapGet("/{projectId}", GetProjectAsync).WithName("GetProject");
-        projects.MapPost("/", CreateProjectAsync).WithName("CreateProject");
-        projects.MapPut("/{projectId}", UpdateProjectAsync).WithName("UpdateProject");
+        projects.MapPost("/", CreateProjectAsync).WithName("CreateProject")
+            .AddEndpointFilter<ValidationFilter<CreateProjectRequest>>();
+        projects.MapPut("/{projectId}", UpdateProjectAsync).WithName("UpdateProject")
+            .AddEndpointFilter<ValidationFilter<UpdateProjectRequest>>();
         projects.MapDelete("/{projectId}", DeleteProjectAsync).WithName("DeleteProject");
 
         return app;
