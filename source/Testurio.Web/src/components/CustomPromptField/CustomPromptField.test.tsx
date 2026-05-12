@@ -158,7 +158,8 @@ describe('CustomPromptField', () => {
 
   it('shows custom prompt text in preview when value is non-empty', () => {
     renderField({ value: 'Focus on auth flows.' });
-    expect(screen.getByText(/Focus on auth flows./)).toBeInTheDocument();
+    // The text appears in both the textarea and the preview panel; verify at least one element contains it.
+    expect(screen.getAllByText(/Focus on auth flows./)[0]).toBeInTheDocument();
     expect(screen.queryByText(/No custom prompt added/)).not.toBeInTheDocument();
   });
 

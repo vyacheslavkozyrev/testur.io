@@ -127,7 +127,7 @@ public partial class TestGeneratorPlugin
     /// Composes the final system prompt: base system prompt → testing strategy → custom prompt.
     /// The order is fixed and cannot be changed (AC-032).
     /// </summary>
-    internal static string ComposeSystemPrompt(string testingStrategy, string? customPrompt)
+    public static string ComposeSystemPrompt(string testingStrategy, string? customPrompt)
     {
         var sb = new StringBuilder(BaseSystemPrompt);
 

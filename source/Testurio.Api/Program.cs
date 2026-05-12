@@ -8,6 +8,7 @@ using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Anthropic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +55,23 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 builder.Services.AddInfrastructure();
+
+// ILlmGenerationClient — used by PromptCheckService for AI-assisted prompt quality checks.
+// The API key is optional at startup; if absent the prompt-check endpoint will fail at runtime
+// (acceptable: the key is always present in non-development environments).
+builder.Services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
+{
+    var apiKey = builder.Configuration["Claude:ApiKey"] ?? string.Empty;
+    if (!string.IsNullOrEmpty(apiKey))
+        client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+})
+.AddTypedClient<ILlmGenerationClient>((client, sp) =>
+{
+    var modelId = builder.Configuration["Claude:ModelId"] ?? "claude-opus-4-7";
+    var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
+    return new AnthropicGenerationClient(client, modelId, logger);
+});
+
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
