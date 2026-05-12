@@ -2,97 +2,97 @@
 
 ## Tasks
 
-### T001 — [Domain] Add PM tool configuration value objects to Project entity
+### T001 — [x] [Domain] Add PM tool configuration value objects to Project entity
 Add enum types and configuration records to model ADO and Jira connections. Files: `source/Testurio.Core/Entities/Project.cs` (extend with `pmTool`, `adoOrgUrl`, `adoProjectName`, `adoTeam`, `adoInTestingStatus`, `adoAuthMethod`, `adoTokenSecretUri`, `jiraBaseUrl`, `jiraProjectKey`, `jiraInTestingStatus`, `jiraAuthMethod`, `jiraApiTokenSecretUri`, `jiraEmailSecretUri`, `webhookSecret`, `integrationStatus` properties), `source/Testurio.Core/Enums/PMToolType.cs` (`ado`, `jira`), `source/Testurio.Core/Enums/ADOAuthMethod.cs` (`pat`, `oauth`), `source/Testurio.Core/Enums/JiraAuthMethod.cs` (`apiToken`, `pat`), `source/Testurio.Core/Enums/IntegrationStatus.cs` (`none`, `active`, `authError`).
 
-### T002 — [Domain] Add PM tool API interfaces to Core
+### T002 — [x] [Domain] Add PM tool API interfaces to Core
 Define service contracts for interacting with PM tools. Files: `source/Testurio.Core/Interfaces/IADOClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync), `source/Testurio.Core/Interfaces/IJiraClient.cs` (GetProjectAsync, TestConnectionAsync, PostCommentAsync, DeregisterWebhookAsync).
 
-### T003 — [Infra] Create ADO REST client implementation
+### T003 — [x] [Infra] Create ADO REST client implementation
 Implement Azure DevOps API client. Files: `source/Testurio.Infrastructure/ADO/ADOClient.cs` (full ADO REST v4.1 integration), `source/Testurio.Infrastructure/ADO/Models/ADOProjectResponse.cs`, `source/Testurio.Infrastructure/ADO/Models/ADOUserResponse.cs`.
 
-### T004 — [Infra] Create Jira REST client implementation
+### T004 — [x] [Infra] Create Jira REST client implementation
 Implement Jira API client. Files: `source/Testurio.Infrastructure/Jira/JiraAdditionalClient.cs` (extends existing JiraApiClient from 0004 with GetProjectAsync, TestConnectionAsync, DeregisterWebhookAsync), `source/Testurio.Infrastructure/Jira/Models/JiraProjectResponse.cs`.
 
-### T005 — [Infra] Add webhook secret generation and storage
+### T005 — [x] [Infra] Add webhook secret generation and storage
 Create utility for generating and persisting webhook secrets. Files: `source/Testurio.Infrastructure/Security/WebhookSecretGenerator.cs` (GenerateSecret(), ValidateSignature()), register in DI.
 
-### T006 — [Infra] Extend ProjectRepository for PM tool queries
+### T006 — [x] [Infra] Extend ProjectRepository for PM tool queries
 Add specialized queries for retrieving PM tool config. Files: `source/Testurio.Infrastructure/Cosmos/ProjectRepository.cs` (add GetByProjectIdAndUserIdAsync if not present, ensure partition-key enforcement).
 
-### T007 — [App] Create PM tool connection validator
+### T007 — [x] [App] Create PM tool connection validator
 Validate ADO and Jira connection form inputs. Files: `source/Testurio.Api/Validators/ADOConnectionValidator.cs`, `source/Testurio.Api/Validators/JiraConnectionValidator.cs`, `source/Testurio.Api/Validators/PMToolConnectionValidator.cs` (base class).
 
-### T008 — [App] Create PM tool connection service
+### T008 — [x] [App] Create PM tool connection service
 Orchestrate PM tool configuration save, test, and removal. Files: `source/Testurio.Api/Services/IPMToolConnectionService.cs`, `source/Testurio.Api/Services/PMToolConnectionService.cs` (SaveADOConnectionAsync, SaveJiraConnectionAsync, TestConnectionAsync, RemoveConnectionAsync, GenerateWebhookSecretAsync, RegenerateWebhookSecretAsync).
 
-### T009 — [App] Create DTOs for PM tool configuration
+### T009 — [x] [App] Create DTOs for PM tool configuration
 Define request and response models. Files: `source/Testurio.Api/DTOs/SaveADOConnectionRequest.cs`, `source/Testurio.Api/DTOs/SaveJiraConnectionRequest.cs`, `source/Testurio.Api/DTOs/PMToolConnectionResponse.cs`, `source/Testurio.Api/DTOs/TestConnectionResponse.cs`, `source/Testurio.Api/DTOs/WebhookSetupResponse.cs`.
 
-### T010 — [API] Add PM tool connection endpoints
+### T010 — [x] [API] Add PM tool connection endpoints
 Create routes for configuration, testing, and removal. Files: `source/Testurio.Api/Program.cs` (add route group `/v1/projects/{projectId}/integrations` with POST/PUT/DELETE/GET and POST test), routing logic maps to `PMToolConnectionService`.
 
-### T011 — [API] Add webhook info endpoint
+### T011 — [x] [API] Add webhook info endpoint
 Create route to retrieve webhook URL and secret display state. Files: `source/Testurio.Api/Program.cs` (extend integrations group with GET `/webhook-setup` returning `WebhookSetupResponse`).
 
-### T012 — [API] Add integration status endpoint
+### T012 — [x] [API] Add integration status endpoint
 Create route to retrieve current PM tool integration state. Files: `source/Testurio.Api/Program.cs` (GET `/v1/projects/{projectId}/integrations` returning integration status, tool name, identifiers, auth method).
 
-### T013 — [Config] Register PM tool clients and services in DI
+### T013 — [x] [Config] Register PM tool clients and services in DI
 Register all infrastructure and application services. Files: `source/Testurio.Api/Program.cs` and/or `source/Testurio.Infrastructure/DependencyInjection.cs` (AddScoped<IADOClient, ADOClient>(), AddScoped<IJiraClient, JiraAdditionalClient>(), AddScoped<IPMToolConnectionService, PMToolConnectionService>(), AddSingleton<WebhookSecretGenerator>()).
 
-### T014 — [UI] Create PM tool types and DTOs
+### T014 — [x] [UI] Create PM tool types and DTOs
 Define TypeScript interfaces matching backend models. Files: `source/Testurio.Web/src/types/pmTool.types.ts` (PMToolType, ADOConnection, JiraConnection, TestConnectionResult, WebhookSetupInfo, IntegrationStatus).
 
-### T015 — [UI] Create PM tool API service
+### T015 — [x] [UI] Create PM tool API service
 Implement client-side API calls. Files: `source/Testurio.Web/src/services/pmTool/pmToolService.ts` (saveADOConnection, saveJiraConnection, testConnection, removeConnection, getWebhookSetup, getIntegrationStatus), all methods use apiClient with proper error handling.
 
-### T016 — [UI] Create MSW mock handlers for PM tool endpoints
+### T016 — [x] [UI] Create MSW mock handlers for PM tool endpoints
 Mock backend responses for development and testing. Files: `source/Testurio.Web/src/mocks/handlers/pmTool.ts` (handlers for all PM tool endpoints with realistic responses and error scenarios).
 
-### T017 — [UI] Create React Query hooks for PM tool management
+### T017 — [x] [UI] Create React Query hooks for PM tool management
 Implement query and mutation hooks. Files: `source/Testurio.Web/src/hooks/usePMToolConnection.ts` (useIntegrationStatus, useSaveADOConnection, useSaveJiraConnection, useTestConnection, useRemoveConnection, useWebhookSetup, useRegenerateWebhookSecret, PM_TOOL_KEYS), follow React Query v5 patterns with proper cache invalidation.
 
-### T018 — [UI] Create ADO connection form component
+### T018 — [x] [UI] Create ADO connection form component
 Build form for Azure DevOps configuration. Files: `source/Testurio.Web/src/components/Integrations/ADOConnectionForm/ADOConnectionForm.tsx` (required fields: org URL, project name, team, In Testing status, auth method selector, validation, form state management).
 
-### T019 — [UI] Create Jira connection form component
+### T019 — [x] [UI] Create Jira connection form component
 Build form for Jira configuration. Files: `source/Testurio.Web/src/components/Integrations/JiraConnectionForm/JiraConnectionForm.tsx` (required fields: base URL, project key, In Testing status, auth method selector with email+token or PAT options, validation).
 
-### T020 — [UI] Create test connection button component
+### T020 — [x] [UI] Create test connection button component
 Build reusable button with result indicator. Files: `source/Testurio.Web/src/components/Integrations/TestConnectionButton/TestConnectionButton.tsx` (button, success/auth-error/unreachable indicators, loading state, error messages).
 
-### T021 — [UI] Create webhook setup display component
+### T021 — [x] [UI] Create webhook setup display component
 Build panel showing webhook URL and secret. Files: `source/Testurio.Web/src/components/Integrations/WebhookSetupPanel/WebhookSetupPanel.tsx` (URL display with copy button, secret masked/plaintext toggle, regenerate button with warning, tool-specific instructions, copy-to-clipboard functionality).
 
-### T022 — [UI] Create integration status card component
+### T022 — [x] [UI] Create integration status card component
 Build summary card showing current integration state. Files: `source/Testurio.Web/src/components/Integrations/IntegrationStatusCard/IntegrationStatusCard.tsx` (not configured state, configured state with tool name/identifier, auth error alert with token update form).
 
-### T023 — [UI] Create integration removal dialog
+### T023 — [x] [UI] Create integration removal dialog
 Build confirmation and removal flow. Files: `source/Testurio.Web/src/components/Integrations/RemoveIntegrationDialog/RemoveIntegrationDialog.tsx` (confirmation warning about active runs and queued jobs, removal execution, success feedback).
 
-### T024 — [UI] Create Integrations settings page
+### T024 — [x] [UI] Create Integrations settings page
 Assemble all components into unified settings view. Files: `source/Testurio.Web/src/pages/ProjectSettings/Integrations/IntegrationPage.tsx` (renders status card, connection forms, test button, webhook setup, removal dialog as appropriate to current state).
 
-### T025 — [UI] Add translations for PM tool integration
+### T025 — [x] [UI] Add translations for PM tool integration
 Localize all user-facing text. Files: `source/Testurio.Web/src/locales/en/pmTool.json` (connection labels, field names, instructions, error messages, success messages, auth method options, tool-specific steps).
 
-### T026 — [UI] Register integration routes in main router
+### T026 — [x] [UI] Register integration routes in main router
 Wire page into navigation. Files: `source/Testurio.Web/src/routes/routes.tsx` (add route for project integrations page under authenticated project settings area).
 
-### T027 — [Test] Create PM tool connection service unit tests
+### T027 — [x] [Test] Create PM tool connection service unit tests
 Test validation, secret management, and service logic. Files: `tests/Testurio.UnitTests/Services/PMToolConnectionServiceTests.cs` (SaveADOConnectionAsync, SaveJiraConnectionAsync, TestConnectionAsync with success/auth-error/unreachable, RemoveConnectionAsync, WebhookSecretAsync, all US stories' ACs).
 
-### T028 — [Test] Create PM tool API integration tests
+### T028 — [x] [Test] Create PM tool API integration tests
 Test endpoint behavior and multi-tenancy. Files: `tests/Testurio.IntegrationTests/Controllers/PMToolIntegrationTests.cs` (POST/PUT/DELETE/GET integrations, webhook setup, test connection, cross-tenant forbidden checks).
 
-### T029 — [Test] Create PM tool React Query hook tests
+### T029 — [x] [Test] Create PM tool React Query hook tests
 Test query behavior and cache invalidation. Files: `source/Testurio.Web/src/hooks/__tests__/usePMToolConnection.test.ts` (query invalidation on mutation, error state handling, loading states).
 
-### T030 — [Test] Create integration form component tests
+### T030 — [x] [Test] Create integration form component tests
 Test form validation and submission. Files: `source/Testurio.Web/src/components/Integrations/ADOConnectionForm/ADOConnectionForm.test.tsx`, `source/Testurio.Web/src/components/Integrations/JiraConnectionForm/JiraConnectionForm.test.tsx` (field presence, validation display, submission).
 
-### T031 — [Test] Create webhook setup component tests
+### T031 — [x] [Test] Create webhook setup component tests
 Test secret masking, copy, regenerate flows. Files: `source/Testurio.Web/src/components/Integrations/WebhookSetupPanel/WebhookSetupPanel.test.tsx` (URL and secret rendering, copy-to-clipboard, regenerate confirmation, mask/plaintext toggle).
 
 ## Rationale

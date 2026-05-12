@@ -119,6 +119,10 @@ public static class DependencyInjection
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
         services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
+        services.AddHttpClient<IADOClient, ADO.ADOClient>();
+        services.AddHttpClient<IJiraClient, Jira.JiraAdditionalClient>();
+
+        services.AddSingleton<Security.WebhookSecretGenerator>();
 
         return services;
     }

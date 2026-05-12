@@ -10,4 +10,9 @@ public sealed class KeyVaultSecretResolver : ISecretResolver
         => throw new NotImplementedException(
             "KeyVaultSecretResolver is not yet implemented. " +
             "Integrate Azure.Security.KeyVault.Secrets and replace this stub before deploying to production.");
+
+    public Task StoreAsync(string secretName, string secretValue, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException(
+            "KeyVaultSecretResolver is not yet implemented. " +
+            "Integrate Azure.Security.KeyVault.Secrets and replace this stub before deploying to production.");
 }

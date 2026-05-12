@@ -48,6 +48,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/projects/abc-123/settings)",
       "PowerShell(New-Item *)",
       "Bash(git rm *)",
+      "Bash(npx vitest *)",
+      "Bash(xargs cat *)",
       "Read(//d/d/projects/testur.io/tests/Testurio.UnitTests/**)",
       "Read(//d/d/projects/testur.io/tests/Testurio.IntegrationTests/**)"
     ]
