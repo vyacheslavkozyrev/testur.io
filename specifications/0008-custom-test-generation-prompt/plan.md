@@ -18,7 +18,7 @@
 - [x] T014 [UI] Build `CustomPromptField` component — textarea with live character counter, conflict warning, prompt preview panel, and "Check Prompt" button with inline feedback — `source/Testurio.Web/src/components/CustomPromptField/CustomPromptField.tsx`
 - [x] T015 [UI] Integrate `CustomPromptField` into the project settings page — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [x] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
-- [ ] T017 [Test] Backend unit tests for `PromptCheckService` and prompt composition logic in `TestGeneratorPlugin` — `tests/Testurio.UnitTests/Services/PromptCheckServiceTests.cs`
+- [x] T017 [Test] Backend unit tests for `PromptCheckService` and prompt composition logic in `TestGeneratorPlugin` — `tests/Testurio.UnitTests/Services/PromptCheckServiceTests.cs`
 - [ ] T018 [Test] Backend integration tests for `POST /v1/projects/{projectId}/prompt-check` endpoint — `tests/Testurio.IntegrationTests/Controllers/ProjectPromptCheckControllerTests.cs`
 - [ ] T019 [Test] Frontend component tests for `CustomPromptField` — `source/Testurio.Web/src/components/CustomPromptField/CustomPromptField.test.tsx`
 - [ ] T020 [Test] E2E tests — `source/Testurio.Web/e2e/custom-test-generation-prompt.spec.ts`
