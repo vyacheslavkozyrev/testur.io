@@ -164,7 +164,7 @@ Webhook received → Service Bus → Worker dequeues → 8-stage pipeline:
    Detects whether the raw story matches the Testurio template. If yes: parses directly into structured JSON (title, description, acceptance_criteria, entities, actions, edge_cases). If no: calls Claude to convert it, posts a warning comment to the originating ADO/Jira ticket, then continues with the converted story.
 
 2. **AgentRouter** (`Testurio.Pipeline.AgentRouter`)
-   Reads the project `test_types` config (`api | ui_e2e | both`), resolves which generator agents to invoke, and coordinates their parallel execution.
+   Classifies the `ParsedStory` using Claude to determine which test types (`api`, `ui_e2e`) are meaningful for the described functionality. Filters the classification result against the project `test_types` config. If no type can be resolved, posts a comment to the originating ADO/Jira ticket explaining why and marks the run as `Skipped — no applicable test type`. Otherwise, instantiates the appropriate generator agents via `ITestGeneratorFactory` and passes them to stage 4 for parallel execution. Writes `resolvedTestTypes` and `classificationReason` to the `TestRun` record.
 
 3. **MemoryRetrieval** (`Testurio.Pipeline.MemoryRetrieval`)
    Embeds the parsed story text via Azure OpenAI `text-embedding-3-small`, then runs a Cosmos DiskANN vector search scoped to `userId + testType`. Returns the top-3 most semantically similar past scenarios per enabled test type.
