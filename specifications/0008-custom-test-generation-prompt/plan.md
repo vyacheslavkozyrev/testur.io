@@ -9,8 +9,8 @@
 - [x] T005 [App] Implement `PromptCheckService` — calls Claude API with prompt + strategy and returns structured feedback — `source/Testurio.Api/Services/PromptCheckService.cs`
 - [x] T006 [API] Add `POST /v1/projects/{projectId}/prompt-check` endpoint with ownership guard — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
 - [x] T007 [Config] Define `PromptCheckFeedback` response model (Clarity, Specificity, PotentialConflicts) — `source/Testurio.Api/DTOs/PromptCheckDto.cs`
-- [ ] T008 [Worker] Update `TestGeneratorPlugin` to compose final prompt (system + strategy + customPrompt) before calling Claude API — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
-- [ ] T009 [Worker] Add prompt length guard in `TestGeneratorPlugin` — fail the job with a descriptive log entry if total prompt exceeds context limit — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
+- [x] T008 [Worker] Update `TestGeneratorPlugin` to compose final prompt (system + strategy + customPrompt) before calling Claude API — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
+- [x] T009 [Worker] Add prompt length guard in `TestGeneratorPlugin` — fail the job with a descriptive log entry if total prompt exceeds context limit — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [ ] T010 [UI] Add `customPrompt` to project types — `source/Testurio.Web/src/types/project.types.ts`
 - [ ] T011 [UI] Add `promptCheck` method to project service — `source/Testurio.Web/src/services/project/projectService.ts`
 - [ ] T012 [UI] Add `usePromptCheck` mutation hook — `source/Testurio.Web/src/hooks/useProject.ts`
