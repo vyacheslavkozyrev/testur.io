@@ -15,7 +15,7 @@
 - [x] T011 [UI] Add `promptCheck` method to project service — `source/Testurio.Web/src/services/project/projectService.ts`
 - [x] T012 [UI] Add `usePromptCheck` mutation hook — `source/Testurio.Web/src/hooks/useProject.ts`
 - [x] T013 [UI] Add MSW mock handlers for `PATCH /v1/projects/:id` (customPrompt) and `POST /v1/projects/:id/prompt-check` — `source/Testurio.Web/src/mocks/handlers/project.ts`
-- [ ] T014 [UI] Build `CustomPromptField` component — textarea with live character counter, conflict warning, prompt preview panel, and "Check Prompt" button with inline feedback — `source/Testurio.Web/src/components/CustomPromptField/CustomPromptField.tsx`
+- [x] T014 [UI] Build `CustomPromptField` component — textarea with live character counter, conflict warning, prompt preview panel, and "Check Prompt" button with inline feedback — `source/Testurio.Web/src/components/CustomPromptField/CustomPromptField.tsx`
 - [ ] T015 [UI] Integrate `CustomPromptField` into the project settings page — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [ ] T016 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/project.json`
 - [ ] T017 [Test] Backend unit tests for `PromptCheckService` and prompt composition logic in `TestGeneratorPlugin` — `tests/Testurio.UnitTests/Services/PromptCheckServiceTests.cs`
