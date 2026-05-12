@@ -48,6 +48,7 @@ const mockProject: ProjectDto = {
   name: 'Existing Project',
   productUrl: 'https://existing.example.com',
   testingStrategy: 'Smoke tests.',
+  customPrompt: null,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };
