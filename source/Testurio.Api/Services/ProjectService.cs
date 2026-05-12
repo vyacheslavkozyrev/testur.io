@@ -67,6 +67,7 @@ public partial class ProjectService : IProjectService
             Name = request.Name,
             ProductUrl = request.ProductUrl,
             TestingStrategy = request.TestingStrategy,
+            CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt,
         };
 
         // Establish the Key Vault namespace for this project (no Azure SDK call — naming only).
@@ -98,6 +99,7 @@ public partial class ProjectService : IProjectService
         existing.Name = request.Name;
         existing.ProductUrl = request.ProductUrl;
         existing.TestingStrategy = request.TestingStrategy;
+        existing.CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
         var updated = await _projectRepository.UpdateAsync(existing, cancellationToken);
@@ -133,6 +135,7 @@ public partial class ProjectService : IProjectService
         Name: project.Name,
         ProductUrl: project.ProductUrl,
         TestingStrategy: project.TestingStrategy,
+        CustomPrompt: project.CustomPrompt,
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 
