@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/project/projectService';
-import type { ProjectDto, CreateProjectRequest, UpdateProjectRequest } from '@/types/project.types';
+import type {
+  ProjectDto,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  PromptCheckRequest,
+  PromptCheckFeedback,
+} from '@/types/project.types';
 import type { ApiError } from '@/types/api.types';
 
 export const PROJECT_KEYS = {
@@ -47,5 +53,11 @@ export function useDeleteProject() {
   return useMutation<void, ApiError, string>({
     mutationFn: projectService.delete,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: PROJECT_KEYS.all }),
+  });
+}
+
+export function usePromptCheck(projectId: string) {
+  return useMutation<PromptCheckFeedback, ApiError, PromptCheckRequest>({
+    mutationFn: (body) => projectService.promptCheck(projectId, body),
   });
 }
