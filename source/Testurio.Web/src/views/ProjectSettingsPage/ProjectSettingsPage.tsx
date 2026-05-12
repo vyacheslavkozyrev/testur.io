@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
+import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
 import ProjectForm from '@/components/ProjectForm/ProjectForm';
 import { useProject, useUpdateProject, useDeleteProject } from '@/hooks/useProject';
@@ -26,13 +27,21 @@ export default function ProjectSettingsPage() {
   const deleteProject = useDeleteProject();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState<string>('');
 
+  // Sync local customPrompt with the server value when the project loads or changes.
+  // useEffect is the correct place for this — avoids calling setState during render.
+  useEffect(() => {
+    if (project) {
+      setCustomPrompt(project.customPrompt ?? '');
+    }
+  }, [project?.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUpdate = useCallback(
     (data: UpdateProjectRequest) => {
-      updateProject.mutate(data);
+      updateProject.mutate({ ...data, customPrompt: customPrompt || null });
     },
-    [updateProject],
+    [updateProject, customPrompt],
   );
 
   const handleDeleteConfirm = useCallback(() => {
@@ -92,6 +101,21 @@ export default function ProjectSettingsPage() {
         onSubmit={handleUpdate}
       />
 
+      <Box sx={styles.customPromptSection}>
+        <Typography variant="h6" sx={styles.sectionTitle}>
+          {t('customPrompt.section.title')}
+        </Typography>
+        <Typography variant="body2" sx={styles.sectionDescription}>
+          {t('customPrompt.section.description')}
+        </Typography>
+        <CustomPromptField
+          projectId={project.projectId}
+          testingStrategy={project.testingStrategy}
+          value={customPrompt}
+          onChange={setCustomPrompt}
+        />
+      </Box>
+
       <Box sx={styles.dangerZone}>
         <Typography variant="h6" color="error">
           {t('settings.dangerZone.title')}
@@ -141,6 +165,20 @@ const getStyles = (theme: Theme) =>
       },
       alert: {
         width: '100%',
+      },
+      customPromptSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: theme.spacing(2),
+        borderTop: `1px solid ${theme.palette.divider}`,
+        paddingTop: theme.spacing(3),
+      },
+      sectionTitle: {
+        ...theme.typography.h6,
+        color: theme.palette.text.primary,
+      },
+      sectionDescription: {
+        color: theme.palette.text.secondary,
       },
       dangerZone: {
         display: 'flex',

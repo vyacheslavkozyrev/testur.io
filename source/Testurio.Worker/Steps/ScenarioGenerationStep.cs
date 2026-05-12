@@ -71,7 +71,14 @@ public partial class ScenarioGenerationStep
         IReadOnlyList<TestScenario> scenarios;
         try
         {
-            scenarios = await _testGenerator.GenerateAsync(testRun.Id, testRun.ProjectId, testRun.UserId, promptInput, cancellationToken);
+            scenarios = await _testGenerator.GenerateAsync(
+                testRun.Id,
+                testRun.ProjectId,
+                testRun.UserId,
+                promptInput,
+                project.TestingStrategy,
+                project.CustomPrompt,
+                cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

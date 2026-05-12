@@ -20,6 +20,8 @@ public static class ProjectEndpoints
         projects.MapPut("/{projectId}", UpdateProjectAsync).WithName("UpdateProject")
             .AddEndpointFilter<ValidationFilter<UpdateProjectRequest>>();
         projects.MapDelete("/{projectId}", DeleteProjectAsync).WithName("DeleteProject");
+        projects.MapPost("/{projectId}/prompt-check", PromptCheckAsync).WithName("PromptCheck")
+            .AddEndpointFilter<ValidationFilter<PromptCheckRequest>>();
 
         return app;
     }
@@ -89,6 +91,27 @@ public static class ProjectEndpoints
             ProjectOperationResult.NotFound  => TypedResults.NotFound(),
             _                                => TypedResults.NoContent(),
         };
+    }
+
+    private static async Task<Results<Ok<PromptCheckFeedback>, NotFound, ForbidHttpResult>> PromptCheckAsync(
+        string projectId,
+        PromptCheckRequest request,
+        ClaimsPrincipal user,
+        IProjectService projectService,
+        IPromptCheckService promptCheckService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+
+        // Ownership guard — distinguish "not found" from "forbidden" (AC-029).
+        var (result, project) = await projectService.GetWithOwnershipCheckAsync(userId, projectId, cancellationToken);
+        if (result == ProjectOperationResult.Forbidden)
+            return TypedResults.Forbid();
+        if (result == ProjectOperationResult.NotFound || project is null)
+            return TypedResults.NotFound();
+
+        var feedback = await promptCheckService.CheckAsync(request.CustomPrompt, project.TestingStrategy, cancellationToken);
+        return TypedResults.Ok(feedback);
     }
 }
 

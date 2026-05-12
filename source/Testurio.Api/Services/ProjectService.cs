@@ -34,6 +34,12 @@ public interface IProjectService
     /// Returns the result discriminator so callers can return the correct HTTP status.
     /// </summary>
     Task<ProjectOperationResult> DeleteAsync(string userId, string projectId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the project DTO when the project is found and belongs to the user.
+    /// Returns the result discriminator so callers can distinguish NotFound from Forbidden.
+    /// </summary>
+    Task<(ProjectOperationResult Result, ProjectDto? Dto)> GetWithOwnershipCheckAsync(string userId, string projectId, CancellationToken cancellationToken = default);
 }
 
 public partial class ProjectService : IProjectService
@@ -67,6 +73,7 @@ public partial class ProjectService : IProjectService
             Name = request.Name,
             ProductUrl = request.ProductUrl,
             TestingStrategy = request.TestingStrategy,
+            CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt,
         };
 
         // Establish the Key Vault namespace for this project (no Azure SDK call — naming only).
@@ -98,6 +105,7 @@ public partial class ProjectService : IProjectService
         existing.Name = request.Name;
         existing.ProductUrl = request.ProductUrl;
         existing.TestingStrategy = request.TestingStrategy;
+        existing.CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
         var updated = await _projectRepository.UpdateAsync(existing, cancellationToken);
@@ -128,11 +136,28 @@ public partial class ProjectService : IProjectService
         return ProjectOperationResult.Success;
     }
 
+    public async Task<(ProjectOperationResult Result, ProjectDto? Dto)> GetWithOwnershipCheckAsync(string userId, string projectId, CancellationToken cancellationToken = default)
+    {
+        var anyProject = await _projectRepository.GetByProjectIdAsync(projectId, cancellationToken);
+        if (anyProject is null)
+            return (ProjectOperationResult.NotFound, null);
+
+        if (anyProject.UserId != userId)
+            return (ProjectOperationResult.Forbidden, null);
+
+        var project = await _projectRepository.GetByIdAsync(userId, projectId, cancellationToken);
+        if (project is null)
+            return (ProjectOperationResult.NotFound, null); // soft-deleted between the two reads
+
+        return (ProjectOperationResult.Success, ToDto(project));
+    }
+
     private static ProjectDto ToDto(Project project) => new(
         ProjectId: project.Id,
         Name: project.Name,
         ProductUrl: project.ProductUrl,
         TestingStrategy: project.TestingStrategy,
+        CustomPrompt: project.CustomPrompt,
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 

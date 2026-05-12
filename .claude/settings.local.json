@@ -49,7 +49,9 @@
       "PowerShell(New-Item *)",
       "Bash(git rm *)",
       "Bash(npx vitest *)",
-      "Bash(xargs cat *)"
+      "Bash(xargs cat *)",
+      "Read(//d/d/projects/testur.io/tests/Testurio.UnitTests/**)",
+      "Read(//d/d/projects/testur.io/tests/Testurio.IntegrationTests/**)"
     ]
   },
   "enableAllProjectMcpServers": true
