@@ -1,5 +1,11 @@
 import apiClient from '@/services/apiClient';
-import type { ProjectDto, CreateProjectRequest, UpdateProjectRequest } from '@/types/project.types';
+import type {
+  ProjectDto,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  PromptCheckRequest,
+  PromptCheckFeedback,
+} from '@/types/project.types';
 
 export const projectService = {
   list: (): Promise<ProjectDto[]> =>
@@ -16,4 +22,7 @@ export const projectService = {
 
   delete: (id: string): Promise<void> =>
     apiClient.delete(`/v1/projects/${id}`).then(() => undefined),
+
+  promptCheck: (id: string, body: PromptCheckRequest): Promise<PromptCheckFeedback> =>
+    apiClient.post<PromptCheckFeedback>(`/v1/projects/${id}/prompt-check`, body).then((r) => r.data),
 };

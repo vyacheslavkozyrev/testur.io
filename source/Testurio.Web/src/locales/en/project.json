@@ -41,5 +41,33 @@
       "title": "Danger Zone",
       "deleteButton": "Delete Project"
     }
+  },
+  "customPrompt": {
+    "section": {
+      "title": "Custom Test Generation Prompt",
+      "description": "Add optional instructions to steer AI test generation for this project. These are appended after the base system prompt and testing strategy."
+    },
+    "field": {
+      "label": "Custom Prompt",
+      "placeholder": "E.g. Focus on edge cases around authentication and rate limiting. Always test with invalid tokens.",
+      "overLimit": "Custom prompt must not exceed 5,000 characters.",
+      "conflictWarning": "Your custom prompt may conflict with the selected testing strategy."
+    },
+    "check": {
+      "button": "Check Prompt",
+      "error": "Prompt quality check failed. Please try again.",
+      "resultsTitle": "AI Prompt Quality Feedback",
+      "clarity": "Clarity",
+      "specificity": "Specificity",
+      "potentialConflicts": "Potential Conflicts"
+    },
+    "preview": {
+      "title": "Prompt Preview",
+      "readOnly": "Read-only — shows how your prompt will be composed when sent to the AI.",
+      "basePrompt": "[Base System Prompt — fixed, not editable]",
+      "strategyLabel": "[Testing Strategy]",
+      "customLabel": "[Your Custom Prompt]",
+      "noCustomPrompt": "[No custom prompt added — only the base system prompt and testing strategy will be used]"
+    }
   }
 }

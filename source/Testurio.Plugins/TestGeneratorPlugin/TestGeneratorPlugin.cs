@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
@@ -8,7 +9,21 @@ namespace Testurio.Plugins.TestGeneratorPlugin;
 
 public partial class TestGeneratorPlugin
 {
-    private const string SystemPrompt =
+    /// <summary>
+    /// Approximate character-to-token ratio used for the context-limit guard.
+    /// Claude's tokeniser averages ~4 characters per token; we use a conservative ratio of 3
+    /// so the guard fires before the API rejects the request.
+    /// </summary>
+    private const int CharsPerToken = 3;
+
+    /// <summary>
+    /// Maximum tokens allowed in the composed system prompt (system + strategy + custom).
+    /// Claude claude-opus-4-7 supports a 200 000-token context window; we reserve 16 000 for
+    /// the generated output and use the remainder for input. The guard is deliberately conservative.
+    /// </summary>
+    private const int MaxSystemPromptTokens = 4000;
+
+    private const string BaseSystemPrompt =
         """
         You are a QA engineer specialising in API test case design.
         Given a user story description and acceptance criteria, generate a structured list of API test scenarios.
@@ -42,9 +57,23 @@ public partial class TestGeneratorPlugin
         string projectId,
         string userId,
         string storyInput,
+        string testingStrategy,
+        string? customPrompt = null,
         CancellationToken cancellationToken = default)
     {
-        var responseText = await _llmClient.CompleteAsync(SystemPrompt, storyInput, cancellationToken);
+        var composedPrompt = ComposeSystemPrompt(testingStrategy, customPrompt);
+
+        // AC-034: guard against exceeding context limits.
+        var estimatedTokens = composedPrompt.Length / CharsPerToken;
+        if (estimatedTokens > MaxSystemPromptTokens)
+        {
+            LogPromptTooLong(_logger, testRunId, estimatedTokens, MaxSystemPromptTokens);
+            throw new PromptTooLongException(testRunId,
+                $"Composed system prompt is too long ({estimatedTokens} estimated tokens, limit {MaxSystemPromptTokens}). " +
+                "Shorten the testing strategy or custom prompt and retry.");
+        }
+
+        var responseText = await _llmClient.CompleteAsync(composedPrompt, storyInput, cancellationToken);
         responseText = StripMarkdownFences(responseText);
 
         if (string.IsNullOrWhiteSpace(responseText))
@@ -94,6 +123,33 @@ public partial class TestGeneratorPlugin
         return scenarios;
     }
 
+    /// <summary>
+    /// Composes the final system prompt: base system prompt → testing strategy → custom prompt.
+    /// The order is fixed and cannot be changed (AC-032).
+    /// </summary>
+    public static string ComposeSystemPrompt(string testingStrategy, string? customPrompt)
+    {
+        var sb = new StringBuilder(BaseSystemPrompt);
+
+        if (!string.IsNullOrWhiteSpace(testingStrategy))
+        {
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("Testing Strategy:");
+            sb.Append(testingStrategy.Trim());
+        }
+
+        if (!string.IsNullOrWhiteSpace(customPrompt))
+        {
+            sb.AppendLine();
+            sb.AppendLine();
+            sb.AppendLine("Additional Instructions:");
+            sb.Append(customPrompt.Trim());
+        }
+
+        return sb.ToString();
+    }
+
     private static string StripMarkdownFences(string text)
     {
         if (!text.StartsWith("```", StringComparison.Ordinal))
@@ -116,6 +172,9 @@ public partial class TestGeneratorPlugin
     [LoggerMessage(Level = LogLevel.Information, Message = "Generated {Count} test scenarios for test run {TestRunId}")]
     private static partial void LogGenerated(ILogger logger, int count, string testRunId);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "Composed system prompt for test run {TestRunId} exceeds context limit: {EstimatedTokens} estimated tokens (limit {MaxTokens})")]
+    private static partial void LogPromptTooLong(ILogger logger, string testRunId, int estimatedTokens, int maxTokens);
+
     private sealed class GeneratedScenarioDto
     {
         public string Title { get; init; } = string.Empty;
@@ -130,5 +189,19 @@ public partial class TestGeneratorPlugin
         public string? RequestBody { get; init; }
         public int ExpectedStatusCode { get; init; }
         public string? ExpectedResponseSchema { get; init; }
+    }
+}
+
+/// <summary>
+/// Thrown when the composed system prompt exceeds the configured context token limit.
+/// </summary>
+public class PromptTooLongException : Exception
+{
+    public string TestRunId { get; }
+
+    public PromptTooLongException(string testRunId, string message)
+        : base(message)
+    {
+        TestRunId = testRunId;
     }
 }
