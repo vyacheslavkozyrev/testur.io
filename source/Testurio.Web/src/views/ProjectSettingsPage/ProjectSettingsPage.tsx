@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
+import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
 import ProjectForm from '@/components/ProjectForm/ProjectForm';
 import { useProject, useUpdateProject, useDeleteProject } from '@/hooks/useProject';
@@ -26,14 +27,26 @@ export default function ProjectSettingsPage() {
   const deleteProject = useDeleteProject();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState<string>('');
 
+  // Keep local customPrompt in sync with remote value on initial load.
+  // We use a ref-free approach: derive initial value from project and track it via useState.
+  const [promptInitialisedFor, setPromptInitialisedFor] = useState<string | null>(null);
+  if (project && promptInitialisedFor !== project.projectId) {
+    setPromptInitialisedFor(project.projectId);
+    setCustomPrompt(project.customPrompt ?? '');
+  }
 
   const handleUpdate = useCallback(
     (data: UpdateProjectRequest) => {
-      updateProject.mutate(data);
+      updateProject.mutate({ ...data, customPrompt: customPrompt || null });
     },
-    [updateProject],
+    [updateProject, customPrompt],
   );
+
+  const handleCustomPromptChange = useCallback((value: string) => {
+    setCustomPrompt(value);
+  }, []);
 
   const handleDeleteConfirm = useCallback(() => {
     deleteProject.mutate(projectId, {
@@ -92,6 +105,21 @@ export default function ProjectSettingsPage() {
         onSubmit={handleUpdate}
       />
 
+      <Box sx={styles.customPromptSection}>
+        <Typography variant="h6" sx={styles.sectionTitle}>
+          {t('customPrompt.section.title')}
+        </Typography>
+        <Typography variant="body2" sx={styles.sectionDescription}>
+          {t('customPrompt.section.description')}
+        </Typography>
+        <CustomPromptField
+          projectId={project.projectId}
+          testingStrategy={project.testingStrategy}
+          value={customPrompt}
+          onChange={handleCustomPromptChange}
+        />
+      </Box>
+
       <Box sx={styles.dangerZone}>
         <Typography variant="h6" color="error">
           {t('settings.dangerZone.title')}
@@ -141,6 +169,20 @@ const getStyles = (theme: Theme) =>
       },
       alert: {
         width: '100%',
+      },
+      customPromptSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: theme.spacing(2),
+        borderTop: `1px solid ${theme.palette.divider}`,
+        paddingTop: theme.spacing(3),
+      },
+      sectionTitle: {
+        ...theme.typography.h6,
+        color: theme.palette.text.primary,
+      },
+      sectionDescription: {
+        color: theme.palette.text.secondary,
       },
       dangerZone: {
         display: 'flex',
