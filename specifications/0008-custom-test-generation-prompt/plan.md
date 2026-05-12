@@ -12,7 +12,7 @@
 - [x] T008 [Worker] Update `TestGeneratorPlugin` to compose final prompt (system + strategy + customPrompt) before calling Claude API — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [x] T009 [Worker] Add prompt length guard in `TestGeneratorPlugin` — fail the job with a descriptive log entry if total prompt exceeds context limit — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [x] T010 [UI] Add `customPrompt` to project types — `source/Testurio.Web/src/types/project.types.ts`
-- [ ] T011 [UI] Add `promptCheck` method to project service — `source/Testurio.Web/src/services/project/projectService.ts`
+- [x] T011 [UI] Add `promptCheck` method to project service — `source/Testurio.Web/src/services/project/projectService.ts`
 - [ ] T012 [UI] Add `usePromptCheck` mutation hook — `source/Testurio.Web/src/hooks/useProject.ts`
 - [ ] T013 [UI] Add MSW mock handlers for `PATCH /v1/projects/:id` (customPrompt) and `POST /v1/projects/:id/prompt-check` — `source/Testurio.Web/src/mocks/handlers/project.ts`
 - [ ] T014 [UI] Build `CustomPromptField` component — textarea with live character counter, conflict warning, prompt preview panel, and "Check Prompt" button with inline feedback — `source/Testurio.Web/src/components/CustomPromptField/CustomPromptField.tsx`
