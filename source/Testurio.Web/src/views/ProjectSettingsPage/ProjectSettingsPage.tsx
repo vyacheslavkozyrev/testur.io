@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
@@ -29,13 +29,13 @@ export default function ProjectSettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState<string>('');
 
-  // Keep local customPrompt in sync with remote value on initial load.
-  // We use a ref-free approach: derive initial value from project and track it via useState.
-  const [promptInitialisedFor, setPromptInitialisedFor] = useState<string | null>(null);
-  if (project && promptInitialisedFor !== project.projectId) {
-    setPromptInitialisedFor(project.projectId);
-    setCustomPrompt(project.customPrompt ?? '');
-  }
+  // Sync local customPrompt with the server value when the project loads or changes.
+  // useEffect is the correct place for this — avoids calling setState during render.
+  useEffect(() => {
+    if (project) {
+      setCustomPrompt(project.customPrompt ?? '');
+    }
+  }, [project?.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUpdate = useCallback(
     (data: UpdateProjectRequest) => {
@@ -43,10 +43,6 @@ export default function ProjectSettingsPage() {
     },
     [updateProject, customPrompt],
   );
-
-  const handleCustomPromptChange = useCallback((value: string) => {
-    setCustomPrompt(value);
-  }, []);
 
   const handleDeleteConfirm = useCallback(() => {
     deleteProject.mutate(projectId, {
@@ -116,7 +112,7 @@ export default function ProjectSettingsPage() {
           projectId={project.projectId}
           testingStrategy={project.testingStrategy}
           value={customPrompt}
-          onChange={handleCustomPromptChange}
+          onChange={setCustomPrompt}
         />
       </Box>
 

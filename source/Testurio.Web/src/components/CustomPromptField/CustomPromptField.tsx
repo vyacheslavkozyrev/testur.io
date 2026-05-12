@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -43,7 +43,6 @@ export default function CustomPromptField({
   const styles = getStyles(theme);
 
   const [feedback, setFeedback] = useState<PromptCheckFeedback | null>(null);
-  const [feedbackStale, setFeedbackStale] = useState(false);
   const promptCheck = usePromptCheck(projectId);
 
   const charCount = value.length;
@@ -67,19 +66,13 @@ export default function CustomPromptField({
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       onChange(e.target.value);
+      // AC-027: clear stale feedback whenever the user edits the prompt field.
       if (feedback) {
-        setFeedbackStale(true);
+        setFeedback(null);
       }
     },
     [onChange, feedback],
   );
-
-  useEffect(() => {
-    if (feedbackStale) {
-      setFeedback(null);
-      setFeedbackStale(false);
-    }
-  }, [feedbackStale]);
 
   const handleCheckPrompt = useCallback(() => {
     if (!value.trim()) return;
@@ -109,7 +102,7 @@ export default function CustomPromptField({
             : `${charCount} / ${MAX_PROMPT_LENGTH}`
         }
         fullWidth
-        inputProps={{ maxLength: MAX_PROMPT_LENGTH + 1 }}
+        inputProps={{ maxLength: MAX_PROMPT_LENGTH }}
       />
 
       {hasConflict && (
