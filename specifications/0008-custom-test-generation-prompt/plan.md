@@ -4,7 +4,7 @@
 
 - [x] T001 [Domain] Add `customPrompt` nullable string field to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
 - [x] T002 [Infra] Update Cosmos DB project document mapping to include `customPrompt` — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
-- [ ] T003 [App] Update `CreateProjectRequest` and `UpdateProjectRequest` DTOs with optional `customPrompt` field (max 5,000 chars) — `source/Testurio.Api/DTOs/ProjectDto.cs`
+- [x] T003 [App] Update `CreateProjectRequest` and `UpdateProjectRequest` DTOs with optional `customPrompt` field (max 5,000 chars) — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [ ] T004 [App] Update `ProjectService.CreateAsync` and `ProjectService.UpdateAsync` to persist `customPrompt` — `source/Testurio.Api/Services/ProjectService.cs`
 - [ ] T005 [App] Implement `PromptCheckService` — calls Claude API with prompt + strategy and returns structured feedback — `source/Testurio.Api/Services/PromptCheckService.cs`
 - [ ] T006 [API] Add `POST /v1/projects/{projectId}/prompt-check` endpoint with ownership guard — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`

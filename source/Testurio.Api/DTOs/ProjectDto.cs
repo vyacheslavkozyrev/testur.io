@@ -10,6 +10,7 @@ public sealed record ProjectDto(
     string Name,
     string ProductUrl,
     string TestingStrategy,
+    string? CustomPrompt,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
@@ -28,7 +29,10 @@ public sealed record CreateProjectRequest(
 
     [property: Required]
     [property: MaxLength(500)]
-    string TestingStrategy);
+    string TestingStrategy,
+
+    [property: MaxLength(5000)]
+    string? CustomPrompt = null);
 
 /// <summary>
 /// Request body for updating an existing project's core configuration (PUT /v1/projects/{id}).
@@ -44,4 +48,7 @@ public sealed record UpdateProjectRequest(
 
     [property: Required]
     [property: MaxLength(500)]
-    string TestingStrategy);
+    string TestingStrategy,
+
+    [property: MaxLength(5000)]
+    string? CustomPrompt = null);
