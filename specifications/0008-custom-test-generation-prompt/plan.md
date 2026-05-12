@@ -6,9 +6,9 @@
 - [x] T002 [Infra] Update Cosmos DB project document mapping to include `customPrompt` — `source/Testurio.Infrastructure/Repositories/ProjectRepository.cs`
 - [x] T003 [App] Update `CreateProjectRequest` and `UpdateProjectRequest` DTOs with optional `customPrompt` field (max 5,000 chars) — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [x] T004 [App] Update `ProjectService.CreateAsync` and `ProjectService.UpdateAsync` to persist `customPrompt` — `source/Testurio.Api/Services/ProjectService.cs`
-- [ ] T005 [App] Implement `PromptCheckService` — calls Claude API with prompt + strategy and returns structured feedback — `source/Testurio.Api/Services/PromptCheckService.cs`
+- [x] T005 [App] Implement `PromptCheckService` — calls Claude API with prompt + strategy and returns structured feedback — `source/Testurio.Api/Services/PromptCheckService.cs`
 - [ ] T006 [API] Add `POST /v1/projects/{projectId}/prompt-check` endpoint with ownership guard — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
-- [ ] T007 [Config] Define `PromptCheckFeedback` response model (Clarity, Specificity, PotentialConflicts) — `source/Testurio.Api/DTOs/PromptCheckDto.cs`
+- [x] T007 [Config] Define `PromptCheckFeedback` response model (Clarity, Specificity, PotentialConflicts) — `source/Testurio.Api/DTOs/PromptCheckDto.cs`
 - [ ] T008 [Worker] Update `TestGeneratorPlugin` to compose final prompt (system + strategy + customPrompt) before calling Claude API — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [ ] T009 [Worker] Add prompt length guard in `TestGeneratorPlugin` — fail the job with a descriptive log entry if total prompt exceeds context limit — `source/Testurio.Plugins/TestGeneratorPlugin/TestGeneratorPlugin.cs`
 - [ ] T010 [UI] Add `customPrompt` to project types — `source/Testurio.Web/src/types/project.types.ts`
