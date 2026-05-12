@@ -56,6 +56,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 
