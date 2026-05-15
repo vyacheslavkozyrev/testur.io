@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
@@ -36,7 +37,7 @@ public partial class ReportWriterPlugin
         ISecretResolver secretResolver,
         ReportBuilderService reportBuilder,
         ITemplateRepository templateRepository,
-        IBlobStorageClient blobStorageClient,
+        [FromKeyedServices("reports")] IBlobStorageClient blobStorageClient,
         ILogger<ReportWriterPlugin> logger)
     {
         _testRunRepository = testRunRepository;

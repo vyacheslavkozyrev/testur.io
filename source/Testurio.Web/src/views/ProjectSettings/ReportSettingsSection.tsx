@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -32,18 +32,28 @@ export default function ReportSettingsSection({
   const { data: settings, isPending, isError } = useReportSettings(projectId);
   const updateSettings = useUpdateReportSettings(projectId);
 
-  // Local state for the toggles (pre-populated from server data, AC-027).
-  const [includeLogs, setIncludeLogs] = useState<boolean | null>(null);
-  const [includeScreenshots, setIncludeScreenshots] = useState<boolean | null>(null);
+  // Pending edits — undefined means "no local override; use server value".
+  const [pendingLogs, setPendingLogs] = useState<boolean | undefined>(undefined);
+  const [pendingScreenshots, setPendingScreenshots] = useState<boolean | undefined>(undefined);
 
-  // Sync local state from server once loaded.
-  const effectiveLogs = includeLogs ?? settings?.reportIncludeLogs ?? true;
-  const effectiveScreenshots = includeScreenshots ?? settings?.reportIncludeScreenshots ?? true;
+  // Read toggle values directly from server data; local pending edits shadow them.
+  const effectiveLogs = pendingLogs ?? settings?.reportIncludeLogs ?? true;
+  const effectiveScreenshots = pendingScreenshots ?? settings?.reportIncludeScreenshots ?? true;
+
+  // Reset pending edits after a successful save so the next render reads fresh server data.
+  useEffect(() => {
+    if (updateSettings.isSuccess) {
+      setPendingLogs(undefined);
+      setPendingScreenshots(undefined);
+      const timer = setTimeout(() => updateSettings.reset(), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [updateSettings.isSuccess, updateSettings]);
 
   const handleToggleChange = useCallback(
     (values: { includeLogs: boolean; includeScreenshots: boolean }) => {
-      setIncludeLogs(values.includeLogs);
-      setIncludeScreenshots(values.includeScreenshots);
+      setPendingLogs(values.includeLogs);
+      setPendingScreenshots(values.includeScreenshots);
     },
     [],
   );

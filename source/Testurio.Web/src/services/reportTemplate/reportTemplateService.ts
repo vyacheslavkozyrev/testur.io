@@ -21,7 +21,6 @@ export const reportTemplateService = {
       .post<ReportTemplateUploadResponse>(
         `/v1/projects/${projectId}/report-settings/template`,
         formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
       )
       .then((r) => r.data);
   },

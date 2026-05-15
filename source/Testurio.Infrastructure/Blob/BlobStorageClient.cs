@@ -1,3 +1,4 @@
+using System.Text;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
@@ -74,6 +75,7 @@ public partial class BlobStorageClient : IBlobStorageClient
 
     /// <summary>
     /// Downloads text content from the blob identified by <paramref name="blobUri"/>.
+    /// Routes through the authenticated <see cref="BlobServiceClient"/> to avoid 401 in production.
     /// Returns null when the blob cannot be fetched.
     /// </summary>
     public virtual async Task<string?> DownloadAsync(
@@ -82,9 +84,11 @@ public partial class BlobStorageClient : IBlobStorageClient
     {
         try
         {
-            var blobClient = new BlobClient(new Uri(blobUri));
+            var blobName = Path.GetFileName(new Uri(blobUri).LocalPath);
+            var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
             var response = await blobClient.DownloadContentAsync(cancellationToken);
-            var content = response.Value.Content.ToString();
+            var content = Encoding.UTF8.GetString(response.Value.Content);
             LogDownloaded(_logger, blobUri);
             return content;
         }
@@ -97,6 +101,7 @@ public partial class BlobStorageClient : IBlobStorageClient
 
     /// <summary>
     /// Deletes the blob identified by <paramref name="blobUri"/>.
+    /// Routes through the authenticated <see cref="BlobServiceClient"/> to avoid 401 in production.
     /// Returns true on success; blob-not-found is treated as success.
     /// Returns false when the deletion fails for any other reason.
     /// </summary>
@@ -106,7 +111,9 @@ public partial class BlobStorageClient : IBlobStorageClient
     {
         try
         {
-            var blobClient = new BlobClient(new Uri(blobUri));
+            var blobName = Path.GetFileName(new Uri(blobUri).LocalPath);
+            var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
             await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
             LogDeleted(_logger, blobUri);
             return true;

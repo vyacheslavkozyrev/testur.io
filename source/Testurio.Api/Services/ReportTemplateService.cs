@@ -60,13 +60,19 @@ public partial class ReportTemplateService : IReportTemplateService
         if (fileSizeBytes > MaxTemplateSizeBytes)
             return ReportTemplateUploadResult.Failure("Template file must be 100 KB or smaller.");
 
+        // Buffer the IFormFile stream into a MemoryStream once — IFormFile.OpenReadStream() is
+        // not guaranteed to be seekable, so we cannot Seek(0) after reading with StreamReader.
+        using var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms, cancellationToken);
+        ms.Position = 0;
+
         // Read and validate UTF-8 content (AC-005).
         // Use DecoderFallback.ExceptionFallback so malformed byte sequences throw DecoderFallbackException.
         string content;
         try
         {
             var strictUtf8 = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
-            using var reader = new StreamReader(fileStream, strictUtf8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
+            using var reader = new StreamReader(ms, strictUtf8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
             content = await reader.ReadToEndAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -82,9 +88,9 @@ public partial class ReportTemplateService : IReportTemplateService
 
         var oldBlobUri = project.ReportTemplateUri;
 
-        // Reset the stream to upload.
-        fileStream.Seek(0, SeekOrigin.Begin);
-        var newBlobUri = await _templateRepository.UploadAsync(projectId, fileName, fileStream, cancellationToken);
+        // Reset the buffered stream for upload.
+        ms.Position = 0;
+        var newBlobUri = await _templateRepository.UploadAsync(projectId, fileName, ms, cancellationToken);
         if (newBlobUri is null)
             return ReportTemplateUploadResult.Failure("Failed to upload template to blob storage.");
 

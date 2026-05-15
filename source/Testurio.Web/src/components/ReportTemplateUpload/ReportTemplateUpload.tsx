@@ -40,6 +40,9 @@ export default function ReportTemplateUpload({
   const upload = useUploadReportTemplate(projectId);
   const remove = useRemoveReportTemplate(projectId);
 
+  const { mutateAsync: uploadAsync } = upload;
+  const { mutateAsync: removeAsync } = remove;
+
   const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -63,7 +66,7 @@ export default function ReportTemplateUpload({
       }
 
       try {
-        const result = await upload.mutateAsync(file);
+        const result = await uploadAsync(file);
         if (result.warnings.length > 0) {
           setTokenWarnings(result.warnings);
         }
@@ -73,13 +76,17 @@ export default function ReportTemplateUpload({
 
       if (fileInputRef.current) fileInputRef.current.value = '';
     },
-    [upload, t],
+    [uploadAsync, t],
   );
 
   const handleRemoveConfirm = useCallback(async () => {
     setConfirmRemoveOpen(false);
-    await remove.mutateAsync();
-  }, [remove]);
+    try {
+      await removeAsync();
+    } catch {
+      // Error is accessible via remove.isError
+    }
+  }, [removeAsync]);
 
   const hasTemplate = Boolean(currentFileName);
 
@@ -201,7 +208,7 @@ const getStyles = (theme: Theme) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
-      root: { display: 'flex', flexDirection: 'column', gap: theme.spacing(1) },
+      root: { display: 'flex', flexDirection: 'column' as const, gap: theme.spacing(1) },
       sectionTitle: { fontWeight: 600 },
       existingTemplate: {
         display: 'flex',

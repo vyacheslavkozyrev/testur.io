@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -30,12 +30,18 @@ export default function ReportAttachmentToggles({
   // AC-023, AC-024: screenshots toggle is disabled and coerced to OFF for api-only projects.
   const isApiOnly = testType === 'api';
 
+  // Keep a stable ref to onChange so the coercion effect does not re-fire on every parent render.
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
+
   // AC-024: coerce includeScreenshots to false when test_type switches to api.
   useEffect(() => {
     if (isApiOnly && includeScreenshots) {
-      onChange({ includeLogs, includeScreenshots: false });
+      onChangeRef.current({ includeLogs, includeScreenshots: false });
     }
-  }, [isApiOnly, includeLogs, includeScreenshots, onChange]);
+  }, [isApiOnly, includeScreenshots, includeLogs]);
 
   const handleLogsChange = useCallback(
     (_e: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {

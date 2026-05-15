@@ -1,3 +1,4 @@
+using System.Text;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
@@ -16,7 +17,8 @@ public partial class TemplateRepository : ITemplateRepository
     private readonly string _containerName;
     private readonly ILogger<TemplateRepository> _logger;
 
-    private volatile bool _containerEnsured;
+    private readonly SemaphoreSlim _containerInitLock = new(1, 1);
+    private bool _containerEnsured;
 
     public TemplateRepository(
         BlobServiceClient serviceClient,
@@ -41,7 +43,7 @@ public partial class TemplateRepository : ITemplateRepository
         try
         {
             var containerClient = await EnsureContainerAsync(cancellationToken);
-            var blobName = $"templates/{projectId}/{fileName}";
+            var blobName = $"templates/{projectId}/{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}-{fileName}";
             var blobClient = containerClient.GetBlobClient(blobName);
             await blobClient.UploadAsync(content, overwrite: true, cancellationToken: cancellationToken);
             LogUploaded(_logger, blobName, projectId);
@@ -56,6 +58,7 @@ public partial class TemplateRepository : ITemplateRepository
 
     /// <summary>
     /// Downloads the template text from <paramref name="blobUri"/>.
+    /// Routes through the authenticated <see cref="BlobServiceClient"/> to avoid 401 in production.
     /// Returns null when the download fails.
     /// </summary>
     public async Task<string?> DownloadAsync(
@@ -64,9 +67,11 @@ public partial class TemplateRepository : ITemplateRepository
     {
         try
         {
-            var blobClient = new BlobClient(new Uri(blobUri));
+            var blobName = Path.GetFileName(new Uri(blobUri).LocalPath);
+            var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
             var response = await blobClient.DownloadContentAsync(cancellationToken);
-            var text = response.Value.Content.ToString();
+            var text = Encoding.UTF8.GetString(response.Value.Content);
             LogDownloaded(_logger, blobUri);
             return text;
         }
@@ -79,6 +84,7 @@ public partial class TemplateRepository : ITemplateRepository
 
     /// <summary>
     /// Deletes the blob at <paramref name="blobUri"/>.
+    /// Routes through the authenticated <see cref="BlobServiceClient"/> to avoid 401 in production.
     /// Returns true on success (including blob-not-found); false on unexpected errors.
     /// </summary>
     public async Task<bool> DeleteAsync(
@@ -87,7 +93,9 @@ public partial class TemplateRepository : ITemplateRepository
     {
         try
         {
-            var blobClient = new BlobClient(new Uri(blobUri));
+            var blobName = Path.GetFileName(new Uri(blobUri).LocalPath);
+            var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
             await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
             LogDeleted(_logger, blobUri);
             return true;
@@ -102,13 +110,25 @@ public partial class TemplateRepository : ITemplateRepository
     private async Task<BlobContainerClient> EnsureContainerAsync(CancellationToken cancellationToken)
     {
         var containerClient = _serviceClient.GetBlobContainerClient(_containerName);
-        if (!_containerEnsured)
+        if (_containerEnsured)
+            return containerClient;
+
+        await _containerInitLock.WaitAsync(cancellationToken);
+        try
         {
-            await containerClient.CreateIfNotExistsAsync(
-                publicAccessType: PublicAccessType.None,
-                cancellationToken: cancellationToken);
-            _containerEnsured = true;
+            if (!_containerEnsured)
+            {
+                await containerClient.CreateIfNotExistsAsync(
+                    publicAccessType: PublicAccessType.None,
+                    cancellationToken: cancellationToken);
+                _containerEnsured = true;
+            }
         }
+        finally
+        {
+            _containerInitLock.Release();
+        }
+
         return containerClient;
     }
 

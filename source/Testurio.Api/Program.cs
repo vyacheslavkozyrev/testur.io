@@ -127,10 +127,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+var v1 = app.MapGroup("/v1").RequireAuthorization();
+
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
 app.MapIntegrationEndpoints();
-app.MapReportSettingsEndpoints();
+app.MapReportSettingsEndpoints(v1);
 
 app.Run();
 

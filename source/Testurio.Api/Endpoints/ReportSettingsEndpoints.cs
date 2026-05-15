@@ -15,9 +15,8 @@ namespace Testurio.Api.Endpoints;
 /// </summary>
 public static class ReportSettingsEndpoints
 {
-    public static IEndpointRouteBuilder MapReportSettingsEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapReportSettingsEndpoints(this IEndpointRouteBuilder app, RouteGroupBuilder v1)
     {
-        var v1 = app.MapGroup("/v1").RequireAuthorization();
         var reportSettings = v1.MapGroup("/projects/{projectId}/report-settings");
 
         reportSettings.MapGet("/", GetReportSettingsAsync).WithName("GetReportSettings");
@@ -60,7 +59,7 @@ public static class ReportSettingsEndpoints
 
     private static async Task<Results<Ok<ReportTemplateUploadResponse>, BadRequest<ProblemDetails>, NotFound, ForbidHttpResult>> UploadTemplateAsync(
         string projectId,
-        IFormFile? file,
+        [FromForm] IFormFile? file,
         ClaimsPrincipal user,
         IReportTemplateService reportTemplateService,
         IProjectRepository projectRepository,
@@ -178,9 +177,7 @@ public static class ReportSettingsEndpoints
     {
         if (string.IsNullOrEmpty(blobUri))
             return null;
-        // Blob URIs end with templates/{projectId}/{fileName}
-        var lastSlash = blobUri.LastIndexOf('/');
-        return lastSlash >= 0 ? blobUri[(lastSlash + 1)..] : null;
+        return Path.GetFileName(new Uri(blobUri).LocalPath);
     }
 
 }

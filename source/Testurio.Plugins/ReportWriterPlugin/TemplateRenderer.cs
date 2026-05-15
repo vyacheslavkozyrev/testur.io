@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 
@@ -26,25 +27,30 @@ public record TemplateRenderContext(
 /// </summary>
 public static class TemplateRenderer
 {
+    /// <summary>Compiled regex that matches any <c>{{lower_snake_case}}</c> token.</summary>
+    private static readonly Regex TokenPattern = new(@"\{\{[a-z_]+\}\}", RegexOptions.Compiled);
+
     /// <summary>
     /// Substitutes all recognised placeholder tokens in <paramref name="template"/> with values
     /// derived from <paramref name="context"/>. Returns the rendered report string.
+    /// Unrecognised tokens are left as-is (AC-020).
     /// </summary>
     public static string Render(string template, TemplateRenderContext context)
     {
-        var result = template;
+        var dict = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["{{story_title}}"]       = context.StoryTitle ?? string.Empty,
+            ["{{story_url}}"]         = context.StoryUrl ?? string.Empty,
+            ["{{run_date}}"]          = FormatRunDate(context.Run),
+            ["{{overall_result}}"]    = FormatOverallResult(context.Run),
+            ["{{scenarios}}"]         = BuildScenariosTable(context.Scenarios, context.StepResults),
+            ["{{logs}}"]              = context.LogSection,
+            ["{{screenshots}}"]       = context.IncludeScreenshots ? BuildScreenshotsSection(context.Run) : string.Empty,
+            ["{{ai_scenario_source}}"] = context.AiScenarioSource ?? string.Empty,
+            ["{{timing_summary}}"]    = BuildTimingSummary(context.Run, context.Scenarios, context.StepResults),
+        };
 
-        result = result.Replace("{{story_title}}", context.StoryTitle ?? string.Empty);
-        result = result.Replace("{{story_url}}", context.StoryUrl ?? string.Empty);
-        result = result.Replace("{{run_date}}", FormatRunDate(context.Run));
-        result = result.Replace("{{overall_result}}", FormatOverallResult(context.Run));
-        result = result.Replace("{{scenarios}}", BuildScenariosTable(context.Scenarios, context.StepResults));
-        result = result.Replace("{{logs}}", context.LogSection);
-        result = result.Replace("{{screenshots}}", context.IncludeScreenshots ? BuildScreenshotsSection(context.Run) : string.Empty);
-        result = result.Replace("{{ai_scenario_source}}", context.AiScenarioSource ?? string.Empty);
-        result = result.Replace("{{timing_summary}}", BuildTimingSummary(context.Run, context.Scenarios, context.StepResults));
-
-        return result;
+        return TokenPattern.Replace(template, m => dict.TryGetValue(m.Value, out var v) ? v : m.Value);
     }
 
     // ─── Token value builders ────────────────────────────────────────────────
@@ -76,8 +82,9 @@ public static class TemplateRenderer
         foreach (var scenario in scenarios)
         {
             var steps = stepResults.Where(s => s.ScenarioId == scenario.Id).ToList();
-            var passed = steps.All(s => s.Status == StepStatus.Passed);
-            var result = passed ? "Passed" : "Failed";
+            var result = steps.Count == 0
+                ? "No data"
+                : steps.All(s => s.Status == StepStatus.Passed) ? "Passed" : "Failed";
             var duration = steps.Sum(s => s.DurationMs);
             sb.AppendLine($"| {EscapeMarkdown(scenario.Title)} | {result} | {steps.Count} | {duration} |");
         }

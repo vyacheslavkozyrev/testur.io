@@ -128,6 +128,75 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // ─── POST /v1/projects/{projectId}/report-settings/template ─────────────
+
+    [Fact]
+    public async Task UploadTemplate_Returns200_WithBlobUri_ForValidMdFile()
+    {
+        var project = MakeProject();
+        const string blobUri = "https://storage.example.com/templates/proj-001/123-report.md";
+
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync("test-user-oid", "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+        _factory.TemplateRepoMock
+            .Setup(r => r.UploadAsync("proj-001", It.IsAny<string>(), It.IsAny<Stream>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(blobUri);
+
+        var client = CreateAuthenticatedClient();
+        var content = new MultipartFormDataContent();
+        var fileBytes = System.Text.Encoding.UTF8.GetBytes("# Report\n{{story_title}}");
+        content.Add(new ByteArrayContent(fileBytes) { Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/markdown") } }, "file", "report.md");
+
+        var response = await client.PostAsync("/v1/projects/proj-001/report-settings/template", content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var dto = await response.Content.ReadFromJsonAsync<ReportTemplateUploadResponse>();
+        Assert.NotNull(dto);
+        Assert.Equal(blobUri, dto.BlobUri);
+    }
+
+    [Fact]
+    public async Task UploadTemplate_Returns400_ForNonMdFile()
+    {
+        var project = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync("test-user-oid", "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var content = new MultipartFormDataContent();
+        var fileBytes = System.Text.Encoding.UTF8.GetBytes("<html><body>not markdown</body></html>");
+        content.Add(new ByteArrayContent(fileBytes) { Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/html") } }, "file", "report.html");
+
+        var response = await client.PostAsync("/v1/projects/proj-001/report-settings/template", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadTemplate_Returns400_ForFileLargerThan100Kb()
+    {
+        var project = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync("test-user-oid", "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var content = new MultipartFormDataContent();
+        // 101 KB of ASCII text
+        var fileBytes = new byte[101 * 1024];
+        Array.Fill(fileBytes, (byte)'a');
+        content.Add(new ByteArrayContent(fileBytes) { Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/markdown") } }, "file", "large.md");
+
+        var response = await client.PostAsync("/v1/projects/proj-001/report-settings/template", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     // ─── PATCH /v1/projects/{projectId}/report-settings ─────────────────────
 
     [Fact]
@@ -150,6 +219,23 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.NotNull(dto);
         Assert.False(dto.ReportIncludeLogs);
         Assert.False(dto.ReportIncludeScreenshots);
+    }
+
+    [Fact]
+    public async Task UpdateReportSettings_Returns400_WhenScreenshotsTrueForApiOnlyProject()
+    {
+        // AC-026: reportIncludeScreenshots must not be true when test_type is api.
+        var project = MakeProject();
+        project.TestingStrategy = "api";
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync("test-user-oid", "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var request = new UpdateReportSettingsRequest(true, true);
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/report-settings", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     // ─── Auth guard ──────────────────────────────────────────────────────────
@@ -189,6 +275,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
                     ["Infrastructure:BlobStorageConnectionString"] = "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=dummykey==;EndpointSuffix=core.windows.net",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "test-reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
                 });
