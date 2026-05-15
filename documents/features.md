@@ -14,7 +14,7 @@ tags: [features, business, product]
 - Features are listed in implementation order
 - v1 scope: single-user accounts, web products only, Azure DevOps and Jira integrations
 - **POC scope:** features 0001–0005; Jira integration, API testing only, commercial LLM API, hardcoded single project config — **completed**
-- **MVP scope:** features 0001–0031; both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
+- **MVP scope:** features 0001–0031 (except 0019); both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
 - **Post-MVP scope:** features 0033–0042; additional test types (smoke, a11y, visual, performance), model tier routing, cross-project memory, training data export
 
 ---
@@ -107,12 +107,6 @@ User can create a named project and set the product URL and testing strategy (e.
 **[0007]: PM Tool Integration** `MVP`
 _Business Outcome: Connects Testurio to where stories already live, with no developer involvement after initial setup._
 User can connect a project to Azure DevOps or Jira by providing the required access tokens. Once connected, the system receives status-change events and posts reports back automatically.
-
----
-
-**[0019]: Trigger Notification Method Configuration** `MVP`
-_Business Outcome: Lets QA leads choose the integration approach that fits their infrastructure without involving a developer._
-When setting up a project, the QA lead can select whether Testurio receives Jira status-change events via webhook or by polling on a configured interval. Both methods are supported for Jira and Azure DevOps. Only one method is active per project at a time.
 
 ---
 
@@ -221,6 +215,14 @@ User can select and purchase a subscription plan directly within the product. Th
 **[0016]: Subscription Management** `MVP`
 _Business Outcome: Gives users full control over their subscription without contacting support._
 User can view their active plan, update their payment method, and upgrade or cancel their subscription at any time. Changes take effect according to the plan's billing cycle.
+
+---
+
+## Post-MVP — Configuration & Integration
+
+**[0019]: Trigger Notification Method Configuration** `Post-MVP`
+_Business Outcome: Lets QA leads choose the integration approach that fits their infrastructure without involving a developer._
+When setting up a project, the QA lead can select whether Testurio receives Jira status-change events via webhook or by polling on a configured interval. Both methods are supported for Jira and Azure DevOps. Only one method is active per project at a time.
 
 ---
 
