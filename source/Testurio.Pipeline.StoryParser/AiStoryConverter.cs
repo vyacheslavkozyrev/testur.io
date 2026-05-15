@@ -1,4 +1,6 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
@@ -39,12 +41,14 @@ public sealed partial class AiStoryConverter
 
     static AiStoryConverter()
     {
-        JsonOptions = new JsonSerializerOptions
+        var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver()
         };
-        JsonOptions.MakeReadOnly();
+        options.MakeReadOnly();
+        JsonOptions = options;
     }
 
     private readonly ILlmGenerationClient _llmClient;
