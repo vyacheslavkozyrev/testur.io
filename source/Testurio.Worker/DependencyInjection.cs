@@ -3,9 +3,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
+using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Plugins.StoryParserPlugin;
 using Testurio.Plugins.TestExecutorPlugin;
@@ -44,7 +46,8 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Anthropic Claude API client for scenario generation.
+        // Anthropic Claude API client for scenario generation (legacy worker-level registration).
+        // The StoryParser pipeline stage resolves ILlmGenerationClient from the same registration.
         services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
         {
             var opts = sp.GetRequiredService<IOptions<ClaudeOptions>>().Value;
@@ -56,6 +59,9 @@ public static class DependencyInjection
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
             return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
+
+        // StoryParser pipeline stage (feature 0025).
+        services.AddStoryParser();
 
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();

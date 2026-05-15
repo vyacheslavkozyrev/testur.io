@@ -4,8 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
-using Testurio.Core.Repositories;
+using Testurio.Core.Exceptions;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
+using Testurio.Pipeline.StoryParser;
 using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
 
@@ -94,7 +97,11 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             testRun.StartedAt = DateTimeOffset.UtcNow;
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
-            // Full pipeline: ScenarioGeneration (0002) → ApiTestExecution (0003) → ReportDelivery (0004).
+            // Full pipeline:
+            //   Stage 1: StoryParser (0025) — parse work item → ParsedStory, update ParserMode
+            //   Stage 2: ScenarioGeneration (0002) — generate test scenarios
+            //   Stage 3: ApiTestExecution (0003) — execute API tests
+            //   Stage 4: ReportDelivery (0004) — post report to PM tool
             // ReportDeliveryStep sets the terminal run status (Completed or ReportDeliveryFailed).
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
@@ -115,9 +122,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
 
-            // ScenarioGenerationException is a permanent failure — dead-letter so Service Bus
-            // does not retry and flood the LLM with repeated calls for the same broken run.
-            if (ex is ScenarioGenerationException)
+            // StoryParserException and ScenarioGenerationException are permanent failures — dead-letter
+            // so Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
+            if (ex is StoryParserException or ScenarioGenerationException)
                 await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
             else
                 await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
@@ -130,16 +137,65 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         if (project is null)
             throw new InvalidOperationException($"Project {testRun.ProjectId} not found for user {testRun.UserId}");
 
-        // Step 1: Parse story and generate test scenarios (feature 0002).
+        // Stage 1: Build WorkItem from run context and parse the story (feature 0025).
+        // The WorkItem carries the issue key and PM tool type so TemplateChecker can detect
+        // non-conformance and PmToolCommentPoster can post the warning comment.
+        // Note: at this stage Description/AcceptanceCriteria are empty stubs — full story content
+        // fetch will be moved here from ScenarioGenerationStep when feature 0002 is refactored.
+        var workItem = BuildWorkItem(testRun, project);
+        var templateChecker = _serviceProvider.GetRequiredService<TemplateChecker>();
+        var isConformant = templateChecker.IsConformant(workItem);
+
+        var storyParserService = _serviceProvider.GetRequiredService<StoryParserService>();
+        try
+        {
+            await storyParserService.ParseAsync(workItem, project, cancellationToken);
+        }
+        catch (StoryParserException)
+        {
+            // AC-018: record failure detail before re-throwing so the run history is updated.
+            testRun.SkipReason = "Failed — StoryParser error";
+            await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
+            throw;
+        }
+
+        // AC-020: persist parserMode to the TestRun record after the parse step completes.
+        testRun.ParserMode = isConformant ? ParserMode.Direct : ParserMode.AiConverted;
+        await _testRunRepository.UpdateAsync(testRun, cancellationToken);
+        LogParsed(_logger, testRun.Id, testRun.ParserMode.ToString()!);
+
+        // Stage 2: Generate test scenarios (feature 0002).
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
         var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
-        // Step 2: Execute API tests against the product URL (feature 0003).
+        // Stage 3: Execute API tests against the product URL (feature 0003).
         var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
         await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
 
-        // Step 3: Build and post the report to Jira (feature 0004).
+        // Stage 4: Build and post the report to Jira (feature 0004).
         await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
+    }
+
+    /// <summary>
+    /// Builds a <see cref="WorkItem"/> from the test run and project context.
+    /// Description and AcceptanceCriteria are empty at this point — full story content is fetched
+    /// from Jira/ADO inside ScenarioGenerationStep (feature 0002). The WorkItem here is used
+    /// by the StoryParser stage to determine parser mode and post PM tool warnings on non-conformance.
+    /// </summary>
+    private static WorkItem BuildWorkItem(TestRun testRun, Core.Entities.Project project)
+    {
+        var pmToolType = project.PmTool ?? PMToolType.Jira;
+        return new WorkItem
+        {
+            Title = testRun.JiraIssueKey,
+            Description = string.Empty,
+            AcceptanceCriteria = string.Empty,
+            PmToolType = pmToolType,
+            IssueKey = testRun.JiraIssueKey,
+            AdoWorkItemId = pmToolType == PMToolType.Ado && int.TryParse(testRun.JiraIssueId, out var id)
+                ? id
+                : null
+        };
     }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
@@ -158,6 +214,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Completed test run {TestRunId} for project {ProjectId}")]
     private static partial void LogCompleted(ILogger logger, string testRunId, string projectId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Story parsed for test run {TestRunId} — mode: {ParserMode}")]
+    private static partial void LogParsed(ILogger logger, string testRunId, string parserMode);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to process test run {TestRunId} for project {ProjectId}")]
     private static partial void LogFailed(ILogger logger, string testRunId, string projectId, Exception ex);
