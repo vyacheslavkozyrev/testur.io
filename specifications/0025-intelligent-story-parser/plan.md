@@ -8,7 +8,7 @@
 - [x] T004 [Domain] Add `IStoryParser` interface (`ParseAsync(WorkItem, CancellationToken) → Task<ParsedStory>`) — `source/Testurio.Core/Interfaces/IStoryParser.cs`
 - [x] T005 [Domain] Extend `TestRun` entity with `ParserMode` enum field (`direct` | `ai_converted`) — `source/Testurio.Core/Entities/TestRun.cs`
 - [x] T006 [Infra] Add `parserMode` field to `TestRunRepository` Cosmos write path — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
-- [ ] T007 [Infra] Update DI registration to expose `AnthropicClient` singleton for pipeline projects — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T007 [Infra] Update DI registration to expose `AnthropicClient` singleton for pipeline projects — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T008 [App] Implement `TemplateChecker` (rule-based: validates title, description, and at least one AC are non-empty) — `source/Testurio.Pipeline.StoryParser/TemplateChecker.cs`
 - [ ] T009 [App] Implement `DirectParser` (heuristic extraction of entities, actions, edge_cases from raw text; returns `ParsedStory`) — `source/Testurio.Pipeline.StoryParser/DirectParser.cs`
 - [ ] T010 [App] Implement `AiStoryConverter` (calls Claude `claude-opus-4-7` with adaptive thinking; deserialises and validates response against `ParsedStory` schema) — `source/Testurio.Pipeline.StoryParser/AiStoryConverter.cs`
