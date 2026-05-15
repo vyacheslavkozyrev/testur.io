@@ -23,6 +23,7 @@ i18nInstance.use(initReactI18next).init({
         'sidebar.settings': 'Settings',
         'sidebar.signOut': 'Sign Out',
         'sidebar.signOutAriaLabel': 'Sign out',
+        'sidebar.signOutTooltip': 'Sign Out',
         'sidebar.collapseAriaLabel': 'Collapse sidebar',
         'sidebar.expandAriaLabel': 'Expand sidebar',
       },

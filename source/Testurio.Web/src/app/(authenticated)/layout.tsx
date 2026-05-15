@@ -16,16 +16,15 @@ async function getSessionUserId(): Promise<string | null> {
 
 export default async function AuthenticatedLayout({
   children,
-  params: _params,
 }: {
   children: React.ReactNode;
-  params: Record<string, string>;
 }) {
   const userId = await getSessionUserId();
 
   if (!userId) {
-    const returnUrl = '/dashboard';
-    redirect(`/sign-in?returnUrl=${encodeURIComponent(returnUrl)}`);
+    // Feature 0013 will supply the real returnUrl via Next.js middleware.
+    // For now we redirect to sign-in; middleware will capture the original URL.
+    redirect('/sign-in');
   }
 
   return <PrivateCabinetLayout>{children}</PrivateCabinetLayout>;

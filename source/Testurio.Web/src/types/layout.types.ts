@@ -1,6 +1,7 @@
 export interface AuthUser {
   id: string;
-  displayName: string;
+  /** May be null or empty; callers should fall back to email prefix. */
+  displayName: string | null;
   email: string;
   avatarUrl?: string;
 }

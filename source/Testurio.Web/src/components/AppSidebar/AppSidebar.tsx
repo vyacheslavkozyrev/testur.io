@@ -19,7 +19,9 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useTranslation } from 'react-i18next';
+import Link from 'next/link';
 import { useSidebarState } from '@/hooks/useSidebarState';
+import { DASHBOARD_ROUTE, PROJECTS_ROUTE, SETTINGS_ROUTE } from '@/routes/routes';
 
 const EXPANDED_WIDTH = 240;
 const COLLAPSED_WIDTH = 64;
@@ -32,12 +34,12 @@ interface NavLinkConfig {
 }
 
 const primaryLinks: NavLinkConfig[] = [
-  { href: '/dashboard', labelKey: 'sidebar.dashboard', icon: <DashboardOutlinedIcon /> },
-  { href: '/projects', labelKey: 'sidebar.projects', icon: <FolderOutlinedIcon /> },
+  { href: DASHBOARD_ROUTE, labelKey: 'sidebar.dashboard', icon: <DashboardOutlinedIcon /> },
+  { href: PROJECTS_ROUTE, labelKey: 'sidebar.projects', icon: <FolderOutlinedIcon /> },
 ];
 
 function isLinkActive(href: string, pathname: string): boolean {
-  if (href === '/dashboard') return pathname === '/dashboard';
+  if (href === DASHBOARD_ROUTE) return pathname === DASHBOARD_ROUTE;
   return pathname === href || pathname.startsWith(href + '/');
 }
 
@@ -111,7 +113,7 @@ export default function AppSidebar() {
             return (
               <Tooltip key={href} title={label} placement="right">
                 <ListItemButton
-                  component="a"
+                  component={Link}
                   href={href}
                   selected={active}
                   aria-label={label}
@@ -126,7 +128,7 @@ export default function AppSidebar() {
           return (
             <ListItemButton
               key={href}
-              component="a"
+              component={Link}
               href={href}
               selected={active}
               sx={active ? styles.activeNavButton : styles.navButton}
@@ -148,14 +150,14 @@ export default function AppSidebar() {
       <List sx={styles.navList} disablePadding>
         {(() => {
           const label = t('sidebar.settings');
-          const active = isLinkActive('/settings', pathname);
+          const active = isLinkActive(SETTINGS_ROUTE, pathname);
 
           if (collapsed) {
             return (
               <Tooltip title={label} placement="right">
                 <ListItemButton
-                  component="a"
-                  href="/settings"
+                  component={Link}
+                  href={SETTINGS_ROUTE}
                   selected={active}
                   aria-label={label}
                   sx={active ? styles.activeNavButton : styles.navButton}
@@ -168,8 +170,8 @@ export default function AppSidebar() {
 
           return (
             <ListItemButton
-              component="a"
-              href="/settings"
+              component={Link}
+              href={SETTINGS_ROUTE}
               selected={active}
               sx={active ? styles.activeNavButton : styles.navButton}
             >
@@ -192,7 +194,7 @@ export default function AppSidebar() {
       {/* Sign Out */}
       <List sx={styles.navList} disablePadding>
         {collapsed ? (
-          <Tooltip title={t('sidebar.signOut')} placement="right">
+          <Tooltip title={t('sidebar.signOutTooltip')} placement="right">
             {signOutButton}
           </Tooltip>
         ) : (

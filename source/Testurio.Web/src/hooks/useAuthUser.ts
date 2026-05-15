@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import apiClient from '@/services/apiClient';
 import type { AuthUser } from '@/types/layout.types';
 
 /**
@@ -14,9 +15,9 @@ export function useAuthUser(): AuthUser | null {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: AuthUser | null) => setUser(data))
+    apiClient
+      .get<AuthUser>('/api/auth/me')
+      .then((res) => setUser(res.data))
       .catch(() => setUser(null));
   }, []);
 

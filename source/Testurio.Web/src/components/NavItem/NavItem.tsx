@@ -82,7 +82,7 @@ const getStyles = (theme: Theme, active: boolean) =>
       },
       icon: {
         color: 'inherit',
-        minWidth: active ? 36 : 36,
+        minWidth: 36,
       },
       label: {
         ...theme.typography.body2,
