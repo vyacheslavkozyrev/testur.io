@@ -16,10 +16,10 @@
 - [x] T012 [App] Implement `StoryParserService` (orchestrates `TemplateChecker` → `DirectParser` or `AiStoryConverter` + `PmToolCommentPoster`; implements `IStoryParser`) — `source/Testurio.Pipeline.StoryParser/StoryParserService.cs`
 - [x] T013 [Config] Register `StoryParserService` as `IStoryParser` and its dependencies in DI — `source/Testurio.Pipeline.StoryParser/DependencyInjection.cs`
 - [x] T014 [Worker] Inject `IStoryParser` into `TestRunJobProcessor` and invoke `ParseAsync` as the first pipeline stage; update `TestRun.ParserMode` after parse; propagate `StoryParserException` to run-failure handler — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T015 [Test] Unit tests for `TemplateChecker` (all three missing-field variants + all-present happy path) — `tests/Testurio.UnitTests/Pipeline/TemplateCheckerTests.cs`
-- [ ] T016 [Test] Unit tests for `DirectParser` (field extraction, empty arrays when not detected, no-Claude-call assertion) — `tests/Testurio.UnitTests/Pipeline/DirectParserTests.cs`
-- [ ] T017 [Test] Unit tests for `AiStoryConverter` (valid response → schema passes; malformed response → `StoryParserException`; Claude API error → `StoryParserException`) — `tests/Testurio.UnitTests/Pipeline/AiStoryConverterTests.cs`
-- [ ] T018 [Test] Unit tests for `StoryParserService` (conformant story → direct path, no AI call, no comment; non-conformant → AI path, comment posted; AI failure → `StoryParserException` thrown; comment-post failure → pipeline continues) — `tests/Testurio.UnitTests/Pipeline/StoryParserServiceTests.cs`
+- [x] T015 [Test] Unit tests for `TemplateChecker` (all three missing-field variants + all-present happy path) — `tests/Testurio.UnitTests/Pipeline/TemplateCheckerTests.cs`
+- [x] T016 [Test] Unit tests for `DirectParser` (field extraction, empty arrays when not detected, no-Claude-call assertion) — `tests/Testurio.UnitTests/Pipeline/DirectParserTests.cs`
+- [x] T017 [Test] Unit tests for `AiStoryConverter` (valid response → schema passes; malformed response → `StoryParserException`; Claude API error → `StoryParserException`) — `tests/Testurio.UnitTests/Pipeline/AiStoryConverterTests.cs`
+- [x] T018 [Test] Unit tests for `StoryParserService` (conformant story → direct path, no AI call, no comment; non-conformant → AI path, comment posted; AI failure → `StoryParserException` thrown; comment-post failure → pipeline continues) — `tests/Testurio.UnitTests/Pipeline/StoryParserServiceTests.cs`
 - [ ] T019 [Test] Integration tests for the full parse stage via `TestRunJobProcessor` (conformant story end-to-end; non-conformant story end-to-end with mocked Anthropic and PM tool clients) — `tests/Testurio.IntegrationTests/Pipeline/StoryParserIntegrationTests.cs`
 
 ## Rationale
