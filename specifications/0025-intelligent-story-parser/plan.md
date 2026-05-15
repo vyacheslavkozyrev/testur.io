@@ -2,12 +2,12 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `WorkItem` model (PM-tool-agnostic input to the parser) — `source/Testurio.Core/Models/WorkItem.cs`
-- [ ] T002 [Domain] Create `ParsedStory` immutable record (output contract shared with all downstream stages) — `source/Testurio.Core/Models/ParsedStory.cs`
-- [ ] T003 [Domain] Create `StoryParserException` typed exception — `source/Testurio.Core/Exceptions/StoryParserException.cs`
-- [ ] T004 [Domain] Add `IStoryParser` interface (`ParseAsync(WorkItem, CancellationToken) → Task<ParsedStory>`) — `source/Testurio.Core/Interfaces/IStoryParser.cs`
-- [ ] T005 [Domain] Extend `TestRun` entity with `ParserMode` enum field (`direct` | `ai_converted`) — `source/Testurio.Core/Entities/TestRun.cs`
-- [ ] T006 [Infra] Add `parserMode` field to `TestRunRepository` Cosmos write path — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+- [x] T001 [Domain] Create `WorkItem` model (PM-tool-agnostic input to the parser) — `source/Testurio.Core/Models/WorkItem.cs`
+- [x] T002 [Domain] Create `ParsedStory` immutable record (output contract shared with all downstream stages) — `source/Testurio.Core/Models/ParsedStory.cs`
+- [x] T003 [Domain] Create `StoryParserException` typed exception — `source/Testurio.Core/Exceptions/StoryParserException.cs`
+- [x] T004 [Domain] Add `IStoryParser` interface (`ParseAsync(WorkItem, CancellationToken) → Task<ParsedStory>`) — `source/Testurio.Core/Interfaces/IStoryParser.cs`
+- [x] T005 [Domain] Extend `TestRun` entity with `ParserMode` enum field (`direct` | `ai_converted`) — `source/Testurio.Core/Entities/TestRun.cs`
+- [x] T006 [Infra] Add `parserMode` field to `TestRunRepository` Cosmos write path — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
 - [ ] T007 [Infra] Update DI registration to expose `AnthropicClient` singleton for pipeline projects — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T008 [App] Implement `TemplateChecker` (rule-based: validates title, description, and at least one AC are non-empty) — `source/Testurio.Pipeline.StoryParser/TemplateChecker.cs`
 - [ ] T009 [App] Implement `DirectParser` (heuristic extraction of entities, actions, edge_cases from raw text; returns `ParsedStory`) — `source/Testurio.Pipeline.StoryParser/DirectParser.cs`

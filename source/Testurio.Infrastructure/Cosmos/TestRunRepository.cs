@@ -78,6 +78,9 @@ public class TestRunRepository : ITestRunRepository
 
     public async Task<TestRun> UpdateAsync(TestRun testRun, CancellationToken cancellationToken = default)
     {
+        // ReplaceItemAsync serialises the full TestRun entity, including the ParserMode field
+        // added by feature 0025. Cosmos DB's schema-less model makes this additive and
+        // backwards-compatible — existing run documents without the field deserialise fine.
         var response = await _container.ReplaceItemAsync(testRun, testRun.Id, new PartitionKey(testRun.ProjectId), cancellationToken: cancellationToken);
         return response.Resource;
     }
