@@ -1,17 +1,19 @@
-import Link from 'next/link';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
-export default function HomePage() {
-  return (
-    <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h4">Welcome to Testurio</Typography>
-      <Box>
-        <Button variant="contained" component={Link} href="/projects/new">
-          Create Project
-        </Button>
-      </Box>
-    </Box>
-  );
+/**
+ * Root page: redirects authenticated users to /dashboard,
+ * unauthenticated users to /sign-in.
+ *
+ * Feature 0013 will replace the session detection with a real MSAL token check.
+ */
+export default async function RootPage() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('testurio_session');
+
+  if (sessionCookie?.value) {
+    redirect('/dashboard');
+  } else {
+    redirect('/sign-in');
+  }
 }
