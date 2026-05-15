@@ -15,4 +15,23 @@ public class TestRun
     public DateTimeOffset? CompletedAt { get; set; }
     public string? SkipReason { get; set; }
     public string? DeliveryError { get; set; }
+
+    /// <summary>
+    /// How the story was parsed in stage 1.
+    /// Null until the StoryParser stage completes.
+    /// </summary>
+    public ParserMode? ParserMode { get; set; }
+}
+
+/// <summary>
+/// Indicates how the StoryParser processed the incoming work item.
+/// Written to the TestRun record after stage 1 completes (AC-020).
+/// </summary>
+public enum ParserMode
+{
+    /// <summary>Work item matched the Testurio template and was parsed directly without calling Claude.</summary>
+    Direct,
+
+    /// <summary>Work item did not match the template; Claude converted it to the ParsedStory schema.</summary>
+    AiConverted
 }
