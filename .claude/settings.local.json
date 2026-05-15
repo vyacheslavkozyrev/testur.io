@@ -51,7 +51,10 @@
       "Bash(npx vitest *)",
       "Bash(xargs cat *)",
       "Read(//d/d/projects/testur.io/tests/Testurio.UnitTests/**)",
-      "Read(//d/d/projects/testur.io/tests/Testurio.IntegrationTests/**)"
+      "Read(//d/d/projects/testur.io/tests/Testurio.IntegrationTests/**)",
+      "Bash(git -C \"D:/projects/testur.io\" show HEAD:specifications/0032-memory-writer/plan.md)",
+      "Bash(git -C \"D:/projects/testur.io\" show HEAD:specifications/0032-memory-writer/stories.md)",
+      "Bash(git *)"
     ]
   },
   "enableAllProjectMcpServers": true
