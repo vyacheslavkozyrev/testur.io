@@ -110,6 +110,10 @@ public static class DependencyInjection
             return new BlobStorageClient(serviceClient, opts.ExecutionLogsBlobContainerName, logger);
         });
 
+        // Register IBlobStorageClient so pipeline stages (ReportWriterPlugin) and API services
+        // can inject the blob client without depending on the concrete type.
+        services.AddSingleton<IBlobStorageClient>(sp => sp.GetRequiredService<BlobStorageClient>());
+
         services.AddSingleton<IExecutionLogRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
