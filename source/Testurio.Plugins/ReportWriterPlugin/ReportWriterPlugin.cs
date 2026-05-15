@@ -3,6 +3,7 @@ using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Blob;
 
 namespace Testurio.Plugins.ReportWriterPlugin;
 
@@ -22,6 +23,8 @@ public partial class ReportWriterPlugin
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
     private readonly ReportBuilderService _reportBuilder;
+    private readonly TemplateRepository _templateRepository;
+    private readonly IBlobStorageClient _blobStorageClient;
     private readonly ILogger<ReportWriterPlugin> _logger;
 
     public ReportWriterPlugin(
@@ -33,6 +36,8 @@ public partial class ReportWriterPlugin
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
         ReportBuilderService reportBuilder,
+        TemplateRepository templateRepository,
+        IBlobStorageClient blobStorageClient,
         ILogger<ReportWriterPlugin> logger)
     {
         _testRunRepository = testRunRepository;
@@ -43,6 +48,8 @@ public partial class ReportWriterPlugin
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
         _reportBuilder = reportBuilder;
+        _templateRepository = templateRepository;
+        _blobStorageClient = blobStorageClient;
         _logger = logger;
     }
 
@@ -76,12 +83,30 @@ public partial class ReportWriterPlugin
         var stepResults = await _stepResultRepository.GetByRunAsync(projectId, testRunId, cancellationToken);
         var logEntries = await _executionLogRepository.GetByRunAsync(projectId, testRunId, cancellationToken);
 
-        // AC-012, AC-013, AC-014, AC-015: append log section to every report (no toggle at POC).
-        var logSection = logEntries.Count > 0
-            ? _reportBuilder.BuildLogSection(logEntries, scenarios)
-            : null;
+        // AC-028–AC-034: load custom template or fall back to built-in default.
+        var template = await LoadTemplateAsync(project, run, cancellationToken);
 
-        var commentBody = _reportBuilder.Build(run, scenarios, stepResults, logSection);
+        // AC-031–AC-032: render the template with run data and attachment toggle settings.
+        var commentBody = _reportBuilder.BuildFromTemplate(
+            template,
+            run,
+            scenarios,
+            stepResults,
+            logEntries,
+            reportIncludeLogs: project.ReportIncludeLogs,
+            reportIncludeScreenshots: project.ReportIncludeScreenshots);
+
+        // AC-033: store the rendered report as a blob and persist the URI on the run record.
+        var reportBlobUri = await _blobStorageClient.UploadAsync(
+            $"reports/{projectId}/{testRunId}/report.md",
+            commentBody,
+            cancellationToken);
+
+        if (!string.IsNullOrEmpty(reportBlobUri))
+        {
+            run.ReportBlobUri = reportBlobUri;
+            await _testRunRepository.UpdateAsync(run, cancellationToken);
+        }
 
         string apiToken;
         try
@@ -118,6 +143,32 @@ public partial class ReportWriterPlugin
         return ReportDeliveryResult.Success();
     }
 
+    /// <summary>
+    /// Loads the custom template from blob storage if <paramref name="project"/> has one;
+    /// falls back to the built-in default on any error (AC-034).
+    /// Records a warning on the run when falling back due to a fetch error.
+    /// </summary>
+    private async Task<string> LoadTemplateAsync(
+        Project project,
+        TestRun run,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(project.ReportTemplateUri))
+            return DefaultReportTemplate.Content;
+
+        var templateContent = await _templateRepository.DownloadAsync(project.ReportTemplateUri, cancellationToken);
+        if (templateContent is not null)
+            return templateContent;
+
+        // AC-034: blob fetch failed — fall back to default and record warning.
+        var warning = $"Custom template blob could not be fetched ({project.ReportTemplateUri}); built-in default used.";
+        LogTemplateFetchFailed(_logger, run.Id, project.ReportTemplateUri);
+        run.ReportTemplateWarning = warning;
+        await _testRunRepository.UpdateAsync(run, cancellationToken);
+
+        return DefaultReportTemplate.Content;
+    }
+
     [LoggerMessage(Level = LogLevel.Error, Message = "TestRun {TestRunId} not found in project {ProjectId} during report delivery")]
     private static partial void LogRunNotFound(ILogger logger, string testRunId, string projectId);
 
@@ -132,6 +183,9 @@ public partial class ReportWriterPlugin
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Report delivered for run {TestRunId} to Jira issue {IssueKey}")]
     private static partial void LogDelivered(ILogger logger, string testRunId, string issueKey);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to fetch custom template blob for run {TestRunId}: {BlobUri} — using built-in default")]
+    private static partial void LogTemplateFetchFailed(ILogger logger, string testRunId, string blobUri);
 }
 
 public class ReportDeliveryResult
