@@ -1,0 +1,29 @@
+{
+  "sectionTitle": "Report Format & Attachments",
+  "loadError": "Failed to load report settings.",
+  "saveError": "Failed to save report settings.",
+  "saveSuccess": "Report settings saved.",
+  "saveButton": "Save Report Settings",
+  "template": {
+    "title": "Report Template",
+    "noTemplate": "No custom template — the built-in default will be used.",
+    "upload": "Upload Template",
+    "replace": "Replace",
+    "remove": "Remove",
+    "removeConfirmTitle": "Remove Report Template",
+    "removeConfirmBody": "Are you sure you want to remove the report template? The project will revert to the built-in default.",
+    "removeConfirm": "Remove",
+    "cancel": "Cancel",
+    "uploadFailed": "Template upload failed. Please try again.",
+    "removeFailed": "Failed to delete the template file. The existing template remains in effect.",
+    "errorExtension": "Only Markdown (.md) files are accepted.",
+    "errorSize": "Template file must be 100 KB or smaller.",
+    "unknownToken": "Unknown token {{token}} — it will appear as-is in the report."
+  },
+  "attachments": {
+    "title": "Report Attachments",
+    "includeLogs": "Include step-by-step logs",
+    "includeScreenshots": "Include screenshots",
+    "screenshotsDisabledTooltip": "Screenshots are only available for UI E2E tests."
+  }
+}
