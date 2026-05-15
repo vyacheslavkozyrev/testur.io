@@ -3,7 +3,7 @@
 ## Tasks
 
 - [x] T001 [UI] Add layout TypeScript types: `AuthUser` (`id`, `displayName`, `email`, `avatarUrl?`) and `SidebarState` (`collapsed: boolean`) — `source/Testurio.Web/src/types/layout.types.ts`
-- [ ] T002 [UI] Add `useAuthUser` hook: reads the signed-in user identity from the Azure AD B2C session (via MSAL or the session cookie exposed to the client); returns `AuthUser | null` — `source/Testurio.Web/src/hooks/useAuthUser.ts`
+- [x] T002 [UI] Add `useAuthUser` hook: reads the signed-in user identity from the Azure AD B2C session (via MSAL or the session cookie exposed to the client); returns `AuthUser | null` — `source/Testurio.Web/src/hooks/useAuthUser.ts`
 - [ ] T003 [UI] Add `useSidebarState` hook: reads/writes `testurio.sidebarCollapsed` from `localStorage`, returns `[collapsed: boolean, toggle: () => void]`, defaults to `false` when key is absent or `localStorage` is unavailable — `source/Testurio.Web/src/hooks/useSidebarState.ts`
 - [ ] T004 [UI] Add MSW mock handler for auth user: returns a mock `AuthUser` so the layout renders correctly in Storybook and component tests — `source/Testurio.Web/src/mocks/handlers/auth.ts`
 - [ ] T005 [UI] Create `AppHeader` component: renders the Testurio logo (link to `/dashboard`) on the left and the signed-in user's avatar + display name on the right; accepts `user: AuthUser | null`; uses `useAuthUser` internally — `source/Testurio.Web/src/components/AppHeader/AppHeader.tsx`
