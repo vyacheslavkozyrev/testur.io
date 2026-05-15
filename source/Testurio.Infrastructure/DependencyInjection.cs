@@ -22,6 +22,7 @@ public class InfrastructureOptions
     [Required] public required string TestRunJobQueueName { get; init; }
     [Required] public required string BlobStorageConnectionString { get; init; }
     [Required] public required string ExecutionLogsBlobContainerName { get; init; }
+    [Required] public required string ReportTemplatesBlobContainerName { get; init; }
 }
 
 public static class DependencyInjection
@@ -113,6 +114,14 @@ public static class DependencyInjection
         // Register IBlobStorageClient so pipeline stages (ReportWriterPlugin) and API services
         // can inject the blob client without depending on the concrete type.
         services.AddSingleton<IBlobStorageClient>(sp => sp.GetRequiredService<BlobStorageClient>());
+
+        services.AddSingleton<TemplateRepository>(sp =>
+        {
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TemplateRepository>>();
+            return new TemplateRepository(serviceClient, opts.ReportTemplatesBlobContainerName, logger);
+        });
 
         services.AddSingleton<IExecutionLogRepository>(sp =>
         {
