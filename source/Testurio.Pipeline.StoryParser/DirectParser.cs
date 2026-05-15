@@ -67,14 +67,16 @@ public sealed class DirectParser
     {
         var lower = text.ToLowerInvariant();
         var found = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var keyword in keywords)
         {
-            // Use word-boundary matching for single-word keywords; substring for phrases.
+            // Use word-boundary matching for single-word keywords; exact substring for phrases.
+            // `lower` is already lowercased, so Ordinal comparison is correct for phrases.
             bool matched = keyword.Contains(' ')
-                ? lower.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                ? lower.Contains(keyword, StringComparison.Ordinal)
                 : Regex.IsMatch(lower, $@"\b{Regex.Escape(keyword)}\b");
 
-            if (matched && !found.Contains(keyword))
+            if (matched && seen.Add(keyword))
                 found.Add(keyword);
         }
         return found.AsReadOnly();

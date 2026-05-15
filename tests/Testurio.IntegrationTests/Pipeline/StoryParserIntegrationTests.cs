@@ -97,8 +97,6 @@ public class StoryParserIntegrationTests
         var sut = CreateStoryParserService();
         await sut.ParseAsync(workItem, MakeJiraProject());
 
-        await Task.Delay(100); // Allow fire-and-forget to settle
-
         _jiraApiClient.Verify(c =>
             c.PostCommentAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
@@ -156,9 +154,6 @@ public class StoryParserIntegrationTests
 
         var sut = CreateStoryParserService();
         await sut.ParseAsync(workItem, MakeJiraProject());
-
-        // Allow the fire-and-forget comment post to complete
-        await Task.Delay(200);
 
         _jiraApiClient.Verify(c =>
             c.PostCommentAsync(It.IsAny<string>(), "PROJ-3", It.IsAny<string>(),

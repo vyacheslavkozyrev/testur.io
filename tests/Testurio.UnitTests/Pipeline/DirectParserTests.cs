@@ -115,8 +115,7 @@ public class DirectParserTests
 
         var result = _sut.Parse(workItem);
 
-        // entities array must never be null — may be empty
-        Assert.NotNull(result.Entities);
+        Assert.Empty(result.Entities);
     }
 
     [Fact]
@@ -129,7 +128,7 @@ public class DirectParserTests
 
         var result = _sut.Parse(workItem);
 
-        Assert.NotNull(result.Actions);
+        Assert.Empty(result.Actions);
     }
 
     [Fact]
@@ -142,7 +141,7 @@ public class DirectParserTests
 
         var result = _sut.Parse(workItem);
 
-        Assert.NotNull(result.EdgeCases);
+        Assert.Empty(result.EdgeCases);
     }
 
     [Fact]

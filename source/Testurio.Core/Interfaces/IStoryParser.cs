@@ -15,6 +15,13 @@ public interface IStoryParser
     /// Uses direct rule-based parsing when the work item conforms to the Testurio template,
     /// or calls the Claude API to convert it when it does not.
     /// </summary>
+    /// <remarks>
+    /// This overload does not post a PM tool warning comment when AI conversion is used,
+    /// because the <c>Project</c> credential context is not available through this interface.
+    /// When comment posting is required (e.g. in the Worker pipeline), resolve
+    /// <c>StoryParserService</c> directly and call its
+    /// <c>ParseAsync(WorkItem, Project?, CancellationToken)</c> overload.
+    /// </remarks>
     /// <exception cref="StoryParserException">
     /// Thrown when AI conversion is required but the Claude API response is malformed or missing required fields.
     /// </exception>

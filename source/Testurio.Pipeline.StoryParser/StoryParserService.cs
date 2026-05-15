@@ -65,21 +65,11 @@ public sealed partial class StoryParserService : IStoryParser
         // AI conversion — throws StoryParserException on unrecoverable failure.
         var parsedStory = await _aiConverter.ConvertAsync(workItem, ct);
 
-        // AC-014: post warning comment asynchronously; failure must not halt the pipeline.
+        // AC-014: post warning comment before returning; PostWarningAsync swallows all exceptions
+        // internally so failure never halts the pipeline. A direct await is used instead of
+        // Task.Run to avoid thread-pool orphan risk during graceful host shutdown.
         if (project is not null)
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _commentPoster.PostWarningAsync(workItem, project, CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    LogCommentPostError(_logger, workItem.IssueKey, ex);
-                }
-            });
-        }
+            await _commentPoster.PostWarningAsync(workItem, project, ct);
 
         return parsedStory;
     }
@@ -89,7 +79,4 @@ public sealed partial class StoryParserService : IStoryParser
 
     [LoggerMessage(Level = LogLevel.Information, Message = "StoryParserService: AI conversion for issue {IssueKey}")]
     private static partial void LogAiConversion(ILogger logger, string issueKey);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "StoryParserService: warning comment post failed for issue {IssueKey} (non-fatal)")]
-    private static partial void LogCommentPostError(ILogger logger, string issueKey, Exception ex);
 }

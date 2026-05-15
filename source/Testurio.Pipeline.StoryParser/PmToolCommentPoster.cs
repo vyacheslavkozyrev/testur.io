@@ -67,8 +67,22 @@ public sealed partial class PmToolCommentPoster
 
     private async Task PostJiraWarningAsync(WorkItem workItem, Core.Entities.Project project, string commentBody, CancellationToken ct)
     {
-        var email = await _secretResolver.ResolveAsync(project.JiraEmailSecretUri ?? project.JiraEmail ?? string.Empty, ct);
-        var token = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretUri ?? project.JiraApiTokenSecretRef ?? string.Empty, ct);
+        // Credentials must come from Key Vault only — never from plaintext Project fields.
+        // Architecture rule: only the Key Vault secret URI is stored in Cosmos; the value is never.
+        if (string.IsNullOrEmpty(project.JiraEmailSecretUri))
+        {
+            LogJiraCredentialsMissing(_logger, workItem.IssueKey);
+            return;
+        }
+
+        if (string.IsNullOrEmpty(project.JiraApiTokenSecretUri))
+        {
+            LogJiraCredentialsMissing(_logger, workItem.IssueKey);
+            return;
+        }
+
+        var email = await _secretResolver.ResolveAsync(project.JiraEmailSecretUri, ct);
+        var token = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretUri, ct);
 
         var result = await _jiraApiClient.PostCommentAsync(
             project.JiraBaseUrl!,
@@ -107,6 +121,9 @@ public sealed partial class PmToolCommentPoster
         else
             LogCommentPosted(_logger, workItem.IssueKey, "ADO");
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "PmToolCommentPoster: Jira credentials not configured (Key Vault URI missing) for {IssueKey} — comment skipped")]
+    private static partial void LogJiraCredentialsMissing(ILogger logger, string issueKey);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "PmToolCommentPoster: failed to post warning comment to {IssueKey} ({PmToolType})")]
     private static partial void LogCommentPostFailed(ILogger logger, string issueKey, string pmToolType, Exception ex);

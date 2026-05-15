@@ -140,16 +140,29 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         // Stage 1: Build WorkItem from run context and parse the story (feature 0025).
         // The WorkItem carries the issue key and PM tool type so TemplateChecker can detect
         // non-conformance and PmToolCommentPoster can post the warning comment.
-        // Note: at this stage Description/AcceptanceCriteria are empty stubs — full story content
-        // fetch will be moved here from ScenarioGenerationStep when feature 0002 is refactored.
+        //
+        // KNOWN ARCHITECTURAL DEBT (tracked for feature 0002 refactor):
+        // Description and AcceptanceCriteria are empty stubs at this point — the full story content
+        // is currently fetched inside ScenarioGenerationStep (feature 0002). Because both fields are
+        // empty, the TemplateChecker will always report non-conformant and the parser will always take
+        // the AI-conversion path. Moving the story fetch from ScenarioGenerationStep to here is
+        // required to make the direct-parse path functional. Until that refactor is complete,
+        // ParserMode will always be recorded as AiConverted.
         var workItem = BuildWorkItem(testRun, project);
-        var templateChecker = _serviceProvider.GetRequiredService<TemplateChecker>();
-        var isConformant = templateChecker.IsConformant(workItem);
 
-        var storyParserService = _serviceProvider.GetRequiredService<StoryParserService>();
+        // Resolve via IStoryParser (interface contract). StoryParserService is also resolved directly
+        // for the project-aware overload that posts the PM tool warning comment. This concrete resolve
+        // is intentional and documented — it will be eliminated when IStoryParser is extended to
+        // accept Project? as a parameter in a follow-up task.
+        var storyParser = _serviceProvider.GetRequiredService<IStoryParser>();
         try
         {
-            await storyParserService.ParseAsync(workItem, project, cancellationToken);
+            // The ParsedStory result will be passed to Stage 2 once the story-fetch refactor
+            // (feature 0002) moves content retrieval to this stage. Until then the result is
+            // intentionally not forwarded — ScenarioGenerationStep still fetches story content itself.
+            _ = storyParser is StoryParserService sps
+                ? await sps.ParseAsync(workItem, project, cancellationToken)
+                : await storyParser.ParseAsync(workItem, cancellationToken);
         }
         catch (StoryParserException)
         {
@@ -160,9 +173,12 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
 
         // AC-020: persist parserMode to the TestRun record after the parse step completes.
-        testRun.ParserMode = isConformant ? ParserMode.Direct : ParserMode.AiConverted;
+        // ParserMode is determined from whether the work item was conformant.
+        // See architectural debt note above — currently always AiConverted due to empty stubs.
+        var templateChecker = _serviceProvider.GetRequiredService<TemplateChecker>();
+        testRun.ParserMode = templateChecker.IsConformant(workItem) ? ParserMode.Direct : ParserMode.AiConverted;
         await _testRunRepository.UpdateAsync(testRun, cancellationToken);
-        LogParsed(_logger, testRun.Id, testRun.ParserMode.ToString()!);
+        LogParsed(_logger, testRun.Id, testRun.ParserMode.Value.ToString());
 
         // Stage 2: Generate test scenarios (feature 0002).
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();

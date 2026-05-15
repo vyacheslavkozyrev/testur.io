@@ -35,11 +35,17 @@ public sealed partial class AiStoryConverter
         - Do NOT include any text outside the JSON object.
         """;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerOptions JsonOptions;
+
+    static AiStoryConverter()
     {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-    };
+        JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        JsonOptions.MakeReadOnly();
+    }
 
     private readonly ILlmGenerationClient _llmClient;
     private readonly ILogger<AiStoryConverter> _logger;
@@ -107,15 +113,20 @@ public sealed partial class AiStoryConverter
         if (dto.AcceptanceCriteria is null || dto.AcceptanceCriteria.Length == 0)
             throw new StoryParserException("StoryParser: invalid AI response — acceptance_criteria is missing or empty");
 
+        var filteredAc = dto.AcceptanceCriteria
+            .Select(s => s?.Trim() ?? string.Empty)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+
+        // Guard against an array that is non-empty but consists entirely of whitespace entries.
+        if (filteredAc.Count == 0)
+            throw new StoryParserException("StoryParser: invalid AI response — acceptance_criteria is missing or empty");
+
         return new ParsedStory
         {
             Title = dto.Title.Trim(),
             Description = dto.Description.Trim(),
-            AcceptanceCriteria = dto.AcceptanceCriteria
-                .Select(s => s?.Trim() ?? string.Empty)
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .ToList()
-                .AsReadOnly(),
+            AcceptanceCriteria = filteredAc.AsReadOnly(),
             Entities = dto.Entities ?? Array.Empty<string>(),
             Actions = dto.Actions ?? Array.Empty<string>(),
             EdgeCases = dto.EdgeCases ?? Array.Empty<string>()

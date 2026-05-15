@@ -84,8 +84,6 @@ public class StoryParserServiceTests
 
         await sut.ParseAsync(MakeConformantWorkItem(), MakeProject());
 
-        // Give any fire-and-forget tasks a moment to settle.
-        await Task.Delay(50);
         _jiraApiClient.Verify(c => c.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
