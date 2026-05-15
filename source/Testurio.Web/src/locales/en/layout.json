@@ -1,0 +1,19 @@
+{
+  "header": {
+    "logoText": "Testurio",
+    "logoAriaLabel": "Testurio — go to dashboard"
+  },
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "settings": "Settings",
+    "signOut": "Sign Out",
+    "signOutAriaLabel": "Sign out",
+    "collapseAriaLabel": "Collapse sidebar",
+    "expandAriaLabel": "Expand sidebar",
+    "dashboardTooltip": "Dashboard",
+    "projectsTooltip": "Projects",
+    "settingsTooltip": "Settings",
+    "signOutTooltip": "Sign Out"
+  }
+}
