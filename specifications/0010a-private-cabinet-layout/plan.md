@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [UI] Add layout TypeScript types: `AuthUser` (`id`, `displayName`, `email`, `avatarUrl?`) and `SidebarState` (`collapsed: boolean`) — `source/Testurio.Web/src/types/layout.types.ts`
+- [x] T001 [UI] Add layout TypeScript types: `AuthUser` (`id`, `displayName`, `email`, `avatarUrl?`) and `SidebarState` (`collapsed: boolean`) — `source/Testurio.Web/src/types/layout.types.ts`
 - [ ] T002 [UI] Add `useAuthUser` hook: reads the signed-in user identity from the Azure AD B2C session (via MSAL or the session cookie exposed to the client); returns `AuthUser | null` — `source/Testurio.Web/src/hooks/useAuthUser.ts`
 - [ ] T003 [UI] Add `useSidebarState` hook: reads/writes `testurio.sidebarCollapsed` from `localStorage`, returns `[collapsed: boolean, toggle: () => void]`, defaults to `false` when key is absent or `localStorage` is unavailable — `source/Testurio.Web/src/hooks/useSidebarState.ts`
 - [ ] T004 [UI] Add MSW mock handler for auth user: returns a mock `AuthUser` so the layout renders correctly in Storybook and component tests — `source/Testurio.Web/src/mocks/handlers/auth.ts`
