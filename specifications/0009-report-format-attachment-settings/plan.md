@@ -74,14 +74,14 @@ T023. ~~`[UI]` Add report settings i18n translation keys~~
 T024. ~~`[UI]` Register report settings routes in project settings navigation~~
 → `source/portal/src/routes/routes.tsx` ✅
 
-T025. `[Test]` Unit tests for ReportTemplateService validation and token scanning
-→ `tests/Testurio.UnitTests/Services/ReportTemplateServiceTests.cs`
+T025. ~~`[Test]` Unit tests for ReportTemplateService validation and token scanning~~
+→ `tests/Testurio.UnitTests/Services/ReportTemplateServiceTests.cs` ✅
 
-T026. `[Test]` Unit tests for TemplateRenderer placeholder substitution logic
-→ `tests/Testurio.UnitTests/Services/TemplateRendererTests.cs`
+T026. ~~`[Test]` Unit tests for TemplateRenderer placeholder substitution logic~~
+→ `tests/Testurio.UnitTests/Services/TemplateRendererTests.cs` ✅
 
-T027. `[Test]` Unit tests for report configuration validator
-→ `tests/Testurio.UnitTests/Validators/ReportConfigurationValidatorTests.cs`
+T027. ~~`[Test]` Unit tests for report configuration validator~~
+→ `tests/Testurio.UnitTests/Validators/ReportConfigurationValidatorTests.cs` ✅
 
 T028. `[Test]` Integration tests for template upload/remove API endpoints
 → `tests/Testurio.IntegrationTests/Controllers/ProjectSettingsControllerTests.cs`
