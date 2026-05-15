@@ -20,7 +20,7 @@
 - [x] T016 [Test] Unit tests for `DirectParser` (field extraction, empty arrays when not detected, no-Claude-call assertion) — `tests/Testurio.UnitTests/Pipeline/DirectParserTests.cs`
 - [x] T017 [Test] Unit tests for `AiStoryConverter` (valid response → schema passes; malformed response → `StoryParserException`; Claude API error → `StoryParserException`) — `tests/Testurio.UnitTests/Pipeline/AiStoryConverterTests.cs`
 - [x] T018 [Test] Unit tests for `StoryParserService` (conformant story → direct path, no AI call, no comment; non-conformant → AI path, comment posted; AI failure → `StoryParserException` thrown; comment-post failure → pipeline continues) — `tests/Testurio.UnitTests/Pipeline/StoryParserServiceTests.cs`
-- [ ] T019 [Test] Integration tests for the full parse stage via `TestRunJobProcessor` (conformant story end-to-end; non-conformant story end-to-end with mocked Anthropic and PM tool clients) — `tests/Testurio.IntegrationTests/Pipeline/StoryParserIntegrationTests.cs`
+- [x] T019 [Test] Integration tests for the full parse stage via `TestRunJobProcessor` (conformant story end-to-end; non-conformant story end-to-end with mocked Anthropic and PM tool clients) — `tests/Testurio.IntegrationTests/Pipeline/StoryParserIntegrationTests.cs`
 
 ## Rationale
 
