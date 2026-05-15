@@ -3,7 +3,6 @@ using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.Blob;
 
 namespace Testurio.Plugins.ReportWriterPlugin;
 
@@ -23,7 +22,7 @@ public partial class ReportWriterPlugin
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
     private readonly ReportBuilderService _reportBuilder;
-    private readonly TemplateRepository _templateRepository;
+    private readonly ITemplateRepository _templateRepository;
     private readonly IBlobStorageClient _blobStorageClient;
     private readonly ILogger<ReportWriterPlugin> _logger;
 
@@ -36,7 +35,7 @@ public partial class ReportWriterPlugin
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
         ReportBuilderService reportBuilder,
-        TemplateRepository templateRepository,
+        ITemplateRepository templateRepository,
         IBlobStorageClient blobStorageClient,
         ILogger<ReportWriterPlugin> logger)
     {

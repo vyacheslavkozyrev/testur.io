@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Interfaces;
 
 namespace Testurio.Infrastructure.Blob;
 
@@ -9,7 +10,7 @@ namespace Testurio.Infrastructure.Blob;
 /// Blob names follow the pattern <c>templates/{projectId}/{fileName}</c> so templates are
 /// isolated per project and the file name is visible in the container for operator inspection.
 /// </summary>
-public partial class TemplateRepository
+public partial class TemplateRepository : ITemplateRepository
 {
     private readonly BlobServiceClient _serviceClient;
     private readonly string _containerName;

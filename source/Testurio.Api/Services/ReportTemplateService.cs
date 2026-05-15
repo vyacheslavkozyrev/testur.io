@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Testurio.Api.DTOs;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.Blob;
 
 namespace Testurio.Api.Services;
 
@@ -31,12 +30,12 @@ public partial class ReportTemplateService : IReportTemplateService
     };
 
     private readonly IProjectRepository _projectRepository;
-    private readonly TemplateRepository _templateRepository;
+    private readonly ITemplateRepository _templateRepository;
     private readonly ILogger<ReportTemplateService> _logger;
 
     public ReportTemplateService(
         IProjectRepository projectRepository,
-        TemplateRepository templateRepository,
+        ITemplateRepository templateRepository,
         ILogger<ReportTemplateService> logger)
     {
         _projectRepository = projectRepository;

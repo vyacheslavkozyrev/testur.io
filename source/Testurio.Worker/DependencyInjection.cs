@@ -91,6 +91,8 @@ public static class DependencyInjection
             sp.GetRequiredService<IJiraApiClient>(),
             sp.GetRequiredService<ISecretResolver>(),
             sp.GetRequiredService<ReportBuilderService>(),
+            sp.GetRequiredService<ITemplateRepository>(),
+            sp.GetRequiredService<IBlobStorageClient>(),
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReportWriterPlugin>>()));
         services.AddSingleton<ReportDeliveryStep>();
 

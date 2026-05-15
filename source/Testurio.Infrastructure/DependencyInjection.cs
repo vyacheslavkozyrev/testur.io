@@ -123,6 +123,8 @@ public static class DependencyInjection
             return new TemplateRepository(serviceClient, opts.ReportTemplatesBlobContainerName, logger);
         });
 
+        services.AddSingleton<ITemplateRepository>(sp => sp.GetRequiredService<TemplateRepository>());
+
         services.AddSingleton<IExecutionLogRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
