@@ -83,11 +83,11 @@ T026. ~~`[Test]` Unit tests for TemplateRenderer placeholder substitution logic~
 T027. ~~`[Test]` Unit tests for report configuration validator~~
 → `tests/Testurio.UnitTests/Validators/ReportConfigurationValidatorTests.cs` ✅
 
-T028. `[Test]` Integration tests for template upload/remove API endpoints
-→ `tests/Testurio.IntegrationTests/Controllers/ProjectSettingsControllerTests.cs`
+T028. ~~`[Test]` Integration tests for template upload/remove API endpoints~~
+→ `tests/Testurio.IntegrationTests/Controllers/ProjectSettingsControllerTests.cs` ✅
 
-T029. `[Test]` Integration tests for report rendering with custom templates and attachment toggles
-→ `tests/Testurio.IntegrationTests/Plugins/ReportWriterPluginTests.cs`
+T029. ~~`[Test]` Integration tests for report rendering with custom templates and attachment toggles~~
+→ `tests/Testurio.IntegrationTests/Pipeline/ReportWriterPluginTests.cs` ✅
 
 T030. `[Test]` Frontend component tests for ReportTemplateUpload validation and warnings
 → `source/portal/src/components/ReportTemplateUpload/ReportTemplateUpload.test.tsx`
