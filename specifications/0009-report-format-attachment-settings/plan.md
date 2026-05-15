@@ -89,14 +89,14 @@ T028. ~~`[Test]` Integration tests for template upload/remove API endpoints~~
 T029. ~~`[Test]` Integration tests for report rendering with custom templates and attachment toggles~~
 → `tests/Testurio.IntegrationTests/Pipeline/ReportWriterPluginTests.cs` ✅
 
-T030. `[Test]` Frontend component tests for ReportTemplateUpload validation and warnings
-→ `source/portal/src/components/ReportTemplateUpload/ReportTemplateUpload.test.tsx`
+T030. ~~`[Test]` Frontend component tests for ReportTemplateUpload validation and warnings~~
+→ `source/Testurio.Web/src/components/ReportTemplateUpload/ReportTemplateUpload.test.tsx` ✅
 
-T031. `[Test]` Frontend component tests for ReportAttachmentToggles interaction and test_type coercion
-→ `source/portal/src/components/ReportAttachmentToggles/ReportAttachmentToggles.test.tsx`
+T031. ~~`[Test]` Frontend component tests for ReportAttachmentToggles interaction and test_type coercion~~
+→ `source/Testurio.Web/src/components/ReportAttachmentToggles/ReportAttachmentToggles.test.tsx` ✅
 
-T032. `[Test]` Frontend hooks tests for useReportSettings queries and mutations
-→ `source/portal/src/hooks/useReportSettings.test.ts`
+T032. ~~`[Test]` Frontend hooks tests for useReportSettings queries and mutations~~
+→ `source/Testurio.Web/src/hooks/__tests__/useReportSettings.test.ts` ✅
 
 ## Rationale
 
