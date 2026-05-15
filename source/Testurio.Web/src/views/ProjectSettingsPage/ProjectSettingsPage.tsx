@@ -13,6 +13,7 @@ import CustomPromptField from '@/components/CustomPromptField/CustomPromptField'
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
 import ProjectForm from '@/components/ProjectForm/ProjectForm';
 import { useProject, useUpdateProject, useDeleteProject } from '@/hooks/useProject';
+import ReportSettingsSection from '@/views/ProjectSettings/ReportSettingsSection';
 import type { UpdateProjectRequest } from '@/types/project.types';
 
 export default function ProjectSettingsPage() {
@@ -116,6 +117,14 @@ export default function ProjectSettingsPage() {
         />
       </Box>
 
+      {/* Report Format & Attachment Settings (feature 0009) */}
+      <Box sx={styles.reportSettingsSection}>
+        <ReportSettingsSection
+          projectId={project.projectId}
+          testType={project.testingStrategy}
+        />
+      </Box>
+
       <Box sx={styles.dangerZone}>
         <Typography variant="h6" color="error">
           {t('settings.dangerZone.title')}
@@ -179,6 +188,10 @@ const getStyles = (theme: Theme) =>
       },
       sectionDescription: {
         color: theme.palette.text.secondary,
+      },
+      reportSettingsSection: {
+        borderTop: `1px solid ${theme.palette.divider}`,
+        paddingTop: theme.spacing(3),
       },
       dangerZone: {
         display: 'flex',

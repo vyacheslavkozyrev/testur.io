@@ -9,6 +9,8 @@ using Testurio.Core.Repositories;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Worker.Steps;
 
+// ITemplateRepository and IBlobStorageClient are injected into ReportWriterPlugin from feature 0009.
+
 // JiraCommentResult is defined in Testurio.Core.Interfaces — imported for mock setup.
 
 namespace Testurio.IntegrationTests.Pipeline;
@@ -27,6 +29,8 @@ public class TestRunPipelineTests
     private readonly Mock<IProjectRepository> _projectRepo = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+    private readonly Mock<ITemplateRepository> _templateRepo = new();
+    private readonly Mock<IBlobStorageClient> _blobStorageClient = new();
 
     /// <summary>
     /// Sets up <see cref="_executionLogRepo"/> to return an empty list — call this in tests that
@@ -41,6 +45,19 @@ public class TestRunPipelineTests
 
     private ReportDeliveryStep CreateReportDeliveryStep()
     {
+        // Default: template repo returns null (no custom template).
+        _templateRepo
+            .Setup(r => r.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+        // Default: blob upload returns a URI.
+        _blobStorageClient
+            .Setup(c => c.UploadAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://storage.example.com/reports/run1/report.md");
+        // Default: test run update succeeds.
+        _testRunRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRun run, CancellationToken _) => run);
+
         var builder = new ReportBuilderService();
         var plugin = new ReportWriterPlugin(
             _testRunRepo.Object,
@@ -51,6 +68,8 @@ public class TestRunPipelineTests
             _jiraApiClient.Object,
             _secretResolver.Object,
             builder,
+            _templateRepo.Object,
+            _blobStorageClient.Object,
             NullLogger<ReportWriterPlugin>.Instance);
         return new ReportDeliveryStep(plugin, _testRunRepo.Object, NullLogger<ReportDeliveryStep>.Instance);
     }

@@ -54,7 +54,9 @@
       "Read(//d/d/projects/testur.io/tests/Testurio.IntegrationTests/**)",
       "Bash(git -C \"D:/projects/testur.io\" show HEAD:specifications/0032-memory-writer/plan.md)",
       "Bash(git -C \"D:/projects/testur.io\" show HEAD:specifications/0032-memory-writer/stories.md)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Read(//d/d/projects/**)",
+      "Bash(python3 -c ' *)"
     ]
   },
   "enableAllProjectMcpServers": true

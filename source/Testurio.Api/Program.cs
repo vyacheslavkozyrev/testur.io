@@ -8,6 +8,7 @@ using Testurio.Api.Middleware;
 using Testurio.Api.Services;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Security;
 using Testurio.Infrastructure.Anthropic;
 
@@ -82,6 +83,7 @@ builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPMToolConnectionService, PMToolConnectionService>();
 builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
+builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 builder.Services.AddOptions<PMToolConnectionServiceOptions>()
@@ -125,9 +127,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+var v1 = app.MapGroup("/v1").RequireAuthorization();
+
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
 app.MapIntegrationEndpoints();
+app.MapReportSettingsEndpoints(v1);
 
 app.Run();
 

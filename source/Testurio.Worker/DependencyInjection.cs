@@ -1,5 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
@@ -91,6 +92,8 @@ public static class DependencyInjection
             sp.GetRequiredService<IJiraApiClient>(),
             sp.GetRequiredService<ISecretResolver>(),
             sp.GetRequiredService<ReportBuilderService>(),
+            sp.GetRequiredService<ITemplateRepository>(),
+            sp.GetRequiredKeyedService<IBlobStorageClient>("reports"),
             sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ReportWriterPlugin>>()));
         services.AddSingleton<ReportDeliveryStep>();
 

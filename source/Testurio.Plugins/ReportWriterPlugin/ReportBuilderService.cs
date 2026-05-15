@@ -173,6 +173,52 @@ public class ReportBuilderService
         };
     }
 
+    // — Template-based rendering (feature 0009) —
+
+    /// <summary>
+    /// Renders a report using <paramref name="template"/> by substituting all supported placeholder tokens
+    /// with data derived from the run, scenarios, step results, log entries, and project settings.
+    /// Delegates token substitution to <see cref="TemplateRenderer"/>.
+    /// </summary>
+    /// <param name="template">The Markdown template content (custom or built-in default).</param>
+    /// <param name="run">The completed test run.</param>
+    /// <param name="scenarios">All scenarios generated for this run.</param>
+    /// <param name="stepResults">All step results for this run.</param>
+    /// <param name="logEntries">Execution log entries; empty when logs are not available.</param>
+    /// <param name="reportIncludeLogs">Whether to expand <c>{{logs}}</c> (AC-032).</param>
+    /// <param name="reportIncludeScreenshots">Whether to expand <c>{{screenshots}}</c> (AC-032).</param>
+    /// <param name="storyTitle">Work item title from the PM tool.</param>
+    /// <param name="storyUrl">Direct URL to the work item.</param>
+    /// <param name="aiScenarioSource">Raw AI-generated scenario text before execution.</param>
+    public string BuildFromTemplate(
+        string template,
+        TestRun run,
+        IReadOnlyList<TestScenario> scenarios,
+        IReadOnlyList<StepResult> stepResults,
+        IReadOnlyList<ExecutionLogEntry> logEntries,
+        bool reportIncludeLogs,
+        bool reportIncludeScreenshots,
+        string? storyTitle = null,
+        string? storyUrl = null,
+        string? aiScenarioSource = null)
+    {
+        var logSection = reportIncludeLogs && logEntries.Count > 0
+            ? BuildLogSection(logEntries, scenarios)
+            : string.Empty;
+
+        var context = new TemplateRenderContext(
+            Run: run,
+            Scenarios: scenarios,
+            StepResults: stepResults,
+            LogSection: logSection,
+            IncludeScreenshots: reportIncludeScreenshots,
+            StoryTitle: storyTitle,
+            StoryUrl: storyUrl,
+            AiScenarioSource: aiScenarioSource);
+
+        return TemplateRenderer.Render(template, context);
+    }
+
     // — Execution log section (AC-012 – AC-015) —
 
     /// <summary>

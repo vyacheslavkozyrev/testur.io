@@ -20,6 +20,8 @@ public class ReportWriterPluginTests
     private readonly Mock<IProjectRepository> _projectRepo = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+    private readonly Mock<ITemplateRepository> _templateRepo = new();
+    private readonly Mock<IBlobStorageClient> _blobStorageClient = new();
     private readonly ReportBuilderService _reportBuilder = new();
 
     public ReportWriterPluginTests()
@@ -28,6 +30,21 @@ public class ReportWriterPluginTests
         _executionLogRepo
             .Setup(r => r.GetByRunAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<ExecutionLogEntry>());
+
+        // Default: template repo returns null (no custom template) — uses built-in default.
+        _templateRepo
+            .Setup(r => r.DownloadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string?)null);
+
+        // Default: blob upload returns a URI.
+        _blobStorageClient
+            .Setup(c => c.UploadAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://storage.example.com/reports/run1/report.md");
+
+        // Default: test run update succeeds.
+        _testRunRepo
+            .Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestRun run, CancellationToken _) => run);
     }
 
     private ReportWriterPlugin CreateSut() => new(
@@ -39,6 +56,8 @@ public class ReportWriterPluginTests
         _jiraApiClient.Object,
         _secretResolver.Object,
         _reportBuilder,
+        _templateRepo.Object,
+        _blobStorageClient.Object,
         NullLogger<ReportWriterPlugin>.Instance);
 
     private static TestRun MakeRun(TestRunStatus status = TestRunStatus.Completed) => new()
