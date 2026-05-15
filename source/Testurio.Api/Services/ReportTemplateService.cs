@@ -61,10 +61,12 @@ public partial class ReportTemplateService : IReportTemplateService
             return ReportTemplateUploadResult.Failure("Template file must be 100 KB or smaller.");
 
         // Read and validate UTF-8 content (AC-005).
+        // Use DecoderFallback.ExceptionFallback so malformed byte sequences throw DecoderFallbackException.
         string content;
         try
         {
-            using var reader = new StreamReader(fileStream, System.Text.Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
+            var strictUtf8 = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+            using var reader = new StreamReader(fileStream, strictUtf8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
             content = await reader.ReadToEndAsync(cancellationToken);
         }
         catch (Exception ex)

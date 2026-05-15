@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Testurio.Api.DTOs;
 using Testurio.Api.Services;
+using Testurio.Api.Validators;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 
@@ -74,11 +75,10 @@ public static class ReportSettingsEndpoints
 
         if (file is null || file.Length == 0)
         {
-            return TypedResults.BadRequest(new ProblemDetails
-            {
-                Title = "No file was provided.",
-                Status = 400,
-            });
+            var vpd = new ValidationProblemDetails(
+                new Dictionary<string, string[]> { ["file"] = ["No file was provided."] })
+            { Status = 400 };
+            return TypedResults.BadRequest<ProblemDetails>(vpd);
         }
 
         await using var stream = file.OpenReadStream();
@@ -92,11 +92,10 @@ public static class ReportSettingsEndpoints
 
         if (!result.IsSuccess)
         {
-            return TypedResults.BadRequest(new ProblemDetails
-            {
-                Title = result.ErrorMessage,
-                Status = 400,
-            });
+            var vpd = new ValidationProblemDetails(
+                new Dictionary<string, string[]> { ["file"] = [result.ErrorMessage ?? string.Empty] })
+            { Status = 400 };
+            return TypedResults.BadRequest<ProblemDetails>(vpd);
         }
 
         return TypedResults.Ok(new ReportTemplateUploadResponse(result.BlobUri!, result.Warnings));
@@ -146,15 +145,17 @@ public static class ReportSettingsEndpoints
             return TypedResults.NotFound();
 
         // AC-026: reportIncludeScreenshots must not be true when test_type is api.
-        // test_type is stored as TestingStrategy for now; the API-level validation
-        // is enforced by ReportConfigurationValidator at the service boundary.
-        if (request.ReportIncludeScreenshots && IsApiOnlyProject(project.TestingStrategy))
+        var validationErrors = ReportConfigurationValidator.Validate(request, project.TestingStrategy).ToList();
+        if (validationErrors.Count > 0)
         {
-            return TypedResults.BadRequest(new ProblemDetails
+            var vpd = new ValidationProblemDetails();
+            foreach (var ve in validationErrors)
             {
-                Title = "reportIncludeScreenshots cannot be true when test_type is api.",
-                Status = 400,
-            });
+                foreach (var member in ve.MemberNames)
+                    vpd.Errors[member] = [ve.ErrorMessage ?? string.Empty];
+            }
+            vpd.Status = 400;
+            return TypedResults.BadRequest<ProblemDetails>(vpd);
         }
 
         project.ReportIncludeLogs = request.ReportIncludeLogs;
@@ -182,10 +183,4 @@ public static class ReportSettingsEndpoints
         return lastSlash >= 0 ? blobUri[(lastSlash + 1)..] : null;
     }
 
-    /// <summary>
-    /// Heuristic check: returns true when the project's TestingStrategy indicates API-only testing.
-    /// The full test_type field (api / ui_e2e / both) is part of a future project config model;
-    /// for now we cannot reliably distinguish — the validator is the authoritative gate (AC-026).
-    /// </summary>
-    private static bool IsApiOnlyProject(string testingStrategy) => false;
 }

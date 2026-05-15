@@ -12,7 +12,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
-import { useMemo as useMemoStyle } from 'react';
 import {
   useUploadReportTemplate,
   useRemoveReportTemplate,
