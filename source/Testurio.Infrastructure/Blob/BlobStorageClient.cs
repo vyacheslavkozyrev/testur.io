@@ -1,15 +1,15 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Interfaces;
 
 namespace Testurio.Infrastructure.Blob;
 
 /// <summary>
-/// Uploads response body content to Azure Blob Storage for log entries that exceed the
-/// inline size threshold (10 KB).  Returns the public URL on success.
-/// On failure, indicates truncation is needed so the caller can inline up to 10 KB and flag the entry.
+/// Azure Blob Storage client.  Provides upload, download, and delete operations.
+/// Used for execution log body overflow (feature 0005) and report template storage (feature 0009).
 /// </summary>
-public partial class BlobStorageClient
+public partial class BlobStorageClient : IBlobStorageClient
 {
     /// <summary>Response bodies up to this size are stored inline in Cosmos DB.</summary>
     public const int InlineThresholdBytes = 10 * 1024; // 10 KB
@@ -72,9 +72,67 @@ public partial class BlobStorageClient
         }
     }
 
+    /// <summary>
+    /// Downloads text content from the blob identified by <paramref name="blobUri"/>.
+    /// Returns null when the blob cannot be fetched.
+    /// </summary>
+    public virtual async Task<string?> DownloadAsync(
+        string blobUri,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var blobClient = new BlobClient(new Uri(blobUri));
+            var response = await blobClient.DownloadContentAsync(cancellationToken);
+            var content = response.Value.Content.ToString();
+            LogDownloaded(_logger, blobUri);
+            return content;
+        }
+        catch (Exception ex)
+        {
+            LogDownloadFailed(_logger, blobUri, ex);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Deletes the blob identified by <paramref name="blobUri"/>.
+    /// Returns true on success; blob-not-found is treated as success.
+    /// Returns false when the deletion fails for any other reason.
+    /// </summary>
+    public virtual async Task<bool> DeleteAsync(
+        string blobUri,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var blobClient = new BlobClient(new Uri(blobUri));
+            await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+            LogDeleted(_logger, blobUri);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogDeleteFailed(_logger, blobUri, ex);
+            return false;
+        }
+    }
+
     [LoggerMessage(Level = LogLevel.Debug, Message = "Response body blob uploaded: {BlobName}")]
     private static partial void LogUploaded(ILogger logger, string blobName);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Blob upload failed for '{BlobName}' — response body will be truncated")]
     private static partial void LogUploadFailed(ILogger logger, string blobName, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Blob downloaded: {BlobUri}")]
+    private static partial void LogDownloaded(ILogger logger, string blobUri);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Blob download failed for '{BlobUri}'")]
+    private static partial void LogDownloadFailed(ILogger logger, string blobUri, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Blob deleted: {BlobUri}")]
+    private static partial void LogDeleted(ILogger logger, string blobUri);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Blob deletion failed for '{BlobUri}'")]
+    private static partial void LogDeleteFailed(ILogger logger, string blobUri, Exception ex);
 }
