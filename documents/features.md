@@ -14,7 +14,7 @@ tags: [features, business, product]
 - Features are listed in implementation order
 - v1 scope: single-user accounts, web products only, Azure DevOps and Jira integrations
 - **POC scope:** features 0001–0005; Jira integration, API testing only, commercial LLM API, hardcoded single project config — **completed**
-- **MVP scope:** features 0001–0032; both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
+- **MVP scope:** features 0001–0031; both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
 - **Post-MVP scope:** features 0033–0042; additional test types (smoke, a11y, visual, performance), model tier routing, cross-project memory, training data export
 
 ---
@@ -89,17 +89,12 @@ After execution, Claude writes a structured verdict report: a one-sentence PASSE
 
 ---
 
-**[0031]: Test Result Feedback Loop** `MVP`
-_Business Outcome: Continuously improves memory quality by promoting scenarios that work and retiring ones that consistently fail._
-After each run, the system updates the `passRate` of any memory entries that were reused: weighted average increases on pass, decreases on fail. When a scenario's `passRate` drops below 0.5 after at least 5 uses, it is soft-deleted (`isDeleted: true`) and excluded from future retrievals.
+**[0031]: QA Lead Feedback Capture via PM Tool Comments** `MVP`
+_Business Outcome: Lets QA leads inject domain knowledge and corrections directly from their PM tool, improving future test generation without any portal interaction._
+After a test run, the QA lead can add a comment to the originating ADO or Jira ticket containing `@testurio memorize` anywhere in the text. The system detects this flag during its next comment-poll cycle (or via webhook comment event, depending on project trigger method). The comment body — excluding the flag itself — is embedded using `text-embedding-3-small` and upserted to the `TestMemory` container as a `feedback` entry, scoped to `userId + projectId + testType` inferred from the run. The entry is tagged `source: qalead` and is excluded from the soft-delete quality loop entirely. On the next generation call for the same project, `MemoryRetrieval` returns these feedback entries alongside scenario-derived entries, injecting the QA lead's knowledge as few-shot context. A confirmation reply is posted back to the ticket comment thread so the QA lead knows the note was captured.
 
 ---
 
-**[0032]: Memory Writer Service** `MVP`
-_Business Outcome: Builds a project-specific knowledge base of proven test patterns, compounding generation quality with every passing run._
-For runs where all scenarios pass, the system generates a story embedding and upserts the scenario to the Cosmos `TestMemory` container. Each stored entry includes the story text, scenario JSON, test type, pass rate, and run count. Cross-project memory sharing is supported as an opt-in per user: anonymized entries are stored with a hashed `userId` and no `projectId`, making them available to generators across all projects.
-
----
 
 ## MVP — Project Management
 
@@ -290,3 +285,9 @@ The QA lead or admin can export all stored `(storyText, scenarioJson, outcome)` 
 **[0042]: Pipeline Run Detail View** `Post-MVP`
 _Business Outcome: Gives QA leads and engineering leads transparency into what the pipeline did and what it cost._
 Each test run in the portal shows a per-stage breakdown: which generator agents ran, which executor handled each test type, token usage per Claude call, and estimated cost. Helps identify expensive runs and tune project configuration.
+
+---
+
+**[0032]: Memory Writer Service** `Post-MVP`
+_Business Outcome: Makes the memory layer self-filling by automatically capturing proven test patterns from every passing run, compounding generation quality without QA lead effort._
+When all scenarios in a run pass, the system embeds the parsed story text using `text-embedding-3-small` and upserts the scenario JSON to the Cosmos `TestMemory` container, tagged `source: pipeline`. The stored entry includes the story text, scenario JSON, test type, `userId`, and `projectId`. Complements feature 0031 (manual QA lead feedback) by automating memory growth at scale.
