@@ -7,18 +7,21 @@ using Testurio.Core.Models;
 namespace Testurio.Infrastructure.Cosmos;
 
 /// <summary>
-/// Implements <see cref="IStatsRepository"/> using two Cosmos DB containers:
-/// <c>Projects</c> (partition key: <c>userId</c>) and <c>TestRuns</c> (partition key: <c>projectId</c>).
+/// Implements <see cref="IStatsRepository"/> using Cosmos DB containers:
+/// <c>Projects</c> (partition key: <c>userId</c>), <c>TestRuns</c> (partition key: <c>projectId</c>),
+/// and <c>TestResults</c> (partition key: <c>userId</c>).
 /// </summary>
 public class StatsRepository : IStatsRepository
 {
     private readonly Container _projectsContainer;
     private readonly Container _testRunsContainer;
+    private readonly Container _testResultsContainer;
 
     public StatsRepository(CosmosClient cosmosClient, string databaseName)
     {
         _projectsContainer = cosmosClient.GetContainer(databaseName, "Projects");
         _testRunsContainer = cosmosClient.GetContainer(databaseName, "TestRuns");
+        _testResultsContainer = cosmosClient.GetContainer(databaseName, "TestResults");
     }
 
     /// <inheritdoc/>
@@ -127,6 +130,135 @@ public class StatsRepository : IStatsRepository
         const int dailyLimit = 0;
 
         return new QuotaUsage(usedToday, dailyLimit, todayEnd);
+    }
+
+    /// <inheritdoc/>
+    public async Task<(IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)?> GetProjectHistoryAsync(
+        string userId,
+        string projectId,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. Validate ownership — point-read is cheap and enforces multi-tenant isolation.
+        try
+        {
+            await _projectsContainer.ReadItemAsync<Project>(
+                projectId,
+                new PartitionKey(userId),
+                cancellationToken: cancellationToken);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        // 2. Fetch all non-deleted TestResult documents for this project, sorted by createdAt desc.
+        //    TestResults partition key is userId — no cross-partition fan-out needed.
+        var resultQuery = new QueryDefinition(
+            "SELECT * FROM c " +
+            "WHERE c.userId = @userId AND c.projectId = @projectId " +
+            "AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false) " +
+            "ORDER BY c.createdAt DESC")
+            .WithParameter("@userId", userId)
+            .WithParameter("@projectId", projectId);
+
+        var results = new List<TestResult>();
+        using var resultIterator = _testResultsContainer.GetItemQueryIterator<TestResult>(
+            resultQuery,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+        while (resultIterator.HasMoreResults)
+        {
+            var page = await resultIterator.ReadNextAsync(cancellationToken);
+            results.AddRange(page);
+        }
+
+        // 3. Project each TestResult → RunHistoryItem.
+        var runs = results
+            .Select(r => new RunHistoryItem(
+                Id: r.Id,
+                RunId: r.RunId,
+                StoryTitle: r.StoryTitle,
+                Verdict: r.Verdict,
+                Recommendation: r.Recommendation,
+                TotalApiScenarios: r.ScenarioResults.Count(s => s.TestType == "api"),
+                PassedApiScenarios: r.ScenarioResults.Count(s => s.TestType == "api" && s.Passed),
+                TotalUiE2eScenarios: r.ScenarioResults.Count(s => s.TestType == "ui_e2e"),
+                PassedUiE2eScenarios: r.ScenarioResults.Count(s => s.TestType == "ui_e2e" && s.Passed),
+                TotalDurationMs: r.TotalDurationMs,
+                CreatedAt: r.CreatedAt))
+            .ToList()
+            .AsReadOnly();
+
+        // 4. Compute 90 trend-point buckets (today-89 through today, UTC), zero-filled.
+        var today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
+        var passedByDate = results
+            .Where(r => r.Verdict == "PASSED")
+            .GroupBy(r => DateOnly.FromDateTime(r.CreatedAt.UtcDateTime))
+            .ToDictionary(g => g.Key, g => g.Count());
+        var failedByDate = results
+            .Where(r => r.Verdict == "FAILED")
+            .GroupBy(r => DateOnly.FromDateTime(r.CreatedAt.UtcDateTime))
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var trendPoints = Enumerable.Range(0, 90)
+            .Select(i =>
+            {
+                var date = today.AddDays(-(89 - i));
+                passedByDate.TryGetValue(date, out var passed);
+                failedByDate.TryGetValue(date, out var failed);
+                return new TrendPoint(date, passed, failed);
+            })
+            .ToList()
+            .AsReadOnly();
+
+        return (runs, trendPoints);
+    }
+
+    /// <inheritdoc/>
+    public async Task<TestResult?> GetRunDetailAsync(
+        string userId,
+        string projectId,
+        string runId,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. Validate project ownership.
+        try
+        {
+            await _projectsContainer.ReadItemAsync<Project>(
+                projectId,
+                new PartitionKey(userId),
+                cancellationToken: cancellationToken);
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        // 2. Find the TestResult whose RunId matches (TestResult.Id ≠ runId; RunId field stores the TestRun id).
+        //    We query by runId field rather than document id because the plan uses runId as the URL param.
+        var query = new QueryDefinition(
+            "SELECT * FROM c WHERE c.userId = @userId AND c.runId = @runId " +
+            "AND (NOT IS_DEFINED(c.isDeleted) OR c.isDeleted = false)")
+            .WithParameter("@userId", userId)
+            .WithParameter("@runId", runId);
+
+        using var iterator = _testResultsContainer.GetItemQueryIterator<TestResult>(
+            query,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+        while (iterator.HasMoreResults)
+        {
+            var page = await iterator.ReadNextAsync(cancellationToken);
+            foreach (var result in page)
+            {
+                // Verify the result belongs to the requested project.
+                if (result.ProjectId != projectId)
+                    return null;
+                return result;
+            }
+        }
+
+        return null;
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────
