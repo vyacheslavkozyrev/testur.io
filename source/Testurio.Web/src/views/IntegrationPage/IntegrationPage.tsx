@@ -45,7 +45,7 @@ export default function IntegrationPage() {
   const [updateEmailValue, setUpdateEmailValue] = useState('');
 
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
-  const { data: project } = useProject(projectId ?? '');
+  const { data: project, isPending: isProjectPending } = useProject(projectId ?? '');
   const updateWorkItemTypeFilter = useUpdateWorkItemTypeFilter(projectId ?? '');
 
   const isConfigured = integration?.pmTool !== null && integration?.pmTool !== undefined;
@@ -251,7 +251,7 @@ export default function IntegrationPage() {
           <Divider />
           <WorkItemTypeFilter
             currentTypes={effectiveWorkItemTypes}
-            isSaving={updateWorkItemTypeFilter.isPending}
+            isSaving={updateWorkItemTypeFilter.isPending || isProjectPending}
             isError={updateWorkItemTypeFilter.isError}
             onSave={handleSaveWorkItemTypeFilter}
           />

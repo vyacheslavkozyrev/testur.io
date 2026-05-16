@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -32,6 +32,16 @@ export default function WorkItemTypeFilter({
   const [types, setTypes] = useState<string[]>(currentTypes);
   const [inputValue, setInputValue] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // Sync server data into local state only on the first non-empty resolution (e.g. after
+  // query loads). Subsequent changes must come from user actions, not re-renders.
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (!initializedRef.current && currentTypes.length > 0) {
+      setTypes(currentTypes);
+      initializedRef.current = true;
+    }
+  }, [currentTypes]);
 
   const handleAddType = useCallback(() => {
     const trimmed = inputValue.trim();

@@ -51,7 +51,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         var issueType = fields?.IssueType?.Name ?? string.Empty;
         if (!_filterService.IsAllowed(project, issueType))
         {
-            LogFiltered(_logger, issueType, project.Id);
+            LogFiltered(_logger, issueType, project.Id, "webhook_filtered", "issue_type_not_allowed");
             return WebhookProcessResult.Ignored;
         }
 
@@ -178,6 +178,6 @@ public partial class JiraWebhookService : IJiraWebhookService
     private static partial void LogEnqueued(ILogger logger, string issueKey, string projectId, string testRunId);
 
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "Webhook filtered: issue type '{IssueType}' is not in the allowed list for project {ProjectId} (eventType=webhook_filtered, reason=issue_type_not_allowed)")]
-    private static partial void LogFiltered(ILogger logger, string issueType, string projectId);
+        Message = "Webhook filtered: issue type '{IssueType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
+    private static partial void LogFiltered(ILogger logger, string issueType, string projectId, string eventType, string reason);
 }

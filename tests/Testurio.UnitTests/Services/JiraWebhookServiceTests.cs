@@ -246,14 +246,15 @@ public class JiraWebhookServiceTests
 
         var result = await sut.ProcessAsync(MakeProject(), payload);
 
-        // AC-014: silently dropped — no test run created, no comment posted
+        // AC-014: silently dropped — no test run created, no comment posted, no run enqueued
         Assert.Equal(WebhookProcessResult.Ignored, result);
         _testRunRepo.VerifyNoOtherCalls();
         _jiraApiClient.VerifyNoOtherCalls();
+        _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenIssueTypeFieldMissing_FallsBackToDefault()
+    public async Task ProcessAsync_WhenIssueTypeFieldMissing_PassesEmptyStringToFilterService()
     {
         // Missing issue type field (null) → empty string → filter service decides
         _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), string.Empty)).Returns(false);

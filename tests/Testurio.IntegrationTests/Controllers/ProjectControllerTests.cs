@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -282,6 +283,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(new[] { "Story", "Bug" }, body.AllowedWorkItemTypes);
     }
 
     [Fact]
@@ -292,6 +296,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("At least one work item type must be selected"));
     }
 
     [Fact]
@@ -302,6 +312,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("Work item type values must be non-empty strings"));
     }
 
     [Fact]
@@ -312,6 +328,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("A maximum of 20 work item types may be configured"));
     }
 
     [Fact]

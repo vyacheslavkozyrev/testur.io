@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
+import { theme } from '@/theme/theme';
 import WorkItemTypeFilter from './WorkItemTypeFilter';
 
 const i18nInstance = i18n.createInstance();
@@ -23,8 +24,6 @@ i18nInstance.use(initReactI18next).init({
     },
   },
 });
-
-const theme = createTheme();
 
 function Wrapper({ children }: { children: React.ReactNode }) {
   return (

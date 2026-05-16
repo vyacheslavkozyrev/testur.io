@@ -185,6 +185,7 @@ public partial class ProjectService : IProjectService
         ProductUrl: project.ProductUrl,
         TestingStrategy: project.TestingStrategy,
         CustomPrompt: project.CustomPrompt,
+        AllowedWorkItemTypes: project.AllowedWorkItemTypes,
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 

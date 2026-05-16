@@ -17,5 +17,5 @@ public sealed record UpdateWorkItemTypeFilterRequest(
 public sealed class NoEmptyStringsAttribute : ValidationAttribute
 {
     public override bool IsValid(object? value) =>
-        value is string[] arr && arr.All(s => !string.IsNullOrWhiteSpace(s));
+        value is null || value is not string[] arr || arr.All(s => !string.IsNullOrWhiteSpace(s));
 }

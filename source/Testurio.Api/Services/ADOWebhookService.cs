@@ -53,7 +53,7 @@ public partial class ADOWebhookService : IADOWebhookService
         var workItemType = payload.Resource.Revision?.Fields?.WorkItemType ?? string.Empty;
         if (!_filterService.IsAllowed(project, workItemType))
         {
-            LogFiltered(_logger, workItemType, project.Id);
+            LogFiltered(_logger, workItemType, project.Id, "webhook_filtered", "issue_type_not_allowed");
             return WebhookProcessResult.Ignored;
         }
 
@@ -68,6 +68,8 @@ public partial class ADOWebhookService : IADOWebhookService
                 return WebhookProcessResult.Queued;
             }
 
+            // JiraIssueKey/JiraIssueId are reused for ADO work item IDs until the domain entity
+            // is extended with ADO-specific fields (tracked as a future improvement).
             var queued = new QueuedRun
             {
                 ProjectId = project.Id,
@@ -80,6 +82,8 @@ public partial class ADOWebhookService : IADOWebhookService
             return WebhookProcessResult.Queued;
         }
 
+        // JiraIssueKey/JiraIssueId are reused for ADO work item IDs until the domain entity
+        // is extended with ADO-specific fields (tracked as a future improvement).
         var testRun = new TestRun
         {
             ProjectId = project.Id,
@@ -104,8 +108,8 @@ public partial class ADOWebhookService : IADOWebhookService
     }
 
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "ADO webhook filtered: work item type '{WorkItemType}' is not in the allowed list for project {ProjectId} (eventType=webhook_filtered, reason=issue_type_not_allowed)")]
-    private static partial void LogFiltered(ILogger logger, string workItemType, string projectId);
+        Message = "ADO webhook filtered: work item type '{WorkItemType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
+    private static partial void LogFiltered(ILogger logger, string workItemType, string projectId, string eventType, string reason);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Duplicate ADO webhook ignored for work item {WorkItemId} in project {ProjectId}")]
     private static partial void LogDuplicate(ILogger logger, string workItemId, string projectId);
