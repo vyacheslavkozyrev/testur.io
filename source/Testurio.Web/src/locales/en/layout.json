@@ -1,7 +1,7 @@
 {
   "header": {
-    "logoText": "Testurio",
-    "logoAriaLabel": "Testurio — go to dashboard"
+    "logoText": "TestUR.io",
+    "logoAriaLabel": "TestUR.io — go to dashboard"
   },
   "sidebar": {
     "dashboard": "Dashboard",

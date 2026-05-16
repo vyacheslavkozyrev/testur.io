@@ -9,6 +9,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
+import { CHROME_BG, CHROME_DIVIDER, CHROME_MUTED, CHROME_TEXT } from '@/theme/theme';
 import type { AuthUser } from '@/types/layout.types';
 
 const MAX_DISPLAY_NAME_LENGTH = 24;
@@ -80,9 +81,9 @@ const getStyles = (theme: Theme) =>
   useMemo(
     () => ({
       appBar: {
-        backgroundColor: theme.palette.background.paper,
-        color: theme.palette.text.primary,
-        borderBottom: `1px solid ${theme.palette.divider}`,
+        backgroundColor: CHROME_BG,
+        color: CHROME_TEXT,
+        borderBottom: `1px solid ${CHROME_DIVIDER}`,
         zIndex: theme.zIndex.drawer + 1,
         height: 64,
       },
@@ -100,7 +101,7 @@ const getStyles = (theme: Theme) =>
       logoText: {
         ...theme.typography.h6,
         fontWeight: 700,
-        color: theme.palette.primary.main,
+        color: '#ffffff',
       },
       userSection: {
         display: 'flex',
@@ -109,7 +110,7 @@ const getStyles = (theme: Theme) =>
       },
       displayName: {
         ...theme.typography.body2,
-        color: theme.palette.text.primary,
+        color: CHROME_MUTED,
         maxWidth: 180,
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -120,7 +121,7 @@ const getStyles = (theme: Theme) =>
         height: 36,
         fontSize: 14,
         bgcolor: theme.palette.primary.main,
-        color: theme.palette.primary.contrastText,
+        color: '#fff',
       },
     }),
     [theme],
