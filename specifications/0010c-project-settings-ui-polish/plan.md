@@ -4,7 +4,7 @@
 
 - [x] T001 [UI] Expose `ProjectFormHandle` (imperative ref: `triggerSubmit(): Promise<boolean>`, `isDirty: boolean`) via `forwardRef` + `useImperativeHandle`; remove save button in edit mode; normalise section title to `h6`; remove `maxWidth: 640` — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
 - [x] T002 [UI] Expose `ReportSettingsSectionHandle` (imperative ref: `getValues()`, `isDirty: boolean`) via `forwardRef` + `useImperativeHandle`; remove standalone save button — `source/Testurio.Web/src/views/ProjectSettings/ReportSettingsSection.tsx`
-- [ ] T003 [UI] Create `SaveBar` component — single "Save Changes" / "No changes" / "Saving…" / "Saved ✓" button with dirty+loading+success states — `source/Testurio.Web/src/components/SaveBar/SaveBar.tsx`
+- [x] T003 [UI] Create `SaveBar` component — single "Save Changes" / "No changes" / "Saving…" / "Saved ✓" button with dirty+loading+success states — `source/Testurio.Web/src/components/SaveBar/SaveBar.tsx`
 - [ ] T004 [UI] Add translation keys for tabs, save bar states, and unsaved-changes banner — `source/Testurio.Web/src/locales/en/project.json`
 - [ ] T005 [UI] Refactor `ProjectSettingsPage` — add MUI `Tabs`/`Tab` navigation, wire imperative refs to `handleSaveAll`, implement dirty-state aggregation, unsaved-changes banner, per-section error alerts, retry-only-failed logic — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [ ] T006 [Test] Component tests for `SaveBar` (all button states) — `source/Testurio.Web/src/components/SaveBar/SaveBar.test.tsx`
