@@ -18,9 +18,9 @@ describe('truncateText', () => {
   });
 
   it('trims trailing whitespace before appending the ellipsis', () => {
-    const text = 'Hello   ' + 'A'.repeat(115);
+    // First 10 chars: "Hello     " (5 spaces) — trimEnd → "Hello" + ellipsis
+    const text = 'Hello     ' + 'X'.repeat(113);
     const result = truncateText(text, 10);
-    // First 10 chars: "Hello     " — trimEnd → "Hello" + ellipsis
     expect(result).toBe('Hello\u2026');
   });
 
