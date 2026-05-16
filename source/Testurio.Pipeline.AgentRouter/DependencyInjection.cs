@@ -30,8 +30,7 @@ public static class DependencyInjection
         services.AddSingleton<StoryClassifier>();
         services.AddSingleton<SkipCommentPoster>();
         services.AddSingleton<ITestGeneratorFactory, TestGeneratorFactory>();
-        services.AddSingleton<AgentRouterService>();
-        services.AddSingleton<IAgentRouter>(sp => sp.GetRequiredService<AgentRouterService>());
+        services.AddSingleton<IAgentRouter, AgentRouterService>();
 
         return services;
     }

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Core.Entities;
@@ -18,18 +17,8 @@ public class AgentRouterServiceTests
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<ITestRunRepository> _testRunRepo = new();
 
-    private AgentRouterService CreateSut(ITestGeneratorFactory? factory = null)
+    private AgentRouterService CreateSut()
     {
-        var apiMock = new Mock<ITestGeneratorAgent>();
-        var uiMock = new Mock<ITestGeneratorAgent>();
-
-        // Build a real factory backed by a ServiceProvider with keyed mocks.
-        var services = new ServiceCollection();
-        services.AddKeyedSingleton<ITestGeneratorAgent>(TestGeneratorFactory.ApiKey, (_, _) => apiMock.Object);
-        services.AddKeyedSingleton<ITestGeneratorAgent>(TestGeneratorFactory.UiE2eKey, (_, _) => uiMock.Object);
-        var sp = services.BuildServiceProvider();
-
-        var resolvedFactory = factory ?? new TestGeneratorFactory(sp);
         var classifier = new StoryClassifier(_llmClient.Object, NullLogger<StoryClassifier>.Instance);
         var skipPoster = new SkipCommentPoster(
             _jiraApiClient.Object,
@@ -44,7 +33,6 @@ public class AgentRouterServiceTests
         return new AgentRouterService(
             classifier,
             skipPoster,
-            resolvedFactory,
             _testRunRepo.Object,
             NullLogger<AgentRouterService>.Instance);
     }

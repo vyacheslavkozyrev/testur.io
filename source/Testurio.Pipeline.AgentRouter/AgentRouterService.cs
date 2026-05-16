@@ -22,20 +22,17 @@ public sealed partial class AgentRouterService : IAgentRouter
 
     private readonly StoryClassifier _classifier;
     private readonly SkipCommentPoster _skipCommentPoster;
-    private readonly ITestGeneratorFactory _generatorFactory;
     private readonly ITestRunRepository _testRunRepository;
     private readonly ILogger<AgentRouterService> _logger;
 
     public AgentRouterService(
         StoryClassifier classifier,
         SkipCommentPoster skipCommentPoster,
-        ITestGeneratorFactory generatorFactory,
         ITestRunRepository testRunRepository,
         ILogger<AgentRouterService> logger)
     {
         _classifier = classifier;
         _skipCommentPoster = skipCommentPoster;
-        _generatorFactory = generatorFactory;
         _testRunRepository = testRunRepository;
         _logger = logger;
     }
@@ -85,18 +82,15 @@ public sealed partial class AgentRouterService : IAgentRouter
 
             LogSkipped(_logger, testRun.Id, reason);
 
-            // AC-008: comment post is fire-and-forget — failure must not propagate.
-            await _skipCommentPoster.PostSkipCommentAsync(testRun, project, reason, ct);
+            // AC-008: comment post is fire-and-forget — dispatch without awaiting so the
+            // pipeline does not block on the outbound HTTP call to Jira/ADO.
+            // SkipCommentPoster swallows all exceptions internally, so discard is safe.
+            _ = _skipCommentPoster.PostSkipCommentAsync(testRun, project, reason, ct);
         }
         else
         {
             // Normal path — persist routing metadata. The caller will continue to stage 4.
             await _testRunRepository.UpdateAsync(testRun, ct);
-
-            // Build generator instances to verify the factory can resolve each type.
-            // The orchestrator receives these via AgentRouterResult for parallel execution.
-            foreach (var testType in resolved)
-                _ = _generatorFactory.Create(testType);
         }
 
         return result;

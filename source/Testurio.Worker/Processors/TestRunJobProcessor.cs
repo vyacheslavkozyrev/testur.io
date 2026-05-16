@@ -178,8 +178,12 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         new()
         {
             Title = testRun.JiraIssueKey,
-            Description = string.Empty,
-            AcceptanceCriteria = Array.Empty<string>()
+            // Description and AcceptanceCriteria will be fully populated when the StoryParser
+            // stage (feature 0025) is wired in before the AgentRouter stage. Until then,
+            // a placeholder is used so the type contract (at least one AC) is honoured and
+            // the limitation is visible in the Claude prompt itself.
+            Description = "(Story content not yet available — pending StoryParser integration)",
+            AcceptanceCriteria = new[] { "(Acceptance criteria not yet available — pending StoryParser integration)" }
         };
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)

@@ -81,13 +81,7 @@ public sealed partial class SkipCommentPoster
         string commentBody,
         CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(project.JiraEmailSecretUri))
-        {
-            LogJiraCredentialsMissing(_logger, testRun.JiraIssueKey);
-            return;
-        }
-
-        if (string.IsNullOrEmpty(project.JiraApiTokenSecretUri))
+        if (string.IsNullOrEmpty(project.JiraEmailSecretUri) || string.IsNullOrEmpty(project.JiraApiTokenSecretUri))
         {
             LogJiraCredentialsMissing(_logger, testRun.JiraIssueKey);
             return;
@@ -122,7 +116,13 @@ public sealed partial class SkipCommentPoster
             return;
         }
 
-        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri ?? string.Empty, ct);
+        if (string.IsNullOrEmpty(project.AdoTokenSecretUri))
+        {
+            LogAdoCredentialsMissing(_logger, testRun.JiraIssueKey);
+            return;
+        }
+
+        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri, ct);
 
         var success = await _adoClient.PostCommentAsync(
             project.AdoOrgUrl!,
@@ -149,6 +149,9 @@ public sealed partial class SkipCommentPoster
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "SkipCommentPoster: ADO comment post failed for {IssueKey}")]
     private static partial void LogAdoCommentFailed(ILogger logger, string issueKey);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "SkipCommentPoster: ADO token not configured (Key Vault URI missing) for {IssueKey} — comment skipped")]
+    private static partial void LogAdoCredentialsMissing(ILogger logger, string issueKey);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "SkipCommentPoster: ADO work item id could not be parsed for issue key {IssueKey} — comment skipped")]
     private static partial void LogAdoWorkItemIdMissing(ILogger logger, string issueKey);

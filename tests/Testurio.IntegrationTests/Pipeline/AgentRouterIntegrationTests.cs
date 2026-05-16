@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Core.Entities;
@@ -26,21 +25,12 @@ public class AgentRouterIntegrationTests
 
     private AgentRouterService CreateAgentRouterService()
     {
-        var apiMock = new Mock<ITestGeneratorAgent>();
-        var uiMock = new Mock<ITestGeneratorAgent>();
-
-        var services = new ServiceCollection();
-        services.AddKeyedSingleton<ITestGeneratorAgent>(TestGeneratorFactory.ApiKey, (_, _) => apiMock.Object);
-        services.AddKeyedSingleton<ITestGeneratorAgent>(TestGeneratorFactory.UiE2eKey, (_, _) => uiMock.Object);
-        var sp = services.BuildServiceProvider();
-
         var classifier = new StoryClassifier(_llmClient.Object, NullLogger<StoryClassifier>.Instance);
         var skipPoster = new SkipCommentPoster(
             _jiraApiClient.Object,
             _adoClient.Object,
             _secretResolver.Object,
             NullLogger<SkipCommentPoster>.Instance);
-        var factory = new TestGeneratorFactory(sp);
 
         _testRunRepo
             .Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
@@ -49,7 +39,6 @@ public class AgentRouterIntegrationTests
         return new AgentRouterService(
             classifier,
             skipPoster,
-            factory,
             _testRunRepo.Object,
             NullLogger<AgentRouterService>.Instance);
     }
