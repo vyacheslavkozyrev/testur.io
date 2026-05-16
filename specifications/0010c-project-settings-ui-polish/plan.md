@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [UI] Expose `ProjectFormHandle` (imperative ref: `triggerSubmit(): Promise<boolean>`, `isDirty: boolean`) via `forwardRef` + `useImperativeHandle`; remove save button in edit mode; normalise section title to `h6`; remove `maxWidth: 640` — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
+- [x] T001 [UI] Expose `ProjectFormHandle` (imperative ref: `triggerSubmit(): Promise<boolean>`, `isDirty: boolean`) via `forwardRef` + `useImperativeHandle`; remove save button in edit mode; normalise section title to `h6`; remove `maxWidth: 640` — `source/Testurio.Web/src/components/ProjectForm/ProjectForm.tsx`
 - [ ] T002 [UI] Expose `ReportSettingsSectionHandle` (imperative ref: `getValues()`, `isDirty: boolean`) via `forwardRef` + `useImperativeHandle`; remove standalone save button — `source/Testurio.Web/src/views/ProjectSettings/ReportSettingsSection.tsx`
 - [ ] T003 [UI] Create `SaveBar` component — single "Save Changes" / "No changes" / "Saving…" / "Saved ✓" button with dirty+loading+success states — `source/Testurio.Web/src/components/SaveBar/SaveBar.tsx`
 - [ ] T004 [UI] Add translation keys for tabs, save bar states, and unsaved-changes banner — `source/Testurio.Web/src/locales/en/project.json`

@@ -1,13 +1,17 @@
-import { useCallback, useMemo } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import type { ProjectDto, CreateProjectRequest, UpdateProjectRequest } from '@/types/project.types';
+
+export interface ProjectFormHandle {
+  triggerSubmit: () => Promise<boolean>;
+  isDirty: boolean;
+}
 
 export interface ProjectFormProps {
   /** Pre-populate fields when editing an existing project. */
@@ -23,120 +27,138 @@ interface FormValues {
   testingStrategy: string;
 }
 
-export default function ProjectForm({ project, isSubmitting, onSubmit, onCancel }: ProjectFormProps) {
-  const { t } = useTranslation('project');
-  const theme = useTheme();
-  const styles = getStyles(theme);
-  const isEdit = Boolean(project);
+const ProjectForm = forwardRef<ProjectFormHandle, ProjectFormProps>(
+  function ProjectForm({ project, isSubmitting, onSubmit, onCancel }, ref) {
+    const { t } = useTranslation('project');
+    const theme = useTheme();
+    const styles = getStyles(theme);
+    const isEdit = Boolean(project);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormValues>({
-    defaultValues: {
-      name: project?.name ?? '',
-      productUrl: project?.productUrl ?? '',
-      testingStrategy: project?.testingStrategy ?? '',
-    },
-  });
+    const {
+      control,
+      handleSubmit,
+      formState: { errors, isDirty },
+    } = useForm<FormValues>({
+      defaultValues: {
+        name: project?.name ?? '',
+        productUrl: project?.productUrl ?? '',
+        testingStrategy: project?.testingStrategy ?? '',
+      },
+    });
 
-  const handleFormSubmit = useCallback(
-    (data: FormValues) => {
-      onSubmit(data);
-    },
-    [onSubmit],
-  );
+    const handleFormSubmit = useCallback(
+      (data: FormValues) => {
+        onSubmit(data);
+      },
+      [onSubmit],
+    );
 
-  return (
-    <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={styles.root} noValidate>
-      <Typography variant="h5" sx={styles.title}>
-        {isEdit ? t('form.titleEdit') : t('form.titleCreate')}
-      </Typography>
+    useImperativeHandle(ref, () => ({
+      triggerSubmit: () =>
+        new Promise<boolean>((resolve) => {
+          handleSubmit(
+            (data) => {
+              handleFormSubmit(data);
+              resolve(true);
+            },
+            () => resolve(false),
+          )();
+        }),
+      get isDirty() {
+        return isDirty;
+      },
+    }));
 
-      <Controller
-        name="name"
-        control={control}
-        rules={{
-          required: t('form.validation.nameRequired'),
-          maxLength: { value: 200, message: t('form.validation.nameMaxLength') },
-        }}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label={t('form.fields.name')}
-            error={Boolean(errors.name)}
-            helperText={errors.name?.message}
-            fullWidth
-            required
-            inputProps={{ maxLength: 201 }}
-          />
+    return (
+      <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={styles.root} noValidate>
+        <Typography variant="h6" sx={styles.title}>
+          {isEdit ? t('form.titleEdit') : t('form.titleCreate')}
+        </Typography>
+
+        <Controller
+          name="name"
+          control={control}
+          rules={{
+            required: t('form.validation.nameRequired'),
+            maxLength: { value: 200, message: t('form.validation.nameMaxLength') },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label={t('form.fields.name')}
+              error={Boolean(errors.name)}
+              helperText={errors.name?.message}
+              fullWidth
+              required
+              inputProps={{ maxLength: 201 }}
+            />
+          )}
+        />
+
+        <Controller
+          name="productUrl"
+          control={control}
+          rules={{
+            required: t('form.validation.productUrlRequired'),
+            pattern: {
+              value: /^https?:\/\/.+/,
+              message: t('form.validation.productUrlInvalid'),
+            },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label={t('form.fields.productUrl')}
+              type="url"
+              error={Boolean(errors.productUrl)}
+              helperText={errors.productUrl?.message}
+              fullWidth
+              required
+            />
+          )}
+        />
+
+        <Controller
+          name="testingStrategy"
+          control={control}
+          rules={{
+            required: t('form.validation.testingStrategyRequired'),
+            maxLength: { value: 500, message: t('form.validation.testingStrategyMaxLength') },
+          }}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label={t('form.fields.testingStrategy')}
+              multiline
+              minRows={3}
+              error={Boolean(errors.testingStrategy)}
+              helperText={errors.testingStrategy?.message}
+              fullWidth
+              required
+              inputProps={{ maxLength: 501 }}
+            />
+          )}
+        />
+
+        {/* In create mode, show action buttons inline; edit mode buttons are managed by the parent page */}
+        {!isEdit && (
+          <Box sx={styles.actions}>
+            {onCancel && (
+              <Button variant="outlined" onClick={onCancel} disabled={isSubmitting}>
+                {t('form.actions.cancel')}
+              </Button>
+            )}
+            <Button type="submit" variant="contained" disabled={isSubmitting}>
+              {t('form.actions.create')}
+            </Button>
+          </Box>
         )}
-      />
-
-      <Controller
-        name="productUrl"
-        control={control}
-        rules={{
-          required: t('form.validation.productUrlRequired'),
-          pattern: {
-            value: /^https?:\/\/.+/,
-            message: t('form.validation.productUrlInvalid'),
-          },
-        }}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label={t('form.fields.productUrl')}
-            type="url"
-            error={Boolean(errors.productUrl)}
-            helperText={errors.productUrl?.message}
-            fullWidth
-            required
-          />
-        )}
-      />
-
-      <Controller
-        name="testingStrategy"
-        control={control}
-        rules={{
-          required: t('form.validation.testingStrategyRequired'),
-          maxLength: { value: 500, message: t('form.validation.testingStrategyMaxLength') },
-        }}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            label={t('form.fields.testingStrategy')}
-            multiline
-            minRows={3}
-            error={Boolean(errors.testingStrategy)}
-            helperText={errors.testingStrategy?.message}
-            fullWidth
-            required
-            inputProps={{ maxLength: 501 }}
-          />
-        )}
-      />
-
-      <Box sx={styles.actions}>
-        {onCancel && (
-          <Button variant="outlined" onClick={onCancel} disabled={isSubmitting}>
-            {t('form.actions.cancel')}
-          </Button>
-        )}
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={isSubmitting}
-          startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : null}
-        >
-          {isEdit ? t('form.actions.save') : t('form.actions.create')}
-        </Button>
       </Box>
-    </Box>
-  );
-}
+    );
+  },
+);
+
+export default ProjectForm;
 
 // co-located at the bottom of the file
 const getStyles = (theme: Theme) =>
@@ -147,11 +169,10 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(3),
-        maxWidth: 640,
         width: '100%',
       },
       title: {
-        ...theme.typography.h5,
+        ...theme.typography.h6,
         color: theme.palette.text.primary,
         marginBottom: theme.spacing(1),
       },
