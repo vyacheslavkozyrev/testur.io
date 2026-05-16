@@ -15,10 +15,8 @@ public class TestRun
     public DateTimeOffset? CompletedAt { get; set; }
     public string? SkipReason { get; set; }
     public string? DeliveryError { get; set; }
-
-    /// <summary>
-    /// How the story was parsed in stage 1.
-    /// Null until the StoryParser stage completes.
-    /// </summary>
-    public ParserMode? ParserMode { get; set; }
+    /// <summary>Blob Storage URI of the rendered report for this run. Populated by ReportWriterPlugin (feature 0009).</summary>
+    public string? ReportBlobUri { get; set; }
+    /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>
+    public string? ReportTemplateWarning { get; set; }
 }

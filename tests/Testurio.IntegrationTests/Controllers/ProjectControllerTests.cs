@@ -301,6 +301,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
+                    ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
+                    ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
+                    ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });
