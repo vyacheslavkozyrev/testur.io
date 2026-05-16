@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -23,6 +24,12 @@ namespace Testurio.IntegrationTests.Controllers;
 /// </summary>
 public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControllerTests.ApiFactory>
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     private readonly ApiFactory _factory;
 
     public ProjectAccessControllerTests(ApiFactory factory)
@@ -68,7 +75,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<ProjectAccessDto>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.IpAllowlist, body.AccessMode);
         Assert.Null(body.BasicAuthUser);
@@ -133,7 +140,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<ProjectAccessDto>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.IpAllowlist, body.AccessMode);
     }
@@ -160,7 +167,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<ProjectAccessDto>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.BasicAuth, body.AccessMode);
         // Response must not expose the password — basic_auth_user can be pre-filled
@@ -209,7 +216,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<ProjectAccessDto>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.HeaderToken, body.AccessMode);
         Assert.Equal("X-Testurio-Token", body.HeaderTokenName);
