@@ -6,7 +6,7 @@
 | --------- | ----------- | ---------- | ----- |
 | Specify   | ✅ Complete | 2026-05-16 |       |
 | Plan      | ✅ Complete | 2026-05-16 |       |
-| Implement | ⏳ Pending  |            |       |
+| Implement | ✅ Complete | 2026-05-16 |       |
 | Review    | ⏳ Pending  |            |       |
 | Test      | ⏳ Pending  |            |       |
 
@@ -14,7 +14,7 @@
 
 ## Implementation Notes
 
-_Populated by `/implement 0011`_
+T001–T029 implemented across backend (Domain, Infra, App, API) and frontend (types, service, hooks, MSW, components, page, i18n, route). T030 (E2E) deferred to test phase. `@mui/x-charts` added as dependency for TrendChart.
 
 ---
 
