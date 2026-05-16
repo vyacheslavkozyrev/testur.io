@@ -15,6 +15,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import NextLink from 'next/link';
 import { useTheme, type Theme } from '@mui/material/styles';
+import AccessModeSelector from '@/components/AccessModeSelector/AccessModeSelector';
 import { PROJECTS_ROUTE } from '@/routes/routes';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
@@ -234,9 +235,6 @@ export default function ProjectSettingsPage() {
         <Box sx={styles.settingsContent}>
           {/* Project info card */}
           <Paper variant="outlined" sx={styles.card}>
-            <Typography variant="h6" sx={styles.cardTitle}>
-              {t('form.titleEdit')}
-            </Typography>
             {sectionErrors.projectInfo && (
               <Alert severity="error" sx={styles.cardAlert}>
                 {t('settings.saveError')}
@@ -258,6 +256,17 @@ export default function ProjectSettingsPage() {
               value={customPrompt}
               onChange={handleCustomPromptChange}
             />
+          </Paper>
+
+          {/* Testing environment access card */}
+          <Paper variant="outlined" sx={styles.card}>
+            <Typography variant="subtitle1" color="text.primary">
+              {t('access.section.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('access.section.description')}
+            </Typography>
+            <AccessModeSelector projectId={project.projectId} />
           </Paper>
 
           {/* Report settings card */}
@@ -355,11 +364,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(2),
-      },
-      cardTitle: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
-        fontWeight: 600,
       },
       cardAlert: {
         marginBottom: theme.spacing(2),

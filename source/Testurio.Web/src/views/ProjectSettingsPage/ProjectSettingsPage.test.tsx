@@ -64,6 +64,25 @@ jest.mock('@/hooks/useReportSettings', () => ({
   useRemoveReportTemplate: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
+jest.mock('@/hooks/useProjectAccess', () => ({
+  useProjectAccess: () => ({
+    data: {
+      projectId: '00000000-0000-0000-0000-000000000001',
+      accessMode: 'ipAllowlist',
+      basicAuthUser: null,
+      headerTokenName: null,
+    },
+    isPending: false,
+    isError: false,
+  }),
+  useUpdateProjectAccess: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+    isError: false,
+    isSuccess: false,
+  }),
+}));
+
 jest.mock('@/hooks/usePMToolConnection', () => ({
   useIntegrationStatus: () => ({ data: undefined, isPending: true, isError: false }),
   useSaveADOConnection: () => ({ mutate: jest.fn(), isPending: false, isError: false }),

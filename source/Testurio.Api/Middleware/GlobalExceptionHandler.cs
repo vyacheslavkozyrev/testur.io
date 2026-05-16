@@ -14,6 +14,7 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService pds) : IExce
         {
             ValidationException v => (StatusCodes.Status400BadRequest, v.Message),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
+            BadHttpRequestException bhr => (bhr.StatusCode, "Invalid request"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")
         };
 

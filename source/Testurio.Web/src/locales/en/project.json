@@ -45,6 +45,12 @@
       "deleteButton": "Delete Project"
     }
   },
+  "access": {
+    "section": {
+      "title": "Testing Environment Access",
+      "description": "Configure how the test executor authenticates against your staging environment."
+    }
+  },
   "tabs": {
     "settings": "Settings",
     "integration": "Integration"

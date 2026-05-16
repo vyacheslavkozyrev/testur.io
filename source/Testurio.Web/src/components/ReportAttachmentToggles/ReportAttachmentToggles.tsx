@@ -6,7 +6,6 @@ import Box from '@mui/material/Box';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 
 export interface ReportAttachmentTogglesProps {
@@ -59,10 +58,6 @@ export default function ReportAttachmentToggles({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="body2" sx={styles.sectionLabel}>
-        {t('attachments.title')}
-      </Typography>
-
       <FormControlLabel
         control={
           <Switch checked={includeLogs} onChange={handleLogsChange} />
@@ -100,14 +95,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(1),
-      },
-      sectionLabel: {
-        fontWeight: 600,
-        textTransform: 'uppercase' as const,
-        letterSpacing: '0.07em',
-        color: theme.palette.text.secondary,
-        fontSize: theme.typography.caption.fontSize,
-        marginBottom: theme.spacing(0.5),
       },
     }),
     [theme],

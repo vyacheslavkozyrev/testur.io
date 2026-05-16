@@ -2,31 +2,31 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `AccessMode` enum (`IpAllowlist`, `BasicAuth`, `HeaderToken`) — `source/Testurio.Core/Enums/AccessMode.cs`
-- [ ] T002 [Domain] Extend `Project` entity with access configuration fields (`AccessMode`, `BasicAuthUserSecretUri`, `BasicAuthPassSecretUri`, `HeaderTokenName`, `HeaderTokenSecretUri`) — `source/Testurio.Core/Entities/Project.cs`
-- [ ] T003 [Domain] Define `IProjectAccessCredentialProvider` interface with `ResolveAsync(Project, CancellationToken)` returning `ProjectAccessCredentials` — `source/Testurio.Core/Interfaces/IProjectAccessCredentialProvider.cs`
-- [ ] T004 [Domain] Create `ProjectAccessCredentials` discriminated union record (`IpAllowlist`, `BasicAuth`, `HeaderToken` cases) — `source/Testurio.Core/Models/ProjectAccessCredentials.cs`
-- [ ] T005 [Domain] Create `CredentialRetrievalException` — `source/Testurio.Core/Exceptions/CredentialRetrievalException.cs`
-- [ ] T006 [Infra] Implement `ProjectAccessCredentialProvider` — reads secret URIs from project document, fetches values from Key Vault via `ISecretResolver`, returns typed `ProjectAccessCredentials` — `source/Testurio.Infrastructure/KeyVault/ProjectAccessCredentialProvider.cs`
-- [ ] T007 [Infra] Extend `ProjectSecretNamespace` with constants for access secret keys (`basic-auth-user`, `basic-auth-pass`, `header-token-value`) — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
-- [ ] T008 [Infra] Register `IProjectAccessCredentialProvider` → `ProjectAccessCredentialProvider` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T009 [App] Create `UpdateProjectAccessRequest` DTO with `[AllowedValues]` on `AccessMode`, conditional required fields, and `[RegularExpression]` on `HeaderTokenName` — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
-- [ ] T010 [App] Create `ProjectAccessDto` (safe response: mode, optional username, optional header name — never plaintext secrets) — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
-- [ ] T011 [App] Implement `IProjectAccessService` interface and `ProjectAccessService` — validates ownership, writes/clears Key Vault secrets, updates Cosmos project document, returns `ProjectAccessDto` — `source/Testurio.Api/Services/ProjectAccessService.cs`
-- [ ] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
-- [ ] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
-- [ ] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
-- [ ] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
-- [ ] T016 [UI] Add API client for access endpoints — `source/Testurio.Web/src/services/project/projectAccessService.ts`
-- [ ] T017 [UI] Add React Query hooks (`useProjectAccess`, `useUpdateProjectAccess`) — `source/Testurio.Web/src/hooks/useProjectAccess.ts`
-- [ ] T018 [UI] Add MSW mock handlers for access endpoints — `source/Testurio.Web/src/mocks/handlers/projectAccess.ts`
-- [ ] T019 [UI] Create `AccessModeSelector` component (radio group + conditional credential fields + IP info panel) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.tsx`
-- [ ] T020 [UI] Integrate `AccessModeSelector` into `ProjectSettingsPage` — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
-- [ ] T021 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/projectAccess.json`
-- [ ] T022 [Test] Backend unit tests for `ProjectAccessService` (ownership, secret write/clear on mode switch, safe DTO shape) — `tests/Testurio.UnitTests/Services/ProjectAccessServiceTests.cs`
-- [ ] T023 [Test] Backend unit tests for `ProjectAccessCredentialProvider` (each access mode, Key Vault unreachable → `CredentialRetrievalException`) — `tests/Testurio.UnitTests/Services/ProjectAccessCredentialProviderTests.cs`
-- [ ] T024 [Test] Backend integration tests for `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` — `tests/Testurio.IntegrationTests/Controllers/ProjectAccessControllerTests.cs`
-- [ ] T025 [Test] Frontend component tests for `AccessModeSelector` (mode switch renders correct fields, masked password field, validation errors) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.test.tsx`
+- [x] T001 [Domain] Add `AccessMode` enum (`IpAllowlist`, `BasicAuth`, `HeaderToken`) — `source/Testurio.Core/Enums/AccessMode.cs`
+- [x] T002 [Domain] Extend `Project` entity with access configuration fields (`AccessMode`, `BasicAuthUserSecretUri`, `BasicAuthPassSecretUri`, `HeaderTokenName`, `HeaderTokenSecretUri`) — `source/Testurio.Core/Entities/Project.cs`
+- [x] T003 [Domain] Define `IProjectAccessCredentialProvider` interface with `ResolveAsync(Project, CancellationToken)` returning `ProjectAccessCredentials` — `source/Testurio.Core/Interfaces/IProjectAccessCredentialProvider.cs`
+- [x] T004 [Domain] Create `ProjectAccessCredentials` discriminated union record (`IpAllowlist`, `BasicAuth`, `HeaderToken` cases) — `source/Testurio.Core/Models/ProjectAccessCredentials.cs`
+- [x] T005 [Domain] Create `CredentialRetrievalException` — `source/Testurio.Core/Exceptions/CredentialRetrievalException.cs`
+- [x] T006 [Infra] Implement `ProjectAccessCredentialProvider` — reads secret URIs from project document, fetches values from Key Vault via `ISecretResolver`, returns typed `ProjectAccessCredentials` — `source/Testurio.Infrastructure/KeyVault/ProjectAccessCredentialProvider.cs`
+- [x] T007 [Infra] Extend `ProjectSecretNamespace` with constants for access secret keys (`basic-auth-user`, `basic-auth-pass`, `header-token-value`) — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
+- [x] T008 [Infra] Register `IProjectAccessCredentialProvider` → `ProjectAccessCredentialProvider` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T009 [App] Create `UpdateProjectAccessRequest` DTO with `[AllowedValues]` on `AccessMode`, conditional required fields, and `[RegularExpression]` on `HeaderTokenName` — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
+- [x] T010 [App] Create `ProjectAccessDto` (safe response: mode, optional username, optional header name — never plaintext secrets) — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
+- [x] T011 [App] Implement `IProjectAccessService` interface and `ProjectAccessService` — validates ownership, writes/clears Key Vault secrets, updates Cosmos project document, returns `ProjectAccessDto` — `source/Testurio.Api/Services/ProjectAccessService.cs`
+- [x] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
+- [x] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
+- [x] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
+- [x] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
+- [x] T016 [UI] Add API client for access endpoints — `source/Testurio.Web/src/services/project/projectAccessService.ts`
+- [x] T017 [UI] Add React Query hooks (`useProjectAccess`, `useUpdateProjectAccess`) — `source/Testurio.Web/src/hooks/useProjectAccess.ts`
+- [x] T018 [UI] Add MSW mock handlers for access endpoints — `source/Testurio.Web/src/mocks/handlers/projectAccess.ts`
+- [x] T019 [UI] Create `AccessModeSelector` component (radio group + conditional credential fields + IP info panel) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.tsx`
+- [x] T020 [UI] Integrate `AccessModeSelector` into `ProjectSettingsPage` — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.tsx`
+- [x] T021 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/projectAccess.json`
+- [x] T022 [Test] Backend unit tests for `ProjectAccessService` (ownership, secret write/clear on mode switch, safe DTO shape) — `tests/Testurio.UnitTests/Services/ProjectAccessServiceTests.cs`
+- [x] T023 [Test] Backend unit tests for `ProjectAccessCredentialProvider` (each access mode, Key Vault unreachable → `CredentialRetrievalException`) — `tests/Testurio.UnitTests/Services/ProjectAccessCredentialProviderTests.cs`
+- [x] T024 [Test] Backend integration tests for `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` — `tests/Testurio.IntegrationTests/Controllers/ProjectAccessControllerTests.cs`
+- [x] T025 [Test] Frontend component tests for `AccessModeSelector` (mode switch renders correct fields, masked password field, validation errors) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.test.tsx`
 
 ## Rationale
 

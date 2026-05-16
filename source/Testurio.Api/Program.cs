@@ -86,6 +86,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPMToolConnectionService, PMToolConnectionService>();
 builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
@@ -104,7 +105,9 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddSingleton<ISecretResolver, KeyVaultSecretResolver>();
+    var keyVaultUri = builder.Configuration["KeyVault:Uri"]
+        ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
+    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
 }
 
 var app = builder.Build();
@@ -134,6 +137,7 @@ var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
+app.MapProjectAccessEndpoints(v1);
 app.MapIntegrationEndpoints();
 app.MapReportSettingsEndpoints(v1);
 app.MapStatsEndpoints(v1);

@@ -69,7 +69,12 @@
       "Skill(pipeline)",
       "Bash(Select-String -Path \"C:\\\\Users\\\\serzh\\\\VSC_Projects\\\\testur.io\\\\specifications\\\\0015-plan-purchase\\\\plan.md\" -Pattern \"^\\\\- \\\\[ \\\\] T\")",
       "Bash(Measure-Object)",
-      "Bash(Select-Object -ExpandProperty Count)"
+      "Bash(Select-Object -ExpandProperty Count)",
+      "Skill(implement)",
+      "Bash(./node_modules/.bin/jest --testPathPattern=\"WorkItemTypeFilter.test\" --no-coverage)",
+      "Skill(review)",
+      "Skill(test)",
+      "Bash(npx --yes vitest run source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.test.tsx)"
     ]
   },
   "enableAllProjectMcpServers": true
