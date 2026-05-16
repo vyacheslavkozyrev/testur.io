@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
+import AccessModeSelector from '@/components/AccessModeSelector/AccessModeSelector';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
 import ProjectForm from '@/components/ProjectForm/ProjectForm';
@@ -117,6 +118,17 @@ export default function ProjectSettingsPage() {
         />
       </Box>
 
+      {/* Testing Environment Access Configuration (feature 0017) */}
+      <Box sx={styles.accessSection}>
+        <Typography variant="h6" sx={styles.sectionTitle}>
+          {t('access.section.title')}
+        </Typography>
+        <Typography variant="body2" sx={styles.sectionDescription}>
+          {t('access.section.description')}
+        </Typography>
+        <AccessModeSelector projectId={project.projectId} />
+      </Box>
+
       {/* Report Format & Attachment Settings (feature 0009) */}
       <Box sx={styles.reportSettingsSection}>
         <ReportSettingsSection
@@ -188,6 +200,13 @@ const getStyles = (theme: Theme) =>
       },
       sectionDescription: {
         color: theme.palette.text.secondary,
+      },
+      accessSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: theme.spacing(2),
+        borderTop: `1px solid ${theme.palette.divider}`,
+        paddingTop: theme.spacing(3),
       },
       reportSettingsSection: {
         borderTop: `1px solid ${theme.palette.divider}`,

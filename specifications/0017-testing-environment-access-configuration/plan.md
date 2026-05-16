@@ -16,13 +16,13 @@
 - [x] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
 - [x] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
 - [x] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
-- [ ] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
-- [ ] T016 [UI] Add API client for access endpoints — `source/Testurio.Web/src/services/project/projectAccessService.ts`
-- [ ] T017 [UI] Add React Query hooks (`useProjectAccess`, `useUpdateProjectAccess`) — `source/Testurio.Web/src/hooks/useProjectAccess.ts`
-- [ ] T018 [UI] Add MSW mock handlers for access endpoints — `source/Testurio.Web/src/mocks/handlers/projectAccess.ts`
-- [ ] T019 [UI] Create `AccessModeSelector` component (radio group + conditional credential fields + IP info panel) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.tsx`
-- [ ] T020 [UI] Integrate `AccessModeSelector` into `ProjectSettingsPage` — `source/Testurio.Web/src/pages/ProjectSettingsPage/ProjectSettingsPage.tsx`
-- [ ] T021 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/projectAccess.json`
+- [x] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
+- [x] T016 [UI] Add API client for access endpoints — `source/Testurio.Web/src/services/project/projectAccessService.ts`
+- [x] T017 [UI] Add React Query hooks (`useProjectAccess`, `useUpdateProjectAccess`) — `source/Testurio.Web/src/hooks/useProjectAccess.ts`
+- [x] T018 [UI] Add MSW mock handlers for access endpoints — `source/Testurio.Web/src/mocks/handlers/projectAccess.ts`
+- [x] T019 [UI] Create `AccessModeSelector` component (radio group + conditional credential fields + IP info panel) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.tsx`
+- [x] T020 [UI] Integrate `AccessModeSelector` into `ProjectSettingsPage` — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.tsx`
+- [x] T021 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/projectAccess.json`
 - [ ] T022 [Test] Backend unit tests for `ProjectAccessService` (ownership, secret write/clear on mode switch, safe DTO shape) — `tests/Testurio.UnitTests/Services/ProjectAccessServiceTests.cs`
 - [ ] T023 [Test] Backend unit tests for `ProjectAccessCredentialProvider` (each access mode, Key Vault unreachable → `CredentialRetrievalException`) — `tests/Testurio.UnitTests/Services/ProjectAccessCredentialProviderTests.cs`
 - [ ] T024 [Test] Backend integration tests for `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` — `tests/Testurio.IntegrationTests/Controllers/ProjectAccessControllerTests.cs`

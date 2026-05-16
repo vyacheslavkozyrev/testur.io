@@ -1,0 +1,36 @@
+{
+  "modeLabel": "Environment access method",
+  "saveButton": "Save access configuration",
+  "saveSuccess": "Access configuration saved.",
+  "saveError": "Failed to save access configuration. Please try again.",
+  "loadError": "Failed to load access configuration.",
+  "modes": {
+    "ipAllowlist": {
+      "label": "IP Allowlisting (Recommended)",
+      "description": "Add the Testurio static egress IPs to your staging environment's firewall or CDN allowlist. No credentials needed.",
+      "setupStep1": "1. Copy the IP addresses shown above.",
+      "setupStep2": "2. Add them to your firewall or CDN allowlist (e.g. Cloudflare, Azure Front Door, nginx).",
+      "setupStep3": "3. Done — the worker will connect transparently on every test run."
+    },
+    "basicAuth": {
+      "label": "HTTP Basic Auth",
+      "usernameLabel": "Username",
+      "passwordLabel": "Password",
+      "passwordStoredHint": "A password is stored. Enter a new value to replace it."
+    },
+    "headerToken": {
+      "label": "Custom Header Token",
+      "headerNameLabel": "Header Name",
+      "headerNameHint": "Alphanumeric characters and hyphens only, e.g. X-Testurio-Token",
+      "headerValueLabel": "Header Value",
+      "valueStoredHint": "A value is stored. Enter a new value to replace it."
+    }
+  },
+  "validation": {
+    "usernameRequired": "Username is required.",
+    "passwordRequired": "Password is required.",
+    "headerNameRequired": "Header name is required.",
+    "headerNameInvalid": "Header name must contain only alphanumeric characters and hyphens.",
+    "headerValueRequired": "Header value is required."
+  }
+}
