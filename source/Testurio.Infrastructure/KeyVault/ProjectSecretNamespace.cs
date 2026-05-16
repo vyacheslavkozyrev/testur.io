@@ -24,4 +24,9 @@ public static class ProjectSecretNamespace
     /// </summary>
     public static string NamespacePrefix(string projectId)
         => $"projects--{projectId}--";
+
+    // Access credential secret key constants (feature 0017)
+    public const string BasicAuthUser = "basic-auth-user";
+    public const string BasicAuthPass = "basic-auth-pass";
+    public const string HeaderTokenValue = "header-token-value";
 }

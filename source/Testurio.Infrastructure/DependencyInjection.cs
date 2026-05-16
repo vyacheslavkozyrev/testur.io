@@ -161,6 +161,10 @@ public static class DependencyInjection
 
         services.AddSingleton<Security.WebhookSecretGenerator>();
 
+        services.AddSingleton<IProjectAccessCredentialProvider>(sp =>
+            new KeyVault.ProjectAccessCredentialProvider(
+                sp.GetRequiredService<ISecretResolver>()));
+
         return services;
     }
 
