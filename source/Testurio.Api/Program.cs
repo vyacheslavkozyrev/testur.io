@@ -86,6 +86,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPMToolConnectionService, PMToolConnectionService>();
 builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 builder.Services.AddOptions<PMToolConnectionServiceOptions>()
@@ -133,6 +134,7 @@ var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
+app.MapProjectAccessEndpoints();
 app.MapIntegrationEndpoints();
 app.MapReportSettingsEndpoints(v1);
 

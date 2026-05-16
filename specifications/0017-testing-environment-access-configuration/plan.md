@@ -10,10 +10,10 @@
 - [x] T006 [Infra] Implement `ProjectAccessCredentialProvider` — reads secret URIs from project document, fetches values from Key Vault via `ISecretResolver`, returns typed `ProjectAccessCredentials` — `source/Testurio.Infrastructure/KeyVault/ProjectAccessCredentialProvider.cs`
 - [x] T007 [Infra] Extend `ProjectSecretNamespace` with constants for access secret keys (`basic-auth-user`, `basic-auth-pass`, `header-token-value`) — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
 - [x] T008 [Infra] Register `IProjectAccessCredentialProvider` → `ProjectAccessCredentialProvider` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T009 [App] Create `UpdateProjectAccessRequest` DTO with `[AllowedValues]` on `AccessMode`, conditional required fields, and `[RegularExpression]` on `HeaderTokenName` — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
-- [ ] T010 [App] Create `ProjectAccessDto` (safe response: mode, optional username, optional header name — never plaintext secrets) — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
-- [ ] T011 [App] Implement `IProjectAccessService` interface and `ProjectAccessService` — validates ownership, writes/clears Key Vault secrets, updates Cosmos project document, returns `ProjectAccessDto` — `source/Testurio.Api/Services/ProjectAccessService.cs`
-- [ ] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
+- [x] T009 [App] Create `UpdateProjectAccessRequest` DTO with `[AllowedValues]` on `AccessMode`, conditional required fields, and `[RegularExpression]` on `HeaderTokenName` — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
+- [x] T010 [App] Create `ProjectAccessDto` (safe response: mode, optional username, optional header name — never plaintext secrets) — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
+- [x] T011 [App] Implement `IProjectAccessService` interface and `ProjectAccessService` — validates ownership, writes/clears Key Vault secrets, updates Cosmos project document, returns `ProjectAccessDto` — `source/Testurio.Api/Services/ProjectAccessService.cs`
+- [x] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
 - [ ] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
 - [ ] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
 - [ ] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
