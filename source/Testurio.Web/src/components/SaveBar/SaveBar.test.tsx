@@ -12,10 +12,12 @@ i18nInstance.use(initReactI18next).init({
   resources: {
     en: {
       project: {
-        'saveBar.save': 'Save Changes',
-        'saveBar.noChanges': 'No changes',
-        'saveBar.saving': 'Saving…',
-        'saveBar.saved': 'Saved ✓',
+        saveBar: {
+          save: 'Save Changes',
+          noChanges: 'No changes',
+          saving: 'Saving…',
+          saved: 'Saved ✓',
+        },
       },
     },
   },

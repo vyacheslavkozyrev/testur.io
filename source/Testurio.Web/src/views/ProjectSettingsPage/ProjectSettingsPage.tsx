@@ -63,6 +63,7 @@ export default function ProjectSettingsPage() {
   const projectFormRef = useRef<ProjectFormHandle>(null);
   const reportSettingsRef = useRef<ReportSettingsSectionHandle>(null);
   const capturedFormData = useRef<UpdateProjectRequest | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (project) {
@@ -83,11 +84,16 @@ export default function ProjectSettingsPage() {
     return formDirty || reportDirty || promptDirty;
   }, [customPrompt, savedCustomPrompt]);
 
-  // Recompute save bar state after each render (outside saving/saved lock).
+  // Poll computeDirty() after every render — form isDirty lives in a ref and
+  // cannot be a dep, so no deps array is intentional. Guard prevents setState
+  // when nothing changed, which avoids triggering a follow-up render.
   useEffect(() => {
     if (saveBarState === 'saving' || saveBarState === 'saved') return;
-    setSaveBarState(computeDirty() ? 'dirty' : 'clean');
+    const next = computeDirty() ? 'dirty' : 'clean';
+    if (next !== saveBarState) setSaveBarState(next);
   });
+
+  useEffect(() => () => { if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current); }, []);
 
   const handleTabChange = useCallback((_: React.SyntheticEvent, value: TabValue) => {
     setActiveTab(value);
@@ -156,8 +162,8 @@ export default function ProjectSettingsPage() {
       setSavedCustomPrompt(customPrompt);
       setPendingSections({ projectInfo: true, reportSettings: true });
       setSaveBarState('saved');
-      const timer = window.setTimeout(() => setSaveBarState('clean'), 2000);
-      return () => window.clearTimeout(timer);
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = window.setTimeout(() => setSaveBarState('clean'), 2000);
     }
   }, [pendingSections, customPrompt, updateProject, updateReportSettings]);
 
@@ -165,7 +171,7 @@ export default function ProjectSettingsPage() {
     deleteProject.mutate(projectId ?? '', {
       onSuccess: () => {
         setDeleteDialogOpen(false);
-        router.push('/projects');
+        router.push(PROJECTS_ROUTE);
       },
     });
   }, [deleteProject, projectId, router]);
@@ -189,7 +195,7 @@ export default function ProjectSettingsPage() {
     );
   }
 
-  const hasDirtySettings = computeDirty();
+  const hasDirtySettings = saveBarState === 'dirty';
 
   return (
     <Box sx={styles.root}>
@@ -228,14 +234,14 @@ export default function ProjectSettingsPage() {
         <Box sx={styles.settingsContent}>
           {/* Project info card */}
           <Paper variant="outlined" sx={styles.card}>
+            <Typography variant="h6" sx={styles.cardTitle}>
+              {t('form.titleEdit')}
+            </Typography>
             {sectionErrors.projectInfo && (
               <Alert severity="error" sx={styles.cardAlert}>
                 {t('settings.saveError')}
               </Alert>
             )}
-            <Typography variant="h6" sx={styles.cardTitle}>
-              {t('form.titleEdit')}
-            </Typography>
             <ProjectForm
               ref={projectFormRef}
               project={project}
@@ -274,7 +280,7 @@ export default function ProjectSettingsPage() {
           <Paper variant="outlined" sx={styles.dangerCard}>
             <Box sx={styles.dangerContent}>
               <Box>
-                <Typography variant="subtitle2" sx={styles.dangerTitle}>
+                <Typography variant="subtitle1" sx={styles.dangerTitle}>
                   {t('settings.dangerZone.title')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -287,6 +293,7 @@ export default function ProjectSettingsPage() {
                 size="small"
                 onClick={handleOpenDeleteDialog}
                 disabled={deleteProject.isPending}
+                sx={styles.dangerButton}
               >
                 {t('settings.dangerZone.deleteButton')}
               </Button>
@@ -358,10 +365,9 @@ const getStyles = (theme: Theme) =>
         marginBottom: theme.spacing(2),
       },
       dangerCard: {
-        padding: theme.spacing(3),
         borderRadius: 1,
         borderColor: theme.palette.error.light,
-        marginTop: theme.spacing(2),
+        padding: theme.spacing(3),
       },
       dangerContent: {
         display: 'flex',
@@ -370,10 +376,11 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerTitle: {
-        ...theme.typography.subtitle2,
-        fontWeight: 600,
+        ...theme.typography.subtitle1,
         color: theme.palette.error.main,
-        marginBottom: theme.spacing(0.5),
+      },
+      dangerButton: {
+        flexShrink: 0,
       },
     }),
     [theme],

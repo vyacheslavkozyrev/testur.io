@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -37,16 +37,6 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
     const effectiveScreenshots = pendingScreenshots ?? settings?.reportIncludeScreenshots ?? true;
 
     const isDirty = pendingLogs !== undefined || pendingScreenshots !== undefined;
-
-    // When the parent save succeeds it calls clearDirty directly; as a safety
-    // net, also reset pending state whenever the server data is refreshed so
-    // that the dirty flag stays correct after React Query invalidates.
-    useEffect(() => {
-      if (settings) {
-        setPendingLogs(undefined);
-        setPendingScreenshots(undefined);
-      }
-    }, [settings]);
 
     const clearDirty = useCallback(() => {
       setPendingLogs(undefined);

@@ -67,7 +67,7 @@ const ProjectForm = forwardRef<ProjectFormHandle, ProjectFormProps>(
       get isDirty() {
         return isDirty;
       },
-    }));
+    }), [handleFormSubmit, handleSubmit, isDirty]);
 
     return (
       <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={styles.root} noValidate>

@@ -54,6 +54,7 @@ jest.mock('@/hooks/useProject', () => ({
   useUpdateProject: () => mockUpdateProject,
   useDeleteProject: () => mockDeleteProject,
   usePromptCheck: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
+  useUpdateWorkItemTypeFilter: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
 }));
 
 jest.mock('@/hooks/useReportSettings', () => ({

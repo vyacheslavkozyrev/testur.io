@@ -49,6 +49,7 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [updateTokenValue, setUpdateTokenValue] = useState('');
   const [updateEmailValue, setUpdateEmailValue] = useState('');
+  const [pendingWorkItemTypes, setPendingWorkItemTypes] = useState<string[] | null>(null);
 
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
   const { data: project, isPending: isProjectPending } = useProject(projectId ?? '');
@@ -66,12 +67,19 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
     [project?.allowedWorkItemTypes, defaultWorkItemTypes],
   );
 
-  const handleSaveWorkItemTypeFilter = useCallback(
-    (types: string[]) => {
-      updateWorkItemTypeFilter.mutate({ allowedWorkItemTypes: types });
-    },
-    [updateWorkItemTypeFilter],
-  );
+  const handleWorkItemTypesChange = useCallback((types: string[]) => {
+    setPendingWorkItemTypes(types);
+  }, []);
+
+  const handleSaveChanges = useCallback(() => {
+    if (!pendingWorkItemTypes) return;
+    updateWorkItemTypeFilter.mutate(
+      { allowedWorkItemTypes: pendingWorkItemTypes },
+      { onSuccess: () => setPendingWorkItemTypes(null) },
+    );
+  }, [pendingWorkItemTypes, updateWorkItemTypeFilter]);
+
+  const isDirty = pendingWorkItemTypes !== null;
 
   const { data: webhookSetup, isPending: isWebhookPending } = useWebhookSetup(
     projectId ?? '',
@@ -112,6 +120,10 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   const handleRemoveCancel = useCallback(() => { setRemoveDialogOpen(false); }, []);
   const handleRegenerate = useCallback(() => { regenerateWebhook.mutate(); }, [regenerateWebhook]);
   const handleShowUpdateToken = useCallback(() => { setFormMode('update-token'); }, []);
+  const handleAddConnection = useCallback(() => {
+    setFormMode(selectedTool === 'jira' ? 'add-jira' : 'add-ado');
+  }, [selectedTool]);
+  const handleOpenRemoveDialog = useCallback(() => setRemoveDialogOpen(true), []);
 
   const handleUpdateToken = useCallback(() => {
     const request: UpdateTokenRequest = {
@@ -124,7 +136,9 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   }, [updateToken, updateTokenValue, updateEmailValue]);
 
   if (isPending) {
-    return (
+    return embedded ? (
+      <CircularProgress />
+    ) : (
       <Box sx={styles.centered}>
         <CircularProgress />
       </Box>
@@ -142,7 +156,7 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
         <Box sx={styles.cardContent}>
           <IntegrationStatusCard
             integration={integration}
-            onAddConnection={() => setFormMode(selectedTool === 'jira' ? 'add-jira' : 'add-ado')}
+            onAddConnection={handleAddConnection}
             onShowUpdateToken={handleShowUpdateToken}
           />
 
@@ -192,18 +206,6 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
           {isConfigured && formMode === 'none' && (
             <>
               <Divider />
-              <WorkItemTypeFilter
-                currentTypes={effectiveWorkItemTypes}
-                isSaving={updateWorkItemTypeFilter.isPending || isProjectPending}
-                isError={updateWorkItemTypeFilter.isError}
-                onSave={handleSaveWorkItemTypeFilter}
-              />
-            </>
-          )}
-
-          {isConfigured && formMode === 'none' && (
-            <>
-              <Divider />
               <TestConnectionButton
                 isLoading={testConnection.isPending}
                 result={testConnection.data ?? null}
@@ -214,7 +216,19 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
         </Box>
       </Paper>
 
-      {/* Card 2 — Webhook setup (configured only) */}
+      {/* Card 2 — Work Item Type Filter (configured only) */}
+      {isConfigured && formMode === 'none' && (
+        <Paper variant="outlined" sx={styles.card}>
+          <Box sx={styles.cardContent}>
+            <WorkItemTypeFilter
+              currentTypes={effectiveWorkItemTypes}
+              onChange={handleWorkItemTypesChange}
+            />
+          </Box>
+        </Paper>
+      )}
+
+      {/* Card 3 — Webhook setup (configured only) */}
       {isConfigured && webhookSetup && !isWebhookPending && formMode === 'none' && (
         <Paper variant="outlined" sx={styles.card}>
           <Box sx={styles.cardContent}>
@@ -228,12 +242,12 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
         </Paper>
       )}
 
-      {/* Card 3 — Danger Zone (configured only) */}
+      {/* Card 4 — Danger Zone (configured only) */}
       {isConfigured && formMode === 'none' && (
         <Paper variant="outlined" sx={styles.dangerCard}>
           <Box sx={styles.dangerRow}>
             <Box>
-              <Typography variant="subtitle2" sx={styles.dangerTitle}>
+              <Typography variant="subtitle1" sx={styles.dangerTitle}>
                 {t('page.dangerZone')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -244,7 +258,7 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
               variant="outlined"
               color="error"
               size="small"
-              onClick={() => setRemoveDialogOpen(true)}
+              onClick={handleOpenRemoveDialog}
               disabled={removeConnection.isPending}
               sx={styles.dangerButton}
             >
@@ -252,6 +266,25 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
             </Button>
           </Box>
         </Paper>
+      )}
+
+      {/* Global save bar (configured only) */}
+      {isConfigured && formMode === 'none' && (
+        <Box sx={styles.saveBar}>
+          {updateWorkItemTypeFilter.isError && (
+            <Alert severity="error" sx={styles.saveError}>
+              {t('page.saveChangesError')}
+            </Alert>
+          )}
+          <Button
+            variant="contained"
+            onClick={handleSaveChanges}
+            disabled={!isDirty || updateWorkItemTypeFilter.isPending || isProjectPending}
+            startIcon={updateWorkItemTypeFilter.isPending ? <CircularProgress size={16} color="inherit" /> : undefined}
+          >
+            {t('page.saveChanges')}
+          </Button>
+        </Box>
       )}
     </Box>
   );
@@ -338,13 +371,21 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerTitle: {
-        ...theme.typography.subtitle2,
-        fontWeight: 600,
+        ...theme.typography.subtitle1,
         color: theme.palette.error.main,
-        marginBottom: theme.spacing(0.5),
       },
       dangerButton: {
         flexShrink: 0,
+      },
+      saveBar: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: theme.spacing(2),
+        paddingTop: theme.spacing(1),
+      },
+      saveError: {
+        flex: 1,
       },
     }),
     [theme],
