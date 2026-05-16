@@ -39,6 +39,7 @@
     "saveSuccess": "Changes saved successfully.",
     "dangerZone": {
       "title": "Danger Zone",
+      "description": "Permanently delete this project and all its test history. This action cannot be undone.",
       "deleteButton": "Delete Project"
     }
   },

@@ -6,7 +6,6 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ReportAttachmentToggles from '@/components/ReportAttachmentToggles/ReportAttachmentToggles';
 import ReportTemplateUpload from '@/components/ReportTemplateUpload/ReportTemplateUpload';
@@ -34,18 +33,14 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
     const { data: settings, isPending, isError } = useReportSettings(projectId);
     const updateSettings = useUpdateReportSettings(projectId);
 
-    // Pending edits — undefined means "no local override; use server value".
     const [pendingLogs, setPendingLogs] = useState<boolean | undefined>(undefined);
     const [pendingScreenshots, setPendingScreenshots] = useState<boolean | undefined>(undefined);
 
-    // Read toggle values directly from server data; local pending edits shadow them.
     const effectiveLogs = pendingLogs ?? settings?.reportIncludeLogs ?? true;
     const effectiveScreenshots = pendingScreenshots ?? settings?.reportIncludeScreenshots ?? true;
 
-    const isDirty =
-      pendingLogs !== undefined || pendingScreenshots !== undefined;
+    const isDirty = pendingLogs !== undefined || pendingScreenshots !== undefined;
 
-    // Reset pending edits after a successful save so the next render reads fresh server data.
     useEffect(() => {
       if (updateSettings.isSuccess) {
         setPendingLogs(undefined);
@@ -82,18 +77,11 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
     }
 
     if (isError || !settings) {
-      return (
-        <Alert severity="error">{t('loadError')}</Alert>
-      );
+      return <Alert severity="error">{t('loadError')}</Alert>;
     }
 
     return (
       <Box sx={styles.root}>
-        <Typography variant="h6" sx={styles.sectionTitle}>
-          {t('sectionTitle')}
-        </Typography>
-
-        {/* Report Template Upload (US-001 – US-003) */}
         <ReportTemplateUpload
           projectId={projectId}
           currentFileName={settings.reportTemplateFileName}
@@ -101,7 +89,6 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
 
         <Divider />
 
-        {/* Attachment Toggles (US-005) */}
         <ReportAttachmentToggles
           testType={testType}
           includeLogs={effectiveLogs}
@@ -123,10 +110,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(3),
-      },
-      sectionTitle: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
       },
       loading: {
         display: 'flex',

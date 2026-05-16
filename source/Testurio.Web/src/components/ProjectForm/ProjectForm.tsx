@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import type { ProjectDto, CreateProjectRequest, UpdateProjectRequest } from '@/types/project.types';
 
@@ -72,10 +71,6 @@ const ProjectForm = forwardRef<ProjectFormHandle, ProjectFormProps>(
 
     return (
       <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={styles.root} noValidate>
-        <Typography variant="h6" sx={styles.title}>
-          {isEdit ? t('form.titleEdit') : t('form.titleCreate')}
-        </Typography>
-
         <Controller
           name="name"
           control={control}
@@ -161,7 +156,6 @@ const ProjectForm = forwardRef<ProjectFormHandle, ProjectFormProps>(
 
 export default ProjectForm;
 
-// co-located at the bottom of the file
 const getStyles = (theme: Theme) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
@@ -171,11 +165,6 @@ const getStyles = (theme: Theme) =>
         flexDirection: 'column',
         gap: theme.spacing(3),
         width: '100%',
-      },
-      title: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
-        marginBottom: theme.spacing(1),
       },
       actions: {
         display: 'flex',

@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
@@ -57,10 +58,8 @@ export default function ProjectSettingsPage() {
 
   const projectFormRef = useRef<ProjectFormHandle>(null);
   const reportSettingsRef = useRef<ReportSettingsSectionHandle>(null);
-  // Capture form data from ProjectForm's onSubmit callback before firing mutateAsync
   const capturedFormData = useRef<UpdateProjectRequest | null>(null);
 
-  // Sync customPrompt with server data on load.
   useEffect(() => {
     if (project) {
       const serverValue = project.customPrompt ?? '';
@@ -68,6 +67,10 @@ export default function ProjectSettingsPage() {
       setSavedCustomPrompt(serverValue);
     }
   }, [project?.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCustomPromptChange = useCallback((value: string) => {
+    setCustomPrompt(value);
+  }, []);
 
   const computeDirty = useCallback((): boolean => {
     const formDirty = projectFormRef.current?.isDirty ?? false;
@@ -79,19 +82,13 @@ export default function ProjectSettingsPage() {
   // Recompute save bar state after each render (outside saving/saved lock).
   useEffect(() => {
     if (saveBarState === 'saving' || saveBarState === 'saved') return;
-    const dirty = computeDirty();
-    setSaveBarState(dirty ? 'dirty' : 'clean');
+    setSaveBarState(computeDirty() ? 'dirty' : 'clean');
   });
 
   const handleTabChange = useCallback((_: React.SyntheticEvent, value: TabValue) => {
     setActiveTab(value);
   }, []);
 
-  const handleCustomPromptChange = useCallback((value: string) => {
-    setCustomPrompt(value);
-  }, []);
-
-  // Called by ProjectForm's onSubmit; captures validated data for use in handleSaveAll.
   const handleCaptureFormData = useCallback(
     (data: CreateProjectRequest | UpdateProjectRequest) => {
       capturedFormData.current = { ...data, customPrompt: customPrompt || null };
@@ -107,7 +104,6 @@ export default function ProjectSettingsPage() {
     let reportSettingsOk = !pendingSections.reportSettings;
 
     if (pendingSections.projectInfo) {
-      // triggerSubmit validates and calls handleCaptureFormData(data) if valid
       const valid = await projectFormRef.current?.triggerSubmit();
       if (!valid) {
         setSaveBarState('dirty');
@@ -185,11 +181,10 @@ export default function ProjectSettingsPage() {
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="h4" sx={styles.pageTitle}>
+      <Typography variant="h5" sx={styles.pageTitle}>
         {t('settings.title', { name: project.name })}
       </Typography>
 
-      {/* Unsaved-changes banner — shown on Integration tab when Settings are dirty */}
       {activeTab === 'integration' && hasDirtySettings && (
         <Alert
           severity="warning"
@@ -210,37 +205,35 @@ export default function ProjectSettingsPage() {
 
       {activeTab === 'settings' && (
         <Box sx={styles.settingsContent}>
-          {sectionErrors.projectInfo && (
-            <Alert severity="error" sx={styles.sectionAlert}>
-              {t('settings.saveError')}
-            </Alert>
-          )}
+          {/* Project info card */}
+          <Paper variant="outlined" sx={styles.card}>
+            {sectionErrors.projectInfo && (
+              <Alert severity="error" sx={styles.cardAlert}>
+                {t('settings.saveError')}
+              </Alert>
+            )}
+            <ProjectForm
+              ref={projectFormRef}
+              project={project}
+              isSubmitting={updateProject.isPending}
+              onSubmit={handleCaptureFormData}
+            />
+          </Paper>
 
-          <ProjectForm
-            ref={projectFormRef}
-            project={project}
-            isSubmitting={updateProject.isPending}
-            onSubmit={handleCaptureFormData}
-          />
-
-          <Box sx={styles.customPromptSection}>
-            <Typography variant="h6" sx={styles.sectionTitle}>
-              {t('customPrompt.section.title')}
-            </Typography>
-            <Typography variant="body2" sx={styles.sectionDescription}>
-              {t('customPrompt.section.description')}
-            </Typography>
+          {/* Custom prompt card */}
+          <Paper variant="outlined" sx={styles.card}>
             <CustomPromptField
               projectId={project.projectId}
               testingStrategy={project.testingStrategy}
               value={customPrompt}
               onChange={handleCustomPromptChange}
             />
-          </Box>
+          </Paper>
 
-          <Box sx={styles.reportSettingsSection}>
+          {/* Report settings card */}
+          <Paper variant="outlined" sx={styles.card}>
             {sectionErrors.reportSettings && (
-              <Alert severity="error" sx={styles.sectionAlert}>
+              <Alert severity="error" sx={styles.cardAlert}>
                 {t('settings.saveError')}
               </Alert>
             )}
@@ -249,27 +242,40 @@ export default function ProjectSettingsPage() {
               projectId={project.projectId}
               testType={project.testingStrategy}
             />
-          </Box>
+          </Paper>
 
           <SaveBar state={saveBarState} onClick={handleSaveAll} />
 
-          <Box sx={styles.dangerZone}>
-            <Typography variant="h6" color="error">
-              {t('settings.dangerZone.title')}
-            </Typography>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={handleOpenDeleteDialog}
-              disabled={deleteProject.isPending}
-            >
-              {t('settings.dangerZone.deleteButton')}
-            </Button>
-          </Box>
+          {/* Danger zone card */}
+          <Paper variant="outlined" sx={styles.dangerCard}>
+            <Box sx={styles.dangerContent}>
+              <Box>
+                <Typography variant="subtitle2" sx={styles.dangerTitle}>
+                  {t('settings.dangerZone.title')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('settings.dangerZone.description')}
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={handleOpenDeleteDialog}
+                disabled={deleteProject.isPending}
+              >
+                {t('settings.dangerZone.deleteButton')}
+              </Button>
+            </Box>
+          </Paper>
         </Box>
       )}
 
-      {activeTab === 'integration' && <IntegrationPage />}
+      {activeTab === 'integration' && (
+        <Paper variant="outlined" sx={styles.card}>
+          <IntegrationPage embedded />
+        </Paper>
+      )}
 
       <ProjectDeleteDialog
         open={deleteDialogOpen}
@@ -282,18 +288,17 @@ export default function ProjectSettingsPage() {
   );
 }
 
-// co-located at the bottom of the file
 const getStyles = (theme: Theme) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
       root: {
         padding: theme.spacing(4),
-        maxWidth: 800,
+        maxWidth: 860,
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: theme.spacing(3),
+        gap: theme.spacing(2),
       },
       centered: {
         display: 'flex',
@@ -301,48 +306,44 @@ const getStyles = (theme: Theme) =>
         padding: theme.spacing(8),
       },
       pageTitle: {
-        ...theme.typography.h4,
+        ...theme.typography.h5,
         color: theme.palette.text.primary,
+        fontWeight: 600,
+        marginBottom: theme.spacing(1),
       },
       tabs: {
         borderBottom: `1px solid ${theme.palette.divider}`,
+        marginBottom: theme.spacing(1),
       },
       settingsContent: {
         display: 'flex',
         flexDirection: 'column',
-        gap: theme.spacing(4),
-      },
-      sectionAlert: {
-        width: '100%',
-      },
-      customPromptSection: {
-        display: 'flex',
-        flexDirection: 'column',
         gap: theme.spacing(2),
-        borderTop: `1px solid ${theme.palette.divider}`,
-        paddingTop: theme.spacing(3),
       },
-      sectionTitle: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
+      card: {
+        padding: theme.spacing(3),
+        borderRadius: 2,
       },
-      sectionDescription: {
-        color: theme.palette.text.secondary,
+      cardAlert: {
+        marginBottom: theme.spacing(2),
       },
-      reportSettingsSection: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(2),
-        borderTop: `1px solid ${theme.palette.divider}`,
-        paddingTop: theme.spacing(3),
-      },
-      dangerZone: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(2),
-        borderTop: `1px solid ${theme.palette.error.light}`,
-        paddingTop: theme.spacing(3),
+      dangerCard: {
+        padding: theme.spacing(3),
+        borderRadius: 2,
+        borderColor: theme.palette.error.light,
         marginTop: theme.spacing(2),
+      },
+      dangerContent: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing(2),
+      },
+      dangerTitle: {
+        ...theme.typography.subtitle2,
+        fontWeight: 600,
+        color: theme.palette.error.main,
+        marginBottom: theme.spacing(0.5),
       },
     }),
     [theme],

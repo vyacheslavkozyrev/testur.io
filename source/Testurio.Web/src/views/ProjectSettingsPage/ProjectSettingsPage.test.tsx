@@ -87,6 +87,7 @@ i18nInstance.use(initReactI18next).init({
         'settings.saveError': 'Failed to save changes. Please try again.',
         'settings.saveSuccess': 'Changes saved successfully.',
         'settings.dangerZone.title': 'Danger Zone',
+        'settings.dangerZone.description': 'Permanently delete this project.',
         'settings.dangerZone.deleteButton': 'Delete Project',
         'tabs.settings': 'Settings',
         'tabs.integration': 'Integration',
@@ -240,15 +241,14 @@ describe('ProjectSettingsPage', () => {
     expect(screen.getByRole('tab', { name: 'Integration' })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('shows the form and custom prompt section on Settings tab', () => {
+  it('shows the form fields and custom prompt section on Settings tab', () => {
     render(
       <Wrapper>
         <ProjectSettingsPage />
       </Wrapper>,
     );
-    expect(screen.getByRole('heading', { name: 'Edit Project' })).toBeInTheDocument();
-    expect(screen.getByText('Custom Test Generation Prompt')).toBeInTheDocument();
-    expect(screen.getByText('Report Format & Attachment Settings')).toBeInTheDocument();
+    expect(screen.getByLabelText(/project name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/custom prompt/i)).toBeInTheDocument();
   });
 
   it('switches to Integration tab when clicked', async () => {
@@ -260,8 +260,8 @@ describe('ProjectSettingsPage', () => {
     );
     await user.click(screen.getByRole('tab', { name: 'Integration' }));
     expect(screen.getByRole('tab', { name: 'Integration' })).toHaveAttribute('aria-selected', 'true');
-    // Settings form should not be visible
-    expect(screen.queryByRole('heading', { name: 'Edit Project' })).not.toBeInTheDocument();
+    // Settings form fields should not be visible
+    expect(screen.queryByLabelText(/project name/i)).not.toBeInTheDocument();
   });
 
   it('switches back to Settings tab when Settings tab is clicked', async () => {
@@ -273,7 +273,7 @@ describe('ProjectSettingsPage', () => {
     );
     await user.click(screen.getByRole('tab', { name: 'Integration' }));
     await user.click(screen.getByRole('tab', { name: 'Settings' }));
-    expect(screen.getByRole('heading', { name: 'Edit Project' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/project name/i)).toBeInTheDocument();
   });
 
   it('shows "No changes" save button initially (clean state)', () => {

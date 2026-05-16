@@ -30,7 +30,12 @@ import type { PMToolType, SaveADOConnectionRequest, SaveJiraConnectionRequest, U
 
 type FormMode = 'none' | 'add-ado' | 'add-jira' | 'update-token';
 
-export default function IntegrationPage() {
+export interface IntegrationPageProps {
+  /** When true, suppresses the outer page container (padding, maxWidth) for tab-embedded use. */
+  embedded?: boolean;
+}
+
+export default function IntegrationPage({ embedded = false }: IntegrationPageProps) {
   const { projectId } = useParams<{ projectId: string }>();
   const { t } = useTranslation('pmTool');
   const theme = useTheme();
@@ -45,7 +50,6 @@ export default function IntegrationPage() {
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
 
   const isConfigured = integration?.pmTool !== null;
-  // webhookSetup is fetched whenever a PM tool is configured; no separate flag needed.
   const webhookEnabled = isConfigured;
 
   const { data: webhookSetup, isPending: isWebhookPending } = useWebhookSetup(
@@ -131,7 +135,7 @@ export default function IntegrationPage() {
 
   if (isPending) {
     return (
-      <Box sx={styles.centered}>
+      <Box sx={embedded ? styles.centeredEmbedded : styles.centered}>
         <CircularProgress />
       </Box>
     );
@@ -139,21 +143,19 @@ export default function IntegrationPage() {
 
   if (isError || !integration) {
     return (
-      <Box sx={styles.root}>
+      <Box sx={embedded ? undefined : styles.root}>
         <Alert severity="error">{t('page.loadError')}</Alert>
       </Box>
     );
   }
 
-  return (
-    <Box sx={styles.root}>
-      <Typography variant="h5" sx={styles.pageTitle}>
-        {t('page.title')}
-      </Typography>
-
-      <Typography variant="body2" color="text.secondary">
-        {t('page.description')}
-      </Typography>
+  const content = (
+    <>
+      {!embedded && (
+        <Typography variant="body2" color="text.secondary">
+          {t('page.description')}
+        </Typography>
+      )}
 
       <IntegrationStatusCard
         integration={integration}
@@ -161,10 +163,11 @@ export default function IntegrationPage() {
         onShowUpdateToken={handleShowUpdateToken}
       />
 
-      {/* Tool selector when not configured */}
       {!isConfigured && formMode === 'none' && (
         <Box sx={styles.toolSelector}>
-          <Typography variant="subtitle1">{t('page.selectTool')}</Typography>
+          <Typography variant="subtitle2" color="text.secondary">
+            {t('page.selectTool')}
+          </Typography>
           <Box sx={styles.toolButtons}>
             <Button variant="outlined" onClick={handleAddADO}>
               {t('page.connectAdo')}
@@ -176,7 +179,6 @@ export default function IntegrationPage() {
         </Box>
       )}
 
-      {/* ADO form */}
       {formMode === 'add-ado' && (
         <>
           <Divider />
@@ -191,7 +193,6 @@ export default function IntegrationPage() {
         </>
       )}
 
-      {/* Jira form */}
       {formMode === 'add-jira' && (
         <>
           <Divider />
@@ -206,7 +207,6 @@ export default function IntegrationPage() {
         </>
       )}
 
-      {/* Connected state */}
       {isConfigured && formMode === 'none' && (
         <>
           <Divider />
@@ -230,12 +230,13 @@ export default function IntegrationPage() {
 
           <Divider />
           <Box sx={styles.dangerZone}>
-            <Typography variant="subtitle1" color="error">
+            <Typography variant="subtitle2" color="error">
               {t('page.dangerZone')}
             </Typography>
             <Button
               variant="outlined"
               color="error"
+              size="small"
               onClick={() => setRemoveDialogOpen(true)}
               disabled={removeConnection.isPending}
             >
@@ -251,6 +252,19 @@ export default function IntegrationPage() {
         onConfirm={handleRemoveConfirm}
         onCancel={handleRemoveCancel}
       />
+    </>
+  );
+
+  if (embedded) {
+    return <Box sx={styles.embeddedContent}>{content}</Box>;
+  }
+
+  return (
+    <Box sx={styles.root}>
+      <Typography variant="h5" sx={styles.pageTitle}>
+        {t('page.title')}
+      </Typography>
+      {content}
     </Box>
   );
 }
@@ -267,10 +281,20 @@ const getStyles = (theme: Theme) =>
         flexDirection: 'column',
         gap: theme.spacing(3),
       },
+      embeddedContent: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: theme.spacing(3),
+      },
       centered: {
         display: 'flex',
         justifyContent: 'center',
         padding: theme.spacing(8),
+      },
+      centeredEmbedded: {
+        display: 'flex',
+        justifyContent: 'center',
+        padding: theme.spacing(4),
       },
       pageTitle: {
         ...theme.typography.h5,
@@ -289,7 +313,7 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(2),
-        paddingTop: theme.spacing(2),
+        paddingTop: theme.spacing(1),
       },
     }),
     [theme],
