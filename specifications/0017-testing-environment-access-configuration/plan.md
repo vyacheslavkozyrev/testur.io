@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `AccessMode` enum (`IpAllowlist`, `BasicAuth`, `HeaderToken`) — `source/Testurio.Core/Enums/AccessMode.cs`
+- [x] T001 [Domain] Add `AccessMode` enum (`IpAllowlist`, `BasicAuth`, `HeaderToken`) — `source/Testurio.Core/Enums/AccessMode.cs`
 - [ ] T002 [Domain] Extend `Project` entity with access configuration fields (`AccessMode`, `BasicAuthUserSecretUri`, `BasicAuthPassSecretUri`, `HeaderTokenName`, `HeaderTokenSecretUri`) — `source/Testurio.Core/Entities/Project.cs`
 - [ ] T003 [Domain] Define `IProjectAccessCredentialProvider` interface with `ResolveAsync(Project, CancellationToken)` returning `ProjectAccessCredentials` — `source/Testurio.Core/Interfaces/IProjectAccessCredentialProvider.cs`
 - [ ] T004 [Domain] Create `ProjectAccessCredentials` discriminated union record (`IpAllowlist`, `BasicAuth`, `HeaderToken` cases) — `source/Testurio.Core/Models/ProjectAccessCredentials.cs`
