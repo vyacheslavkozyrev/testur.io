@@ -15,7 +15,7 @@ export interface QuotaUsageBarProps {
 export default function QuotaUsageBar({ quotaUsage }: QuotaUsageBarProps) {
   const { t } = useTranslation('dashboard');
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const { usedToday, dailyLimit, resetsAt } = quotaUsage;
   const hasNoPlan = dailyLimit === 0;

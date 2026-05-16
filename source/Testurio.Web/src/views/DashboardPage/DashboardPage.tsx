@@ -31,7 +31,7 @@ export default function DashboardPage({ onStreamUpdate: _onStreamUpdate }: Dashb
   const { t } = useTranslation('dashboard');
   const router = useRouter();
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const { data, isPending, isError, refetch } = useDashboard();
 

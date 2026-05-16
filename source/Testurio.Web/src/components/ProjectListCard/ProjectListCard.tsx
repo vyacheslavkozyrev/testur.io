@@ -26,7 +26,7 @@ export default function ProjectListCard({ project }: ProjectListCardProps) {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const truncatedStrategy = useMemo(
     () => truncateText(project.testingStrategy, STRATEGY_MAX_LENGTH),

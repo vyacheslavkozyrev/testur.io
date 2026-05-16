@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -24,6 +26,16 @@ namespace Testurio.IntegrationTests.Controllers;
 public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactory>
 {
     private readonly ApiFactory _factory;
+
+    /// <summary>
+    /// Matches the API's <c>JsonStringEnumConverter</c> registration so enum values
+    /// round-trip correctly during deserialization in tests.
+    /// </summary>
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     public StatsControllerTests(ApiFactory factory)
     {
@@ -75,8 +87,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync("/v1/stats/dashboard");
-        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(
-            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(JsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
@@ -98,8 +109,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync("/v1/stats/dashboard");
-        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(
-            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(JsonOptions);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
@@ -151,8 +161,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync("/v1/stats/dashboard");
-        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(
-            new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var body = await response.Content.ReadFromJsonAsync<DashboardResponse>(JsonOptions);
 
         Assert.NotNull(body);
         Assert.Equal(3, body.Projects.Count);

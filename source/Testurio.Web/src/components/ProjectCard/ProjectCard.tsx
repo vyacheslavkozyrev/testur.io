@@ -20,7 +20,7 @@ export interface ProjectCardProps {
 export default function ProjectCard({ project }: ProjectCardProps) {
   const { t } = useTranslation('dashboard');
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const startedAtFormatted = useMemo(() => {
     if (!project.latestRun) return null;

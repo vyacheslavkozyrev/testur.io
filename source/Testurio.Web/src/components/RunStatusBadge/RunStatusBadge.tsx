@@ -28,7 +28,7 @@ const STATUS_CONFIG: Record<RunStatus, StatusConfig> = {
 
 export default function RunStatusBadge({ status }: RunStatusBadgeProps) {
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
   const config = STATUS_CONFIG[status];
 
   return (

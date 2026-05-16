@@ -21,7 +21,7 @@ export default function ProjectsPage() {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const { data: projects, isPending, isError, refetch } = useProjects();
 

@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-09 |       |
 | Implement | ✅ Complete | 2026-05-16 |       |
 | Review    | ✅ Complete | 2026-05-16 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-16 |       |
 
 ---
 
@@ -35,7 +35,21 @@ _Populated by `/implement [####]`_
 
 ## Test Results
 
-_Populated by `/test [####]`_
+### Run — 2026-05-16
+
+**Backend unit tests (T022):** 6 / 6 passed — `DashboardServiceTests`
+
+**Backend integration tests (T023):** 5 / 5 passed — `StatsControllerTests`
+- Fixed: `ReadFromJsonAsync` options in two tests were missing `JsonStringEnumConverter`, causing deserialization failures for the `RunStatus` enum serialized as a string. Added shared `JsonOptions` instance with the converter.
+
+**Frontend component tests (T024–T027):** 28 / 28 passed — `RunStatusBadge`, `ProjectCard`, `QuotaUsageBar`, `DashboardPage`
+- Fixed: `ProjectCard` tests used `getByText('Never run')` which failed when the text appeared twice (once in the Chip badge, once in the timestamp fallback Typography). Switched to `getAllByText`.
+- Fixed: Components called `useMemo(() => getStyles(theme), [theme])` where `getStyles` itself contains `useMemo` — a nested Hook call that crashes in the browser (though passes in jsdom). Changed all affected components to call `getStyles(theme)` directly. Affected files: `DashboardPage.tsx`, `ProjectCard.tsx`, `QuotaUsageBar.tsx`, `RunStatusBadge.tsx`, `ProjectsPage.tsx`, `ProjectListCard.tsx`.
+
+**E2E tests (T028):** 7 / 7 passed — `dashboard.spec.ts` (created in this phase)
+- Covers: AC-001 (route accessible), AC-003/AC-004 (sort order + badges), AC-007/AC-012 (Create Project button always visible), AC-009/AC-010/AC-011 (empty state CTA), AC-013/AC-014 (quota bar visible), AC-020/AC-021/AC-024 (card link href correct).
+
+**Overall: Passed — all tests pass, all acceptance criteria covered.**
 
 ---
 

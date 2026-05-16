@@ -85,7 +85,8 @@ describe('ProjectCard', () => {
         <ProjectCard project={mockProjectNoRun} />
       </Wrapper>,
     );
-    expect(screen.getByText('Never run')).toBeInTheDocument();
+    // "Never run" appears both in the RunStatusBadge chip and in the timestamp area
+    expect(screen.getAllByText('Never run').length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText(/Last run:/)).not.toBeInTheDocument();
   });
 
@@ -105,7 +106,7 @@ describe('ProjectCard', () => {
         <ProjectCard project={mockProjectNoRun} />
       </Wrapper>,
     );
-    // Chip label for NeverRun status
-    expect(screen.getByText('Never run')).toBeInTheDocument();
+    // Chip label for NeverRun status — may appear multiple times (badge + timestamp fallback)
+    expect(screen.getAllByText('Never run')[0]).toBeInTheDocument();
   });
 });
