@@ -1,13 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import FormHelperText from '@mui/material/FormHelperText';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import TextField from '@mui/material/TextField';
@@ -37,14 +36,17 @@ export default function AccessModeSelector({ projectId }: AccessModeSelectorProp
   const [headerTokenValue, setHeaderTokenValue] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // Sync local state when server data loads
-  const initializedRef = useMemo(() => ({ current: false }), []);
-  if (access && !initializedRef.current) {
-    initializedRef.current = true;
-    setSelectedMode(access.accessMode);
-    setBasicAuthUser(access.basicAuthUser ?? '');
-    setHeaderTokenName(access.headerTokenName ?? '');
-  }
+  // Sync local state when server data first loads — useRef + useEffect to avoid
+  // calling setState during render (violates React's rules of rendering).
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (access && !initializedRef.current) {
+      initializedRef.current = true;
+      setSelectedMode(access.accessMode);
+      setBasicAuthUser(access.basicAuthUser ?? '');
+      setHeaderTokenName(access.headerTokenName ?? '');
+    }
+  }, [access]);
 
   const handleModeChange = useCallback((_: React.ChangeEvent<HTMLInputElement>, value: string) => {
     setSelectedMode(value as AccessMode);
@@ -212,7 +214,6 @@ export default function AccessModeSelector({ projectId }: AccessModeSelectorProp
                 fullWidth
                 required
               />
-              <FormHelperText error={Boolean(validationErrors.headerTokenName)} />
               <TextField
                 label={t('modes.headerToken.headerValueLabel')}
                 type="password"

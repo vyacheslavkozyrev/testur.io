@@ -238,6 +238,37 @@ public class ProjectAccessServiceTests
         Assert.Null(dto);
     }
 
+
+    [Fact]
+    public async Task UpdateAsync_DoesNotUpdateCosmos_WhenKeyVaultWriteFails_AC040()
+    {
+        // AC-040: If the Key Vault write fails during a mode switch, the Cosmos document
+        // must NOT be updated and the previous configuration must remain intact.
+        var project = MakeProject();
+        project.AccessMode = AccessMode.IpAllowlist;
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        // Key Vault write fails
+        _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Key Vault unavailable"));
+
+        var request = new UpdateProjectAccessRequest
+        {
+            AccessMode = AccessMode.BasicAuth,
+            BasicAuthUser = "admin",
+            BasicAuthPass = "secret",
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateAsync("user-1", "proj-1", request));
+
+        // Cosmos must NOT have been updated
+        _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task UpdateAsync_ReturnsNotFound_WhenProjectDoesNotExist()
     {

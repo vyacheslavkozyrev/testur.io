@@ -67,8 +67,12 @@ public partial class ProjectAccessService : IProjectAccessService
         if (project is null)
             return (ProjectOperationResult.NotFound, null);
 
-        // Overwrite previous secrets before writing new ones (clearing old credentials).
-        await ClearSecretsAsync(project, cancellationToken);
+        // AC-040: Write new secrets first. Only clear old secrets and update Cosmos AFTER the
+        // new Key Vault writes succeed. If a new StoreAsync throws, the old secrets remain
+        // intact and Cosmos is not touched — previous configuration stays in effect.
+        var oldUserUri  = project.BasicAuthUserSecretUri;
+        var oldPassUri  = project.BasicAuthPassSecretUri;
+        var oldTokenUri = project.HeaderTokenSecretUri;
 
         project.AccessMode = request.AccessMode;
         project.BasicAuthUserSecretUri = null;
@@ -81,6 +85,7 @@ public partial class ProjectAccessService : IProjectAccessService
             var userSecretName = ProjectSecretNamespace.SecretName(projectId, ProjectSecretNamespace.BasicAuthUser);
             var passSecretName = ProjectSecretNamespace.SecretName(projectId, ProjectSecretNamespace.BasicAuthPass);
 
+            // These may throw — Cosmos is not yet updated at this point.
             await _secretResolver.StoreAsync(userSecretName, request.BasicAuthUser!, cancellationToken);
             await _secretResolver.StoreAsync(passSecretName, request.BasicAuthPass!, cancellationToken);
 
@@ -93,6 +98,7 @@ public partial class ProjectAccessService : IProjectAccessService
         {
             var tokenSecretName = ProjectSecretNamespace.SecretName(projectId, ProjectSecretNamespace.HeaderTokenValue);
 
+            // May throw — Cosmos is not yet updated at this point.
             await _secretResolver.StoreAsync(tokenSecretName, request.HeaderTokenValue!, cancellationToken);
 
             project.HeaderTokenName = request.HeaderTokenName;
@@ -105,8 +111,13 @@ public partial class ProjectAccessService : IProjectAccessService
             LogIpAllowlistConfigured(_logger, projectId, userId);
         }
 
+        // New secrets stored successfully — now update Cosmos and clear the old secrets.
         project.UpdatedAt = DateTimeOffset.UtcNow;
         var updated = await _projectRepository.UpdateAsync(project, cancellationToken);
+
+        // Best-effort cleanup of old secrets (fire-and-forget errors are acceptable here:
+        // stale secrets with known names are harmless once the Cosmos URIs are removed).
+        await ClearSecretsAsync(oldUserUri, oldPassUri, oldTokenUri, cancellationToken);
         var dto = await BuildDtoAsync(updated, cancellationToken);
         return (ProjectOperationResult.Success, dto);
     }
@@ -131,17 +142,19 @@ public partial class ProjectAccessService : IProjectAccessService
                 : null);
     }
 
-    private async Task ClearSecretsAsync(Project project, CancellationToken cancellationToken)
+    private async Task ClearSecretsAsync(
+        string? userUri, string? passUri, string? tokenUri, CancellationToken cancellationToken)
     {
-        // Overwrite previous secrets with empty string to invalidate them before switching modes.
-        if (!string.IsNullOrWhiteSpace(project.BasicAuthUserSecretUri))
-            await _secretResolver.StoreAsync(project.BasicAuthUserSecretUri, string.Empty, cancellationToken);
+        // Overwrite previous secrets with empty string to invalidate them after the mode switch.
+        // Called only after the new Key Vault writes and the Cosmos update have both succeeded.
+        if (!string.IsNullOrWhiteSpace(userUri))
+            await _secretResolver.StoreAsync(userUri, string.Empty, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(project.BasicAuthPassSecretUri))
-            await _secretResolver.StoreAsync(project.BasicAuthPassSecretUri, string.Empty, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(passUri))
+            await _secretResolver.StoreAsync(passUri, string.Empty, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(project.HeaderTokenSecretUri))
-            await _secretResolver.StoreAsync(project.HeaderTokenSecretUri, string.Empty, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(tokenUri))
+            await _secretResolver.StoreAsync(tokenUri, string.Empty, cancellationToken);
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Project {ProjectId} access mode set to IpAllowlist by user {UserId}")]
