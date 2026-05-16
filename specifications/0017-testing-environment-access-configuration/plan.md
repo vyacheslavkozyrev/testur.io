@@ -23,10 +23,10 @@
 - [x] T019 [UI] Create `AccessModeSelector` component (radio group + conditional credential fields + IP info panel) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.tsx`
 - [x] T020 [UI] Integrate `AccessModeSelector` into `ProjectSettingsPage` — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [x] T021 [UI] Add translation keys — `source/Testurio.Web/src/locales/en/projectAccess.json`
-- [ ] T022 [Test] Backend unit tests for `ProjectAccessService` (ownership, secret write/clear on mode switch, safe DTO shape) — `tests/Testurio.UnitTests/Services/ProjectAccessServiceTests.cs`
-- [ ] T023 [Test] Backend unit tests for `ProjectAccessCredentialProvider` (each access mode, Key Vault unreachable → `CredentialRetrievalException`) — `tests/Testurio.UnitTests/Services/ProjectAccessCredentialProviderTests.cs`
-- [ ] T024 [Test] Backend integration tests for `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` — `tests/Testurio.IntegrationTests/Controllers/ProjectAccessControllerTests.cs`
-- [ ] T025 [Test] Frontend component tests for `AccessModeSelector` (mode switch renders correct fields, masked password field, validation errors) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.test.tsx`
+- [x] T022 [Test] Backend unit tests for `ProjectAccessService` (ownership, secret write/clear on mode switch, safe DTO shape) — `tests/Testurio.UnitTests/Services/ProjectAccessServiceTests.cs`
+- [x] T023 [Test] Backend unit tests for `ProjectAccessCredentialProvider` (each access mode, Key Vault unreachable → `CredentialRetrievalException`) — `tests/Testurio.UnitTests/Services/ProjectAccessCredentialProviderTests.cs`
+- [x] T024 [Test] Backend integration tests for `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` — `tests/Testurio.IntegrationTests/Controllers/ProjectAccessControllerTests.cs`
+- [x] T025 [Test] Frontend component tests for `AccessModeSelector` (mode switch renders correct fields, masked password field, validation errors) — `source/Testurio.Web/src/components/AccessModeSelector/AccessModeSelector.test.tsx`
 
 ## Rationale
 
