@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Create `MemoryRetrievalResult` record (`IReadOnlyList<TestMemoryEntry> Scenarios`) — `source/Testurio.Core/Models/MemoryRetrievalResult.cs`
 - [x] T003 [Domain] Create `IEmbeddingService` interface (`EmbedAsync(string text, CancellationToken) → Task<float[]>`) — `source/Testurio.Core/Interfaces/IEmbeddingService.cs`
 - [x] T004 [Domain] Create `IMemoryRetrievalService` interface (`RetrieveAsync(ParsedStory story, ProjectConfig config, CancellationToken) → Task<MemoryRetrievalResult>`) — `source/Testurio.Core/Interfaces/IMemoryRetrievalService.cs`
-- [ ] T005 [Infra] Add `AzureOpenAIOptions` configuration class (`Endpoint`, `ApiKey`, `EmbeddingDeployment`) with `[Required]` data annotations — `source/Testurio.Infrastructure/Options/AzureOpenAIOptions.cs`
+- [x] T005 [Infra] Add `AzureOpenAIOptions` configuration class (`Endpoint`, `ApiKey`, `EmbeddingDeployment`) with `[Required]` data annotations — `source/Testurio.Infrastructure/Options/AzureOpenAIOptions.cs`
 - [ ] T006 [Infra] Implement `AzureOpenAIEmbeddingService` (`IEmbeddingService`; calls Azure OpenAI `text-embedding-3-small` via `Azure.AI.OpenAI` SDK; returns `float[1536]`) — `source/Testurio.Infrastructure/Embedding/AzureOpenAIEmbeddingService.cs`
 - [ ] T007 [Infra] Implement `TestMemoryRepository` (Cosmos DiskANN vector query scoped to `userId + projectId` partition key; filters `isDeleted: false`; returns top-3 entries by cosine similarity) — `source/Testurio.Infrastructure/Cosmos/TestMemoryRepository.cs`
 - [ ] T008 [Infra] Register `AzureOpenAIEmbeddingService` as `IEmbeddingService`, `TestMemoryRepository`, and `AzureOpenAIOptions` validated binding in infrastructure DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
