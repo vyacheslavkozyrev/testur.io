@@ -14,15 +14,15 @@ import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ProjectListCard from '@/components/ProjectListCard/ProjectListCard';
 import { useProjects } from '@/hooks/useProject';
+import { NEW_PROJECT_ROUTE } from '@/routes/routes';
 
-const NEW_PROJECT_ROUTE = '/projects/new';
 const SKELETON_COUNT = 6;
 
 export default function ProjectsPage() {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   const { data: projects, isPending, isError, refetch } = useProjects();
 
@@ -112,52 +112,47 @@ export default function ProjectsPage() {
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme) =>
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useMemo(
-    () => ({
-      root: {
-        padding: theme.spacing(4),
-        display: 'flex',
-        flexDirection: 'column' as const,
-        gap: theme.spacing(4),
-      },
-      header: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: theme.spacing(2),
-      },
-      pageTitle: {
-        ...theme.typography.h4,
-        color: theme.palette.text.primary,
-      },
-      skeleton: {
-        height: 160,
-        borderRadius: theme.shape.borderRadius,
-      },
-      emptyState: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: theme.spacing(2),
-        padding: theme.spacing(8, 2),
-        textAlign: 'center' as const,
-      },
-      emptyIcon: {
-        fontSize: 64,
-        color: theme.palette.text.disabled,
-      },
-      emptyHeading: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
-      },
-      emptyDescription: {
-        ...theme.typography.body2,
-        color: theme.palette.text.secondary,
-        maxWidth: 400,
-      },
-    }),
-    [theme],
-  );
+const getStyles = (theme: Theme) => ({
+  root: {
+    padding: theme.spacing(4),
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: theme.spacing(4),
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing(2),
+  },
+  pageTitle: {
+    ...theme.typography.h4,
+    color: theme.palette.text.primary,
+  },
+  skeleton: {
+    height: 160,
+    borderRadius: theme.shape.borderRadius,
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing(2),
+    padding: theme.spacing(8, 2),
+    textAlign: 'center' as const,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    color: theme.palette.text.disabled,
+  },
+  emptyHeading: {
+    ...theme.typography.h6,
+    color: theme.palette.text.primary,
+  },
+  emptyDescription: {
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
+    maxWidth: 400,
+  },
+});

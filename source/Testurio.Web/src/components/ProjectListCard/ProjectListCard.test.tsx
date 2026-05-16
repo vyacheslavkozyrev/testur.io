@@ -18,7 +18,9 @@ i18nInstance.use(initReactI18next).init({
   resources: {
     en: {
       projects: {
-        'card.editAriaLabel': 'Edit project',
+        card: {
+          editAriaLabel: 'Edit project',
+        },
       },
     },
   },

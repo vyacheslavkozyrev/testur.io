@@ -35,15 +35,23 @@ i18nInstance.use(initReactI18next).init({
   resources: {
     en: {
       projects: {
-        'page.title': 'Projects',
-        'page.createButton': 'Create Project',
-        'card.editAriaLabel': 'Edit project',
-        'emptyState.heading': 'No projects yet',
-        'emptyState.description':
-          'Create your first project to start running automated tests against your product.',
-        'emptyState.ctaLabel': 'Create your first project',
-        'error.message': 'Failed to load projects. Please try again.',
-        'error.retryButton': 'Retry',
+        page: {
+          title: 'Projects',
+          createButton: 'Create Project',
+        },
+        card: {
+          editAriaLabel: 'Edit project',
+        },
+        emptyState: {
+          heading: 'No projects yet',
+          description:
+            'Create your first project to start running automated tests against your product.',
+          ctaLabel: 'Create your first project',
+        },
+        error: {
+          message: 'Failed to load projects. Please try again.',
+          retryButton: 'Retry',
+        },
       },
     },
   },

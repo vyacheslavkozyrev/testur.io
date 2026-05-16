@@ -26,7 +26,7 @@ export default function ProjectListCard({ project }: ProjectListCardProps) {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   const truncatedStrategy = useMemo(
     () => truncateText(project.testingStrategy, STRATEGY_MAX_LENGTH),
@@ -78,60 +78,55 @@ export default function ProjectListCard({ project }: ProjectListCardProps) {
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme) =>
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useMemo(
-    () => ({
-      card: {
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column' as const,
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
-        transition: 'box-shadow 150ms ease',
-        '&:hover': {
-          boxShadow: theme.shadows[4],
-        },
-      },
-      actionArea: {
-        height: '100%',
-        alignItems: 'flex-start' as const,
-      },
-      content: {
-        display: 'flex',
-        flexDirection: 'column' as const,
-        gap: theme.spacing(1),
-        width: '100%',
-      },
-      header: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: theme.spacing(1),
-        minWidth: 0,
-      },
-      name: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
-        flex: 1,
-        minWidth: 0,
-      },
-      editButton: {
-        color: theme.palette.text.secondary,
-        flexShrink: 0,
-        '&:hover': {
-          color: theme.palette.primary.main,
-          backgroundColor: theme.palette.action.hover,
-        },
-      },
-      url: {
-        ...theme.typography.body2,
-        color: theme.palette.text.secondary,
-      },
-      strategy: {
-        ...theme.typography.body2,
-        color: theme.palette.text.primary,
-      },
-    }),
-    [theme],
-  );
+const getStyles = (theme: Theme) => ({
+  card: {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    transition: 'box-shadow 150ms ease',
+    '&:hover': {
+      boxShadow: theme.shadows[4],
+    },
+  },
+  actionArea: {
+    height: '100%',
+    alignItems: 'flex-start' as const,
+  },
+  content: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: theme.spacing(1),
+    width: '100%',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing(1),
+    minWidth: 0,
+  },
+  name: {
+    ...theme.typography.h6,
+    color: theme.palette.text.primary,
+    flex: 1,
+    minWidth: 0,
+  },
+  editButton: {
+    color: theme.palette.text.secondary,
+    flexShrink: 0,
+    '&:hover': {
+      color: theme.palette.primary.main,
+      backgroundColor: theme.palette.action.hover,
+    },
+  },
+  url: {
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
+  },
+  strategy: {
+    ...theme.typography.body2,
+    color: theme.palette.text.primary,
+  },
+});

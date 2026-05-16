@@ -8,6 +8,8 @@ export const DASHBOARD_ROUTE = '/dashboard';
 
 export const PROJECTS_ROUTE = '/projects';
 
+export const NEW_PROJECT_ROUTE = '/projects/new';
+
 export const SETTINGS_ROUTE = '/settings';
 
 /**
