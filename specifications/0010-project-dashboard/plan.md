@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Create `LatestRunSummary` value object (`runId`, `status`, `startedAt`, `completedAt`) — `source/Testurio.Core/Models/LatestRunSummary.cs`
 - [x] T003 [Domain] Create `DashboardProjectSummary` value object (`projectId`, `name`, `productUrl`, `testingStrategy`, `latestRun` nullable `LatestRunSummary`) — `source/Testurio.Core/Models/DashboardProjectSummary.cs`
 - [x] T004 [Domain] Create `QuotaUsage` value object (`usedToday`, `dailyLimit`, `resetsAt`) — `source/Testurio.Core/Models/QuotaUsage.cs`
-- [ ] T005 [Domain] Create `DashboardUpdatedEvent` record (`projectId`, `latestRun`, optional `quotaUsage`) — `source/Testurio.Core/Events/DashboardUpdatedEvent.cs`; defined here so feature 0043 can reference it without a reverse dependency
+- [x] T005 [Domain] Create `DashboardUpdatedEvent` record (`projectId`, `latestRun`, optional `quotaUsage`) — `source/Testurio.Core/Events/DashboardUpdatedEvent.cs`; defined here so feature 0043 can reference it without a reverse dependency
 - [ ] T006 [Domain] Add `IStatsRepository` interface with methods `GetDashboardSummariesAsync` and `GetQuotaUsageAsync` — `source/Testurio.Core/Interfaces/IStatsRepository.cs`
 - [ ] T007 [Infra] Implement `StatsRepository`: query Cosmos `Projects` container for active projects by `userId`, join each with its most recent entry from `TestResults` by `startedAt` descending; projects with no results sort after those with results (alphabetically by name) — `source/Testurio.Infrastructure/Cosmos/StatsRepository.cs`
 - [ ] T008 [Infra] Register `StatsRepository` as a scoped service in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`; `IDashboardStreamManager` registration is handled by feature 0043
