@@ -82,7 +82,9 @@ i18nInstance.use(initReactI18next).init({
   resources: {
     en: {
       project: {
-        'settings.title': '{{name}} — Settings',
+        'settings.title': '{{name}}',
+        'settings.breadcrumbProjects': 'Projects',
+        'settings.breadcrumbSettings': 'Settings',
         'settings.loadError': 'Failed to load project. Please try again.',
         'settings.saveError': 'Failed to save changes. Please try again.',
         'settings.saveSuccess': 'Changes saved successfully.',
@@ -222,13 +224,15 @@ const { default: ProjectSettingsPage } = require('./ProjectSettingsPage') as {
 };
 
 describe('ProjectSettingsPage', () => {
-  it('renders the page title with the project name', () => {
+  it('renders the project name as page title and breadcrumbs', () => {
     render(
       <Wrapper>
         <ProjectSettingsPage />
       </Wrapper>,
     );
-    expect(screen.getByText('Demo Project — Settings')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Demo Project' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Projects' })).toBeInTheDocument();
+    expect(screen.getByText('Settings', { selector: 'p' })).toBeInTheDocument();
   });
 
   it('renders Settings tab active by default', () => {

@@ -33,7 +33,9 @@
     "pageTitle": "New Project"
   },
   "settings": {
-    "title": "{{name}} — Settings",
+    "title": "{{name}}",
+    "breadcrumbProjects": "Projects",
+    "breadcrumbSettings": "Settings",
     "loadError": "Failed to load project. Please try again.",
     "saveError": "Failed to save changes. Please try again.",
     "saveSuccess": "Changes saved successfully.",

@@ -5,13 +5,17 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
+import NextLink from 'next/link';
 import { useTheme, type Theme } from '@mui/material/styles';
+import { PROJECTS_ROUTE } from '@/routes/routes';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
 import ProjectForm, { type ProjectFormHandle } from '@/components/ProjectForm/ProjectForm';
@@ -181,6 +185,15 @@ export default function ProjectSettingsPage() {
 
   return (
     <Box sx={styles.root}>
+      <Breadcrumbs sx={styles.breadcrumbs}>
+        <Link component={NextLink} href={PROJECTS_ROUTE} underline="hover" color="text.secondary" variant="body2">
+          {t('settings.breadcrumbProjects')}
+        </Link>
+        <Typography variant="body2" color="text.primary">
+          {t('settings.breadcrumbSettings')}
+        </Typography>
+      </Breadcrumbs>
+
       <Typography variant="h5" sx={styles.pageTitle}>
         {t('settings.title', { name: project.name })}
       </Typography>
@@ -301,11 +314,13 @@ const getStyles = (theme: Theme) =>
         justifyContent: 'center',
         padding: theme.spacing(8),
       },
+      breadcrumbs: {
+        marginBottom: theme.spacing(-1),
+      },
       pageTitle: {
         ...theme.typography.h5,
         color: theme.palette.text.primary,
         fontWeight: 600,
-        marginBottom: theme.spacing(1),
       },
       tabs: {
         borderBottom: `1px solid ${theme.palette.divider}`,
