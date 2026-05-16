@@ -4,9 +4,9 @@
 
 - [x] T001 [Domain] Add `AccessMode` enum (`IpAllowlist`, `BasicAuth`, `HeaderToken`) — `source/Testurio.Core/Enums/AccessMode.cs`
 - [x] T002 [Domain] Extend `Project` entity with access configuration fields (`AccessMode`, `BasicAuthUserSecretUri`, `BasicAuthPassSecretUri`, `HeaderTokenName`, `HeaderTokenSecretUri`) — `source/Testurio.Core/Entities/Project.cs`
-- [ ] T003 [Domain] Define `IProjectAccessCredentialProvider` interface with `ResolveAsync(Project, CancellationToken)` returning `ProjectAccessCredentials` — `source/Testurio.Core/Interfaces/IProjectAccessCredentialProvider.cs`
-- [ ] T004 [Domain] Create `ProjectAccessCredentials` discriminated union record (`IpAllowlist`, `BasicAuth`, `HeaderToken` cases) — `source/Testurio.Core/Models/ProjectAccessCredentials.cs`
-- [ ] T005 [Domain] Create `CredentialRetrievalException` — `source/Testurio.Core/Exceptions/CredentialRetrievalException.cs`
+- [x] T003 [Domain] Define `IProjectAccessCredentialProvider` interface with `ResolveAsync(Project, CancellationToken)` returning `ProjectAccessCredentials` — `source/Testurio.Core/Interfaces/IProjectAccessCredentialProvider.cs`
+- [x] T004 [Domain] Create `ProjectAccessCredentials` discriminated union record (`IpAllowlist`, `BasicAuth`, `HeaderToken` cases) — `source/Testurio.Core/Models/ProjectAccessCredentials.cs`
+- [x] T005 [Domain] Create `CredentialRetrievalException` — `source/Testurio.Core/Exceptions/CredentialRetrievalException.cs`
 - [ ] T006 [Infra] Implement `ProjectAccessCredentialProvider` — reads secret URIs from project document, fetches values from Key Vault via `ISecretResolver`, returns typed `ProjectAccessCredentials` — `source/Testurio.Infrastructure/KeyVault/ProjectAccessCredentialProvider.cs`
 - [ ] T007 [Infra] Extend `ProjectSecretNamespace` with constants for access secret keys (`basic-auth-user`, `basic-auth-pass`, `header-token-value`) — `source/Testurio.Infrastructure/KeyVault/ProjectSecretNamespace.cs`
 - [ ] T008 [Infra] Register `IProjectAccessCredentialProvider` → `ProjectAccessCredentialProvider` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
