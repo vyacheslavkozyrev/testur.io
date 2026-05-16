@@ -11,12 +11,15 @@ namespace Testurio.Infrastructure.Cosmos;
 /// </summary>
 public class TestMemoryRepository
 {
-    private readonly Container _container;
+    private readonly Container _container = null!;
 
     public TestMemoryRepository(CosmosClient cosmosClient, string databaseName)
     {
         _container = cosmosClient.GetContainer(databaseName, "TestMemory");
     }
+
+    /// <summary>Protected parameterless constructor for test-double subclassing.</summary>
+    protected TestMemoryRepository() { }
 
     /// <summary>
     /// Retrieves the top-3 most semantically similar test memory entries for the given
@@ -28,7 +31,7 @@ public class TestMemoryRepository
     /// <param name="embedding">Story embedding vector (1536 dimensions) for similarity search.</param>
     /// <param name="cancellationToken">Cancellation token forwarded to Cosmos SDK calls.</param>
     /// <returns>Up to 3 matching <see cref="TestMemoryEntry"/> instances, never null.</returns>
-    public async Task<IReadOnlyList<TestMemoryEntry>> FindSimilarAsync(
+    public virtual async Task<IReadOnlyList<TestMemoryEntry>> FindSimilarAsync(
         string userId,
         string projectId,
         float[] embedding,
