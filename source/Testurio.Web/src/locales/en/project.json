@@ -42,6 +42,20 @@
       "deleteButton": "Delete Project"
     }
   },
+  "tabs": {
+    "settings": "Settings",
+    "integration": "Integration"
+  },
+  "saveBar": {
+    "save": "Save Changes",
+    "noChanges": "No changes",
+    "saving": "Saving…",
+    "saved": "Saved ✓"
+  },
+  "unsavedBanner": {
+    "message": "You have unsaved changes in Settings.",
+    "link": "Go to Settings"
+  },
   "customPrompt": {
     "section": {
       "title": "Custom Test Generation Prompt",
