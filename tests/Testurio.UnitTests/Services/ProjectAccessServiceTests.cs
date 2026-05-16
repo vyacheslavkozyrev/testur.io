@@ -68,8 +68,6 @@ public class ProjectAccessServiceTests
         var project = MakeProject();
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
 
         var (result, dto) = await _sut.GetAsync("user-1", "proj-1");
 
@@ -78,22 +76,20 @@ public class ProjectAccessServiceTests
         Assert.Equal(AccessMode.IpAllowlist, dto.AccessMode);
         Assert.Null(dto.BasicAuthUser);
         Assert.Null(dto.HeaderTokenName);
+        // Username is read from Cosmos — no Key Vault call required.
+        _secretResolver.Verify(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task GetAsync_ResolvesAndReturnsUsername_WhenBasicAuthMode()
+    public async Task GetAsync_ReturnsUsername_FromCosmos_WhenBasicAuthMode()
     {
         var project = MakeProject();
         project.AccessMode = AccessMode.BasicAuth;
-        project.BasicAuthUserSecretUri = "projects--proj-1--basic-auth-user";
+        project.BasicAuthUser = "testuser";
         project.BasicAuthPassSecretUri = "projects--proj-1--basic-auth-pass";
 
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
-        _secretResolver.Setup(s => s.ResolveAsync("projects--proj-1--basic-auth-user", It.IsAny<CancellationToken>()))
-            .ReturnsAsync("testuser");
 
         var (result, dto) = await _sut.GetAsync("user-1", "proj-1");
 
@@ -102,6 +98,8 @@ public class ProjectAccessServiceTests
         Assert.Equal(AccessMode.BasicAuth, dto.AccessMode);
         Assert.Equal("testuser", dto.BasicAuthUser);
         Assert.Null(dto.HeaderTokenName);
+        // Username comes from Cosmos — Key Vault must not be called.
+        _secretResolver.Verify(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -113,8 +111,6 @@ public class ProjectAccessServiceTests
         project.HeaderTokenSecretUri = "projects--proj-1--header-token-value";
 
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
 
         var (result, dto) = await _sut.GetAsync("user-1", "proj-1");
@@ -133,12 +129,10 @@ public class ProjectAccessServiceTests
     {
         var project = MakeProject();
         project.AccessMode = AccessMode.BasicAuth;
-        project.BasicAuthUserSecretUri = "projects--proj-1--basic-auth-user";
+        project.BasicAuthUser = "admin";
         project.BasicAuthPassSecretUri = "projects--proj-1--basic-auth-pass";
 
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
         _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project p, CancellationToken _) => p);
@@ -152,25 +146,20 @@ public class ProjectAccessServiceTests
         Assert.NotNull(dto);
         Assert.Equal(AccessMode.IpAllowlist, dto.AccessMode);
 
-        // Previous secrets must be overwritten (cleared)
-        _secretResolver.Verify(s => s.StoreAsync("projects--proj-1--basic-auth-user", string.Empty, It.IsAny<CancellationToken>()), Times.Once);
+        // Old password secret must be cleared.
         _secretResolver.Verify(s => s.StoreAsync("projects--proj-1--basic-auth-pass", string.Empty, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateAsync_StoresBasicAuthSecrets_AndReturnsUsernameInDto()
+    public async Task UpdateAsync_StoresBasicAuthPassword_AndReturnsUsernameFromCosmos()
     {
         var project = MakeProject();
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
         _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project p, CancellationToken _) => p);
         _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _secretResolver.Setup(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("admin");
 
         var request = new UpdateProjectAccessRequest
         {
@@ -183,13 +172,77 @@ public class ProjectAccessServiceTests
         Assert.Equal(ProjectOperationResult.Success, result);
         Assert.NotNull(dto);
         Assert.Equal(AccessMode.BasicAuth, dto.AccessMode);
-        Assert.Equal("admin", dto.BasicAuthUser); // username resolved from KV for display
+        Assert.Equal("admin", dto.BasicAuthUser); // username comes from Cosmos, not KV
 
-        // Password must never appear in the DTO
-        _secretResolver.Verify(s => s.StoreAsync(
-            "projects--proj-1--basic-auth-user", "admin", It.IsAny<CancellationToken>()), Times.Once);
+        // Only the password is stored in Key Vault — username goes directly to Cosmos.
         _secretResolver.Verify(s => s.StoreAsync(
             "projects--proj-1--basic-auth-pass", "secret", It.IsAny<CancellationToken>()), Times.Once);
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--basic-auth-user", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SwitchingBasicAuthToBasicAuth_DoesNotWipeFreshlyStoredPassword()
+    {
+        // Re-saving BasicAuth → BasicAuth uses the same deterministic secret name.
+        // ClearSecretsAsync must NOT overwrite the freshly-stored password with "".
+        var project = MakeProject();
+        project.AccessMode = AccessMode.BasicAuth;
+        project.BasicAuthUser = "admin";
+        project.BasicAuthPassSecretUri = "projects--proj-1--basic-auth-pass";
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+        _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateProjectAccessRequest
+        {
+            AccessMode = AccessMode.BasicAuth,
+            BasicAuthUser = "admin",
+            BasicAuthPass = "new-secret",
+        };
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+
+        // New password must be stored.
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--basic-auth-pass", "new-secret", It.IsAny<CancellationToken>()), Times.Once);
+
+        // The same-name secret must NOT be wiped after storing the new value.
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--basic-auth-pass", string.Empty, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BasicAuth_KeepsExistingPassword_WhenNewPasswordOmitted()
+    {
+        var project = MakeProject();
+        project.AccessMode = AccessMode.BasicAuth;
+        project.BasicAuthUser = "admin";
+        project.BasicAuthPassSecretUri = "projects--proj-1--basic-auth-pass";
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        // Update username only — no new password.
+        var request = new UpdateProjectAccessRequest
+        {
+            AccessMode = AccessMode.BasicAuth,
+            BasicAuthUser = "new-admin",
+        };
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.Equal("new-admin", dto!.BasicAuthUser);
+
+        // Existing password URI preserved — Key Vault must not be touched at all.
+        _secretResolver.Verify(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -197,8 +250,6 @@ public class ProjectAccessServiceTests
     {
         var project = MakeProject();
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
         _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Project p, CancellationToken _) => p);
@@ -219,7 +270,6 @@ public class ProjectAccessServiceTests
         Assert.Equal("X-Testurio-Token", dto.HeaderTokenName);
         Assert.Null(dto.BasicAuthUser);
 
-        // Token value stored in KV
         _secretResolver.Verify(s => s.StoreAsync(
             "projects--proj-1--header-token-value", "tok-secret", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -238,7 +288,6 @@ public class ProjectAccessServiceTests
         Assert.Null(dto);
     }
 
-
     [Fact]
     public async Task UpdateAsync_DoesNotUpdateCosmos_WhenKeyVaultWriteFails_AC040()
     {
@@ -249,10 +298,7 @@ public class ProjectAccessServiceTests
 
         _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(project);
-        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(project);
 
-        // Key Vault write fails
         _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Key Vault unavailable"));
 
@@ -265,7 +311,6 @@ public class ProjectAccessServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateAsync("user-1", "proj-1", request));
 
-        // Cosmos must NOT have been updated
         _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

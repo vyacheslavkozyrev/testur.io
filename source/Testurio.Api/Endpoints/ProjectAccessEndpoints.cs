@@ -8,9 +8,8 @@ namespace Testurio.Api.Endpoints;
 
 public static class ProjectAccessEndpoints
 {
-    public static IEndpointRouteBuilder MapProjectAccessEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapProjectAccessEndpoints(this IEndpointRouteBuilder app, RouteGroupBuilder v1)
     {
-        var v1 = app.MapGroup("/v1").RequireAuthorization();
         var projects = v1.MapGroup("/projects");
 
         projects.MapGet("/{projectId}/access", GetProjectAccessAsync).WithName("GetProjectAccess");

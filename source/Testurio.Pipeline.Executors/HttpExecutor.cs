@@ -70,7 +70,15 @@ public sealed partial class HttpExecutor
                 break;
 
             case ProjectAccessCredentials.HeaderToken(var headerName, var headerValue):
-                client.DefaultRequestHeaders.Add(headerName, headerValue);
+                try
+                {
+                    client.DefaultRequestHeaders.Add(headerName, headerValue);
+                }
+                catch (Exception ex) when (ex is FormatException or InvalidOperationException)
+                {
+                    throw new CredentialRetrievalException(
+                        $"Header name '{headerName}' is not a valid HTTP header name.", ex);
+                }
                 break;
 
             case ProjectAccessCredentials.IpAllowlist:

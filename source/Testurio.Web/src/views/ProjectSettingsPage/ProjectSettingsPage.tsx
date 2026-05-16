@@ -235,9 +235,6 @@ export default function ProjectSettingsPage() {
         <Box sx={styles.settingsContent}>
           {/* Project info card */}
           <Paper variant="outlined" sx={styles.card}>
-            <Typography variant="h6" sx={styles.cardTitle}>
-              {t('form.titleEdit')}
-            </Typography>
             {sectionErrors.projectInfo && (
               <Alert severity="error" sx={styles.cardAlert}>
                 {t('settings.saveError')}
@@ -263,7 +260,7 @@ export default function ProjectSettingsPage() {
 
           {/* Testing environment access card */}
           <Paper variant="outlined" sx={styles.card}>
-            <Typography variant="h6" sx={styles.cardTitle}>
+            <Typography variant="subtitle1" color="text.primary">
               {t('access.section.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -367,11 +364,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(2),
-      },
-      cardTitle: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
-        fontWeight: 600,
       },
       cardAlert: {
         marginBottom: theme.spacing(2),

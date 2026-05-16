@@ -1,18 +1,30 @@
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Testurio.Core.Interfaces;
 
 namespace Testurio.Infrastructure;
 
-// Production implementation — resolves a Key Vault secret reference via SecretClient.
-// Wire up in a future feature once Azure.Security.KeyVault.Secrets is integrated.
+/// <summary>
+/// Production implementation: resolves and stores project secrets via Azure Key Vault.
+/// Uses DefaultAzureCredential (Managed Identity in Azure, az login / env vars locally).
+/// </summary>
 public sealed class KeyVaultSecretResolver : ISecretResolver
 {
-    public Task<string> ResolveAsync(string secretRef, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException(
-            "KeyVaultSecretResolver is not yet implemented. " +
-            "Integrate Azure.Security.KeyVault.Secrets and replace this stub before deploying to production.");
+    private readonly SecretClient _client;
 
-    public Task StoreAsync(string secretName, string secretValue, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException(
-            "KeyVaultSecretResolver is not yet implemented. " +
-            "Integrate Azure.Security.KeyVault.Secrets and replace this stub before deploying to production.");
+    public KeyVaultSecretResolver(string keyVaultUri)
+    {
+        _client = new SecretClient(new Uri(keyVaultUri), new DefaultAzureCredential());
+    }
+
+    public async Task<string> ResolveAsync(string secretRef, CancellationToken cancellationToken = default)
+    {
+        var response = await _client.GetSecretAsync(secretRef, cancellationToken: cancellationToken);
+        return response.Value.Value;
+    }
+
+    public async Task StoreAsync(string secretName, string secretValue, CancellationToken cancellationToken = default)
+    {
+        await _client.SetSecretAsync(secretName, secretValue, cancellationToken);
+    }
 }

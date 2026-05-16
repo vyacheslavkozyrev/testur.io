@@ -14,14 +14,14 @@ import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useProjectAccess, useUpdateProjectAccess } from '@/hooks/useProjectAccess';
 import type { AccessMode, UpdateProjectAccessRequest } from '@/types/projectAccess.types';
+import { PUBLISHED_EGRESS_IPS } from '@/config/egressIps';
 
 interface AccessModeSelectorProps {
   projectId: string;
 }
 
-const PUBLISHED_EGRESS_IPS = ['20.0.0.1', '20.0.0.2', '20.0.0.3'];
-
 export default function AccessModeSelector({ projectId }: AccessModeSelectorProps) {
+  if (!projectId) return null;
   const { t } = useTranslation('projectAccess');
   const theme = useTheme();
   const styles = getStyles(theme);
@@ -55,22 +55,26 @@ export default function AccessModeSelector({ projectId }: AccessModeSelectorProp
 
   const validate = useCallback((): boolean => {
     const errors: Record<string, string> = {};
+    // Only require the secret field when there is no existing credential to fall back on.
+    const hasExistingCredential = access?.accessMode === selectedMode;
 
     if (selectedMode === 'basicAuth') {
       if (!basicAuthUser.trim()) errors.basicAuthUser = t('validation.usernameRequired');
-      if (!basicAuthPass.trim()) errors.basicAuthPass = t('validation.passwordRequired');
+      if (!basicAuthPass.trim() && !hasExistingCredential)
+        errors.basicAuthPass = t('validation.passwordRequired');
     }
 
     if (selectedMode === 'headerToken') {
       if (!headerTokenName.trim()) errors.headerTokenName = t('validation.headerNameRequired');
       else if (!/^[A-Za-z0-9\-]+$/.test(headerTokenName))
         errors.headerTokenName = t('validation.headerNameInvalid');
-      if (!headerTokenValue.trim()) errors.headerTokenValue = t('validation.headerValueRequired');
+      if (!headerTokenValue.trim() && !hasExistingCredential)
+        errors.headerTokenValue = t('validation.headerValueRequired');
     }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [selectedMode, basicAuthUser, basicAuthPass, headerTokenName, headerTokenValue, t]);
+  }, [selectedMode, basicAuthUser, basicAuthPass, headerTokenName, headerTokenValue, access, t]);
 
   const handleSave = useCallback(() => {
     if (!validate()) return;
@@ -79,11 +83,13 @@ export default function AccessModeSelector({ projectId }: AccessModeSelectorProp
       accessMode: selectedMode,
       ...(selectedMode === 'basicAuth' && {
         basicAuthUser,
-        basicAuthPass,
+        // Omit password when blank — server keeps the existing Key Vault secret.
+        ...(basicAuthPass ? { basicAuthPass } : {}),
       }),
       ...(selectedMode === 'headerToken' && {
         headerTokenName,
-        headerTokenValue,
+        // Omit token value when blank — server keeps the existing Key Vault secret.
+        ...(headerTokenValue ? { headerTokenValue } : {}),
       }),
     };
 

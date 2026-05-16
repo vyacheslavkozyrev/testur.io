@@ -28,15 +28,19 @@ public sealed class UpdateProjectAccessRequest : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (!Enum.IsDefined(typeof(AccessMode), AccessMode))
+        {
+            yield return new ValidationResult(
+                $"'{AccessMode}' is not a valid access mode.", [nameof(AccessMode)]);
+            yield break;
+        }
+
         if (AccessMode == AccessMode.BasicAuth)
         {
             if (string.IsNullOrWhiteSpace(BasicAuthUser))
                 yield return new ValidationResult(
                     "Username is required for HTTP Basic Auth.", [nameof(BasicAuthUser)]);
-
-            if (string.IsNullOrWhiteSpace(BasicAuthPass))
-                yield return new ValidationResult(
-                    "Password is required for HTTP Basic Auth.", [nameof(BasicAuthPass)]);
+            // BasicAuthPass is optional on re-save — omitting it keeps the existing Key Vault secret.
         }
 
         if (AccessMode == AccessMode.HeaderToken)
@@ -44,10 +48,7 @@ public sealed class UpdateProjectAccessRequest : IValidatableObject
             if (string.IsNullOrWhiteSpace(HeaderTokenName))
                 yield return new ValidationResult(
                     "Header name is required for Custom Header Token.", [nameof(HeaderTokenName)]);
-
-            if (string.IsNullOrWhiteSpace(HeaderTokenValue))
-                yield return new ValidationResult(
-                    "Header value is required for Custom Header Token.", [nameof(HeaderTokenValue)]);
+            // HeaderTokenValue is optional on re-save — omitting it keeps the existing Key Vault secret.
         }
     }
 }

@@ -79,7 +79,9 @@ public class Project
 
     // Testing environment access configuration — feature 0017
     public AccessMode AccessMode { get; set; } = AccessMode.IpAllowlist;
-    /// <summary>Key Vault secret URI for the Basic Auth username. Never the raw value.</summary>
+    /// <summary>Basic Auth username stored directly (non-sensitive). Key Vault holds the password only.</summary>
+    public string? BasicAuthUser { get; set; }
+    /// <summary>Key Vault secret URI for the Basic Auth username. Superseded by BasicAuthUser; retained for backward compatibility.</summary>
     public string? BasicAuthUserSecretUri { get; set; }
     /// <summary>Key Vault secret URI for the Basic Auth password. Never the raw value.</summary>
     public string? BasicAuthPassSecretUri { get; set; }
