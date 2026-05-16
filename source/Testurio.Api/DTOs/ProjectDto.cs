@@ -11,6 +11,7 @@ public sealed record ProjectDto(
     string ProductUrl,
     string TestingStrategy,
     string? CustomPrompt,
+    string[]? AllowedWorkItemTypes,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 

@@ -3,6 +3,7 @@ import type {
   ProjectDto,
   CreateProjectRequest,
   UpdateProjectRequest,
+  UpdateWorkItemTypeFilterRequest,
   PromptCheckRequest,
   PromptCheckFeedback,
 } from '@/types/project.types';
@@ -25,4 +26,7 @@ export const projectService = {
 
   promptCheck: (id: string, body: PromptCheckRequest): Promise<PromptCheckFeedback> =>
     apiClient.post<PromptCheckFeedback>(`/v1/projects/${id}/prompt-check`, body).then((r) => r.data),
+
+  updateWorkItemTypeFilter: (id: string, body: UpdateWorkItemTypeFilterRequest): Promise<ProjectDto> =>
+    apiClient.patch<ProjectDto>(`/v1/projects/${id}/work-item-type-filter`, body).then((r) => r.data),
 };

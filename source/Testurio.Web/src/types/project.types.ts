@@ -4,8 +4,13 @@ export interface ProjectDto {
   productUrl: string;
   testingStrategy: string;
   customPrompt: string | null;
+  allowedWorkItemTypes: string[] | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdateWorkItemTypeFilterRequest {
+  allowedWorkItemTypes: string[];
 }
 
 export interface CreateProjectRequest {

@@ -79,7 +79,9 @@ builder.Services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>(
     return new AnthropicGenerationClient(client, modelId, logger);
 });
 
+builder.Services.AddScoped<IWorkItemTypeFilterService, WorkItemTypeFilterService>();
 builder.Services.AddScoped<IJiraWebhookService, JiraWebhookService>();
+builder.Services.AddScoped<IADOWebhookService, ADOWebhookService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IPMToolConnectionService, PMToolConnectionService>();
 builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();

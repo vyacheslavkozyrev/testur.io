@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -102,6 +103,25 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
         Assert.NotNull(body);
         Assert.Equal("proj-001", body.ProjectId);
+    }
+
+    [Fact]
+    public async Task GetProject_IncludesAllowedWorkItemTypesField_InResponse()
+    {
+        // AC-010: GET response includes the allowedWorkItemTypes field
+        var project = MakeProject();
+        project.AllowedWorkItemTypes = new[] { "Story", "Bug" };
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/v1/projects/proj-001");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(new[] { "Story", "Bug" }, body.AllowedWorkItemTypes);
     }
 
     [Fact]
@@ -261,6 +281,95 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // ─── PATCH /v1/projects/{id}/work-item-type-filter ───────────────────────
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns200_WithUpdatedProject()
+    {
+        var existing = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story", "Bug" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(new[] { "Story", "Bug" }, body.AllowedWorkItemTypes);
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenEmptyArray()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = Array.Empty<string>() };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("At least one work item type must be selected"));
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenArrayContainsEmptyString()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story", "" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("Work item type values must be non-empty strings"));
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenMoreThan20Types()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = Enumerable.Range(1, 21).Select(i => $"Type{i}").ToArray() };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("AllowedWorkItemTypes", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        var messages = body.Errors.First(kv => kv.Key.Equals("AllowedWorkItemTypes", StringComparison.OrdinalIgnoreCase)).Value;
+        Assert.Contains(messages, m => m.Contains("A maximum of 20 work item types may be configured"));
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns403_WhenProjectBelongsToDifferentUser()
+    {
+        var otherUserProject = MakeProject(userId: "other-user-oid");
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -304,6 +413,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                     ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });

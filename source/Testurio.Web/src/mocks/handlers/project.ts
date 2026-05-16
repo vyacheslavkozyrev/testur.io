@@ -7,6 +7,7 @@ const mockProject: ProjectDto = {
   productUrl: 'https://example.com',
   testingStrategy: 'Focus on API contracts and key user flows.',
   customPrompt: null,
+  allowedWorkItemTypes: null,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };
@@ -55,6 +56,13 @@ export const projectHandlers = [
   http.post('/v1/projects/:projectId/prompt-check', ({ params }) => {
     if (params.projectId === mockProject.projectId) {
       return HttpResponse.json(mockPromptCheckFeedback);
+    }
+    return new HttpResponse(null, { status: 404 });
+  }),
+
+  http.patch('/v1/projects/:projectId/work-item-type-filter', ({ params }) => {
+    if (params.projectId === mockProject.projectId) {
+      return HttpResponse.json({ ...mockProject, allowedWorkItemTypes: ['Story', 'Bug'] });
     }
     return new HttpResponse(null, { status: 404 });
   }),
