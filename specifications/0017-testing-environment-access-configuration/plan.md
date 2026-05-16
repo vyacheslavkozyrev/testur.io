@@ -14,8 +14,8 @@
 - [x] T010 [App] Create `ProjectAccessDto` (safe response: mode, optional username, optional header name — never plaintext secrets) — `source/Testurio.Api/DTOs/ProjectAccessDto.cs`
 - [x] T011 [App] Implement `IProjectAccessService` interface and `ProjectAccessService` — validates ownership, writes/clears Key Vault secrets, updates Cosmos project document, returns `ProjectAccessDto` — `source/Testurio.Api/Services/ProjectAccessService.cs`
 - [x] T012 [API] Register `PATCH /v1/projects/{projectId}/access` and `GET /v1/projects/{projectId}/access` endpoints — `source/Testurio.Api/Endpoints/ProjectAccessEndpoints.cs`
-- [ ] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
-- [ ] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
+- [x] T013 [App] Extend `HttpExecutor` to inject Basic Auth header or custom header per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/HttpExecutor.cs`
+- [x] T014 [App] Extend `PlaywrightExecutor` to apply `httpCredentials` or `extraHTTPHeaders` per run using `IProjectAccessCredentialProvider` — `source/Testurio.Pipeline.Executors/PlaywrightExecutor.cs`
 - [ ] T015 [UI] Add access configuration types — `source/Testurio.Web/src/types/projectAccess.types.ts`
 - [ ] T016 [UI] Add API client for access endpoints — `source/Testurio.Web/src/services/project/projectAccessService.ts`
 - [ ] T017 [UI] Add React Query hooks (`useProjectAccess`, `useUpdateProjectAccess`) — `source/Testurio.Web/src/hooks/useProjectAccess.ts`
