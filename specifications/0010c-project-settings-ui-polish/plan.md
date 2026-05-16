@@ -8,7 +8,7 @@
 - [x] T004 [UI] Add translation keys for tabs, save bar states, and unsaved-changes banner — `source/Testurio.Web/src/locales/en/project.json`
 - [x] T005 [UI] Refactor `ProjectSettingsPage` — add MUI `Tabs`/`Tab` navigation, wire imperative refs to `handleSaveAll`, implement dirty-state aggregation, unsaved-changes banner, per-section error alerts, retry-only-failed logic — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.tsx`
 - [x] T006 [Test] Component tests for `SaveBar` (all button states) — `source/Testurio.Web/src/components/SaveBar/SaveBar.test.tsx`
-- [ ] T007 [Test] Component tests for updated `ProjectSettingsPage` (tab switching, unified save, unsaved-changes banner, partial failure) — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.test.tsx`
+- [x] T007 [Test] Component tests for updated `ProjectSettingsPage` (tab switching, unified save, unsaved-changes banner, partial failure) — `source/Testurio.Web/src/views/ProjectSettingsPage/ProjectSettingsPage.test.tsx`
 - [ ] T008 [Test] E2E — tab navigation, unified save happy path, partial failure retry — `source/Testurio.Web/e2e/project-settings-ui-polish.spec.ts`
 
 ## Rationale
