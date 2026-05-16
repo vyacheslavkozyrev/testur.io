@@ -77,6 +77,17 @@ public class Project
     /// <summary>When true, screenshot attachments are included in the rendered report. Default: true. Only meaningful when test_type is ui_e2e or both.</summary>
     public bool ReportIncludeScreenshots { get; set; } = true;
 
+    // Testing environment access configuration — feature 0017
+    public AccessMode AccessMode { get; set; } = AccessMode.IpAllowlist;
+    /// <summary>Key Vault secret URI for the Basic Auth username. Never the raw value.</summary>
+    public string? BasicAuthUserSecretUri { get; set; }
+    /// <summary>Key Vault secret URI for the Basic Auth password. Never the raw value.</summary>
+    public string? BasicAuthPassSecretUri { get; set; }
+    /// <summary>Header name for custom header token mode (non-sensitive, stored directly). E.g. X-Testurio-Token.</summary>
+    public string? HeaderTokenName { get; set; }
+    /// <summary>Key Vault secret URI for the custom header token value. Never the raw value.</summary>
+    public string? HeaderTokenSecretUri { get; set; }
+
     // Legacy fields — kept for backward compatibility until migration removes them
     public string? JiraEmail { get; set; }
     public string? JiraApiTokenSecretRef { get; set; }
