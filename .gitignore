@@ -6,6 +6,7 @@
 **/Debug
 **/Release
 **/TestResults
+**/worktrees
 
 # Ignore build results
 
