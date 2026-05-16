@@ -24,6 +24,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly IServiceProvider _serviceProvider;
     private readonly RunQueueManager _runQueueManager;
     private readonly ReportDeliveryStep _reportDeliveryStep;
+    private readonly IAgentRouter _agentRouter;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -34,6 +35,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         IServiceProvider serviceProvider,
         RunQueueManager runQueueManager,
         ReportDeliveryStep reportDeliveryStep,
+        IAgentRouter agentRouter,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -46,6 +48,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _serviceProvider = serviceProvider;
         _runQueueManager = runQueueManager;
         _reportDeliveryStep = reportDeliveryStep;
+        _agentRouter = agentRouter;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -99,10 +102,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
             // Full pipeline:
             //   Stage 1: StoryParser (0025) — parse work item → ParsedStory, update ParserMode
-            //   Stage 2: ScenarioGeneration (0002) — generate test scenarios
-            //   Stage 3: ApiTestExecution (0003) — execute API tests
-            //   Stage 4: ReportDelivery (0004) — post report to PM tool
-            // ReportDeliveryStep sets the terminal run status (Completed or ReportDeliveryFailed).
+            //   Stage 2: AgentRouter (0026) — classify story → resolve test types
+            //   Stage 3: ScenarioGeneration (0002) — generate test scenarios
+            //   Stage 4: ApiTestExecution (0003) — execute API tests
+            //   Stage 5: ReportDelivery (0004) — post report to PM tool
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
@@ -155,12 +158,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         // is intentional and documented — it will be eliminated when IStoryParser is extended to
         // accept Project? as a parameter in a follow-up task.
         var storyParser = _serviceProvider.GetRequiredService<IStoryParser>();
+        ParsedStory parsedStory;
         try
         {
-            // The ParsedStory result will be passed to Stage 2 once the story-fetch refactor
-            // (feature 0002) moves content retrieval to this stage. Until then the result is
-            // intentionally not forwarded — ScenarioGenerationStep still fetches story content itself.
-            _ = storyParser is StoryParserService sps
+            parsedStory = storyParser is StoryParserService sps
                 ? await sps.ParseAsync(workItem, project, cancellationToken)
                 : await storyParser.ParseAsync(workItem, cancellationToken);
         }
@@ -180,15 +181,27 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         await _testRunRepository.UpdateAsync(testRun, cancellationToken);
         LogParsed(_logger, testRun.Id, testRun.ParserMode.Value.ToString());
 
-        // Stage 2: Generate test scenarios (feature 0002).
+        // Stage 2: AgentRouter — classify the story and resolve test types (feature 0026).
+        var routerResult = await _agentRouter.RouteAsync(parsedStory, project, testRun, cancellationToken);
+        LogRouted(_logger, testRun.Id, string.Join(", ", routerResult.ResolvedTestTypes));
+
+        // AC-009: if routing produced an empty list, the run is already marked Skipped by
+        // AgentRouterService. Complete the message normally — a skipped run is not a failure.
+        if (routerResult.ResolvedTestTypes.Length == 0)
+        {
+            LogSkipped(_logger, testRun.Id);
+            return;
+        }
+
+        // Stage 3: Generate test scenarios (feature 0002).
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
         var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
-        // Stage 3: Execute API tests against the product URL (feature 0003).
+        // Stage 4: Execute API tests against the product URL (feature 0003).
         var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
         await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
 
-        // Stage 4: Build and post the report to Jira (feature 0004).
+        // Stage 5: Build and post the report to Jira (feature 0004).
         await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
     }
 
@@ -233,6 +246,12 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Story parsed for test run {TestRunId} — mode: {ParserMode}")]
     private static partial void LogParsed(ILogger logger, string testRunId, string parserMode);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "AgentRouter resolved types [{Types}] for test run {TestRunId}")]
+    private static partial void LogRouted(ILogger logger, string testRunId, string types);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Test run {TestRunId} skipped — no applicable test type resolved")]
+    private static partial void LogSkipped(ILogger logger, string testRunId);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to process test run {TestRunId} for project {ProjectId}")]
     private static partial void LogFailed(ILogger logger, string testRunId, string projectId, Exception ex);

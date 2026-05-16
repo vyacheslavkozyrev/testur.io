@@ -1,8 +1,9 @@
 namespace Testurio.Core.Models;
 
 /// <summary>
-/// Structured output of the StoryParser stage, shared with all downstream pipeline stages.
-/// Immutable — produced once by IStoryParser and consumed read-only by AgentRouter, MemoryRetrieval, and Generators.
+/// Structured output of the StoryParser stage (stage 1), shared with all downstream pipeline stages.
+/// Immutable — produced once by the StoryParser and consumed read-only by AgentRouter, MemoryRetrieval,
+/// and Generators.
 /// </summary>
 public sealed record ParsedStory
 {

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\source\Testurio.Api\Testurio.Api.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Worker\Testurio.Worker.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Infrastructure\Testurio.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Pipeline.AgentRouter\Testurio.Pipeline.AgentRouter.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.StoryParser\Testurio.Pipeline.StoryParser.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Plugins\Testurio.Plugins.csproj" />
   </ItemGroup>

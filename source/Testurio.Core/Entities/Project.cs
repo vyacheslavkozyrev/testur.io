@@ -9,6 +9,14 @@ public class Project
     public required string Name { get; set; }
     public required string ProductUrl { get; set; }
     public required string TestingStrategy { get; set; }
+
+    /// <summary>
+    /// Structured test types enabled for this project (MVP: api, ui_e2e, or both).
+    /// Null or empty defaults to all MVP types (<see cref="TestType.Api"/> and <see cref="TestType.UiE2e"/>)
+    /// for backwards compatibility with projects created before feature 0026.
+    /// </summary>
+    public TestType[]? TestTypes { get; set; }
+
     /// <summary>Optional free-text prompt appended after the testing strategy when calling the TestGenerator. Null means no custom guidance.</summary>
     public string? CustomPrompt { get; set; }
     public bool IsDeleted { get; set; } = false;
