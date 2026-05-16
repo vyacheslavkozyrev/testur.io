@@ -9,6 +9,7 @@ import { useTheme, type Theme } from '@mui/material/styles';
 import type { ProjectDto, CreateProjectRequest, UpdateProjectRequest } from '@/types/project.types';
 
 export interface ProjectFormHandle {
+  /** Validates the form. Calls onSubmit with data if valid. Resolves true if valid, false otherwise. */
   triggerSubmit: () => Promise<boolean>;
   isDirty: boolean;
 }
@@ -140,7 +141,7 @@ const ProjectForm = forwardRef<ProjectFormHandle, ProjectFormProps>(
           )}
         />
 
-        {/* In create mode, show action buttons inline; edit mode buttons are managed by the parent page */}
+        {/* In create mode, show inline actions; edit mode uses the page-level SaveBar */}
         {!isEdit && (
           <Box sx={styles.actions}>
             {onCancel && (
