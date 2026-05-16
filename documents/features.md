@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.6.0
+version: 1.7.0
 status: draft
-updated: 2026-05-15
+updated: 2026-05-16
 tags: [features, business, product]
 ---
 
@@ -175,6 +175,12 @@ All authenticated pages are rendered inside a shared shell layout. The top heade
 **[0010b]: Project List Page** `MVP`
 _Business Outcome: Gives the QA lead a central place to see all their projects and jump directly to any of them._
 User sees all their projects displayed as a card grid. Each card shows the project name, product URL, and a truncated preview of the testing strategy (first ~120 characters with an ellipsis if longer). A persistent "Create Project" button is always visible at the top of the page and links to the existing project creation form. An empty state guides new users to create their first project. Cards link to the project settings page.
+
+---
+
+**[0010c]: Project Settings Page — UI Polish & Tab Layout** `MVP`
+_Business Outcome: Reduces friction when configuring a project by presenting a consistent, scannable settings page with clear grouping._
+The project settings page is restructured around two tabs — **Settings** and **Integration**. The Settings tab consolidates all configuration sections (project info, custom test generation prompt, report format & attachments) under a single **Save** button at the bottom; the per-section save buttons are removed. All form fields expand to the full container width — the `maxWidth: 640` constraint on `ProjectForm` is removed so every field aligns with the rest of the page. Section titles are normalised to the same typographic level (`h6`) across the page so "Edit Project" does not appear visually larger than "Custom Test Generation Prompt". The Integration tab surfaces the existing PM tool integration form (`IntegrationPage`) without modification.
 
 ---
 
