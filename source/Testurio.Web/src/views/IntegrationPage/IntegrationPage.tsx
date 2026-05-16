@@ -229,16 +229,22 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
           )}
 
           <Divider />
-          <Box sx={styles.dangerZone}>
-            <Typography variant="subtitle2" color="error">
-              {t('page.dangerZone')}
-            </Typography>
+          <Box sx={styles.dangerRow}>
+            <Box>
+              <Typography variant="subtitle2" sx={styles.dangerTitle}>
+                {t('page.dangerZone')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t('page.dangerZoneDescription')}
+              </Typography>
+            </Box>
             <Button
               variant="outlined"
               color="error"
               size="small"
               onClick={() => setRemoveDialogOpen(true)}
               disabled={removeConnection.isPending}
+              sx={styles.dangerButton}
             >
               {t('remove.button')}
             </Button>
@@ -309,11 +315,22 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         gap: theme.spacing(2),
       },
-      dangerZone: {
+      dangerRow: {
         display: 'flex',
-        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
         gap: theme.spacing(2),
         paddingTop: theme.spacing(1),
+      },
+      dangerTitle: {
+        ...theme.typography.subtitle2,
+        fontWeight: 600,
+        color: theme.palette.error.main,
+        marginBottom: theme.spacing(0.5),
+      },
+      dangerButton: {
+        flexShrink: 0,
+        alignSelf: 'center',
       },
     }),
     [theme],
