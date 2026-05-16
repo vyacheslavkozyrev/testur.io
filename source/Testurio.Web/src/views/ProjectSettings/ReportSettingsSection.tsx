@@ -9,14 +9,12 @@ import Divider from '@mui/material/Divider';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ReportAttachmentToggles from '@/components/ReportAttachmentToggles/ReportAttachmentToggles';
 import ReportTemplateUpload from '@/components/ReportTemplateUpload/ReportTemplateUpload';
-import {
-  useReportSettings,
-  useUpdateReportSettings,
-} from '@/hooks/useReportSettings';
+import { useReportSettings } from '@/hooks/useReportSettings';
 
 export interface ReportSettingsSectionHandle {
   getValues: () => { reportIncludeLogs: boolean; reportIncludeScreenshots: boolean };
   isDirty: boolean;
+  clearDirty: () => void;
 }
 
 export interface ReportSettingsSectionProps {
@@ -31,7 +29,6 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
     const styles = getStyles(theme);
 
     const { data: settings, isPending, isError } = useReportSettings(projectId);
-    const updateSettings = useUpdateReportSettings(projectId);
 
     const [pendingLogs, setPendingLogs] = useState<boolean | undefined>(undefined);
     const [pendingScreenshots, setPendingScreenshots] = useState<boolean | undefined>(undefined);
@@ -41,14 +38,20 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
 
     const isDirty = pendingLogs !== undefined || pendingScreenshots !== undefined;
 
+    // When the parent save succeeds it calls clearDirty directly; as a safety
+    // net, also reset pending state whenever the server data is refreshed so
+    // that the dirty flag stays correct after React Query invalidates.
     useEffect(() => {
-      if (updateSettings.isSuccess) {
+      if (settings) {
         setPendingLogs(undefined);
         setPendingScreenshots(undefined);
-        const timer = setTimeout(() => updateSettings.reset(), 3000);
-        return () => clearTimeout(timer);
       }
-    }, [updateSettings.isSuccess, updateSettings]);
+    }, [settings]);
+
+    const clearDirty = useCallback(() => {
+      setPendingLogs(undefined);
+      setPendingScreenshots(undefined);
+    }, []);
 
     const handleToggleChange = useCallback(
       (values: { includeLogs: boolean; includeScreenshots: boolean }) => {
@@ -66,6 +69,7 @@ const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSett
       get isDirty() {
         return isDirty;
       },
+      clearDirty,
     }));
 
     if (isPending) {

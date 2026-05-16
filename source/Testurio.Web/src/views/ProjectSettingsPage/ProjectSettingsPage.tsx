@@ -93,6 +93,10 @@ export default function ProjectSettingsPage() {
     setActiveTab(value);
   }, []);
 
+  const handleGoToSettings = useCallback(() => {
+    setActiveTab('settings');
+  }, []);
+
   const handleCaptureFormData = useCallback(
     (data: CreateProjectRequest | UpdateProjectRequest) => {
       capturedFormData.current = { ...data, customPrompt: customPrompt || null };
@@ -126,6 +130,9 @@ export default function ProjectSettingsPage() {
       if (values) {
         try {
           await updateReportSettings.mutateAsync(values);
+          // Clear child pending state immediately so isDirty returns false
+          // before the next React Query invalidation renders.
+          reportSettingsRef.current?.clearDirty();
           reportSettingsOk = true;
         } catch {
           reportSettingsOk = false;
@@ -149,7 +156,8 @@ export default function ProjectSettingsPage() {
       setSavedCustomPrompt(customPrompt);
       setPendingSections({ projectInfo: true, reportSettings: true });
       setSaveBarState('saved');
-      setTimeout(() => setSaveBarState('clean'), 2000);
+      const timer = window.setTimeout(() => setSaveBarState('clean'), 2000);
+      return () => window.clearTimeout(timer);
     }
   }, [pendingSections, customPrompt, updateProject, updateReportSettings]);
 
@@ -202,7 +210,7 @@ export default function ProjectSettingsPage() {
         <Alert
           severity="warning"
           action={
-            <Button color="inherit" size="small" onClick={() => setActiveTab('settings')}>
+            <Button color="inherit" size="small" onClick={handleGoToSettings}>
               {t('unsavedBanner.link')}
             </Button>
           }
@@ -225,6 +233,9 @@ export default function ProjectSettingsPage() {
                 {t('settings.saveError')}
               </Alert>
             )}
+            <Typography variant="h6" sx={styles.cardTitle}>
+              {t('form.titleEdit')}
+            </Typography>
             <ProjectForm
               ref={projectFormRef}
               project={project}
@@ -334,6 +345,14 @@ const getStyles = (theme: Theme) =>
       card: {
         padding: theme.spacing(3),
         borderRadius: 1,
+        display: 'flex',
+        flexDirection: 'column' as const,
+        gap: theme.spacing(2),
+      },
+      cardTitle: {
+        ...theme.typography.h6,
+        color: theme.palette.text.primary,
+        fontWeight: 600,
       },
       cardAlert: {
         marginBottom: theme.spacing(2),
