@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-15 |       |
 | Implement | ✅ Complete | 2026-05-15 |       |
 | Review    | ✅ Complete | 2026-05-15 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-16 |       |
 
 ---
 
@@ -39,7 +39,21 @@ _Populated by `/implement [####]`_
 
 ## Test Results
 
-_Populated by `/test [####]`_
+### Execution Date: 2026-05-16
+
+**Unit tests — 6/6 passed** (`truncateText.test.ts`)
+**Component tests — 15/15 passed** (`ProjectListCard.test.tsx`, `ProjectsPage.test.tsx`)
+**E2E tests — 4/4 passed** (`e2e/projects-list.spec.ts`, Playwright 1.58.0, Chromium)
+
+All acceptance criteria covered:
+- AC-003: Sort order ✅ (E2E)
+- AC-004: Truncation at 120 chars ✅ (unit)
+- AC-009/010: Empty state CTA ✅ (E2E)
+- AC-013: Card → history navigation ✅ (E2E)
+- AC-016/018: Edit icon → settings navigation, no history propagation ✅ (E2E)
+- AC-022–025: Backend (JWT auth, userId scoping, soft-delete, empty array) ✅ covered by feature 0006 integration tests
+
+Backend `GET /v1/projects` was fully implemented by feature 0006 — no new backend tasks needed.
 
 ---
 
