@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-15 |       |
 | Implement | ✅ Complete | 2026-05-15 |       |
 | Review    | ✅ Complete | 2026-05-15 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-15 |       |
 
 ---
 
@@ -48,9 +48,25 @@ _Populated by `/implement 0020`_
 
 ---
 
-## Test Results
+## Test Results — 2026-05-15
 
-_Populated by `/test 0020`_
+### Gaps fixed
+
+- **AC-001 / AC-011** — Added `IntegrationPage.test.tsx`: verifies WorkItemTypeFilter section renders when PM tool is configured and is absent when not configured.
+- **AC-010** — Added `GetProject_IncludesAllowedWorkItemTypesField_InResponse` integration test: verifies GET response serialises `allowedWorkItemTypes` correctly.
+- **AC-015** — Added `ProcessAsync_WhenEventIsFiltered_WritesStructuredLogEntry` unit test: verifies `LogFiltered` emits a structured log entry with `webhook_filtered` and `issue_type_not_allowed` at `Information` level on every drop.
+
+### Final counts
+
+| Suite | Pass / Total |
+|---|---|
+| Unit — WorkItemTypeFilterService + JiraWebhookService | 22 / 22 |
+| Integration — ProjectController | 20 / 20 |
+| Component — WorkItemTypeFilter | 5 / 5 |
+| Component — IntegrationPage | 2 / 2 |
+| **Total** | **49 / 49** |
+
+### Status: Complete
 
 ---
 

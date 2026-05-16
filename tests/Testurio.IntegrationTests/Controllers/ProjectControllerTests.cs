@@ -106,6 +106,25 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     }
 
     [Fact]
+    public async Task GetProject_IncludesAllowedWorkItemTypesField_InResponse()
+    {
+        // AC-010: GET response includes the allowedWorkItemTypes field
+        var project = MakeProject();
+        project.AllowedWorkItemTypes = new[] { "Story", "Bug" };
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/v1/projects/proj-001");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(new[] { "Story", "Bug" }, body.AllowedWorkItemTypes);
+    }
+
+    [Fact]
     public async Task GetProject_Returns404_WhenNotFound()
     {
         _factory.ProjectRepoMock

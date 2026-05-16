@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Api.Services;
@@ -21,6 +22,7 @@ public class JiraWebhookServiceTests
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<IWorkItemTypeFilterService> _filterService = new();
+    private readonly Mock<ILogger<JiraWebhookService>> _logger = new();
 
     public JiraWebhookServiceTests()
     {
@@ -30,6 +32,9 @@ public class JiraWebhookServiceTests
         // Default: allow "Story" only — mirrors behaviour tests were written against.
         _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
         _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), It.Is<string>(s => s != "Story"))).Returns(false);
+
+        // [LoggerMessage] checks IsEnabled before calling Log — enable all levels so log calls fire.
+        _logger.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
     }
 
     private JiraWebhookService CreateSut() => new(
@@ -39,7 +44,7 @@ public class JiraWebhookServiceTests
         _jiraApiClient.Object,
         _secretResolver.Object,
         _filterService.Object,
-        NullLogger<JiraWebhookService>.Instance);
+        _logger.Object);
 
     private static Project MakeProject(string inTestingLabel = "In Testing") => new()
     {
@@ -251,6 +256,29 @@ public class JiraWebhookServiceTests
         _testRunRepo.VerifyNoOtherCalls();
         _jiraApiClient.VerifyNoOtherCalls();
         _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenEventIsFiltered_WritesStructuredLogEntry()
+    {
+        // AC-015: a structured log entry must be written for every dropped event
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Task")).Returns(false);
+
+        var payload = MakePayload(issueType: "Task");
+        var sut = CreateSut();
+
+        await sut.ProcessAsync(MakeProject(), payload);
+
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("webhook_filtered") &&
+                    state.ToString()!.Contains("issue_type_not_allowed")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
