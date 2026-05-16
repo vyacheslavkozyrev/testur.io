@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
@@ -17,9 +17,6 @@ i18nInstance.use(initReactI18next).init({
         'workItemTypeFilter.description': 'Only webhook events for the listed issue types will trigger a test run.',
         'workItemTypeFilter.inputLabel': 'Add issue type',
         'workItemTypeFilter.addButton': 'Add',
-        'workItemTypeFilter.saveError': 'Failed to save the work item type filter. Please try again.',
-        'workItemTypeFilter.validation.atLeastOne': 'At least one work item type must be selected',
-        'common.save': 'Save',
       },
     },
   },
@@ -37,12 +34,7 @@ describe('WorkItemTypeFilter', () => {
   it('renders the current types as chips', () => {
     render(
       <Wrapper>
-        <WorkItemTypeFilter
-          currentTypes={['Story', 'Bug']}
-          isSaving={false}
-          isError={false}
-          onSave={jest.fn()}
-        />
+        <WorkItemTypeFilter currentTypes={['Story', 'Bug']} onChange={jest.fn()} />
       </Wrapper>,
     );
 
@@ -50,16 +42,12 @@ describe('WorkItemTypeFilter', () => {
     expect(screen.getByText('Bug')).toBeInTheDocument();
   });
 
-  it('adds a type when the Add button is clicked', async () => {
+  it('calls onChange with the new list when a type is added', async () => {
+    const onChange = jest.fn();
     const user = userEvent.setup();
     render(
       <Wrapper>
-        <WorkItemTypeFilter
-          currentTypes={[]}
-          isSaving={false}
-          isError={false}
-          onSave={jest.fn()}
-        />
+        <WorkItemTypeFilter currentTypes={[]} onChange={onChange} />
       </Wrapper>,
     );
 
@@ -67,18 +55,15 @@ describe('WorkItemTypeFilter', () => {
     fireEvent.click(screen.getByRole('button', { name: /Add/i }));
 
     expect(screen.getByText('Epic')).toBeInTheDocument();
+    expect(onChange).toHaveBeenCalledWith(['Epic']);
   });
 
-  it('removes a type when its delete button is clicked', async () => {
+  it('calls onChange with the updated list when a type is removed', async () => {
+    const onChange = jest.fn();
     const user = userEvent.setup();
     render(
       <Wrapper>
-        <WorkItemTypeFilter
-          currentTypes={['Story', 'Bug']}
-          isSaving={false}
-          isError={false}
-          onSave={jest.fn()}
-        />
+        <WorkItemTypeFilter currentTypes={['Story', 'Bug']} onChange={onChange} />
       </Wrapper>,
     );
 
@@ -86,45 +71,22 @@ describe('WorkItemTypeFilter', () => {
     await user.click(deleteButtons[0]);
 
     expect(screen.queryByText('Story')).not.toBeInTheDocument();
-    expect(screen.getByText('Bug')).toBeInTheDocument();
+    expect(onChange).toHaveBeenCalledWith(['Bug']);
   });
 
-  it('shows validation error and does not call onSave when list is empty', async () => {
-    const onSave = jest.fn();
+  it('does not add a duplicate type', async () => {
+    const onChange = jest.fn();
+    const user = userEvent.setup();
     render(
       <Wrapper>
-        <WorkItemTypeFilter
-          currentTypes={[]}
-          isSaving={false}
-          isError={false}
-          onSave={onSave}
-        />
+        <WorkItemTypeFilter currentTypes={['Story']} onChange={onChange} />
       </Wrapper>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    await user.type(screen.getByLabelText(/Add issue type/i), 'Story');
+    fireEvent.click(screen.getByRole('button', { name: /Add/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText('At least one work item type must be selected')).toBeInTheDocument();
-    });
-    expect(onSave).not.toHaveBeenCalled();
-  });
-
-  it('calls onSave with the current type list when valid', async () => {
-    const onSave = jest.fn();
-    render(
-      <Wrapper>
-        <WorkItemTypeFilter
-          currentTypes={['Story', 'Bug']}
-          isSaving={false}
-          isError={false}
-          onSave={onSave}
-        />
-      </Wrapper>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    expect(onSave).toHaveBeenCalledWith(['Story', 'Bug']);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getAllByText('Story')).toHaveLength(1);
   });
 });

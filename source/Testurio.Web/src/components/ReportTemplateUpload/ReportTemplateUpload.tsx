@@ -92,7 +92,7 @@ export default function ReportTemplateUpload({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="body2" sx={styles.sectionLabel}>
+      <Typography variant="subtitle1" sx={styles.title}>
         {t('template.title')}
       </Typography>
 
@@ -209,13 +209,9 @@ const getStyles = (theme: Theme) =>
   useMemo(
     () => ({
       root: { display: 'flex', flexDirection: 'column' as const, gap: theme.spacing(1.5) },
-      sectionLabel: {
-        fontWeight: 600,
-        textTransform: 'uppercase' as const,
-        letterSpacing: '0.07em',
-        color: theme.palette.text.secondary,
-        fontSize: theme.typography.caption.fontSize,
-        marginBottom: theme.spacing(0.5),
+      title: {
+        ...theme.typography.subtitle1,
+        color: theme.palette.text.primary,
       },
       existingTemplate: {
         display: 'flex',

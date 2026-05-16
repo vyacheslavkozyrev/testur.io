@@ -68,7 +68,7 @@ export default function WebhookSetupPanel({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="body2" sx={styles.sectionLabel}>
+      <Typography variant="subtitle1" sx={styles.title}>
         {t('webhookSetup.title')}
       </Typography>
 
@@ -165,13 +165,9 @@ const getStyles = (theme: Theme) =>
         flexDirection: 'column',
         gap: theme.spacing(2),
       },
-      sectionLabel: {
-        fontWeight: 600,
-        textTransform: 'uppercase' as const,
-        letterSpacing: '0.07em',
-        color: theme.palette.text.secondary,
-        fontSize: theme.typography.caption.fontSize,
-        marginBottom: theme.spacing(0.5),
+      title: {
+        ...theme.typography.subtitle1,
+        color: theme.palette.text.primary,
       },
       maskedAlert: {
         width: '100%',
