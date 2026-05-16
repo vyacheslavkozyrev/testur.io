@@ -40,6 +40,12 @@ public interface IProjectService
     /// Returns the result discriminator so callers can distinguish NotFound from Forbidden.
     /// </summary>
     Task<(ProjectOperationResult Result, ProjectDto? Dto)> GetWithOwnershipCheckAsync(string userId, string projectId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates only the <c>AllowedWorkItemTypes</c> field on the project document (AC-006).
+    /// Returns the result discriminator so callers can return the correct HTTP status.
+    /// </summary>
+    Task<(ProjectOperationResult Result, ProjectDto? Dto)> UpdateWorkItemTypeFilterAsync(string userId, string projectId, string[] allowedWorkItemTypes, CancellationToken cancellationToken = default);
 }
 
 public partial class ProjectService : IProjectService
@@ -152,12 +158,34 @@ public partial class ProjectService : IProjectService
         return (ProjectOperationResult.Success, ToDto(project));
     }
 
+    public async Task<(ProjectOperationResult Result, ProjectDto? Dto)> UpdateWorkItemTypeFilterAsync(string userId, string projectId, string[] allowedWorkItemTypes, CancellationToken cancellationToken = default)
+    {
+        var anyProject = await _projectRepository.GetByProjectIdAsync(projectId, cancellationToken);
+        if (anyProject is null)
+            return (ProjectOperationResult.NotFound, null);
+
+        if (anyProject.UserId != userId)
+            return (ProjectOperationResult.Forbidden, null);
+
+        var existing = await _projectRepository.GetByIdAsync(userId, projectId, cancellationToken);
+        if (existing is null)
+            return (ProjectOperationResult.NotFound, null);
+
+        existing.AllowedWorkItemTypes = allowedWorkItemTypes;
+        existing.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var updated = await _projectRepository.UpdateAsync(existing, cancellationToken);
+        LogWorkItemTypeFilterUpdated(_logger, updated.Id, userId);
+        return (ProjectOperationResult.Success, ToDto(updated));
+    }
+
     private static ProjectDto ToDto(Project project) => new(
         ProjectId: project.Id,
         Name: project.Name,
         ProductUrl: project.ProductUrl,
         TestingStrategy: project.TestingStrategy,
         CustomPrompt: project.CustomPrompt,
+        AllowedWorkItemTypes: project.AllowedWorkItemTypes,
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 
@@ -172,4 +200,7 @@ public partial class ProjectService : IProjectService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Project {ProjectId} soft-deleted by user {UserId}")]
     private static partial void LogProjectDeleted(ILogger logger, string projectId, string userId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Work item type filter updated on project {ProjectId} by user {UserId}")]
+    private static partial void LogWorkItemTypeFilterUpdated(ILogger logger, string projectId, string userId);
 }

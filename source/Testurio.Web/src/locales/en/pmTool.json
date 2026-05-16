@@ -106,5 +106,15 @@
     "dialogTitle": "Remove PM Tool Integration",
     "warning": "Removing the integration will immediately stop any active test run for this project, clear any queued test jobs, and deregister the webhook from your PM tool. This action cannot be undone.",
     "confirm": "Remove Integration"
+  },
+  "workItemTypeFilter": {
+    "title": "Work Item Type Filter",
+    "description": "Only webhook events for the listed issue types will trigger a test run. Type names are matched exactly as reported by your PM tool (case-sensitive).",
+    "inputLabel": "Add issue type",
+    "addButton": "Add",
+    "saveError": "Failed to save the work item type filter. Please try again.",
+    "validation": {
+      "atLeastOne": "At least one work item type must be selected"
+    }
   }
 }

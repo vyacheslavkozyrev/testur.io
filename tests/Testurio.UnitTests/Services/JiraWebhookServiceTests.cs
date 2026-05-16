@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Api.Services;
@@ -20,11 +21,20 @@ public class JiraWebhookServiceTests
     private readonly Mock<ITestRunJobSender> _jobSender = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+    private readonly Mock<IWorkItemTypeFilterService> _filterService = new();
+    private readonly Mock<ILogger<JiraWebhookService>> _logger = new();
 
     public JiraWebhookServiceTests()
     {
         _secretResolver.Setup(r => r.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string s, CancellationToken _) => s);
+
+        // Default: allow "Story" only — mirrors behaviour tests were written against.
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), It.Is<string>(s => s != "Story"))).Returns(false);
+
+        // [LoggerMessage] checks IsEnabled before calling Log — enable all levels so log calls fire.
+        _logger.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
     }
 
     private JiraWebhookService CreateSut() => new(
@@ -33,7 +43,8 @@ public class JiraWebhookServiceTests
         _jobSender.Object,
         _jiraApiClient.Object,
         _secretResolver.Object,
-        NullLogger<JiraWebhookService>.Instance);
+        _filterService.Object,
+        _logger.Object);
 
     private static Project MakeProject(string inTestingLabel = "In Testing") => new()
     {
@@ -208,5 +219,99 @@ public class JiraWebhookServiceTests
 
         Assert.Equal(WebhookProcessResult.Enqueued, result);
         _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
+    }
+
+    // ─── Work item type filter behaviour (AC-012–016) ────────────────────────
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeMatchesAllowedType_Enqueues()
+    {
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
+        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync((TestRun?)null);
+        _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
+            .ReturnsAsync((TestRun r, CancellationToken _) => r);
+        _jobSender.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), default)).Returns(Task.CompletedTask);
+
+        var payload = MakePayload(issueType: "Story");
+        var sut = CreateSut();
+
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        Assert.Equal(WebhookProcessResult.Enqueued, result);
+        _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeNotInAllowedList_DropsEventSilently()
+    {
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Task")).Returns(false);
+
+        var payload = MakePayload(issueType: "Task");
+        var sut = CreateSut();
+
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        // AC-014: silently dropped — no test run created, no comment posted, no run enqueued
+        Assert.Equal(WebhookProcessResult.Ignored, result);
+        _testRunRepo.VerifyNoOtherCalls();
+        _jiraApiClient.VerifyNoOtherCalls();
+        _runQueueRepo.Verify(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenEventIsFiltered_WritesStructuredLogEntry()
+    {
+        // AC-015: a structured log entry must be written for every dropped event
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Task")).Returns(false);
+
+        var payload = MakePayload(issueType: "Task");
+        var sut = CreateSut();
+
+        await sut.ProcessAsync(MakeProject(), payload);
+
+        _logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("webhook_filtered") &&
+                    state.ToString()!.Contains("issue_type_not_allowed")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeFieldMissing_PassesEmptyStringToFilterService()
+    {
+        // Missing issue type field (null) → empty string → filter service decides
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), string.Empty)).Returns(false);
+
+        var payload = new JiraWebhookPayload
+        {
+            WebhookEvent = "jira:issue_updated",
+            Issue = new JiraIssue
+            {
+                Id = "10001",
+                Key = "PROJ-1",
+                Fields = new JiraIssueFields
+                {
+                    IssueType = null, // missing
+                    Status = new JiraStatus { Name = "In Testing" },
+                    Description = "A description"
+                }
+            },
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = "In Testing" }]
+            }
+        };
+
+        var sut = CreateSut();
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        // Filter service is called with empty string — the decision is its responsibility (AC-016)
+        _filterService.Verify(f => f.IsAllowed(It.IsAny<Project>(), string.Empty), Times.Once);
+        Assert.Equal(WebhookProcessResult.Ignored, result);
     }
 }

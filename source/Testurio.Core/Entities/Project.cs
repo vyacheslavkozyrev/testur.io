@@ -54,6 +54,21 @@ public class Project
     /// <summary>True after the webhook secret has been viewed once in plaintext; subsequent views are masked.</summary>
     public bool WebhookSecretViewed { get; set; } = false;
 
+    // Work item type filter — feature 0020
+    /// <summary>
+    /// Issue type names that are allowed to trigger a test run. Null means use the PM-tool default list.
+    /// Jira default: ["Story", "Bug"]. ADO default: ["User Story", "Bug"].
+    /// </summary>
+    public string[]? AllowedWorkItemTypes { get; set; }
+
+    /// <summary>Returns the default allowed issue types for the given PM tool.</summary>
+    public static string[] GetDefaultAllowedWorkItemTypes(PMToolType pmTool) => pmTool switch
+    {
+        PMToolType.Ado  => ["User Story", "Bug"],
+        PMToolType.Jira => ["Story", "Bug"],
+        _               => ["Story", "Bug"],
+    };
+
     // Report format & attachment settings — feature 0009
     /// <summary>Blob Storage URI of the custom report template (.md file). Null means built-in default is used.</summary>
     public string? ReportTemplateUri { get; set; }

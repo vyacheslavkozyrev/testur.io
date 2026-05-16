@@ -9,7 +9,6 @@ namespace Testurio.Api.Services;
 
 public partial class JiraWebhookService : IJiraWebhookService
 {
-    private const string UserStoryIssueType = "Story";
     private const string SkipReasonIncompleteStory = "Skipped — incomplete story";
 
     private readonly ITestRunRepository _testRunRepository;
@@ -17,6 +16,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     private readonly ITestRunJobSender _jobSender;
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
+    private readonly IWorkItemTypeFilterService _filterService;
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
@@ -25,6 +25,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         ITestRunJobSender jobSender,
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
+        IWorkItemTypeFilterService filterService,
         ILogger<JiraWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
@@ -32,6 +33,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         _jobSender = jobSender;
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
+        _filterService = filterService;
         _logger = logger;
     }
 
@@ -46,8 +48,12 @@ public partial class JiraWebhookService : IJiraWebhookService
         var issue = payload.Issue;
         var fields = issue.Fields;
 
-        if (fields?.IssueType?.Name != UserStoryIssueType)
+        var issueType = fields?.IssueType?.Name ?? string.Empty;
+        if (!_filterService.IsAllowed(project, issueType))
+        {
+            LogFiltered(_logger, issueType, project.Id, "webhook_filtered", "issue_type_not_allowed");
             return WebhookProcessResult.Ignored;
+        }
 
         var statusChange = payload.Changelog?.Items.FirstOrDefault(i => i.Field == "status");
         if (statusChange is null)
@@ -170,4 +176,8 @@ public partial class JiraWebhookService : IJiraWebhookService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Enqueued test run {TestRunId} for {IssueKey} in project {ProjectId}")]
     private static partial void LogEnqueued(ILogger logger, string issueKey, string projectId, string testRunId);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "Webhook filtered: issue type '{IssueType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
+    private static partial void LogFiltered(ILogger logger, string issueType, string projectId, string eventType, string reason);
 }

@@ -17,6 +17,7 @@ import JiraConnectionForm from '@/components/Integrations/JiraConnectionForm/Jir
 import RemoveIntegrationDialog from '@/components/Integrations/RemoveIntegrationDialog/RemoveIntegrationDialog';
 import TestConnectionButton from '@/components/Integrations/TestConnectionButton/TestConnectionButton';
 import WebhookSetupPanel from '@/components/Integrations/WebhookSetupPanel/WebhookSetupPanel';
+import WorkItemTypeFilter from '@/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter';
 import {
   useIntegrationStatus,
   useSaveADOConnection,
@@ -27,6 +28,7 @@ import {
   useRegenerateWebhookSecret,
   useUpdateToken,
 } from '@/hooks/usePMToolConnection';
+import { useProject, useUpdateWorkItemTypeFilter } from '@/hooks/useProject';
 import type { PMToolType, SaveADOConnectionRequest, SaveJiraConnectionRequest, UpdateTokenRequest } from '@/types/pmTool.types';
 
 type FormMode = 'none' | 'add-ado' | 'add-jira' | 'update-token';
@@ -49,7 +51,27 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   const [updateEmailValue, setUpdateEmailValue] = useState('');
 
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
-  const isConfigured = integration?.pmTool !== null;
+  const { data: project, isPending: isProjectPending } = useProject(projectId ?? '');
+  const updateWorkItemTypeFilter = useUpdateWorkItemTypeFilter(projectId ?? '');
+
+  const isConfigured = integration?.pmTool !== null && integration?.pmTool !== undefined;
+
+  const defaultWorkItemTypes = useMemo(() => {
+    if (integration?.pmTool === 'ado') return ['User Story', 'Bug'];
+    return ['Story', 'Bug'];
+  }, [integration?.pmTool]);
+
+  const effectiveWorkItemTypes = useMemo(
+    () => project?.allowedWorkItemTypes ?? defaultWorkItemTypes,
+    [project?.allowedWorkItemTypes, defaultWorkItemTypes],
+  );
+
+  const handleSaveWorkItemTypeFilter = useCallback(
+    (types: string[]) => {
+      updateWorkItemTypeFilter.mutate({ allowedWorkItemTypes: types });
+    },
+    [updateWorkItemTypeFilter],
+  );
 
   const { data: webhookSetup, isPending: isWebhookPending } = useWebhookSetup(
     projectId ?? '',
@@ -163,6 +185,18 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
                 isSubmitting={saveJira.isPending}
                 onSubmit={handleSaveJira}
                 onCancel={handleCancelForm}
+              />
+            </>
+          )}
+
+          {isConfigured && formMode === 'none' && (
+            <>
+              <Divider />
+              <WorkItemTypeFilter
+                currentTypes={effectiveWorkItemTypes}
+                isSaving={updateWorkItemTypeFilter.isPending || isProjectPending}
+                isError={updateWorkItemTypeFilter.isError}
+                onSave={handleSaveWorkItemTypeFilter}
               />
             </>
           )}

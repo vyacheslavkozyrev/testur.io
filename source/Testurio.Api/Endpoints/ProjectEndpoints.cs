@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Testurio.Api.DTOs;
 using Testurio.Api.Middleware;
 using Testurio.Api.Services;
@@ -22,6 +23,9 @@ public static class ProjectEndpoints
         projects.MapDelete("/{projectId}", DeleteProjectAsync).WithName("DeleteProject");
         projects.MapPost("/{projectId}/prompt-check", PromptCheckAsync).WithName("PromptCheck")
             .AddEndpointFilter<ValidationFilter<PromptCheckRequest>>();
+
+        projects.MapPatch("/{projectId}/work-item-type-filter", UpdateWorkItemTypeFilterAsync).WithName("UpdateWorkItemTypeFilter")
+            .AddEndpointFilter<ValidationFilter<UpdateWorkItemTypeFilterRequest>>();
 
         return app;
     }
@@ -112,6 +116,23 @@ public static class ProjectEndpoints
 
         var feedback = await promptCheckService.CheckAsync(request.CustomPrompt, project.TestingStrategy, cancellationToken);
         return TypedResults.Ok(feedback);
+    }
+
+    private static async Task<Results<Ok<ProjectDto>, NotFound, ForbidHttpResult>> UpdateWorkItemTypeFilterAsync(
+        string projectId,
+        [FromBody] UpdateWorkItemTypeFilterRequest request,
+        ClaimsPrincipal user,
+        IProjectService projectService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        var (result, dto) = await projectService.UpdateWorkItemTypeFilterAsync(userId, projectId, request.AllowedWorkItemTypes, cancellationToken);
+        return result switch
+        {
+            ProjectOperationResult.Forbidden => TypedResults.Forbid(),
+            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
+            _                                => TypedResults.Ok(dto!),
+        };
     }
 }
 

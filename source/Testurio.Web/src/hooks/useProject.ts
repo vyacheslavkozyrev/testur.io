@@ -4,6 +4,7 @@ import type {
   ProjectDto,
   CreateProjectRequest,
   UpdateProjectRequest,
+  UpdateWorkItemTypeFilterRequest,
   PromptCheckRequest,
   PromptCheckFeedback,
 } from '@/types/project.types';
@@ -64,5 +65,16 @@ export function useDeleteProject() {
 export function usePromptCheck(projectId: string) {
   return useMutation<PromptCheckFeedback, ApiError, PromptCheckRequest>({
     mutationFn: (body) => projectService.promptCheck(projectId, body),
+  });
+}
+
+export function useUpdateWorkItemTypeFilter(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation<ProjectDto, ApiError, UpdateWorkItemTypeFilterRequest>({
+    mutationFn: (body) => projectService.updateWorkItemTypeFilter(projectId, body),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: PROJECT_KEYS.all });
+      queryClient.setQueryData(PROJECT_KEYS.detail(projectId), updated);
+    },
   });
 }
