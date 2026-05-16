@@ -23,6 +23,9 @@ export const theme = createTheme({
       paper: '#ffffff',
     },
   },
+  shape: {
+    borderRadius: 5,
+  },
   typography: {
     fontFamily: 'Inter, sans-serif',
   },

@@ -54,27 +54,27 @@ const mockProject: ProjectDto = {
 };
 
 describe('ProjectForm', () => {
-  it('renders create title when no project is provided', () => {
+  it('renders the create button in create mode', () => {
     const onSubmit = jest.fn();
     render(
       <Wrapper>
         <ProjectForm isSubmitting={false} onSubmit={onSubmit} />
       </Wrapper>,
     );
-    expect(screen.getByRole('heading', { name: 'Create Project' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /create project/i })).toBeInTheDocument();
   });
 
-  it('renders edit title and pre-fills fields when project is provided', () => {
+  it('pre-fills fields and hides the create button when project is provided', () => {
     const onSubmit = jest.fn();
     render(
       <Wrapper>
         <ProjectForm project={mockProject} isSubmitting={false} onSubmit={onSubmit} />
       </Wrapper>,
     );
-    expect(screen.getByRole('heading', { name: 'Edit Project' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Existing Project')).toBeInTheDocument();
     expect(screen.getByDisplayValue('https://existing.example.com')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Smoke tests.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /create project/i })).not.toBeInTheDocument();
   });
 
   it('shows validation error when name is empty on submit', async () => {

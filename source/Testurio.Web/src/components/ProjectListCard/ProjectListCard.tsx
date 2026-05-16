@@ -84,7 +84,7 @@ const getStyles = (theme: Theme) => ({
     display: 'flex',
     flexDirection: 'column' as const,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: 1,
     transition: 'box-shadow 150ms ease',
     '&:hover': {
       boxShadow: theme.shadows[4],

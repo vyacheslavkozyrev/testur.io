@@ -92,7 +92,7 @@ export default function ReportTemplateUpload({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="subtitle1" sx={styles.sectionTitle}>
+      <Typography variant="subtitle1" sx={styles.title}>
         {t('template.title')}
       </Typography>
 
@@ -208,14 +208,17 @@ const getStyles = (theme: Theme) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
-      root: { display: 'flex', flexDirection: 'column' as const, gap: theme.spacing(1) },
-      sectionTitle: { fontWeight: 600 },
+      root: { display: 'flex', flexDirection: 'column' as const, gap: theme.spacing(1.5) },
+      title: {
+        ...theme.typography.subtitle1,
+        color: theme.palette.text.primary,
+      },
       existingTemplate: {
         display: 'flex',
         alignItems: 'center',
         gap: theme.spacing(2),
         padding: theme.spacing(1.5),
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 1,
         border: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.action.hover,
       },

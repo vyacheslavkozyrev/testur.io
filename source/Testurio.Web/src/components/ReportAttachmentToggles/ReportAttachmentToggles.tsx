@@ -59,7 +59,7 @@ export default function ReportAttachmentToggles({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="subtitle1" sx={styles.sectionTitle}>
+      <Typography variant="body2" sx={styles.sectionLabel}>
         {t('attachments.title')}
       </Typography>
 
@@ -101,7 +101,14 @@ const getStyles = (theme: Theme) =>
         flexDirection: 'column' as const,
         gap: theme.spacing(1),
       },
-      sectionTitle: { fontWeight: 600 },
+      sectionLabel: {
+        fontWeight: 600,
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.07em',
+        color: theme.palette.text.secondary,
+        fontSize: theme.typography.caption.fontSize,
+        marginBottom: theme.spacing(0.5),
+      },
     }),
     [theme],
   );

@@ -118,9 +118,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(1),
-        padding: theme.spacing(3),
-        border: `1px dashed ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
         alignItems: 'flex-start',
       },
       addLink: {
@@ -135,9 +132,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(2),
-        padding: theme.spacing(3),
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
       },
       row: {
         display: 'flex',

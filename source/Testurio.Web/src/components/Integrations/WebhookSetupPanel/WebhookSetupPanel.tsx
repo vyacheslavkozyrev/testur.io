@@ -68,7 +68,7 @@ export default function WebhookSetupPanel({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="h6" sx={styles.title}>
+      <Typography variant="subtitle1" sx={styles.title}>
         {t('webhookSetup.title')}
       </Typography>
 
@@ -164,12 +164,9 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(2),
-        padding: theme.spacing(3),
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
       },
       title: {
-        ...theme.typography.h6,
+        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       maskedAlert: {
