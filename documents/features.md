@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.5.0
+version: 1.6.0
 status: draft
-updated: 2026-05-11
+updated: 2026-05-15
 tags: [features, business, product]
 ---
 
@@ -165,6 +165,12 @@ Each subscription plan defines a maximum number of test run triggers per day. Wh
 ---
 
 ## MVP — Statistics & Dashboard
+
+**[0010a]: Private Cabinet Main Layout & Navigation** `MVP`
+_Business Outcome: Gives every authenticated page a consistent, recognisable shell so QA leads can orient themselves and navigate without friction._
+All authenticated pages are rendered inside a shared shell layout. The top header displays the Testurio logo on the left and the signed-in user's avatar and display name on the right. A collapsible left sidebar contains primary navigation links — Dashboard and Projects — followed by Settings. A Sign Out action is pinned at the bottom of the sidebar. The active link is visually highlighted. The layout is the entry point for all portal pages and must be in place before any authenticated page is implemented.
+
+---
 
 **[0010]: Project Dashboard — Snapshot** `MVP`
 _Business Outcome: Gives the QA lead an at-a-glance view of testing health across all products._

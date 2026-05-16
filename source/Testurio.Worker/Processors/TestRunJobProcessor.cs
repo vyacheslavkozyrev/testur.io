@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
+using Testurio.Pipeline.StoryParser;
 using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
 
@@ -99,7 +101,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             await _testRunRepository.UpdateAsync(testRun, args.CancellationToken);
 
             // Full pipeline:
-            //   Stage 1: StoryParser (0025) — parse work item → ParsedStory [pending feature 0025]
+            //   Stage 1: StoryParser (0025) — parse work item → ParsedStory, update ParserMode
             //   Stage 2: AgentRouter (0026) — classify story → resolve test types
             //   Stage 3: ScenarioGeneration (0002) — generate test scenarios
             //   Stage 4: ApiTestExecution (0003) — execute API tests
@@ -123,9 +125,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
 
-            // ScenarioGenerationException is a permanent failure — dead-letter so Service Bus
-            // does not retry and flood the LLM with repeated calls for the same broken run.
-            if (ex is ScenarioGenerationException)
+            // StoryParserException and ScenarioGenerationException are permanent failures — dead-letter
+            // so Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
+            if (ex is StoryParserException or ScenarioGenerationException)
                 await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
             else
                 await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
@@ -138,14 +140,48 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         if (project is null)
             throw new InvalidOperationException($"Project {testRun.ProjectId} not found for user {testRun.UserId}");
 
-        // Stage 2: AgentRouter — classify the story and resolve test types (feature 0026).
+        // Stage 1: Build WorkItem from run context and parse the story (feature 0025).
+        // The WorkItem carries the issue key and PM tool type so TemplateChecker can detect
+        // non-conformance and PmToolCommentPoster can post the warning comment.
         //
-        // KNOWN ARCHITECTURAL DEBT (tracked for feature 0025 integration):
-        // The ParsedStory here is constructed from the run's issue key as the title only.
-        // Full story content (description, acceptance criteria) will be populated when the
-        // StoryParser pipeline stage (feature 0025) is wired in before this stage.
-        // Until that refactor is complete, Claude will classify based on the issue key alone.
-        var parsedStory = BuildMinimalParsedStory(testRun);
+        // KNOWN ARCHITECTURAL DEBT (tracked for feature 0002 refactor):
+        // Description and AcceptanceCriteria are empty stubs at this point — the full story content
+        // is currently fetched inside ScenarioGenerationStep (feature 0002). Because both fields are
+        // empty, the TemplateChecker will always report non-conformant and the parser will always take
+        // the AI-conversion path. Moving the story fetch from ScenarioGenerationStep to here is
+        // required to make the direct-parse path functional. Until that refactor is complete,
+        // ParserMode will always be recorded as AiConverted.
+        var workItem = BuildWorkItem(testRun, project);
+
+        // Resolve via IStoryParser (interface contract). StoryParserService is also resolved directly
+        // for the project-aware overload that posts the PM tool warning comment. This concrete resolve
+        // is intentional and documented — it will be eliminated when IStoryParser is extended to
+        // accept Project? as a parameter in a follow-up task.
+        var storyParser = _serviceProvider.GetRequiredService<IStoryParser>();
+        ParsedStory parsedStory;
+        try
+        {
+            parsedStory = storyParser is StoryParserService sps
+                ? await sps.ParseAsync(workItem, project, cancellationToken)
+                : await storyParser.ParseAsync(workItem, cancellationToken);
+        }
+        catch (StoryParserException)
+        {
+            // AC-018: record failure detail before re-throwing so the run history is updated.
+            testRun.SkipReason = "Failed — StoryParser error";
+            await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
+            throw;
+        }
+
+        // AC-020: persist parserMode to the TestRun record after the parse step completes.
+        // ParserMode is determined from whether the work item was conformant.
+        // See architectural debt note above — currently always AiConverted due to empty stubs.
+        var templateChecker = _serviceProvider.GetRequiredService<TemplateChecker>();
+        testRun.ParserMode = templateChecker.IsConformant(workItem) ? ParserMode.Direct : ParserMode.AiConverted;
+        await _testRunRepository.UpdateAsync(testRun, cancellationToken);
+        LogParsed(_logger, testRun.Id, testRun.ParserMode.Value.ToString());
+
+        // Stage 2: AgentRouter — classify the story and resolve test types (feature 0026).
         var routerResult = await _agentRouter.RouteAsync(parsedStory, project, testRun, cancellationToken);
         LogRouted(_logger, testRun.Id, string.Join(", ", routerResult.ResolvedTestTypes));
 
@@ -170,21 +206,26 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     }
 
     /// <summary>
-    /// Builds a minimal <see cref="ParsedStory"/> from the run context for routing classification.
-    /// Description and AcceptanceCriteria are empty at this point — full story content will be
-    /// populated when the StoryParser stage (feature 0025) is wired in before the AgentRouter stage.
+    /// Builds a <see cref="WorkItem"/> from the test run and project context.
+    /// Description and AcceptanceCriteria are empty at this point — full story content is fetched
+    /// from Jira/ADO inside ScenarioGenerationStep (feature 0002). The WorkItem here is used
+    /// by the StoryParser stage to determine parser mode and post PM tool warnings on non-conformance.
     /// </summary>
-    private static ParsedStory BuildMinimalParsedStory(TestRun testRun) =>
-        new()
+    private static WorkItem BuildWorkItem(TestRun testRun, Core.Entities.Project project)
+    {
+        var pmToolType = project.PmTool ?? PMToolType.Jira;
+        return new WorkItem
         {
             Title = testRun.JiraIssueKey,
-            // Description and AcceptanceCriteria will be fully populated when the StoryParser
-            // stage (feature 0025) is wired in before the AgentRouter stage. Until then,
-            // a placeholder is used so the type contract (at least one AC) is honoured and
-            // the limitation is visible in the Claude prompt itself.
-            Description = "(Story content not yet available — pending StoryParser integration)",
-            AcceptanceCriteria = new[] { "(Acceptance criteria not yet available — pending StoryParser integration)" }
+            Description = string.Empty,
+            AcceptanceCriteria = string.Empty,
+            PmToolType = pmToolType,
+            IssueKey = testRun.JiraIssueKey,
+            AdoWorkItemId = pmToolType == PMToolType.Ado && int.TryParse(testRun.JiraIssueId, out var id)
+                ? id
+                : null
         };
+    }
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
     {
@@ -202,6 +243,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Completed test run {TestRunId} for project {ProjectId}")]
     private static partial void LogCompleted(ILogger logger, string testRunId, string projectId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Story parsed for test run {TestRunId} — mode: {ParserMode}")]
+    private static partial void LogParsed(ILogger logger, string testRunId, string parserMode);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AgentRouter resolved types [{Types}] for test run {TestRunId}")]
     private static partial void LogRouted(ILogger logger, string testRunId, string types);

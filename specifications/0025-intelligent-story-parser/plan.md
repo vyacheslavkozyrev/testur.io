@@ -2,25 +2,25 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `WorkItem` model (PM-tool-agnostic input to the parser) — `source/Testurio.Core/Models/WorkItem.cs`
-- [ ] T002 [Domain] Create `ParsedStory` immutable record (output contract shared with all downstream stages) — `source/Testurio.Core/Models/ParsedStory.cs`
-- [ ] T003 [Domain] Create `StoryParserException` typed exception — `source/Testurio.Core/Exceptions/StoryParserException.cs`
-- [ ] T004 [Domain] Add `IStoryParser` interface (`ParseAsync(WorkItem, CancellationToken) → Task<ParsedStory>`) — `source/Testurio.Core/Interfaces/IStoryParser.cs`
-- [ ] T005 [Domain] Extend `TestRun` entity with `ParserMode` enum field (`direct` | `ai_converted`) — `source/Testurio.Core/Entities/TestRun.cs`
-- [ ] T006 [Infra] Add `parserMode` field to `TestRunRepository` Cosmos write path — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
-- [ ] T007 [Infra] Update DI registration to expose `AnthropicClient` singleton for pipeline projects — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T008 [App] Implement `TemplateChecker` (rule-based: validates title, description, and at least one AC are non-empty) — `source/Testurio.Pipeline.StoryParser/TemplateChecker.cs`
-- [ ] T009 [App] Implement `DirectParser` (heuristic extraction of entities, actions, edge_cases from raw text; returns `ParsedStory`) — `source/Testurio.Pipeline.StoryParser/DirectParser.cs`
-- [ ] T010 [App] Implement `AiStoryConverter` (calls Claude `claude-opus-4-7` with adaptive thinking; deserialises and validates response against `ParsedStory` schema) — `source/Testurio.Pipeline.StoryParser/AiStoryConverter.cs`
-- [ ] T011 [App] Implement `PmToolCommentPoster` (posts warning comment to ADO or Jira ticket asynchronously based on run context; fire-and-forget with error swallowing) — `source/Testurio.Pipeline.StoryParser/PmToolCommentPoster.cs`
-- [ ] T012 [App] Implement `StoryParserService` (orchestrates `TemplateChecker` → `DirectParser` or `AiStoryConverter` + `PmToolCommentPoster`; implements `IStoryParser`) — `source/Testurio.Pipeline.StoryParser/StoryParserService.cs`
-- [ ] T013 [Config] Register `StoryParserService` as `IStoryParser` and its dependencies in DI — `source/Testurio.Pipeline.StoryParser/DependencyInjection.cs`
-- [ ] T014 [Worker] Inject `IStoryParser` into `TestRunJobProcessor` and invoke `ParseAsync` as the first pipeline stage; update `TestRun.ParserMode` after parse; propagate `StoryParserException` to run-failure handler — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T015 [Test] Unit tests for `TemplateChecker` (all three missing-field variants + all-present happy path) — `tests/Testurio.UnitTests/Pipeline/TemplateCheckerTests.cs`
-- [ ] T016 [Test] Unit tests for `DirectParser` (field extraction, empty arrays when not detected, no-Claude-call assertion) — `tests/Testurio.UnitTests/Pipeline/DirectParserTests.cs`
-- [ ] T017 [Test] Unit tests for `AiStoryConverter` (valid response → schema passes; malformed response → `StoryParserException`; Claude API error → `StoryParserException`) — `tests/Testurio.UnitTests/Pipeline/AiStoryConverterTests.cs`
-- [ ] T018 [Test] Unit tests for `StoryParserService` (conformant story → direct path, no AI call, no comment; non-conformant → AI path, comment posted; AI failure → `StoryParserException` thrown; comment-post failure → pipeline continues) — `tests/Testurio.UnitTests/Pipeline/StoryParserServiceTests.cs`
-- [ ] T019 [Test] Integration tests for the full parse stage via `TestRunJobProcessor` (conformant story end-to-end; non-conformant story end-to-end with mocked Anthropic and PM tool clients) — `tests/Testurio.IntegrationTests/Pipeline/StoryParserIntegrationTests.cs`
+- [x] T001 [Domain] Create `WorkItem` model (PM-tool-agnostic input to the parser) — `source/Testurio.Core/Models/WorkItem.cs`
+- [x] T002 [Domain] Create `ParsedStory` immutable record (output contract shared with all downstream stages) — `source/Testurio.Core/Models/ParsedStory.cs`
+- [x] T003 [Domain] Create `StoryParserException` typed exception — `source/Testurio.Core/Exceptions/StoryParserException.cs`
+- [x] T004 [Domain] Add `IStoryParser` interface (`ParseAsync(WorkItem, CancellationToken) → Task<ParsedStory>`) — `source/Testurio.Core/Interfaces/IStoryParser.cs`
+- [x] T005 [Domain] Extend `TestRun` entity with `ParserMode` enum field (`direct` | `ai_converted`) — `source/Testurio.Core/Entities/TestRun.cs`
+- [x] T006 [Infra] Add `parserMode` field to `TestRunRepository` Cosmos write path — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+- [x] T007 [Infra] Update DI registration to expose `AnthropicClient` singleton for pipeline projects — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T008 [App] Implement `TemplateChecker` (rule-based: validates title, description, and at least one AC are non-empty) — `source/Testurio.Pipeline.StoryParser/TemplateChecker.cs`
+- [x] T009 [App] Implement `DirectParser` (heuristic extraction of entities, actions, edge_cases from raw text; returns `ParsedStory`) — `source/Testurio.Pipeline.StoryParser/DirectParser.cs`
+- [x] T010 [App] Implement `AiStoryConverter` (calls Claude `claude-opus-4-7` with adaptive thinking; deserialises and validates response against `ParsedStory` schema) — `source/Testurio.Pipeline.StoryParser/AiStoryConverter.cs`
+- [x] T011 [App] Implement `PmToolCommentPoster` (posts warning comment to ADO or Jira ticket asynchronously based on run context; fire-and-forget with error swallowing) — `source/Testurio.Pipeline.StoryParser/PmToolCommentPoster.cs`
+- [x] T012 [App] Implement `StoryParserService` (orchestrates `TemplateChecker` → `DirectParser` or `AiStoryConverter` + `PmToolCommentPoster`; implements `IStoryParser`) — `source/Testurio.Pipeline.StoryParser/StoryParserService.cs`
+- [x] T013 [Config] Register `StoryParserService` as `IStoryParser` and its dependencies in DI — `source/Testurio.Pipeline.StoryParser/DependencyInjection.cs`
+- [x] T014 [Worker] Inject `IStoryParser` into `TestRunJobProcessor` and invoke `ParseAsync` as the first pipeline stage; update `TestRun.ParserMode` after parse; propagate `StoryParserException` to run-failure handler — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T015 [Test] Unit tests for `TemplateChecker` (all three missing-field variants + all-present happy path) — `tests/Testurio.UnitTests/Pipeline/TemplateCheckerTests.cs`
+- [x] T016 [Test] Unit tests for `DirectParser` (field extraction, empty arrays when not detected, no-Claude-call assertion) — `tests/Testurio.UnitTests/Pipeline/DirectParserTests.cs`
+- [x] T017 [Test] Unit tests for `AiStoryConverter` (valid response → schema passes; malformed response → `StoryParserException`; Claude API error → `StoryParserException`) — `tests/Testurio.UnitTests/Pipeline/AiStoryConverterTests.cs`
+- [x] T018 [Test] Unit tests for `StoryParserService` (conformant story → direct path, no AI call, no comment; non-conformant → AI path, comment posted; AI failure → `StoryParserException` thrown; comment-post failure → pipeline continues) — `tests/Testurio.UnitTests/Pipeline/StoryParserServiceTests.cs`
+- [x] T019 [Test] Integration tests for the full parse stage via `TestRunJobProcessor` (conformant story end-to-end; non-conformant story end-to-end with mocked Anthropic and PM tool clients) — `tests/Testurio.IntegrationTests/Pipeline/StoryParserIntegrationTests.cs`
 
 ## Rationale
 

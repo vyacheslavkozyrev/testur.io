@@ -16,6 +16,11 @@ public class TestRun
     public string? SkipReason { get; set; }
     public string? DeliveryError { get; set; }
 
+    // ─── StoryParser metadata (stage 1 — feature 0025) ───────────────────────
+
+    /// <summary>Parser mode used to produce the ParsedStory for this run. Null until the StoryParser stage completes.</summary>
+    public ParserMode? ParserMode { get; set; }
+
     // ─── AgentRouter metadata (stage 2 — feature 0026) ───────────────────────
 
     /// <summary>
@@ -31,4 +36,9 @@ public class TestRun
     /// Null until the AgentRouter stage completes.
     /// </summary>
     public string? ClassificationReason { get; set; }
+
+    /// <summary>Blob Storage URI of the rendered report for this run. Populated by ReportWriterPlugin (feature 0009).</summary>
+    public string? ReportBlobUri { get; set; }
+    /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>
+    public string? ReportTemplateWarning { get; set; }
 }

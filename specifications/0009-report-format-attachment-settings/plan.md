@@ -2,101 +2,101 @@
 
 ## Tasks
 
-T001. `[Migration]` Add report template and attachment toggle columns to Project Cosmos schema
-→ `source/Testurio.Core/Entities/Project.cs`
+T001. ~~`[Migration]` Add report template and attachment toggle columns to Project Cosmos schema~~
+→ `source/Testurio.Core/Entities/Project.cs` ✅
 
-T002. `[Domain]` Create domain entities and interfaces for report templating
-→ `source/Testurio.Core/Interfaces/IBlobStorageClient.cs`, `source/Testurio.Core/Interfaces/IReportTemplateService.cs`
+T002. ~~`[Domain]` Create domain entities and interfaces for report templating~~
+→ `source/Testurio.Core/Interfaces/IBlobStorageClient.cs`, `source/Testurio.Core/Interfaces/IReportTemplateService.cs` ✅
 
-T003. `[Infra]` Implement Azure Blob Storage client
-→ `source/Testurio.Infrastructure/BlobStorage/BlobStorageClient.cs`
+T003. ~~`[Infra]` Implement Azure Blob Storage client~~
+→ `source/Testurio.Infrastructure/BlobStorage/BlobStorageClient.cs` ✅
 
-T004. `[Infra]` Register blob storage client in DI container
-→ `source/Testurio.Infrastructure/DependencyInjection.cs`
+T004. ~~`[Infra]` Register blob storage client in DI container~~
+→ `source/Testurio.Infrastructure/DependencyInjection.cs` ✅
 
-T005. `[Infra]` Implement report template upload/download repository
-→ `source/Testurio.Infrastructure/BlobStorage/TemplateRepository.cs`
+T005. ~~`[Infra]` Implement report template upload/download repository~~
+→ `source/Testurio.Infrastructure/BlobStorage/TemplateRepository.cs` ✅
 
-T006. `[App]` Create DTOs for report template upload requests and responses
-→ `source/Testurio.Api/Dtos/ReportTemplateUploadRequest.cs`, `source/Testurio.Api/Dtos/ReportTemplateUploadResponse.cs`
+T006. ~~`[App]` Create DTOs for report template upload requests and responses~~
+→ `source/Testurio.Api/Dtos/ReportTemplateUploadRequest.cs`, `source/Testurio.Api/Dtos/ReportTemplateUploadResponse.cs` ✅
 
-T007. `[App]` Implement report template service with validation and token scanning
-→ `source/Testurio.Api/Services/ReportTemplateService.cs`
+T007. ~~`[App]` Implement report template service with validation and token scanning~~
+→ `source/Testurio.Api/Services/ReportTemplateService.cs` ✅
 
-T008. `[API]` Add project settings endpoints for template upload, replacement, and removal
-→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs` (new route group `/v1/projects/{id}/report-settings`)
+T008. ~~`[API]` Add project settings endpoints for template upload, replacement, and removal~~
+→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs` (new route group `/v1/projects/{id}/report-settings`) ✅
 
-T009. `[Infra]` Extend ReportBuilderService to support custom template rendering with placeholder token substitution
-→ `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs` (new overload method)
+T009. ~~`[Infra]` Extend ReportBuilderService to support custom template rendering with placeholder token substitution~~
+→ `source/Testurio.Plugins/ReportWriterPlugin/ReportBuilderService.cs` (new overload method) ✅
 
-T010. `[Infra]` Create TemplateRenderer service for placeholder token substitution and safe fallback handling
-→ `source/Testurio.Plugins/ReportWriterPlugin/TemplateRenderer.cs`
+T010. ~~`[Infra]` Create TemplateRenderer service for placeholder token substitution and safe fallback handling~~
+→ `source/Testurio.Plugins/ReportWriterPlugin/TemplateRenderer.cs` ✅
 
-T011. `[Infra]` Create built-in default report template constant
-→ `source/Testurio.Plugins/ReportWriterPlugin/DefaultReportTemplate.cs`
+T011. ~~`[Infra]` Create built-in default report template constant~~
+→ `source/Testurio.Plugins/ReportWriterPlugin/DefaultReportTemplate.cs` ✅
 
-T012. `[Infra]` Extend ReportWriterPlugin to load and render custom templates, storing report blob URI
-→ `source/Testurio.Plugins/ReportWriterPlugin/ReportWriterPlugin.cs` (modify DeliverAsync method)
+T012. ~~`[Infra]` Extend ReportWriterPlugin to load and render custom templates, storing report blob URI~~
+→ `source/Testurio.Plugins/ReportWriterPlugin/ReportWriterPlugin.cs` (modify DeliverAsync method) ✅
 
-T013. `[App]` Implement validators for project report configuration (test_type vs reportIncludeScreenshots rules)
-→ `source/Testurio.Api/Validators/ReportConfigurationValidator.cs`
+T013. ~~`[App]` Implement validators for project report configuration (test_type vs reportIncludeScreenshots rules)~~
+→ `source/Testurio.Api/Validators/ReportConfigurationValidator.cs` ✅
 
-T014. `[API]` Add GET endpoint to retrieve current project report settings
-→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs`
+T014. ~~`[API]` Add GET endpoint to retrieve current project report settings~~
+→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs` ✅
 
-T015. `[API]` Add PATCH endpoint to update report attachment toggles
-→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs`
+T015. ~~`[API]` Add PATCH endpoint to update report attachment toggles~~
+→ `source/Testurio.Api/Controllers/ProjectSettingsController.cs` ✅
 
-T016. `[UI]` Create TypeScript types for report template and attachment settings
-→ `source/portal/src/types/reportSettings.types.ts`
+T016. ~~`[UI]` Create TypeScript types for report template and attachment settings~~
+→ `source/portal/src/types/reportSettings.types.ts` ✅
 
-T017. `[UI]` Implement blob storage upload service for frontend
-→ `source/portal/src/services/reportTemplate/reportTemplateService.ts`
+T017. ~~`[UI]` Implement blob storage upload service for frontend~~
+→ `source/portal/src/services/reportTemplate/reportTemplateService.ts` ✅
 
-T018. `[UI]` Create React hooks for report settings queries and mutations
-→ `source/portal/src/hooks/useReportSettings.ts`
+T018. ~~`[UI]` Create React hooks for report settings queries and mutations~~
+→ `source/portal/src/hooks/useReportSettings.ts` ✅
 
-T019. `[UI]` Create MSW mock handlers for report settings endpoints
-→ `source/portal/src/mocks/handlers/reportSettings.ts`
+T019. ~~`[UI]` Create MSW mock handlers for report settings endpoints~~
+→ `source/portal/src/mocks/handlers/reportSettings.ts` ✅
 
-T020. `[UI]` Create ReportTemplateUpload component with file validation and token warning display
-→ `source/portal/src/components/ReportTemplateUpload/ReportTemplateUpload.tsx`
+T020. ~~`[UI]` Create ReportTemplateUpload component with file validation and token warning display~~
+→ `source/portal/src/components/ReportTemplateUpload/ReportTemplateUpload.tsx` ✅
 
-T021. `[UI]` Create ReportAttachmentToggles component with test_type-aware screenshot toggle
-→ `source/portal/src/components/ReportAttachmentToggles/ReportAttachmentToggles.tsx`
+T021. ~~`[UI]` Create ReportAttachmentToggles component with test_type-aware screenshot toggle~~
+→ `source/portal/src/components/ReportAttachmentToggles/ReportAttachmentToggles.tsx` ✅
 
-T022. `[UI]` Create ProjectReportSettingsSection page integrating both components
-→ `source/portal/src/pages/ProjectSettings/ReportSettingsSection.tsx`
+T022. ~~`[UI]` Create ProjectReportSettingsSection page integrating both components~~
+→ `source/portal/src/pages/ProjectSettings/ReportSettingsSection.tsx` ✅
 
-T023. `[UI]` Add report settings i18n translation keys
-→ `source/portal/src/locales/en/reportSettings.json`
+T023. ~~`[UI]` Add report settings i18n translation keys~~
+→ `source/portal/src/locales/en/reportSettings.json` ✅
 
-T024. `[UI]` Register report settings routes in project settings navigation
-→ `source/portal/src/routes/routes.tsx`
+T024. ~~`[UI]` Register report settings routes in project settings navigation~~
+→ `source/portal/src/routes/routes.tsx` ✅
 
-T025. `[Test]` Unit tests for ReportTemplateService validation and token scanning
-→ `tests/Testurio.UnitTests/Services/ReportTemplateServiceTests.cs`
+T025. ~~`[Test]` Unit tests for ReportTemplateService validation and token scanning~~
+→ `tests/Testurio.UnitTests/Services/ReportTemplateServiceTests.cs` ✅
 
-T026. `[Test]` Unit tests for TemplateRenderer placeholder substitution logic
-→ `tests/Testurio.UnitTests/Services/TemplateRendererTests.cs`
+T026. ~~`[Test]` Unit tests for TemplateRenderer placeholder substitution logic~~
+→ `tests/Testurio.UnitTests/Services/TemplateRendererTests.cs` ✅
 
-T027. `[Test]` Unit tests for report configuration validator
-→ `tests/Testurio.UnitTests/Validators/ReportConfigurationValidatorTests.cs`
+T027. ~~`[Test]` Unit tests for report configuration validator~~
+→ `tests/Testurio.UnitTests/Validators/ReportConfigurationValidatorTests.cs` ✅
 
-T028. `[Test]` Integration tests for template upload/remove API endpoints
-→ `tests/Testurio.IntegrationTests/Controllers/ProjectSettingsControllerTests.cs`
+T028. ~~`[Test]` Integration tests for template upload/remove API endpoints~~
+→ `tests/Testurio.IntegrationTests/Controllers/ProjectSettingsControllerTests.cs` ✅
 
-T029. `[Test]` Integration tests for report rendering with custom templates and attachment toggles
-→ `tests/Testurio.IntegrationTests/Plugins/ReportWriterPluginTests.cs`
+T029. ~~`[Test]` Integration tests for report rendering with custom templates and attachment toggles~~
+→ `tests/Testurio.IntegrationTests/Pipeline/ReportWriterPluginTests.cs` ✅
 
-T030. `[Test]` Frontend component tests for ReportTemplateUpload validation and warnings
-→ `source/portal/src/components/ReportTemplateUpload/ReportTemplateUpload.test.tsx`
+T030. ~~`[Test]` Frontend component tests for ReportTemplateUpload validation and warnings~~
+→ `source/Testurio.Web/src/components/ReportTemplateUpload/ReportTemplateUpload.test.tsx` ✅
 
-T031. `[Test]` Frontend component tests for ReportAttachmentToggles interaction and test_type coercion
-→ `source/portal/src/components/ReportAttachmentToggles/ReportAttachmentToggles.test.tsx`
+T031. ~~`[Test]` Frontend component tests for ReportAttachmentToggles interaction and test_type coercion~~
+→ `source/Testurio.Web/src/components/ReportAttachmentToggles/ReportAttachmentToggles.test.tsx` ✅
 
-T032. `[Test]` Frontend hooks tests for useReportSettings queries and mutations
-→ `source/portal/src/hooks/useReportSettings.test.ts`
+T032. ~~`[Test]` Frontend hooks tests for useReportSettings queries and mutations~~
+→ `source/Testurio.Web/src/hooks/__tests__/useReportSettings.test.ts` ✅
 
 ## Rationale
 

@@ -54,6 +54,14 @@ public class Project
     /// <summary>True after the webhook secret has been viewed once in plaintext; subsequent views are masked.</summary>
     public bool WebhookSecretViewed { get; set; } = false;
 
+    // Report format & attachment settings — feature 0009
+    /// <summary>Blob Storage URI of the custom report template (.md file). Null means built-in default is used.</summary>
+    public string? ReportTemplateUri { get; set; }
+    /// <summary>When true, step-by-step execution logs are included in the rendered report. Default: true.</summary>
+    public bool ReportIncludeLogs { get; set; } = true;
+    /// <summary>When true, screenshot attachments are included in the rendered report. Default: true. Only meaningful when test_type is ui_e2e or both.</summary>
+    public bool ReportIncludeScreenshots { get; set; } = true;
+
     // Legacy fields — kept for backward compatibility until migration removes them
     public string? JiraEmail { get; set; }
     public string? JiraApiTokenSecretRef { get; set; }

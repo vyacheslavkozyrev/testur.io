@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Jira;
@@ -22,6 +23,18 @@ public class InfrastructureOptions
     [Required] public required string TestRunJobQueueName { get; init; }
     [Required] public required string BlobStorageConnectionString { get; init; }
     [Required] public required string ExecutionLogsBlobContainerName { get; init; }
+    [Required] public required string ReportTemplatesBlobContainerName { get; init; }
+    [Required] public required string ReportsBlobContainerName { get; init; }
+}
+
+/// <summary>
+/// Options for the Anthropic Claude API client. Validated at startup.
+/// Shared by Testurio.Worker and any pipeline project that needs LLM access.
+/// </summary>
+public class AnthropicOptions
+{
+    [Required] public required string ApiKey { get; init; }
+    [Required] public required string ModelId { get; init; }
 }
 
 public static class DependencyInjection
@@ -110,6 +123,28 @@ public static class DependencyInjection
             return new BlobStorageClient(serviceClient, opts.ExecutionLogsBlobContainerName, logger);
         });
 
+        // Unkeyed IBlobStorageClient → execution-logs container (default for most pipeline stages).
+        services.AddSingleton<IBlobStorageClient>(sp => sp.GetRequiredService<BlobStorageClient>());
+
+        // Keyed IBlobStorageClient → reports container (used by ReportWriterPlugin, AC-033).
+        services.AddKeyedSingleton<IBlobStorageClient>("reports", (sp, _) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BlobStorageClient>>();
+            return new BlobStorageClient(serviceClient, opts.ReportsBlobContainerName, logger);
+        });
+
+        services.AddSingleton<TemplateRepository>(sp =>
+        {
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TemplateRepository>>();
+            return new TemplateRepository(serviceClient, opts.ReportTemplatesBlobContainerName, logger);
+        });
+
+        services.AddSingleton<ITemplateRepository>(sp => sp.GetRequiredService<TemplateRepository>());
+
         services.AddSingleton<IExecutionLogRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
@@ -123,6 +158,33 @@ public static class DependencyInjection
         services.AddHttpClient<IJiraClient, Jira.JiraAdditionalClient>();
 
         services.AddSingleton<Security.WebhookSecretGenerator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a singleton <see cref="ILlmGenerationClient"/> backed by the Anthropic HTTP API.
+    /// Call this from any host (Worker, pipeline projects) that requires Claude API access.
+    /// Requires <c>Anthropic:ApiKey</c> and <c>Anthropic:ModelId</c> in configuration.
+    /// </summary>
+    public static IServiceCollection AddAnthropicClient(this IServiceCollection services)
+    {
+        services.AddOptions<AnthropicOptions>()
+            .BindConfiguration("Anthropic")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
+            client.DefaultRequestHeaders.Add("x-api-key", opts.ApiKey);
+        })
+        .AddTypedClient<ILlmGenerationClient>((client, sp) =>
+        {
+            var opts = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
+            return new AnthropicGenerationClient(client, opts.ModelId, logger);
+        });
 
         return services;
     }
