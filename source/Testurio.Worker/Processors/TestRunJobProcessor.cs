@@ -25,6 +25,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly RunQueueManager _runQueueManager;
     private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly IAgentRouter _agentRouter;
+    private readonly IMemoryRetrievalService _memoryRetrievalService;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -36,6 +37,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         RunQueueManager runQueueManager,
         ReportDeliveryStep reportDeliveryStep,
         IAgentRouter agentRouter,
+        IMemoryRetrievalService memoryRetrievalService,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -49,6 +51,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _runQueueManager = runQueueManager;
         _reportDeliveryStep = reportDeliveryStep;
         _agentRouter = agentRouter;
+        _memoryRetrievalService = memoryRetrievalService;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -103,9 +106,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             // Full pipeline:
             //   Stage 1: StoryParser (0025) — parse work item → ParsedStory, update ParserMode
             //   Stage 2: AgentRouter (0026) — classify story → resolve test types
-            //   Stage 3: ScenarioGeneration (0002) — generate test scenarios
-            //   Stage 4: ApiTestExecution (0003) — execute API tests
-            //   Stage 5: ReportDelivery (0004) — post report to PM tool
+            //   Stage 3: MemoryRetrieval (0027) — embed story, vector search → MemoryRetrievalResult
+            //   Stage 4: ScenarioGeneration (0002) — generate test scenarios
+            //   Stage 5: ApiTestExecution (0003) — execute API tests
+            //   Stage 6: ReportDelivery (0004) — post report to PM tool
             await ExecutePipelineAsync(testRun, args.CancellationToken);
 
             await args.CompleteMessageAsync(args.Message, args.CancellationToken);
@@ -193,15 +197,22 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             return;
         }
 
-        // Stage 3: Generate test scenarios (feature 0002).
+        // Stage 3: MemoryRetrieval (feature 0027) — embed the story and retrieve the top-3
+        // semantically similar past scenarios scoped to this project. Any infrastructure failure
+        // is caught by MemoryRetrievalService and returns an empty result; the pipeline continues.
+        var memoryResult = await _memoryRetrievalService.RetrieveAsync(parsedStory, project, testRun.Id, cancellationToken);
+        LogMemoryRetrieved(_logger, testRun.Id, memoryResult.Scenarios.Count);
+
+        // Stage 4: Generate test scenarios (feature 0002).
+        // TODO (feature 0028): pass memoryResult to the new generator agents when they are wired in.
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
         var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
-        // Stage 4: Execute API tests against the product URL (feature 0003).
+        // Stage 5: Execute API tests against the product URL (feature 0003).
         var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
         await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
 
-        // Stage 5: Build and post the report to Jira (feature 0004).
+        // Stage 6: Build and post the report to Jira (feature 0004).
         await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
     }
 
@@ -249,6 +260,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "AgentRouter resolved types [{Types}] for test run {TestRunId}")]
     private static partial void LogRouted(ILogger logger, string testRunId, string types);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "MemoryRetrieval returned {Count} scenario(s) for test run {TestRunId}")]
+    private static partial void LogMemoryRetrieved(ILogger logger, string testRunId, int count);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Test run {TestRunId} skipped — no applicable test type resolved")]
     private static partial void LogSkipped(ILogger logger, string testRunId);

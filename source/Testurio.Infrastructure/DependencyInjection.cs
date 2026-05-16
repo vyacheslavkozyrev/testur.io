@@ -9,7 +9,9 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.Embedding;
 using Testurio.Infrastructure.Jira;
+using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 
@@ -158,6 +160,31 @@ public static class DependencyInjection
         services.AddHttpClient<IJiraClient, Jira.JiraAdditionalClient>();
 
         services.AddSingleton<Security.WebhookSecretGenerator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers <see cref="IEmbeddingService"/> as <see cref="AzureOpenAIEmbeddingService"/>,
+    /// <see cref="TestMemoryRepository"/>, and the <see cref="AzureOpenAIOptions"/> validated binding.
+    /// Requires <c>AzureOpenAI:Endpoint</c>, <c>AzureOpenAI:ApiKey</c>, and
+    /// <c>AzureOpenAI:EmbeddingDeployment</c> in configuration.
+    /// </summary>
+    public static IServiceCollection AddAzureOpenAI(this IServiceCollection services)
+    {
+        services.AddOptions<AzureOpenAIOptions>()
+            .BindConfiguration("AzureOpenAI")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IEmbeddingService, AzureOpenAIEmbeddingService>();
+
+        services.AddSingleton<ITestMemoryRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestMemoryRepository(cosmos, opts.CosmosDatabaseName);
+        });
 
         return services;
     }
