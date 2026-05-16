@@ -215,4 +215,74 @@ public class JiraWebhookServiceTests
         Assert.Equal(WebhookProcessResult.Enqueued, result);
         _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
     }
+
+    // ─── Work item type filter behaviour (AC-012–016) ────────────────────────
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeMatchesAllowedType_Enqueues()
+    {
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
+        _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync((TestRun?)null);
+        _testRunRepo.Setup(r => r.CreateAsync(It.IsAny<TestRun>(), default))
+            .ReturnsAsync((TestRun r, CancellationToken _) => r);
+        _jobSender.Setup(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), default)).Returns(Task.CompletedTask);
+
+        var payload = MakePayload(issueType: "Story");
+        var sut = CreateSut();
+
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        Assert.Equal(WebhookProcessResult.Enqueued, result);
+        _jobSender.Verify(s => s.SendAsync(It.Is<TestRunJobMessage>(m => m.ProjectId == "proj1"), default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeNotInAllowedList_DropsEventSilently()
+    {
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Task")).Returns(false);
+
+        var payload = MakePayload(issueType: "Task");
+        var sut = CreateSut();
+
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        // AC-014: silently dropped — no test run created, no comment posted
+        Assert.Equal(WebhookProcessResult.Ignored, result);
+        _testRunRepo.VerifyNoOtherCalls();
+        _jiraApiClient.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenIssueTypeFieldMissing_FallsBackToDefault()
+    {
+        // Missing issue type field (null) → empty string → filter service decides
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), string.Empty)).Returns(false);
+
+        var payload = new JiraWebhookPayload
+        {
+            WebhookEvent = "jira:issue_updated",
+            Issue = new JiraIssue
+            {
+                Id = "10001",
+                Key = "PROJ-1",
+                Fields = new JiraIssueFields
+                {
+                    IssueType = null, // missing
+                    Status = new JiraStatus { Name = "In Testing" },
+                    Description = "A description"
+                }
+            },
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = "In Testing" }]
+            }
+        };
+
+        var sut = CreateSut();
+        var result = await sut.ProcessAsync(MakeProject(), payload);
+
+        // Filter service is called with empty string — the decision is its responsibility (AC-016)
+        _filterService.Verify(f => f.IsAllowed(It.IsAny<Project>(), string.Empty), Times.Once);
+        Assert.Equal(WebhookProcessResult.Ignored, result);
+    }
 }
