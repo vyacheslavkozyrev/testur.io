@@ -72,6 +72,7 @@ public partial class ADOWebhookService : IADOWebhookService
             {
                 ProjectId = project.Id,
                 UserId = project.UserId,
+                JiraIssueKey = workItemId,
                 JiraIssueId = workItemId,
             };
             await _runQueueRepository.EnqueueAsync(queued, cancellationToken);
@@ -83,6 +84,7 @@ public partial class ADOWebhookService : IADOWebhookService
         {
             ProjectId = project.Id,
             UserId = project.UserId,
+            JiraIssueKey = workItemId,
             JiraIssueId = workItemId,
             Status = TestRunStatus.Pending,
         };
@@ -93,6 +95,7 @@ public partial class ADOWebhookService : IADOWebhookService
             TestRunId = created.Id,
             ProjectId = project.Id,
             UserId = project.UserId,
+            JiraIssueKey = workItemId,
             JiraIssueId = workItemId,
         }, cancellationToken);
 
