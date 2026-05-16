@@ -154,6 +154,13 @@ public static class DependencyInjection
             return new ExecutionLogRepository(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<IStatsRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new StatsRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
         services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
         services.AddHttpClient<IADOClient, ADO.ADOClient>();

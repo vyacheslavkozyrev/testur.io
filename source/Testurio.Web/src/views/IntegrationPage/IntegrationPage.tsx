@@ -337,7 +337,7 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       card: {
-        borderRadius: 1,
+        borderRadius: `${theme.shape.borderRadius}px`,
       },
       cardContent: {
         display: 'flex',
@@ -360,7 +360,7 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerCard: {
-        borderRadius: 1,
+        borderRadius: `${theme.shape.borderRadius}px`,
         borderColor: theme.palette.error.light,
         padding: theme.spacing(3),
       },

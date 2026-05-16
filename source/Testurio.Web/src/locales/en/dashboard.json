@@ -1,0 +1,24 @@
+{
+  "page": {
+    "title": "Dashboard",
+    "createButton": "Create Project"
+  },
+  "quota": {
+    "usage": "{{used}} / {{limit}} runs used today",
+    "resetsAt": "Resets at {{time}}",
+    "noActivePlan": "No active plan"
+  },
+  "card": {
+    "lastRun": "Last run: {{time}}",
+    "neverRun": "Never run"
+  },
+  "emptyState": {
+    "heading": "No projects yet",
+    "description": "Create your first project and connect it to your PM tool to start automated test runs.",
+    "ctaLabel": "Create your first project"
+  },
+  "error": {
+    "message": "Failed to load dashboard data. Please try again.",
+    "retryButton": "Retry"
+  }
+}
