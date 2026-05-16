@@ -271,11 +271,7 @@ export default function ProjectSettingsPage() {
         </Box>
       )}
 
-      {activeTab === 'integration' && (
-        <Paper variant="outlined" sx={styles.card}>
-          <IntegrationPage embedded />
-        </Paper>
-      )}
+      {activeTab === 'integration' && <IntegrationPage embedded />}
 
       <ProjectDeleteDialog
         open={deleteDialogOpen}
@@ -322,14 +318,14 @@ const getStyles = (theme: Theme) =>
       },
       card: {
         padding: theme.spacing(3),
-        borderRadius: 2,
+        borderRadius: 1,
       },
       cardAlert: {
         marginBottom: theme.spacing(2),
       },
       dangerCard: {
         padding: theme.spacing(3),
-        borderRadius: 2,
+        borderRadius: 1,
         borderColor: theme.palette.error.light,
         marginTop: theme.spacing(2),
       },
