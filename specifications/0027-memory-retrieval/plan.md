@@ -14,7 +14,7 @@
 - [x] T010 [Config] Register `MemoryRetrievalService` as `IMemoryRetrievalService` in pipeline DI — `source/Testurio.Pipeline.MemoryRetrieval/DependencyInjection.cs`
 - [x] T011 [Worker] Wire `IMemoryRetrievalService` into `TestRunJobProcessor`; invoke `RetrieveAsync` after `IAgentRouter` resolves generators and before stage 4 generators execute; pass `MemoryRetrievalResult` to each generator agent — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
 - [x] T012 [Test] Unit tests for `MemoryRetrievalService` (3 entries returned → all present in result; 0 entries → empty list, no warning emitted; embedding throws → empty result, warning logged with userId + projectId + runId; Cosmos query throws → empty result, warning logged; `isDeleted: true` entries excluded via repository filter) — `tests/Testurio.UnitTests/Pipeline/MemoryRetrievalServiceTests.cs`
-- [ ] T013 [Test] Integration tests for the full retrieval stage via `TestRunJobProcessor` (pre-seeded memory entries → top-3 forwarded to generators; no entries → empty result, pipeline reaches stage 4; mocked `IEmbeddingService` and Cosmos emulator) — `tests/Testurio.IntegrationTests/Pipeline/MemoryRetrievalIntegrationTests.cs`
+- [x] T013 [Test] Integration tests for the full retrieval stage via `TestRunJobProcessor` (pre-seeded memory entries → top-3 forwarded to generators; no entries → empty result, pipeline reaches stage 4; mocked `IEmbeddingService` and Cosmos emulator) — `tests/Testurio.IntegrationTests/Pipeline/MemoryRetrievalIntegrationTests.cs`
 
 ## Rationale
 
