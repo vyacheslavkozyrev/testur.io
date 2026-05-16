@@ -2,24 +2,24 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Extend `Project` entity with `allowedWorkItemTypes` field and default helper — `source/Testurio.Core/Entities/Project.cs`
-- [ ] T002 [Domain] Add `IWorkItemTypeFilterService` interface — `source/Testurio.Core/Interfaces/IWorkItemTypeFilterService.cs`
-- [ ] T003 [App] Create `UpdateWorkItemTypeFilterRequest` DTO with validation attributes — `source/Testurio.Api/DTOs/UpdateWorkItemTypeFilterRequest.cs`
-- [ ] T004 [App] Implement `WorkItemTypeFilterService` (filter evaluation, default resolution per PM tool type) — `source/Testurio.Api/Services/WorkItemTypeFilterService.cs`
-- [ ] T005 [App] Extend `JiraWebhookService` to call `IWorkItemTypeFilterService` and drop filtered events with structured log — `source/Testurio.Api/Services/JiraWebhookService.cs`
-- [ ] T006 [App] Create `ADOWebhookService` extension — add issue-type filtering to the ADO webhook handler — `source/Testurio.Api/Services/ADOWebhookService.cs`
-- [ ] T007 [API] Add `PATCH /v1/projects/{projectId}/work-item-type-filter` endpoint — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
-- [ ] T008 [UI] Add `allowedWorkItemTypes` to project TypeScript types — `source/Testurio.Web/src/types/project.types.ts`
-- [ ] T009 [UI] Add `updateWorkItemTypeFilter` method to project API service — `source/Testurio.Web/src/services/project/projectService.ts`
-- [ ] T010 [UI] Add MSW mock handler for the PATCH filter endpoint — `source/Testurio.Web/src/mocks/handlers/project.ts`
-- [ ] T011 [UI] Add `useUpdateWorkItemTypeFilter` mutation hook — `source/Testurio.Web/src/hooks/useProject.ts`
-- [ ] T012 [UI] Create `WorkItemTypeFilter` component (multi-select tag input, at-least-one validation, save button) — `source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.tsx`
-- [ ] T013 [UI] Embed `WorkItemTypeFilter` in the Integrations settings page, visible only when PM tool is configured — `source/Testurio.Web/src/pages/ProjectSettings/Integrations/IntegrationPage.tsx`
-- [ ] T014 [UI] Add translation keys for the work item type filter section — `source/Testurio.Web/src/locales/en/pmTool.json`
-- [ ] T015 [Test] Unit tests for `WorkItemTypeFilterService` (default resolution, pass-through, drop, edge cases) — `tests/Testurio.UnitTests/Services/WorkItemTypeFilterServiceTests.cs`
-- [ ] T016 [Test] Unit tests for `JiraWebhookService` filtering behaviour (matching type enqueues, non-matching drops, missing field falls back to default) — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
-- [ ] T017 [Test] Integration tests for `PATCH /v1/projects/{projectId}/work-item-type-filter` (valid update, empty array 400, empty string 400, over-limit 400, cross-tenant 403) — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
-- [ ] T018 [Test] Component tests for `WorkItemTypeFilter` (renders current types, adds tag, removes tag, blocks empty save, submits valid list) — `source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.test.tsx`
+- [x] T001 [Domain] Extend `Project` entity with `allowedWorkItemTypes` field and default helper — `source/Testurio.Core/Entities/Project.cs`
+- [x] T002 [Domain] Add `IWorkItemTypeFilterService` interface — `source/Testurio.Core/Interfaces/IWorkItemTypeFilterService.cs`
+- [x] T003 [App] Create `UpdateWorkItemTypeFilterRequest` DTO with validation attributes — `source/Testurio.Api/DTOs/UpdateWorkItemTypeFilterRequest.cs`
+- [x] T004 [App] Implement `WorkItemTypeFilterService` (filter evaluation, default resolution per PM tool type) — `source/Testurio.Api/Services/WorkItemTypeFilterService.cs`
+- [x] T005 [App] Extend `JiraWebhookService` to call `IWorkItemTypeFilterService` and drop filtered events with structured log — `source/Testurio.Api/Services/JiraWebhookService.cs`
+- [x] T006 [App] Create `ADOWebhookService` extension — add issue-type filtering to the ADO webhook handler — `source/Testurio.Api/Services/ADOWebhookService.cs`
+- [x] T007 [API] Add `PATCH /v1/projects/{projectId}/work-item-type-filter` endpoint — `source/Testurio.Api/Endpoints/ProjectEndpoints.cs`
+- [x] T008 [UI] Add `allowedWorkItemTypes` to project TypeScript types — `source/Testurio.Web/src/types/project.types.ts`
+- [x] T009 [UI] Add `updateWorkItemTypeFilter` method to project API service — `source/Testurio.Web/src/services/project/projectService.ts`
+- [x] T010 [UI] Add MSW mock handler for the PATCH filter endpoint — `source/Testurio.Web/src/mocks/handlers/project.ts`
+- [x] T011 [UI] Add `useUpdateWorkItemTypeFilter` mutation hook — `source/Testurio.Web/src/hooks/useProject.ts`
+- [x] T012 [UI] Create `WorkItemTypeFilter` component (multi-select tag input, at-least-one validation, save button) — `source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.tsx`
+- [x] T013 [UI] Embed `WorkItemTypeFilter` in the Integrations settings page, visible only when PM tool is configured — `source/Testurio.Web/src/views/IntegrationPage/IntegrationPage.tsx`
+- [x] T014 [UI] Add translation keys for the work item type filter section — `source/Testurio.Web/src/locales/en/pmTool.json`
+- [x] T015 [Test] Unit tests for `WorkItemTypeFilterService` (default resolution, pass-through, drop, edge cases) — `tests/Testurio.UnitTests/Services/WorkItemTypeFilterServiceTests.cs`
+- [x] T016 [Test] Unit tests for `JiraWebhookService` filtering behaviour (matching type enqueues, non-matching drops, missing field falls back to default) — `tests/Testurio.UnitTests/Services/JiraWebhookServiceTests.cs`
+- [x] T017 [Test] Integration tests for `PATCH /v1/projects/{projectId}/work-item-type-filter` (valid update, empty array 400, empty string 400, over-limit 400, cross-tenant 403) — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
+- [x] T018 [Test] Component tests for `WorkItemTypeFilter` (renders current types, adds tag, removes tag, blocks empty save, submits valid list) — `source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.test.tsx`
 
 ## Rationale
 
