@@ -17,7 +17,12 @@ export const PROJECT_KEYS = {
 export function useProjects() {
   return useQuery<ProjectDto[], ApiError>({
     queryKey: PROJECT_KEYS.all,
-    queryFn: projectService.list,
+    queryFn: async () => {
+      const projects = await projectService.list();
+      return [...projects].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    },
   });
 }
 
