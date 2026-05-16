@@ -213,7 +213,7 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
     () => {
       const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
       const navButtonBase = {
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: `${theme.shape.borderRadius}px`,
         px: 1,
         py: 0.75,
         mb: 0.25,

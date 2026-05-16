@@ -2,28 +2,31 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import FormHelperText from '@mui/material/FormHelperText';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 
+interface WorkItemChipProps {
+  type: string;
+  onRemove: (type: string) => void;
+}
+
+function WorkItemChip({ type, onRemove }: WorkItemChipProps) {
+  const handleDelete = useCallback(() => onRemove(type), [type, onRemove]);
+  return <Chip label={type} onDelete={handleDelete} size="small" />;
+}
+
 export interface WorkItemTypeFilterProps {
   currentTypes: string[];
-  isSaving: boolean;
-  isError: boolean;
-  onSave: (types: string[]) => void;
+  onChange: (types: string[]) => void;
 }
 
 export default function WorkItemTypeFilter({
   currentTypes,
-  isSaving,
-  isError,
-  onSave,
+  onChange,
 }: WorkItemTypeFilterProps) {
   const { t } = useTranslation('pmTool');
   const theme = useTheme();
@@ -31,10 +34,9 @@ export default function WorkItemTypeFilter({
 
   const [types, setTypes] = useState<string[]>(currentTypes);
   const [inputValue, setInputValue] = useState('');
-  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Sync server data into local state only on the first non-empty resolution (e.g. after
-  // query loads). Subsequent changes must come from user actions, not re-renders.
+  // Sync server data into local state only on the first non-empty resolution.
+  // Subsequent changes come from user actions, not re-renders.
   const initializedRef = useRef(false);
   useEffect(() => {
     if (!initializedRef.current && currentTypes.length > 0) {
@@ -49,10 +51,11 @@ export default function WorkItemTypeFilter({
       setInputValue('');
       return;
     }
-    setTypes((prev) => [...prev, trimmed]);
+    const next = [...types, trimmed];
+    setTypes(next);
     setInputValue('');
-    setValidationError(null);
-  }, [inputValue, types]);
+    onChange(next);
+  }, [inputValue, types, onChange]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -65,18 +68,14 @@ export default function WorkItemTypeFilter({
   );
 
   const handleRemoveType = useCallback((type: string) => {
-    setTypes((prev) => prev.filter((t) => t !== type));
-    setValidationError(null);
-  }, []);
+    const next = types.filter((t) => t !== type);
+    setTypes(next);
+    onChange(next);
+  }, [types, onChange]);
 
-  const handleSave = useCallback(() => {
-    if (types.length === 0) {
-      setValidationError(t('workItemTypeFilter.validation.atLeastOne'));
-      return;
-    }
-    setValidationError(null);
-    onSave(types);
-  }, [types, onSave, t]);
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  }, []);
 
   return (
     <Box sx={styles.root}>
@@ -89,12 +88,7 @@ export default function WorkItemTypeFilter({
 
       <Box sx={styles.chips}>
         {types.map((type) => (
-          <Chip
-            key={type}
-            label={type}
-            onDelete={() => handleRemoveType(type)}
-            size="small"
-          />
+          <WorkItemChip key={type} type={type} onRemove={handleRemoveType} />
         ))}
       </Box>
 
@@ -103,31 +97,12 @@ export default function WorkItemTypeFilter({
           size="small"
           label={t('workItemTypeFilter.inputLabel')}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           sx={styles.input}
         />
         <Button variant="outlined" size="small" onClick={handleAddType} disabled={!inputValue.trim()}>
           {t('workItemTypeFilter.addButton')}
-        </Button>
-      </Box>
-
-      {validationError && (
-        <FormHelperText error>{validationError}</FormHelperText>
-      )}
-
-      {isError && (
-        <Alert severity="error">{t('workItemTypeFilter.saveError')}</Alert>
-      )}
-
-      <Box>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={isSaving}
-          startIcon={isSaving ? <CircularProgress size={16} /> : undefined}
-        >
-          {t('common.save')}
         </Button>
       </Box>
     </Box>

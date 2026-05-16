@@ -1,128 +1,100 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ReportAttachmentToggles from '@/components/ReportAttachmentToggles/ReportAttachmentToggles';
 import ReportTemplateUpload from '@/components/ReportTemplateUpload/ReportTemplateUpload';
-import {
-  useReportSettings,
-  useUpdateReportSettings,
-} from '@/hooks/useReportSettings';
+import { useReportSettings } from '@/hooks/useReportSettings';
+
+export interface ReportSettingsSectionHandle {
+  getValues: () => { reportIncludeLogs: boolean; reportIncludeScreenshots: boolean };
+  isDirty: boolean;
+  clearDirty: () => void;
+}
 
 export interface ReportSettingsSectionProps {
   projectId: string;
   testType: string;
 }
 
-export default function ReportSettingsSection({
-  projectId,
-  testType,
-}: ReportSettingsSectionProps) {
-  const { t } = useTranslation('reportSettings');
-  const theme = useTheme();
-  const styles = getStyles(theme);
+const ReportSettingsSection = forwardRef<ReportSettingsSectionHandle, ReportSettingsSectionProps>(
+  function ReportSettingsSection({ projectId, testType }, ref) {
+    const { t } = useTranslation('reportSettings');
+    const theme = useTheme();
+    const styles = getStyles(theme);
 
-  const { data: settings, isPending, isError } = useReportSettings(projectId);
-  const updateSettings = useUpdateReportSettings(projectId);
+    const { data: settings, isPending, isError } = useReportSettings(projectId);
 
-  // Pending edits — undefined means "no local override; use server value".
-  const [pendingLogs, setPendingLogs] = useState<boolean | undefined>(undefined);
-  const [pendingScreenshots, setPendingScreenshots] = useState<boolean | undefined>(undefined);
+    const [pendingLogs, setPendingLogs] = useState<boolean | undefined>(undefined);
+    const [pendingScreenshots, setPendingScreenshots] = useState<boolean | undefined>(undefined);
 
-  // Read toggle values directly from server data; local pending edits shadow them.
-  const effectiveLogs = pendingLogs ?? settings?.reportIncludeLogs ?? true;
-  const effectiveScreenshots = pendingScreenshots ?? settings?.reportIncludeScreenshots ?? true;
+    const effectiveLogs = pendingLogs ?? settings?.reportIncludeLogs ?? true;
+    const effectiveScreenshots = pendingScreenshots ?? settings?.reportIncludeScreenshots ?? true;
 
-  // Reset pending edits after a successful save so the next render reads fresh server data.
-  useEffect(() => {
-    if (updateSettings.isSuccess) {
+    const isDirty = pendingLogs !== undefined || pendingScreenshots !== undefined;
+
+    const clearDirty = useCallback(() => {
       setPendingLogs(undefined);
       setPendingScreenshots(undefined);
-      const timer = setTimeout(() => updateSettings.reset(), 3000);
-      return () => clearTimeout(timer);
+    }, []);
+
+    const handleToggleChange = useCallback(
+      (values: { includeLogs: boolean; includeScreenshots: boolean }) => {
+        setPendingLogs(values.includeLogs);
+        setPendingScreenshots(values.includeScreenshots);
+      },
+      [],
+    );
+
+    useImperativeHandle(ref, () => ({
+      getValues: () => ({
+        reportIncludeLogs: effectiveLogs,
+        reportIncludeScreenshots: effectiveScreenshots,
+      }),
+      get isDirty() {
+        return isDirty;
+      },
+      clearDirty,
+    }));
+
+    if (isPending) {
+      return (
+        <Box sx={styles.loading}>
+          <CircularProgress size={24} />
+        </Box>
+      );
     }
-  }, [updateSettings.isSuccess, updateSettings]);
 
-  const handleToggleChange = useCallback(
-    (values: { includeLogs: boolean; includeScreenshots: boolean }) => {
-      setPendingLogs(values.includeLogs);
-      setPendingScreenshots(values.includeScreenshots);
-    },
-    [],
-  );
+    if (isError || !settings) {
+      return <Alert severity="error">{t('loadError')}</Alert>;
+    }
 
-  const handleSave = useCallback(() => {
-    updateSettings.mutate({
-      reportIncludeLogs: effectiveLogs,
-      reportIncludeScreenshots: effectiveScreenshots,
-    });
-  }, [updateSettings, effectiveLogs, effectiveScreenshots]);
-
-  if (isPending) {
     return (
-      <Box sx={styles.loading}>
-        <CircularProgress size={24} />
+      <Box sx={styles.root}>
+        <ReportTemplateUpload
+          projectId={projectId}
+          currentFileName={settings.reportTemplateFileName}
+        />
+
+        <Divider />
+
+        <ReportAttachmentToggles
+          testType={testType}
+          includeLogs={effectiveLogs}
+          includeScreenshots={effectiveScreenshots}
+          onChange={handleToggleChange}
+        />
       </Box>
     );
-  }
+  },
+);
 
-  if (isError || !settings) {
-    return (
-      <Alert severity="error">{t('loadError')}</Alert>
-    );
-  }
-
-  return (
-    <Box sx={styles.root}>
-      <Typography variant="h6" sx={styles.sectionTitle}>
-        {t('sectionTitle')}
-      </Typography>
-
-      {updateSettings.isError && (
-        <Alert severity="error">{t('saveError')}</Alert>
-      )}
-      {updateSettings.isSuccess && (
-        <Alert severity="success">{t('saveSuccess')}</Alert>
-      )}
-
-      {/* Report Template Upload (US-001 – US-003) */}
-      <ReportTemplateUpload
-        projectId={projectId}
-        currentFileName={settings.reportTemplateFileName}
-      />
-
-      <Divider />
-
-      {/* Attachment Toggles (US-005) */}
-      <ReportAttachmentToggles
-        testType={testType}
-        includeLogs={effectiveLogs}
-        includeScreenshots={effectiveScreenshots}
-        onChange={handleToggleChange}
-      />
-
-      <Box>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={updateSettings.isPending}
-        >
-          {updateSettings.isPending ? (
-            <CircularProgress size={16} sx={{ mr: 1 }} />
-          ) : null}
-          {t('saveButton')}
-        </Button>
-      </Box>
-    </Box>
-  );
-}
+export default ReportSettingsSection;
 
 const getStyles = (theme: Theme) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -132,10 +104,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(3),
-      },
-      sectionTitle: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
       },
       loading: {
         display: 'flex',

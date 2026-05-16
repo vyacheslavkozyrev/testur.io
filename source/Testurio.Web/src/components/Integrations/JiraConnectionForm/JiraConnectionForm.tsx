@@ -78,7 +78,7 @@ export default function JiraConnectionForm({
 
   return (
     <Box component="form" onSubmit={handleSubmit(handleFormSubmit)} sx={styles.root} noValidate>
-      <Typography variant="h6" sx={styles.title}>
+      <Typography variant="subtitle1" sx={styles.title}>
         {t('jira.formTitle')}
       </Typography>
 
@@ -243,7 +243,7 @@ const getStyles = (theme: Theme) =>
         width: '100%',
       },
       title: {
-        ...theme.typography.h6,
+        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       actions: {

@@ -10,8 +10,11 @@
     "connectAdo": "Connect Azure DevOps",
     "connectJira": "Connect Jira",
     "dangerZone": "Danger Zone",
+    "dangerZoneDescription": "Removing the integration stops active test runs, clears queued jobs, and deregisters the webhook from your PM tool. This action cannot be undone.",
     "saveError": "Failed to save the connection. Please check your input and try again.",
-    "loadError": "Failed to load integration settings. Please try again."
+    "loadError": "Failed to load integration settings. Please try again.",
+    "saveChanges": "Save changes",
+    "saveChangesError": "Failed to save changes. Please try again."
   },
   "status": {
     "notConfigured": "No PM tool connection configured.",

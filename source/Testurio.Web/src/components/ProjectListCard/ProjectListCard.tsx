@@ -26,7 +26,7 @@ export default function ProjectListCard({ project }: ProjectListCardProps) {
   const { t } = useTranslation('projects');
   const router = useRouter();
   const theme = useTheme();
-  const styles = useMemo(() => getStyles(theme), [theme]);
+  const styles = getStyles(theme);
 
   const truncatedStrategy = useMemo(
     () => truncateText(project.testingStrategy, STRATEGY_MAX_LENGTH),
@@ -84,7 +84,7 @@ const getStyles = (theme: Theme) => ({
     display: 'flex',
     flexDirection: 'column' as const,
     border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: `${theme.shape.borderRadius}px`,
     transition: 'box-shadow 150ms ease',
     '&:hover': {
       boxShadow: theme.shadows[4],

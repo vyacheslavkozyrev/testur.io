@@ -33,12 +33,15 @@
     "pageTitle": "New Project"
   },
   "settings": {
-    "title": "{{name}} — Settings",
+    "title": "{{name}}",
+    "breadcrumbProjects": "Projects",
+    "breadcrumbSettings": "Settings",
     "loadError": "Failed to load project. Please try again.",
     "saveError": "Failed to save changes. Please try again.",
     "saveSuccess": "Changes saved successfully.",
     "dangerZone": {
       "title": "Danger Zone",
+      "description": "Permanently delete this project and all its test history. This action cannot be undone.",
       "deleteButton": "Delete Project"
     }
   },
@@ -47,6 +50,20 @@
       "title": "Testing Environment Access",
       "description": "Configure how the test executor authenticates against your staging environment."
     }
+  },
+  "tabs": {
+    "settings": "Settings",
+    "integration": "Integration"
+  },
+  "saveBar": {
+    "save": "Save Changes",
+    "noChanges": "No changes",
+    "saving": "Saving…",
+    "saved": "Saved ✓"
+  },
+  "unsavedBanner": {
+    "message": "You have unsaved changes in Settings.",
+    "link": "Go to Settings"
   },
   "customPrompt": {
     "section": {
