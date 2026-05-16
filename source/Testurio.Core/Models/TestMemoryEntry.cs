@@ -6,10 +6,10 @@ namespace Testurio.Core.Models;
 /// FeedbackLoop (stage 7) and MemoryWriter (stage 8) pipeline stages.
 /// Partition key: <see cref="UserId"/>.
 /// </summary>
-public class TestMemoryEntry
+public sealed class TestMemoryEntry
 {
     /// <summary>UUID v4 document identifier.</summary>
-    public string Id { get; init; } = Guid.NewGuid().ToString();
+    public string Id { get; init; } = string.Empty;
 
     /// <summary>Azure AD B2C OID — partition key.</summary>
     public required string UserId { get; init; }
@@ -28,6 +28,12 @@ public class TestMemoryEntry
 
     /// <summary>Serialized scenario JSON produced by the generator agent for this story.</summary>
     public required string ScenarioText { get; init; }
+
+    /// <summary>
+    /// Story embedding vector (1536 dimensions) produced by Azure OpenAI <c>text-embedding-3-small</c>.
+    /// Written by MemoryWriter (stage 8) and used as the DiskANN index field for vector search.
+    /// </summary>
+    public float[]? StoryEmbedding { get; init; }
 
     /// <summary>
     /// Quality signal in the range 0.0–1.0. Starts at 1.0 when written; updated by FeedbackLoop.

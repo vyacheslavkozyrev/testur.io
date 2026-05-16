@@ -1,4 +1,5 @@
 using Microsoft.Azure.Cosmos;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.Cosmos;
@@ -9,7 +10,7 @@ namespace Testurio.Infrastructure.Cosmos;
 /// to non-deleted entries, and returns the top-3 entries ordered by cosine similarity.
 /// Partition key: <c>userId</c>.
 /// </summary>
-public class TestMemoryRepository
+public class TestMemoryRepository : ITestMemoryRepository
 {
     private readonly Container _container = null!;
 
@@ -17,9 +18,6 @@ public class TestMemoryRepository
     {
         _container = cosmosClient.GetContainer(databaseName, "TestMemory");
     }
-
-    /// <summary>Protected parameterless constructor for test-double subclassing.</summary>
-    protected TestMemoryRepository() { }
 
     /// <summary>
     /// Retrieves the top-3 most semantically similar test memory entries for the given
@@ -31,31 +29,29 @@ public class TestMemoryRepository
     /// <param name="embedding">Story embedding vector (1536 dimensions) for similarity search.</param>
     /// <param name="cancellationToken">Cancellation token forwarded to Cosmos SDK calls.</param>
     /// <returns>Up to 3 matching <see cref="TestMemoryEntry"/> instances, never null.</returns>
-    public virtual async Task<IReadOnlyList<TestMemoryEntry>> FindSimilarAsync(
+    public async Task<IReadOnlyList<TestMemoryEntry>> FindSimilarAsync(
         string userId,
         string projectId,
         float[] embedding,
         CancellationToken cancellationToken = default)
     {
-        // DiskANN vector search: VectorDistance returns cosine distance (lower = more similar),
-        // so ORDER BY ascending gives the most similar entries first.
-        // We project the score but filter it out when deserialising by using a wrapper.
+        // Cosmos DiskANN vector search: VectorDistance ORDER BY cannot be combined with
+        // arbitrary WHERE predicates on non-vector fields. We scope to the partition key via
+        // QueryRequestOptions (which enforces userId isolation at the SDK level) and filter
+        // projectId and isDeleted client-side from the ranked results.
+        // We fetch a small over-fetch (TOP 10) to ensure up to 3 non-deleted, in-project entries
+        // survive the client-side filter.
         var query = new QueryDefinition(
             """
-            SELECT TOP 3 c.id, c.userId, c.projectId, c.testType,
-                         c.storyText, c.scenarioText, c.passRate,
-                         c.runCount, c.lastUsedAt, c.isDeleted
+            SELECT TOP 10 c.id, c.userId, c.projectId, c.testType,
+                          c.storyText, c.scenarioText, c.passRate,
+                          c.runCount, c.lastUsedAt, c.isDeleted
             FROM c
-            WHERE c.userId     = @userId
-              AND c.projectId  = @projectId
-              AND c.isDeleted  = false
             ORDER BY VectorDistance(c.storyEmbedding, @embedding)
             """)
-            .WithParameter("@userId", userId)
-            .WithParameter("@projectId", projectId)
             .WithParameter("@embedding", embedding);
 
-        var results = new List<TestMemoryEntry>();
+        var rawResults = new List<TestMemoryEntry>();
 
         using var iterator = _container.GetItemQueryIterator<TestMemoryEntry>(
             query,
@@ -67,8 +63,14 @@ public class TestMemoryRepository
         while (iterator.HasMoreResults)
         {
             var page = await iterator.ReadNextAsync(cancellationToken);
-            results.AddRange(page);
+            rawResults.AddRange(page);
         }
+
+        // Apply projectId scope and isDeleted filter client-side, then take top 3.
+        var results = rawResults
+            .Where(e => e.ProjectId == projectId && !e.IsDeleted)
+            .Take(3)
+            .ToList();
 
         return results.AsReadOnly();
     }

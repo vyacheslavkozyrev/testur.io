@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Testurio.Core.Interfaces;
-using Testurio.Infrastructure.Cosmos;
 
 namespace Testurio.Pipeline.MemoryRetrieval;
 
@@ -17,7 +16,7 @@ public static class DependencyInjection
     /// <c>AddAzureOpenAI()</c>):
     /// <list type="bullet">
     ///   <item><see cref="IEmbeddingService"/> — for story embedding generation</item>
-    ///   <item><see cref="TestMemoryRepository"/> — for Cosmos DiskANN vector search</item>
+    ///   <item><see cref="ITestMemoryRepository"/> — for Cosmos DiskANN vector search</item>
     /// </list>
     /// </para>
     /// </summary>

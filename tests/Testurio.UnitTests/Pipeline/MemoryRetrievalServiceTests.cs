@@ -4,7 +4,6 @@ using Moq;
 using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
-using Testurio.Infrastructure.Cosmos;
 using Testurio.Pipeline.MemoryRetrieval;
 
 namespace Testurio.UnitTests.Pipeline;
@@ -12,7 +11,7 @@ namespace Testurio.UnitTests.Pipeline;
 public class MemoryRetrievalServiceTests
 {
     private readonly Mock<IEmbeddingService> _embeddingService = new();
-    private readonly Mock<TestMemoryRepository> _repository = new();
+    private readonly Mock<ITestMemoryRepository> _repository = new();
     private readonly Mock<ILogger<MemoryRetrievalService>> _logger = new();
 
     public MemoryRetrievalServiceTests()

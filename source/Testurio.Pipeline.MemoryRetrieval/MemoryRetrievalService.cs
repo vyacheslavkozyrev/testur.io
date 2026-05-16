@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
-using Testurio.Infrastructure.Cosmos;
 
 namespace Testurio.Pipeline.MemoryRetrieval;
 
@@ -16,12 +15,12 @@ namespace Testurio.Pipeline.MemoryRetrieval;
 public sealed partial class MemoryRetrievalService : IMemoryRetrievalService
 {
     private readonly IEmbeddingService _embeddingService;
-    private readonly TestMemoryRepository _memoryRepository;
+    private readonly ITestMemoryRepository _memoryRepository;
     private readonly ILogger<MemoryRetrievalService> _logger;
 
     public MemoryRetrievalService(
         IEmbeddingService embeddingService,
-        TestMemoryRepository memoryRepository,
+        ITestMemoryRepository memoryRepository,
         ILogger<MemoryRetrievalService> logger)
     {
         _embeddingService = embeddingService;
@@ -44,6 +43,10 @@ public sealed partial class MemoryRetrievalService : IMemoryRetrievalService
         {
             embedding = await _embeddingService.EmbedAsync(storyText, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             LogEmbeddingFailed(_logger, runId, project.UserId, project.Id, ex);
@@ -58,6 +61,10 @@ public sealed partial class MemoryRetrievalService : IMemoryRetrievalService
                 project.Id,
                 embedding,
                 cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

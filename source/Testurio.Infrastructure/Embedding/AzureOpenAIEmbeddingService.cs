@@ -36,7 +36,8 @@ public sealed partial class AzureOpenAIEmbeddingService : IEmbeddingService
     {
         LogEmbedding(_logger, text.Length);
 
-        var response = await _embeddingClient.GenerateEmbeddingAsync(text, cancellationToken: cancellationToken);
+        var options = new EmbeddingGenerationOptions { Dimensions = 1536 };
+        var response = await _embeddingClient.GenerateEmbeddingAsync(text, options, cancellationToken);
         var embedding = response.Value;
 
         var vector = embedding.ToFloats();

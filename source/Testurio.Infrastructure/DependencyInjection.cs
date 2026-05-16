@@ -179,7 +179,7 @@ public static class DependencyInjection
 
         services.AddSingleton<IEmbeddingService, AzureOpenAIEmbeddingService>();
 
-        services.AddSingleton<TestMemoryRepository>(sp =>
+        services.AddSingleton<ITestMemoryRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;

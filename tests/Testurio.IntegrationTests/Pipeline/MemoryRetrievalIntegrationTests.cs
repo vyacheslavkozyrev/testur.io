@@ -3,7 +3,6 @@ using Moq;
 using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
-using Testurio.Infrastructure.Cosmos;
 using Testurio.Pipeline.MemoryRetrieval;
 
 namespace Testurio.IntegrationTests.Pipeline;
@@ -11,14 +10,16 @@ namespace Testurio.IntegrationTests.Pipeline;
 /// <summary>
 /// Integration tests for the MemoryRetrieval pipeline stage (feature 0027).
 /// Exercises the full retrieval path through <see cref="MemoryRetrievalService"/> with a mocked
-/// <see cref="IEmbeddingService"/> and mocked <see cref="TestMemoryRepository"/>.
+/// <see cref="IEmbeddingService"/> and mocked <see cref="ITestMemoryRepository"/>.
 /// Validates end-to-end behaviour from <see cref="ParsedStory"/> input to
 /// <see cref="MemoryRetrievalResult"/> output, covering cold start and pre-seeded scenarios.
+/// Note: a Cosmos-emulator-backed test covering the real DiskANN query is tracked for manual
+/// implementation (see progress.md — remaining issues).
 /// </summary>
 public class MemoryRetrievalIntegrationTests
 {
     private readonly Mock<IEmbeddingService> _embeddingService = new();
-    private readonly Mock<TestMemoryRepository> _repository = new();
+    private readonly Mock<ITestMemoryRepository> _repository = new();
 
     private static readonly float[] SampleEmbedding = new float[1536];
 
