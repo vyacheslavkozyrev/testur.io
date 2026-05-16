@@ -29,7 +29,7 @@ const MOCK_USER = {
 
 test.describe('Projects List Page', () => {
   test.beforeEach(async ({ page }) => {
-    await page.route('/api/auth/me', (route) =>
+    await page.route('**/api/auth/me', (route) =>
       route.fulfill({ json: MOCK_USER }),
     );
   });
@@ -38,11 +38,11 @@ test.describe('Projects List Page', () => {
     page,
   }) => {
     // API returns B first (older), but the UI sorts by createdAt desc → A appears first
-    await page.route('/v1/projects', (route) =>
+    await page.route('**/v1/projects', (route) =>
       route.fulfill({ json: [PROJECT_B, PROJECT_A] }),
     );
 
-    await page.goto('/projects');
+    await page.goto('/projects', { waitUntil: 'domcontentloaded' });
 
     const cards = page.locator('.MuiCard-root');
     await expect(cards.first()).toContainText('Project A');
@@ -52,11 +52,11 @@ test.describe('Projects List Page', () => {
   test('AC-009/AC-010: empty state CTA navigates to /projects/new', async ({
     page,
   }) => {
-    await page.route('/v1/projects', (route) =>
+    await page.route('**/v1/projects', (route) =>
       route.fulfill({ json: [] }),
     );
 
-    await page.goto('/projects');
+    await page.goto('/projects', { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByText('No projects yet')).toBeVisible();
     await page.getByRole('button', { name: 'Create your first project' }).click();
@@ -66,11 +66,11 @@ test.describe('Projects List Page', () => {
   test('AC-013: clicking a project card navigates to /projects/:id/history', async ({
     page,
   }) => {
-    await page.route('/v1/projects', (route) =>
+    await page.route('**/v1/projects', (route) =>
       route.fulfill({ json: [PROJECT_A, PROJECT_B] }),
     );
 
-    await page.goto('/projects');
+    await page.goto('/projects', { waitUntil: 'domcontentloaded' });
 
     const projectId = PROJECT_A.projectId;
     const cardLink = page.locator(`a[href="/projects/${projectId}/history"]`).first();
@@ -81,11 +81,11 @@ test.describe('Projects List Page', () => {
   test('AC-016/AC-018: clicking the edit icon navigates to /projects/:id/settings without opening history', async ({
     page,
   }) => {
-    await page.route('/v1/projects', (route) =>
+    await page.route('**/v1/projects', (route) =>
       route.fulfill({ json: [PROJECT_A, PROJECT_B] }),
     );
 
-    await page.goto('/projects');
+    await page.goto('/projects', { waitUntil: 'domcontentloaded' });
 
     const projectId = PROJECT_A.projectId;
     const editButton = page
