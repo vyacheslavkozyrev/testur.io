@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
@@ -152,6 +153,13 @@ public static class DependencyInjection
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new ExecutionLogRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<IStatsRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new StatsRepository(cosmos, opts.CosmosDatabaseName);
         });
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
