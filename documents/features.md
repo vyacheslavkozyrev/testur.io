@@ -172,6 +172,12 @@ All authenticated pages are rendered inside a shared shell layout. The top heade
 
 ---
 
+**[0010b]: Project List Page** `MVP`
+_Business Outcome: Gives the QA lead a central place to see all their projects and jump directly to any of them._
+User sees all their projects displayed as a card grid. Each card shows the project name, product URL, and a truncated preview of the testing strategy (first ~120 characters with an ellipsis if longer). A persistent "Create Project" button is always visible at the top of the page and links to the existing project creation form. An empty state guides new users to create their first project. Cards link to the project settings page.
+
+---
+
 **[0010]: Project Dashboard — Snapshot** `MVP`
 _Business Outcome: Gives the QA lead an at-a-glance view of testing health across all products._
 User sees a card grid of all projects sorted by most recent activity, each showing its latest run status badge, product URL, and testing strategy. A global quota usage bar sits above the grid. An empty state guides new users to create their first project. Cards navigate to per-project history. Real-time updates are added by feature 0043.
