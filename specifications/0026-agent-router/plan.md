@@ -6,7 +6,7 @@
 - [x] T002 [Domain] Create `AgentRouterResult` record (`TestType[] ResolvedTestTypes`, `string ClassificationReason`) — `source/Testurio.Core/Models/AgentRouterResult.cs`
 - [x] T003 [Domain] Create `ITestGeneratorAgent` marker interface (concrete implementations provided in 0028) — `source/Testurio.Core/Interfaces/ITestGeneratorAgent.cs`
 - [x] T004 [Domain] Create `ITestGeneratorFactory` interface (`Create(TestType) → ITestGeneratorAgent`) — `source/Testurio.Core/Interfaces/ITestGeneratorFactory.cs`
-- [ ] T005 [Domain] Create `IAgentRouter` interface (`RouteAsync(ParsedStory, ProjectConfig, TestRun, CancellationToken) → Task<AgentRouterResult>`) — `source/Testurio.Core/Interfaces/IAgentRouter.cs`
+- [x] T005 [Domain] Create `IAgentRouter` interface (`RouteAsync(ParsedStory, ProjectConfig, TestRun, CancellationToken) → Task<AgentRouterResult>`) — `source/Testurio.Core/Interfaces/IAgentRouter.cs`
 - [ ] T006 [Domain] Extend `TestRun` entity with `ResolvedTestTypes` (`string[]`), `ClassificationReason` (`string`), and `Skipped` variant on the existing run-status type — `source/Testurio.Core/Entities/TestRun.cs`
 - [ ] T007 [Infra] Update `TestRunRepository` Cosmos write path to persist `resolvedTestTypes`, `classificationReason`, and the `Skipped` status — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
 - [ ] T008 [App] Implement `StoryClassifier` (calls Claude `claude-opus-4-7` with adaptive thinking; parses response JSON into `TestType[]` and `classificationReason`) — `source/Testurio.Pipeline.AgentRouter/StoryClassifier.cs`
