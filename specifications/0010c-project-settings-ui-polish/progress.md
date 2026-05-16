@@ -18,7 +18,33 @@ _Populated by `/implement 0010c`_
 
 ---
 
-## Review
+## Review — 2026-05-16 (second pass)
+
+### Blockers fixed
+- `ProjectSettingsPage.tsx:87` — useEffect without deps + no state-equality guard could trigger redundant setState calls on every render; added guard `if (next !== saveBarState)` and explanatory comment (no-deps retained intentionally to poll ref-backed form dirty state).
+- `ProjectSettingsPage.tsx:159` — `return () => window.clearTimeout(timer)` inside `handleSaveAll` useCallback was a no-op (React only calls effect cleanups, not async-function return values); replaced with `saveTimerRef` useRef + dedicated cleanup `useEffect`.
+- `IntegrationPage.tsx:153` — inline `() => setFormMode(...)` passed to `onAddConnection` prop; extracted to `handleAddConnection` useCallback.
+- `IntegrationPage.tsx:255` — inline `() => setRemoveDialogOpen(true)` passed to danger-zone Button; extracted to `handleOpenRemoveDialog` useCallback.
+- `WorkItemTypeFilter.tsx:80` — inline `() => handleRemoveType(type)` passed to each Chip's `onDelete`; extracted `WorkItemChip` sub-component with stable `handleDelete` per chip.
+- `WorkItemTypeFilter.tsx:91` — inline `(e) => setInputValue(e.target.value)` passed to TextField; extracted to `handleInputChange` useCallback.
+
+### Warnings fixed
+- `ProjectSettingsPage.tsx:192` — `hasDirtySettings` computed by calling `computeDirty()` in the render body reads from refs (not reactive); replaced with `saveBarState === 'dirty'` which is proper React state.
+- `ProjectSettingsPage.tsx:168` — hardcoded `'/projects'` string in `router.push`; replaced with `PROJECTS_ROUTE` constant already imported.
+- `IntegrationPage.tsx:134` — embedded loading spinner returned the full `<Box sx={styles.centered}>` wrapper even when `embedded=true`, adding double padding; guarded with `embedded ? <CircularProgress /> : <Box>…`.
+- `SaveBar.test.tsx:15` — i18n resource used flat dot-notation keys (`'saveBar.save': '…'`) which relies on i18next fallback behaviour and diverges from the actual nested `project.json` structure; changed to proper nested object `{ saveBar: { save: '…' } }`.
+- `ProjectSettingsPage.test.tsx:52` — `@/hooks/useProject` mock was missing `useUpdateWorkItemTypeFilter` (added by feature 0020 to `IntegrationPage`), causing 4 integration-tab tests to throw; added the mock entry.
+
+### Suggestions fixed
+- `ProjectSettingsPage.tsx:236` — project info card had no visible section title (AC-024 requires h6 "Edit Project" heading); re-added `<Typography variant="h6" sx={styles.cardTitle}>{t('form.titleEdit')}</Typography>` inside the card.
+- `ProjectForm.tsx:56` — `useImperativeHandle` had no deps array; added `[handleFormSubmit, handleSubmit, isDirty]`.
+- `ReportSettingsSection.tsx:44` — safety-net `useEffect` that reset pending state on every `settings` change would silently discard unsaved edits on any React Query background refetch; removed — `clearDirty()` called explicitly by parent after save is sufficient.
+
+### Status: Complete
+
+---
+
+## Review — 2026-05-16 (first pass)
 
 ### Findings and Fixes (2026-05-16)
 
