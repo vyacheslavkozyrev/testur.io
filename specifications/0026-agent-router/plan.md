@@ -9,7 +9,7 @@
 - [x] T005 [Domain] Create `IAgentRouter` interface (`RouteAsync(ParsedStory, ProjectConfig, TestRun, CancellationToken) → Task<AgentRouterResult>`) — `source/Testurio.Core/Interfaces/IAgentRouter.cs`
 - [x] T006 [Domain] Extend `TestRun` entity with `ResolvedTestTypes` (`string[]`), `ClassificationReason` (`string`), and `Skipped` variant on the existing run-status type — `source/Testurio.Core/Entities/TestRun.cs`
 - [x] T007 [Infra] Update `TestRunRepository` Cosmos write path to persist `resolvedTestTypes`, `classificationReason`, and the `Skipped` status — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
-- [ ] T008 [App] Implement `StoryClassifier` (calls Claude `claude-opus-4-7` with adaptive thinking; parses response JSON into `TestType[]` and `classificationReason`) — `source/Testurio.Pipeline.AgentRouter/StoryClassifier.cs`
+- [x] T008 [App] Implement `StoryClassifier` (calls Claude `claude-opus-4-7` with adaptive thinking; parses response JSON into `TestType[]` and `classificationReason`) — `source/Testurio.Pipeline.AgentRouter/StoryClassifier.cs`
 - [ ] T009 [App] Implement `SkipCommentPoster` (posts skip comment to ADO or Jira based on run context; fire-and-forget, error-swallowing) — `source/Testurio.Pipeline.AgentRouter/SkipCommentPoster.cs`
 - [ ] T010 [App] Implement `TestGeneratorFactory` (`ITestGeneratorFactory`; resolves concrete generators by keyed DI; throws `ArgumentOutOfRangeException` for unrecognised type) — `source/Testurio.Pipeline.AgentRouter/TestGeneratorFactory.cs`
 - [ ] T011 [App] Implement `AgentRouterService` (`IAgentRouter`; classifier → project-config filter → factory build list or skip path; returns `AgentRouterResult`) — `source/Testurio.Pipeline.AgentRouter/AgentRouterService.cs`
