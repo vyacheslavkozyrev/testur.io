@@ -18,7 +18,7 @@
 - [x] T014 [Test] Unit tests for `StoryClassifier` (`api`-only result; `ui_e2e`-only result; both types; empty JSON array from Claude; Claude API error → exception propagated) — `tests/Testurio.UnitTests/Pipeline/StoryClassifierTests.cs`
 - [x] T015 [Test] Unit tests for `TestGeneratorFactory` (returns `ApiTestGeneratorAgent` for `api`; returns `UiE2eTestGeneratorAgent` for `ui_e2e`; throws `ArgumentOutOfRangeException` for unknown value) — `tests/Testurio.UnitTests/Pipeline/TestGeneratorFactoryTests.cs`
 - [x] T016 [Test] Unit tests for `AgentRouterService` (classified types pass project-config filter; type absent from project config is excluded; empty after filter → skip comment posted, `Skipped` status set; comment-post failure → pipeline continues; two types → two generators returned) — `tests/Testurio.UnitTests/Pipeline/AgentRouterServiceTests.cs`
-- [ ] T017 [Test] Integration tests for the full routing stage via `TestRunJobProcessor` (classifiable story → generators built end-to-end; unclassifiable → `Skipped` status + comment posted; both types resolved → two generator instances forwarded to stage 4) — `tests/Testurio.IntegrationTests/Pipeline/AgentRouterIntegrationTests.cs`
+- [x] T017 [Test] Integration tests for the full routing stage via `TestRunJobProcessor` (classifiable story → generators built end-to-end; unclassifiable → `Skipped` status + comment posted; both types resolved → two generator instances forwarded to stage 4) — `tests/Testurio.IntegrationTests/Pipeline/AgentRouterIntegrationTests.cs`
 
 ## Rationale
 
