@@ -86,7 +86,7 @@ describe('ProjectCard', () => {
       </Wrapper>,
     );
     expect(screen.getByText('Never run')).toBeInTheDocument();
-    expect(screen.getByText('Never run')).toBeInTheDocument();
+    expect(screen.queryByText(/Last run:/)).not.toBeInTheDocument();
   });
 
   it('renders project name and product URL', () => {

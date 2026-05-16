@@ -25,8 +25,9 @@ public class DashboardService : IDashboardService
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var summaries = await _statsRepository.GetDashboardSummariesAsync(userId, cancellationToken);
-        var quota = await _statsRepository.GetQuotaUsageAsync(userId, cancellationToken);
-        return new DashboardResponse(summaries, quota);
+        var summariesTask = _statsRepository.GetDashboardSummariesAsync(userId, cancellationToken);
+        var quotaTask = _statsRepository.GetQuotaUsageAsync(userId, cancellationToken);
+        await Task.WhenAll(summariesTask, quotaTask);
+        return new DashboardResponse(summariesTask.Result, quotaTask.Result);
     }
 }

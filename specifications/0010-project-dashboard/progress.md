@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-05-09 |       |
 | Plan      | ✅ Complete | 2026-05-09 |       |
 | Implement | ✅ Complete | 2026-05-16 |       |
-| Review    | ⏳ Pending  |            |       |
+| Review    | ✅ Complete | 2026-05-16 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -18,9 +18,18 @@ _Populated by `/implement [####]`_
 
 ---
 
-## Review
+## Review — 2026-05-16
 
-_Populated by `/review [####]`_
+### Blockers fixed
+- `source/Testurio.Infrastructure/DependencyInjection.cs`:9–12 — duplicate `using Testurio.Infrastructure.Cosmos;` directive introduced by the new StatsRepository registration; removed the extra using to restore compilation.
+
+### Warnings fixed
+- `source/Testurio.Api/Services/DashboardService.cs`:24–30 — sequential `await` of two independent repository calls added unnecessary latency; replaced with `Task.WhenAll` to run both Cosmos queries in parallel.
+
+### Suggestions fixed
+- `source/Testurio.Web/src/components/ProjectCard/ProjectCard.test.tsx`:88–89 — duplicate `expect(screen.getByText('Never run')).toBeInTheDocument()` assertion provided no coverage; replaced the second line with `expect(screen.queryByText(/Last run:/)).not.toBeInTheDocument()` to actually verify the timestamp is absent when `latestRun` is null (per AC-002 / T025 intent).
+
+### Status: Complete
 
 ---
 

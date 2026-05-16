@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
-using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
