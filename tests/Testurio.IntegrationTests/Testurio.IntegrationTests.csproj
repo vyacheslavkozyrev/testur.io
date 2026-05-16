@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\source\Testurio.Api\Testurio.Api.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Core\Testurio.Core.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Pipeline.AgentRouter\Testurio.Pipeline.AgentRouter.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Plugins\Testurio.Plugins.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Worker\Testurio.Worker.csproj" />
   </ItemGroup>

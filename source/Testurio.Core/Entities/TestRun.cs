@@ -16,12 +16,6 @@ public class TestRun
     public string? SkipReason { get; set; }
     public string? DeliveryError { get; set; }
 
-    /// <summary>
-    /// How the story was parsed in stage 1.
-    /// Null until the StoryParser stage completes.
-    /// </summary>
-    public ParserMode? ParserMode { get; set; }
-
     // ─── AgentRouter metadata (stage 2 — feature 0026) ───────────────────────
 
     /// <summary>

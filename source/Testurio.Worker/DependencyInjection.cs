@@ -6,6 +6,7 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
+using Testurio.Pipeline.AgentRouter;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Plugins.StoryParserPlugin;
 using Testurio.Plugins.TestExecutorPlugin;
@@ -57,6 +58,9 @@ public static class DependencyInjection
             return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
 
+        // AgentRouter pipeline stage (feature 0026).
+        services.AddAgentRouter();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -102,8 +106,9 @@ public static class DependencyInjection
             var projectRepo = sp.GetRequiredService<IProjectRepository>();
             var queueManager = sp.GetRequiredService<RunQueueManager>();
             var reportDeliveryStep = sp.GetRequiredService<ReportDeliveryStep>();
+            var agentRouter = sp.GetRequiredService<IAgentRouter>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, reportDeliveryStep, logger);
+            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, reportDeliveryStep, agentRouter, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
