@@ -4,7 +4,7 @@
 
 - [x] T001 [Domain] Create `TestType` enum (`api`, `ui_e2e`) — `source/Testurio.Core/Enums/TestType.cs`
 - [x] T002 [Domain] Create `AgentRouterResult` record (`TestType[] ResolvedTestTypes`, `string ClassificationReason`) — `source/Testurio.Core/Models/AgentRouterResult.cs`
-- [ ] T003 [Domain] Create `ITestGeneratorAgent` marker interface (concrete implementations provided in 0028) — `source/Testurio.Core/Interfaces/ITestGeneratorAgent.cs`
+- [x] T003 [Domain] Create `ITestGeneratorAgent` marker interface (concrete implementations provided in 0028) — `source/Testurio.Core/Interfaces/ITestGeneratorAgent.cs`
 - [ ] T004 [Domain] Create `ITestGeneratorFactory` interface (`Create(TestType) → ITestGeneratorAgent`) — `source/Testurio.Core/Interfaces/ITestGeneratorFactory.cs`
 - [ ] T005 [Domain] Create `IAgentRouter` interface (`RouteAsync(ParsedStory, ProjectConfig, TestRun, CancellationToken) → Task<AgentRouterResult>`) — `source/Testurio.Core/Interfaces/IAgentRouter.cs`
 - [ ] T006 [Domain] Extend `TestRun` entity with `ResolvedTestTypes` (`string[]`), `ClassificationReason` (`string`), and `Skipped` variant on the existing run-status type — `source/Testurio.Core/Entities/TestRun.cs`
