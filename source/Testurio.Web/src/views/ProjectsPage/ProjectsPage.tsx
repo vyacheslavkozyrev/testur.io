@@ -94,7 +94,7 @@ export default function ProjectsPage() {
   return (
     <Box sx={styles.root}>
       <Box sx={styles.header}>
-        <Typography variant="h4" sx={styles.pageTitle}>
+        <Typography variant="h5" sx={styles.pageTitle}>
           {t('page.title')}
         </Typography>
         <Button
@@ -115,23 +115,27 @@ export default function ProjectsPage() {
 const getStyles = (theme: Theme) => ({
   root: {
     padding: theme.spacing(4),
+    maxWidth: 860,
+    margin: '0 auto',
     display: 'flex',
     flexDirection: 'column' as const,
-    gap: theme.spacing(4),
+    gap: theme.spacing(2),
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing(2),
+    marginBottom: theme.spacing(2),
   },
   pageTitle: {
-    ...theme.typography.h4,
+    ...theme.typography.h5,
+    fontWeight: 600,
     color: theme.palette.text.primary,
   },
   skeleton: {
     height: 160,
-    borderRadius: theme.shape.borderRadius,
+    borderRadius: 1,
   },
   emptyState: {
     display: 'flex',
