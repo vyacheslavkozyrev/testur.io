@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-15 |       |
 | Implement | ✅ Complete | 2026-05-15 |       |
 | Review    | ✅ Complete | 2026-05-15 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-15 |       |
 
 ---
 
@@ -38,9 +38,37 @@ _Populated by `/implement [####]`_
 
 ---
 
-## Test Results
+## Test Results — 2026-05-15
 
-_Populated by `/test [####]`_
+### Suite run
+
+| Suite | Tests | Result |
+|-------|-------|--------|
+| `AppHeader.test.tsx` | 8 | ✅ Pass |
+| `NavItem.test.tsx` | 5 | ✅ Pass |
+| `AppSidebar.test.tsx` | 7 | ✅ Pass |
+| `PrivateCabinetLayout.test.tsx` | 4 | ✅ Pass |
+| **Total** | **26** | **✅ All pass** |
+
+### Fix applied before passing
+
+- `AppSidebar.test.tsx`:148 — `toBeDisabled()` does not apply to MUI `ListItemButton` (renders as `div[role="button"]`, not a native `<button>`); changed assertion to `toHaveAttribute('aria-disabled', 'true')`.
+
+### Acceptance criteria coverage
+
+**Covered by passing tests:**
+AC-001, AC-002, AC-004, AC-006, AC-007, AC-008 (including edge cases: null displayName, email fallback, avatar initials), AC-009, AC-012, AC-013, AC-015, AC-016, AC-019, AC-022, AC-023, AC-025, AC-028, AC-037 (toggle aria-label), AC-038 (Sign Out aria-label)
+
+**Not covered — CSS/visual concerns (untestable at component level without visual regression):**
+AC-003 (header/sidebar positioning), AC-005 (1024 px viewport), AC-010 (64 px header height, sticky), AC-011 (header bottom border), AC-021 (transition 200 ms ease), AC-024 (chevron rotation)
+
+**Not covered — server-side / integration behaviour:**
+AC-030, AC-031, AC-032, AC-033 (auth guard redirect, returnUrl, server-side guard) — require feature 0013 integration
+
+**Gap — E2E test not implemented:**
+T020 (`e2e/private-cabinet-layout.spec.ts`) was planned but not created; would cover AC-015 active-link highlighting end-to-end, AC-019 sidebar collapse/expand, AC-027 Sign Out redirect URL, and the auth guard (AC-030–AC-033). This gap is acceptable for the component test phase; E2E tests are deferred to when feature 0013 (auth flow) is complete and a dev server can be run.
+
+### Status: Complete
 
 ---
 

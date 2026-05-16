@@ -145,6 +145,8 @@ describe('AppSidebar', () => {
     );
     const signOutBtn = screen.getByRole('button', { name: /sign out/i });
     fireEvent.click(signOutBtn);
-    expect(signOutBtn).toBeDisabled();
+    // MUI ListItemButton renders as div[role="button"], not a native <button>,
+    // so toBeDisabled() does not apply. Check aria-disabled instead.
+    expect(signOutBtn).toHaveAttribute('aria-disabled', 'true');
   });
 });
