@@ -22,10 +22,11 @@ If no progress file is found, the feature has not been specified yet — proceed
 
 Parse the Phase Status table and identify the **first phase whose status is `⏳ Pending` or `🔄 In Progress`**. This is the resume point.
 
-- If the resume point is **Specify + Plan** → proceed to Step 2.
+- If the resume point is **Specify** or **Plan** → proceed to Step 2.
 - If the resume point is **Implement** → skip to Step 3.
 - If the resume point is **Review** → skip to Step 4.
 - If the resume point is **Test** → skip to Step 5.
+- If the resume point is **Pull Request** → skip to Step 6.
 - If **all phases are ✅ Complete** → inform the user that the feature is already complete and stop.
 
 Do not spawn any agent for a phase that is already marked ✅ Complete.
