@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
@@ -37,14 +36,12 @@ export default function ProjectsPage() {
   const content = useMemo(() => {
     if (isPending) {
       return (
-        <Grid container spacing={3}>
+        <Box sx={styles.grid}>
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
             // eslint-disable-next-line react/no-array-index-key
-            <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
-              <Skeleton variant="rectangular" sx={styles.skeleton} />
-            </Grid>
+            <Skeleton key={i} variant="rectangular" sx={styles.skeleton} />
           ))}
-        </Grid>
+        </Box>
       );
     }
 
@@ -81,13 +78,11 @@ export default function ProjectsPage() {
     }
 
     return (
-      <Grid container spacing={3}>
+      <Box sx={styles.grid}>
         {projects?.map((project) => (
-          <Grid key={project.projectId} size={{ xs: 12, sm: 6, md: 4 }}>
-            <ProjectListCard project={project} />
-          </Grid>
+          <ProjectListCard key={project.projectId} project={project} />
         ))}
-      </Grid>
+      </Box>
     );
   }, [isPending, isError, projects, styles, t, handleRetry, handleCreateProject]);
 
@@ -126,7 +121,11 @@ const getStyles = (theme: Theme) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: theme.spacing(2),
-    marginBottom: theme.spacing(2),
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
+    gap: theme.spacing(3),
   },
   pageTitle: {
     ...theme.typography.h5,
