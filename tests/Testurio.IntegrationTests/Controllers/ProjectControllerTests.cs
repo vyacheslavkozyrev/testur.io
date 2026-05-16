@@ -261,6 +261,74 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // ─── PATCH /v1/projects/{id}/work-item-type-filter ───────────────────────
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns200_WithUpdatedProject()
+    {
+        var existing = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story", "Bug" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenEmptyArray()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = Array.Empty<string>() };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenArrayContainsEmptyString()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story", "" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns400_WhenMoreThan20Types()
+    {
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = Enumerable.Range(1, 21).Select(i => $"Type{i}").ToArray() };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PatchWorkItemTypeFilter_Returns403_WhenProjectBelongsToDifferentUser()
+    {
+        var otherUserProject = MakeProject(userId: "other-user-oid");
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(otherUserProject);
+
+        var client = CreateAuthenticatedClient();
+        var payload = new { allowedWorkItemTypes = new[] { "Story" } };
+        var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/work-item-type-filter", payload);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -304,6 +372,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                     ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });
