@@ -28,7 +28,7 @@
 - [x] T024 [Test] Frontend component tests for `RunStatusBadge`: renders correct MUI Chip label and color for all 7 `RunStatus` values — `source/Testurio.Web/src/components/RunStatusBadge/RunStatusBadge.test.tsx`
 - [x] T025 [Test] Frontend component tests for `ProjectCard`: card link points to correct history URL, `RunStatusBadge` rendered with correct status, `never_run` shows no timestamp — `source/Testurio.Web/src/components/ProjectCard/ProjectCard.test.tsx`
 - [x] T026 [Test] Frontend component tests for `QuotaUsageBar`: numeric ratio shown, amber at limit, red over limit, "No active plan" when `dailyLimit: 0` — `source/Testurio.Web/src/components/QuotaUsageBar/QuotaUsageBar.test.tsx`
-- [ ] T027 [Test] Frontend component tests for `DashboardPage`: loading skeleton visible during fetch, empty state shown on empty projects, error state with retry, card grid renders on success — `source/Testurio.Web/src/pages/DashboardPage/DashboardPage.test.tsx`
+- [x] T027 [Test] Frontend component tests for `DashboardPage`: loading skeleton visible during fetch, empty state shown on empty projects, error state with retry, card grid renders on success — `source/Testurio.Web/src/views/DashboardPage/DashboardPage.test.tsx`
 - [ ] T028 [Test] E2E tests for dashboard: authenticated user sees card grid sorted correctly, empty state CTA visible for new user, card click navigates to `/projects/:id/history`, quota bar present at top of page — `source/Testurio.Web/e2e/dashboard.spec.ts`
 
 ## Rationale
