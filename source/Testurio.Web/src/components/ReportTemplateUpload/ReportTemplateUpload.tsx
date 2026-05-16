@@ -218,7 +218,7 @@ const getStyles = (theme: Theme) =>
         alignItems: 'center',
         gap: theme.spacing(2),
         padding: theme.spacing(1.5),
-        borderRadius: 1,
+        borderRadius: `${theme.shape.borderRadius}px`,
         border: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.action.hover,
       },

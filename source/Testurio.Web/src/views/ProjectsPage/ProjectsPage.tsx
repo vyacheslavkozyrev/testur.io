@@ -134,7 +134,7 @@ const getStyles = (theme: Theme) => ({
   },
   skeleton: {
     height: 160,
-    borderRadius: 1,
+    borderRadius: `${theme.shape.borderRadius}px`,
   },
   emptyState: {
     display: 'flex',

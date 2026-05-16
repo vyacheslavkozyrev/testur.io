@@ -53,9 +53,11 @@ export default function QuotaUsageBar({ quotaUsage }: QuotaUsageBarProps) {
             {t('quota.usage', { used: usedToday, limit: dailyLimit })}
           </Typography>
         )}
-        <Typography variant="caption" sx={styles.resetsAt}>
-          {t('quota.resetsAt', { time: resetsAtFormatted })}
-        </Typography>
+        {!hasNoPlan && (
+          <Typography variant="caption" sx={styles.resetsAt}>
+            {t('quota.resetsAt', { time: resetsAtFormatted })}
+          </Typography>
+        )}
       </Box>
       {!hasNoPlan && (
         <LinearProgress
@@ -78,7 +80,7 @@ const getStyles = (theme: Theme) =>
         padding: theme.spacing(1.5, 2),
         backgroundColor: theme.palette.background.paper,
         border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: `${theme.shape.borderRadius}px`,
         display: 'flex',
         flexDirection: 'column' as const,
         gap: theme.spacing(0.75),
@@ -99,7 +101,7 @@ const getStyles = (theme: Theme) =>
         color: theme.palette.text.secondary,
       },
       bar: {
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: `${theme.shape.borderRadius}px`,
         height: 6,
       },
     }),
