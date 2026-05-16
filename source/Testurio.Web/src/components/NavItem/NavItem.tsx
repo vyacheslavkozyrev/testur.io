@@ -57,7 +57,7 @@ const getStyles = (theme: Theme, active: boolean) =>
   useMemo(
     () => ({
       button: {
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: 1,
         px: 2,
         py: 1,
         mb: 0.5,

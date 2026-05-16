@@ -68,7 +68,7 @@ export default function WebhookSetupPanel({
 
   return (
     <Box sx={styles.root}>
-      <Typography variant="h6" sx={styles.title}>
+      <Typography variant="body2" sx={styles.sectionLabel}>
         {t('webhookSetup.title')}
       </Typography>
 
@@ -164,13 +164,14 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         flexDirection: 'column',
         gap: theme.spacing(2),
-        padding: theme.spacing(3),
-        border: `1px solid ${theme.palette.divider}`,
-        borderRadius: theme.shape.borderRadius,
       },
-      title: {
-        ...theme.typography.h6,
-        color: theme.palette.text.primary,
+      sectionLabel: {
+        fontWeight: 600,
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.07em',
+        color: theme.palette.text.secondary,
+        fontSize: theme.typography.caption.fontSize,
+        marginBottom: theme.spacing(0.5),
       },
       maskedAlert: {
         width: '100%',
