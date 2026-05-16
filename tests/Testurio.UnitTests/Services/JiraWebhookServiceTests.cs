@@ -20,11 +20,16 @@ public class JiraWebhookServiceTests
     private readonly Mock<ITestRunJobSender> _jobSender = new();
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+    private readonly Mock<IWorkItemTypeFilterService> _filterService = new();
 
     public JiraWebhookServiceTests()
     {
         _secretResolver.Setup(r => r.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string s, CancellationToken _) => s);
+
+        // Default: allow "Story" only — mirrors behaviour tests were written against.
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
+        _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), It.Is<string>(s => s != "Story"))).Returns(false);
     }
 
     private JiraWebhookService CreateSut() => new(
@@ -33,6 +38,7 @@ public class JiraWebhookServiceTests
         _jobSender.Object,
         _jiraApiClient.Object,
         _secretResolver.Object,
+        _filterService.Object,
         NullLogger<JiraWebhookService>.Instance);
 
     private static Project MakeProject(string inTestingLabel = "In Testing") => new()
