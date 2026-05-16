@@ -4,7 +4,7 @@
 
 - [x] T001 [Domain] Extend `RunStatus` enum to include all seven values: `Queued`, `Running`, `Passed`, `Failed`, `Cancelled`, `TimedOut`, `NeverRun` — `source/Testurio.Core/Enums/RunStatus.cs`
 - [x] T002 [Domain] Create `LatestRunSummary` value object (`runId`, `status`, `startedAt`, `completedAt`) — `source/Testurio.Core/Models/LatestRunSummary.cs`
-- [ ] T003 [Domain] Create `DashboardProjectSummary` value object (`projectId`, `name`, `productUrl`, `testingStrategy`, `latestRun` nullable `LatestRunSummary`) — `source/Testurio.Core/Models/DashboardProjectSummary.cs`
+- [x] T003 [Domain] Create `DashboardProjectSummary` value object (`projectId`, `name`, `productUrl`, `testingStrategy`, `latestRun` nullable `LatestRunSummary`) — `source/Testurio.Core/Models/DashboardProjectSummary.cs`
 - [ ] T004 [Domain] Create `QuotaUsage` value object (`usedToday`, `dailyLimit`, `resetsAt`) — `source/Testurio.Core/Models/QuotaUsage.cs`
 - [ ] T005 [Domain] Create `DashboardUpdatedEvent` record (`projectId`, `latestRun`, optional `quotaUsage`) — `source/Testurio.Core/Events/DashboardUpdatedEvent.cs`; defined here so feature 0043 can reference it without a reverse dependency
 - [ ] T006 [Domain] Add `IStatsRepository` interface with methods `GetDashboardSummariesAsync` and `GetQuotaUsageAsync` — `source/Testurio.Core/Interfaces/IStatsRepository.cs`
