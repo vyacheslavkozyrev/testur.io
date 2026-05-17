@@ -29,4 +29,9 @@ public static class ProjectSecretNamespace
     public const string BasicAuthUser = "basic-auth-user";
     public const string BasicAuthPass = "basic-auth-pass";
     public const string HeaderTokenValue = "header-token-value";
+
+    // API test authentication secret key constants (feature 0023)
+    public const string ApiAuthBearerToken = "api-auth-bearer-token";
+    public const string ApiAuthApiKeyValue = "api-auth-api-key-value";
+    public const string ApiAuthBasicPassword = "api-auth-basic-password";
 }
