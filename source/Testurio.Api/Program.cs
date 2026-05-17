@@ -149,6 +149,7 @@ app.UseAuthorization();
 
 var v1 = app.MapGroup("/v1").RequireAuthorization();
 
+app.MapPlanEndpoints();
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
 app.MapProjectAccessEndpoints(v1);
