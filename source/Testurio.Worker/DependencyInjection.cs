@@ -9,6 +9,7 @@ using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Pipeline.AgentRouter;
+using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
 using Testurio.Pipeline.StoryParser;
@@ -77,6 +78,12 @@ public static class DependencyInjection
         // Generator agents pipeline stage (feature 0028).
         services.AddGenerators();
 
+        // Executor stage pipeline (feature 0029).
+        // IScreenshotStorage is registered by AddInfrastructure (via BlobScreenshotStorage).
+        // IProjectAccessCredentialProvider is registered by AddInfrastructure.
+        // IHttpClientFactory is provided by AddHttpClient registrations above.
+        services.AddExecutors();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -128,11 +135,12 @@ public static class DependencyInjection
             var memoryRetrievalService = sp.GetRequiredService<IMemoryRetrievalService>();
             var promptTemplateRepository = sp.GetRequiredService<IPromptTemplateRepository>();
             var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
+            var executorRouter = sp.GetRequiredService<IExecutorRouter>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
             return new TestRunJobProcessor(
                 sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
                 queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
-                promptTemplateRepository, testGeneratorFactory, logger);
+                promptTemplateRepository, testGeneratorFactory, executorRouter, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
