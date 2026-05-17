@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Json.Path;
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
@@ -21,15 +22,18 @@ namespace Testurio.Pipeline.Executors;
 public sealed partial class HttpExecutor : IHttpExecutor
 {
     private readonly IProjectAccessCredentialProvider _credentialProvider;
+    private readonly IApiTestAuthCredentialProvider _apiAuthProvider;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<HttpExecutor> _logger;
 
     public HttpExecutor(
         IProjectAccessCredentialProvider credentialProvider,
+        IApiTestAuthCredentialProvider apiAuthProvider,
         IHttpClientFactory httpClientFactory,
         ILogger<HttpExecutor> logger)
     {
         _credentialProvider = credentialProvider;
+        _apiAuthProvider = apiAuthProvider;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
@@ -322,6 +326,62 @@ public sealed partial class HttpExecutor : IHttpExecutor
     }
 
     /// <summary>
+    /// Resolves API test authentication credentials for the project once per run and returns
+    /// them for injection into individual requests via <see cref="ApplyApiAuthCredentials"/>.
+    /// </summary>
+    public async Task<ApiTestAuthCredentials> ResolveApiAuthCredentialsAsync(
+        Project project, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var credentials = await _apiAuthProvider.ResolveAsync(project, cancellationToken);
+            LogApiAuthCredentialsResolved(_logger, project.Id, credentials.GetType().Name);
+            return credentials;
+        }
+        catch (CredentialRetrievalException ex)
+        {
+            LogApiAuthRetrievalFailed(_logger, project.Id, ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Applies API test authentication credentials to a single <see cref="HttpRequestMessage"/>.
+    /// For <see cref="ApiTestAuthCredentials.ApiKey"/> with <see cref="ApiAuthApiKeyPlacement.Query"/>,
+    /// the URL of the request is rewritten to append the key as a query parameter.
+    /// </summary>
+    public static HttpRequestMessage ApplyApiAuthCredentials(
+        HttpRequestMessage request, ApiTestAuthCredentials credentials)
+    {
+        switch (credentials)
+        {
+            case ApiTestAuthCredentials.None:
+                break;
+
+            case ApiTestAuthCredentials.Bearer(var token):
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                break;
+
+            case ApiTestAuthCredentials.ApiKey(var name, ApiAuthApiKeyPlacement.Header, var value):
+                request.Headers.TryAddWithoutValidation(name, value);
+                break;
+
+            case ApiTestAuthCredentials.ApiKey(var name, ApiAuthApiKeyPlacement.Query, var value):
+                var original = request.RequestUri?.ToString() ?? string.Empty;
+                var separator = original.Contains('?') ? '&' : '?';
+                request.RequestUri = new Uri($"{original}{separator}{Uri.EscapeDataString(name)}={Uri.EscapeDataString(value)}", UriKind.RelativeOrAbsolute);
+                break;
+
+            case ApiTestAuthCredentials.Basic(var username, var password):
+                var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
+                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", encoded);
+                break;
+        }
+
+        return request;
+    }
+
+    /// <summary>
     /// Sends a single HTTP request with a per-request timeout derived from
     /// <paramref name="timeoutSeconds"/>, linked to the outer <paramref name="runToken"/>
     /// so cancellation from either source terminates the request.
@@ -375,4 +435,12 @@ public sealed partial class HttpExecutor : IHttpExecutor
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "HTTP request timed out for project {ProjectId} after {TimeoutSeconds}s (elapsed: {ElapsedMs}ms)")]
     private static partial void LogRequestTimedOut(ILogger logger, string projectId, int timeoutSeconds, long elapsedMs);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "API auth credentials resolved for project {ProjectId} (type: {CredentialType})")]
+    private static partial void LogApiAuthCredentialsResolved(ILogger logger, string projectId, string credentialType);
+
+    [LoggerMessage(Level = LogLevel.Error,
+        Message = "Failed to retrieve API auth credentials for project {ProjectId}: {ErrorMessage}")]
+    private static partial void LogApiAuthRetrievalFailed(ILogger logger, string projectId, string errorMessage);
 }

@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Pipeline.Executors;
@@ -10,9 +11,8 @@ using Testurio.Pipeline.Executors;
 namespace Testurio.UnitTests.Pipeline.Executors;
 
 /// <summary>
-/// Unit tests for <see cref="HttpExecutor"/> covering all assertion types and edge cases
-/// defined in feature 0029 acceptance criteria (AC-007 through AC-017), plus the
-/// per-request timeout logic from <see cref="HttpExecutor.SendWithTimeoutAsync"/>.
+/// Unit tests for <see cref="HttpExecutor"/> — covers API auth credential injection (feature 0023),
+/// per-request timeout (feature 0022), and all assertion types (feature 0029).
 /// HTTP responses are injected via a custom <see cref="DelegatingHandler"/> — no real network calls.
 /// </summary>
 public class HttpExecutorTests
@@ -58,6 +58,98 @@ public class HttpExecutorTests
             Path = path,
             Assertions = assertions
         };
+
+    // ─── ApplyApiAuthCredentials — None ───────────────────────────────────────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_None_AddsNoAuthHeader()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api");
+
+        HttpExecutor.ApplyApiAuthCredentials(request, new ApiTestAuthCredentials.None());
+
+        Assert.Null(request.Headers.Authorization);
+        Assert.False(request.Headers.Contains("Authorization"));
+    }
+
+    // ─── ApplyApiAuthCredentials — Bearer ─────────────────────────────────────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_Bearer_AddsAuthorizationBearerHeader()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api");
+
+        HttpExecutor.ApplyApiAuthCredentials(request, new ApiTestAuthCredentials.Bearer("tok-secret"));
+
+        Assert.NotNull(request.Headers.Authorization);
+        Assert.Equal("Bearer", request.Headers.Authorization.Scheme);
+        Assert.Equal("tok-secret", request.Headers.Authorization.Parameter);
+    }
+
+    // ─── ApplyApiAuthCredentials — ApiKey Header ──────────────────────────────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_ApiKeyHeader_AddsCustomHeader()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api");
+
+        HttpExecutor.ApplyApiAuthCredentials(
+            request,
+            new ApiTestAuthCredentials.ApiKey("X-Api-Key", ApiAuthApiKeyPlacement.Header, "key-val"));
+
+        Assert.True(request.Headers.Contains("X-Api-Key"));
+        Assert.Equal("key-val", request.Headers.GetValues("X-Api-Key").First());
+        Assert.Null(request.Headers.Authorization);
+    }
+
+    // ─── ApplyApiAuthCredentials — ApiKey Query (no existing query params) ────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_ApiKeyQuery_AppendsKeyToUrl_WhenNoExistingQueryParams()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api/users");
+
+        HttpExecutor.ApplyApiAuthCredentials(
+            request,
+            new ApiTestAuthCredentials.ApiKey("api_key", ApiAuthApiKeyPlacement.Query, "my-secret"));
+
+        var uri = request.RequestUri?.ToString() ?? string.Empty;
+        Assert.Contains("?api_key=my-secret", uri);
+        Assert.Null(request.Headers.Authorization);
+    }
+
+    // ─── ApplyApiAuthCredentials — ApiKey Query (existing query params) ───────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_ApiKeyQuery_AppendsWithAmpersand_WhenQueryParamsExist()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api?page=1");
+
+        HttpExecutor.ApplyApiAuthCredentials(
+            request,
+            new ApiTestAuthCredentials.ApiKey("api_key", ApiAuthApiKeyPlacement.Query, "my-secret"));
+
+        var uri = request.RequestUri?.ToString() ?? string.Empty;
+        Assert.Contains("&api_key=my-secret", uri);
+    }
+
+    // ─── ApplyApiAuthCredentials — Basic ──────────────────────────────────────
+
+    [Fact]
+    public void ApplyApiAuthCredentials_Basic_AddsAuthorizationBasicHeader()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "https://example.com/api");
+
+        HttpExecutor.ApplyApiAuthCredentials(
+            request,
+            new ApiTestAuthCredentials.Basic("user", "pass"));
+
+        Assert.NotNull(request.Headers.Authorization);
+        Assert.Equal("Basic", request.Headers.Authorization.Scheme);
+        var decoded = System.Text.Encoding.UTF8.GetString(
+            Convert.FromBase64String(request.Headers.Authorization.Parameter!));
+        Assert.Equal("user:pass", decoded);
+    }
 
     // ─── AC-011: status_code assertion ───────────────────────────────────────
 

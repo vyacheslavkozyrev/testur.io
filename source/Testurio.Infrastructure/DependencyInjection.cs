@@ -217,6 +217,10 @@ public static class DependencyInjection
             new KeyVault.ProjectAccessCredentialProvider(
                 sp.GetRequiredService<ISecretResolver>()));
 
+        services.AddSingleton<IApiTestAuthCredentialProvider>(sp =>
+            new KeyVault.ApiTestAuthCredentialProvider(
+                sp.GetRequiredService<ISecretResolver>()));
+
         return services;
     }
 

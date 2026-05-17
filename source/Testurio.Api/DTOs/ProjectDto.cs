@@ -14,6 +14,8 @@ public sealed record ProjectDto(
     string? CustomPrompt,
     string[]? AllowedWorkItemTypes,
     int RequestTimeoutSeconds,
+    /// <summary>"none" | "bearer" | "api_key" | "basic"</summary>
+    string ApiAuthMethod,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 

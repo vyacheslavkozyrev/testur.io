@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import NextLink from 'next/link';
 import { useTheme, type Theme } from '@mui/material/styles';
 import AccessModeSelector, { type AccessModeSelectorHandle } from '@/components/AccessModeSelector/AccessModeSelector';
+import ApiAuthMethodSelector, { type ApiAuthMethodSelectorHandle } from '@/components/ApiAuthMethodSelector/ApiAuthMethodSelector';
 import RequestTimeoutField from '@/components/RequestTimeoutField/RequestTimeoutField';
 import { PROJECTS_ROUTE } from '@/routes/routes';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
@@ -36,6 +37,7 @@ interface SectionErrors {
   projectInfo: boolean;
   reportSettings: boolean;
   access: boolean;
+  apiAuth: boolean;
 }
 
 interface PendingSections {
@@ -62,12 +64,13 @@ export default function ProjectSettingsPage() {
   const [requestTimeoutSeconds, setRequestTimeoutSeconds] = useState<number>(30);
   const [savedRequestTimeoutSeconds, setSavedRequestTimeoutSeconds] = useState<number>(30);
   const [saveBarState, setSaveBarState] = useState<SaveBarState>('clean');
-  const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false });
+  const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false, apiAuth: false });
   const [pendingSections, setPendingSections] = useState<PendingSections>({ projectInfo: true, reportSettings: true });
 
   const projectFormRef = useRef<ProjectFormHandle>(null);
   const reportSettingsRef = useRef<ReportSettingsSectionHandle>(null);
   const accessRef = useRef<AccessModeSelectorHandle>(null);
+  const apiAuthRef = useRef<ApiAuthMethodSelectorHandle>(null);
   const capturedFormData = useRef<UpdateProjectRequest | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -90,9 +93,10 @@ export default function ProjectSettingsPage() {
     const formDirty = projectFormRef.current?.isDirty ?? false;
     const reportDirty = reportSettingsRef.current?.isDirty ?? false;
     const accessDirty = accessRef.current?.isDirty ?? false;
+    const apiAuthDirty = apiAuthRef.current?.isDirty ?? false;
     const promptDirty = customPrompt !== savedCustomPrompt;
     const timeoutDirty = requestTimeoutSeconds !== savedRequestTimeoutSeconds;
-    return formDirty || reportDirty || accessDirty || promptDirty || timeoutDirty;
+    return formDirty || reportDirty || accessDirty || apiAuthDirty || promptDirty || timeoutDirty;
   }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds]);
 
   // Poll computeDirty() after every render — form isDirty lives in a ref and
@@ -128,6 +132,7 @@ export default function ProjectSettingsPage() {
     let projectInfoOk = !pendingSections.projectInfo;
     let reportSettingsOk = !pendingSections.reportSettings;
     let accessOk = !(accessRef.current?.isDirty ?? false);
+    let apiAuthOk = !(apiAuthRef.current?.isDirty ?? false);
 
     if (pendingSections.projectInfo) {
       const valid = await projectFormRef.current?.triggerSubmit();
@@ -169,14 +174,24 @@ export default function ProjectSettingsPage() {
       }
     }
 
+    if (apiAuthRef.current?.isDirty) {
+      try {
+        await apiAuthRef.current.save();
+        apiAuthOk = true;
+      } catch {
+        apiAuthOk = false;
+      }
+    }
+
     const newErrors: SectionErrors = {
       projectInfo: !projectInfoOk,
       reportSettings: !reportSettingsOk,
       access: !accessOk,
+      apiAuth: !apiAuthOk,
     };
     setSectionErrors(newErrors);
 
-    const anyError = newErrors.projectInfo || newErrors.reportSettings || newErrors.access;
+    const anyError = newErrors.projectInfo || newErrors.reportSettings || newErrors.access || newErrors.apiAuth;
     if (anyError) {
       setPendingSections({ projectInfo: newErrors.projectInfo, reportSettings: newErrors.reportSettings });
       setSaveBarState('dirty');
@@ -298,6 +313,22 @@ export default function ProjectSettingsPage() {
               onChange={setRequestTimeoutSeconds}
             />
             <AccessModeSelector ref={accessRef} projectId={project.projectId} />
+          </Paper>
+
+          {/* API Authentication card */}
+          <Paper variant="outlined" sx={styles.card}>
+            {sectionErrors.apiAuth && (
+              <Alert severity="error" sx={styles.cardAlert}>
+                {t('settings.saveError')}
+              </Alert>
+            )}
+            <Typography variant="subtitle1" color="text.primary">
+              {t('apiAuth.section.title')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('apiAuth.section.description')}
+            </Typography>
+            <ApiAuthMethodSelector ref={apiAuthRef} projectId={project.projectId} />
           </Paper>
 
           {/* Report settings card */}
