@@ -18,10 +18,10 @@
 - [x] T014 [UI] Create `SignInPage` view: email + password form, Forgot password link, Create account link, inline error handling, loading state, `returnUrl` redirect on success — `source/Testurio.Web/src/views/SignInPage/SignInPage.tsx`
 - [x] T015 [UI] Create `SignUpPage` view: email + password + confirm-password form, inline validation, loading state, redirect to `/dashboard` on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.tsx`
 - [x] T016 [UI] Create `ForgotPasswordPage` view: email field, submit → confirmation message, Back to sign-in link — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.tsx`
-- [ ] T017 [UI] Add Next.js page for `/sign-in` that renders `SignInPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-in/page.tsx`
-- [ ] T018 [UI] Add Next.js page for `/sign-up` that renders `SignUpPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-up/page.tsx`
-- [ ] T019 [UI] Add Next.js page for `/forgot-password` that renders `ForgotPasswordPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/forgot-password/page.tsx`
-- [ ] T020 [UI] Add `(auth)` route group layout — a minimal wrapper with no header/sidebar, just `{children}` — `source/Testurio.Web/src/app/(auth)/layout.tsx`
+- [x] T017 [UI] Add Next.js page for `/sign-in` that renders `SignInPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-in/page.tsx`
+- [x] T018 [UI] Add Next.js page for `/sign-up` that renders `SignUpPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-up/page.tsx`
+- [x] T019 [UI] Add Next.js page for `/forgot-password` that renders `ForgotPasswordPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/forgot-password/page.tsx`
+- [x] T020 [UI] Add `(auth)` route group layout — a minimal wrapper with no header/sidebar, just `{children}` — `source/Testurio.Web/src/app/(auth)/layout.tsx`
 - [x] T021 [UI] Add auth route constants: `SIGN_IN_ROUTE`, `SIGN_UP_ROUTE`, `FORGOT_PASSWORD_ROUTE` — `source/Testurio.Web/src/routes/routes.ts`
 - [ ] T022 [UI] Add auth translation keys (all strings for sign-in, sign-up, forgot-password pages) — `source/Testurio.Web/src/locales/en/auth.json`
 - [ ] T023 [UI] Restore the auth guard in the `(authenticated)` layout: uncomment server-side session check, redirect to `/sign-in?returnUrl=<path>` when session is missing or invalid — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
