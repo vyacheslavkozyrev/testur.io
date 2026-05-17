@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\source\Testurio.Api\Testurio.Api.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Core\Testurio.Core.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.AgentRouter\Testurio.Pipeline.AgentRouter.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Pipeline.Generators\Testurio.Pipeline.Generators.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.MemoryRetrieval\Testurio.Pipeline.MemoryRetrieval.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.StoryParser\Testurio.Pipeline.StoryParser.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Plugins\Testurio.Plugins.csproj" />

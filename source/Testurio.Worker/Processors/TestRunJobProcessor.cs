@@ -26,6 +26,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly IAgentRouter _agentRouter;
     private readonly IMemoryRetrievalService _memoryRetrievalService;
+    private readonly IPromptTemplateRepository _promptTemplateRepository;
+    private readonly ITestGeneratorFactory _testGeneratorFactory;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -38,6 +40,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ReportDeliveryStep reportDeliveryStep,
         IAgentRouter agentRouter,
         IMemoryRetrievalService memoryRetrievalService,
+        IPromptTemplateRepository promptTemplateRepository,
+        ITestGeneratorFactory testGeneratorFactory,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -52,6 +56,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _reportDeliveryStep = reportDeliveryStep;
         _agentRouter = agentRouter;
         _memoryRetrievalService = memoryRetrievalService;
+        _promptTemplateRepository = promptTemplateRepository;
+        _testGeneratorFactory = testGeneratorFactory;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -129,9 +135,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
 
-            // StoryParserException and ScenarioGenerationException are permanent failures — dead-letter
-            // so Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
-            if (ex is StoryParserException or ScenarioGenerationException)
+            // StoryParserException, ScenarioGenerationException, and InvalidOperationException
+            // (e.g. missing PromptTemplate — AC-005) are permanent failures — dead-letter so
+            // Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
+            if (ex is StoryParserException or ScenarioGenerationException or InvalidOperationException)
                 await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
             else
                 await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);
@@ -203,17 +210,109 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var memoryResult = await _memoryRetrievalService.RetrieveAsync(parsedStory, project, testRun.Id, cancellationToken);
         LogMemoryRetrieved(_logger, testRun.Id, memoryResult.Scenarios.Count);
 
-        // Stage 4: Generate test scenarios (feature 0002).
-        // TODO (feature 0028): pass memoryResult to the new generator agents when they are wired in.
+        // Stage 4: Generate test scenarios (feature 0028).
+        // Load prompt templates for all resolved test types. If any template is missing the run
+        // fails immediately (AC-005) — no agent is invoked and no partial work is done.
+        var generatorResults = await RunGeneratorStageAsync(
+            testRun, project, parsedStory, memoryResult, routerResult.ResolvedTestTypes, cancellationToken);
+
+        // Stage 5: Execute API tests against the product URL (feature 0003).
         var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
         var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
 
-        // Stage 5: Execute API tests against the product URL (feature 0003).
         var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
         await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
 
         // Stage 6: Build and post the report to Jira (feature 0004).
         await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes stage 4 of the pipeline: loads prompt templates, builds generator contexts,
+    /// launches enabled agents with <see cref="Task.WhenAll"/>, catches per-agent failures,
+    /// accumulates <see cref="TestRun.GenerationWarnings"/>, and persists them to Cosmos.
+    /// </summary>
+    private async Task<GeneratorResults> RunGeneratorStageAsync(
+        TestRun testRun,
+        Core.Entities.Project project,
+        ParsedStory parsedStory,
+        MemoryRetrievalResult memoryResult,
+        TestType[] resolvedTestTypes,
+        CancellationToken cancellationToken)
+    {
+        // AC-003 / AC-005: load templates for all resolved types. Throws InvalidOperationException
+        // on missing template; this propagates to OnMessageAsync and dead-letters the message.
+        var templateMap = new Dictionary<TestType, PromptTemplate>();
+        foreach (var testType in resolvedTestTypes)
+        {
+            var templateType = testType == TestType.Api ? "api_test_generator" : "ui_e2e_test_generator";
+            var template = await _promptTemplateRepository.GetAsync(templateType, cancellationToken);
+            templateMap[testType] = template;
+            LogTemplateLoaded(_logger, testRun.Id, templateType);
+        }
+
+        // Build a task per enabled test type. Non-enabled types are skipped — their scenario
+        // lists in the merged result will remain empty (AC-026).
+        var agentTasks = new List<(TestType Type, Task<GeneratorResults> Task)>();
+
+        foreach (var testType in resolvedTestTypes)
+        {
+            var context = new GeneratorContext
+            {
+                ParsedStory = parsedStory,
+                MemoryRetrievalResult = memoryResult,
+                ProjectConfig = project,
+                PromptTemplate = templateMap[testType],
+                TestRunId = Guid.Parse(testRun.Id)
+            };
+
+            var agent = _testGeneratorFactory.Create(testType);
+            agentTasks.Add((testType, agent.GenerateAsync(context, cancellationToken)));
+        }
+
+        // AC-025: launch all agents concurrently and wait for all to complete.
+        // Task.WhenAll does not throw on the first failure — all tasks run to completion,
+        // allowing per-task exception handling below (AC-033).
+        try
+        {
+            await Task.WhenAll(agentTasks.Select(t => (Task)t.Task));
+        }
+        catch
+        {
+            // Individual task exceptions are handled below via await; swallow the aggregate here.
+        }
+
+        // Collect results and handle per-agent failures (AC-033, AC-034).
+        var apiScenarios = new List<ApiTestScenario>();
+        var uiE2eScenarios = new List<UiE2eTestScenario>();
+        var warnings = new List<string>(testRun.GenerationWarnings);
+
+        foreach (var (testType, task) in agentTasks)
+        {
+            try
+            {
+                var result = await task;
+                apiScenarios.AddRange(result.ApiScenarios);
+                uiE2eScenarios.AddRange(result.UiE2eScenarios);
+            }
+            catch (TestGeneratorException ex)
+            {
+                // AC-034: append warning string for the failing agent.
+                var warning = $"{ex.TestType switch { TestType.Api => "api_test_generator", _ => "ui_e2e_test_generator" }}: JSON parse failed after {ex.Attempts} attempts";
+                warnings.Add(warning);
+                LogGeneratorFailed(_logger, testRun.Id, ex.TestType.ToString(), ex.Attempts, ex);
+            }
+        }
+
+        // AC-038 / AC-039: persist accumulated warnings before invoking stage 5.
+        testRun.GenerationWarnings = warnings.ToArray();
+        await _testRunRepository.UpdateAsync(testRun, cancellationToken);
+
+        return new GeneratorResults
+        {
+            ApiScenarios = apiScenarios.AsReadOnly(),
+            UiE2eScenarios = uiE2eScenarios.AsReadOnly()
+        };
     }
 
     /// <summary>
@@ -272,6 +371,12 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to update status to Failed for test run {TestRunId}")]
     private static partial void LogStatusUpdateFailed(ILogger logger, string testRunId, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Prompt template '{TemplateType}' loaded for test run {TestRunId}")]
+    private static partial void LogTemplateLoaded(ILogger logger, string testRunId, string templateType);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Generator agent for type {TestType} failed after {Attempts} attempt(s) for test run {TestRunId}")]
+    private static partial void LogGeneratorFailed(ILogger logger, string testRunId, string testType, int attempts, Exception ex);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Service Bus processor error on {EntityPath}")]
     private static partial void LogServiceBusError(ILogger logger, string entityPath, Exception ex);

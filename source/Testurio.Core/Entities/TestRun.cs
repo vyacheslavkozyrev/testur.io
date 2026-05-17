@@ -37,6 +37,17 @@ public class TestRun
     /// </summary>
     public string? ClassificationReason { get; set; }
 
+    // ─── Generator metadata (stage 4 — feature 0028) ─────────────────────────
+
+    /// <summary>
+    /// Warnings accumulated during the generator stage.
+    /// Each entry describes one agent that exhausted its retry budget,
+    /// e.g. <c>"api_test_generator: JSON parse failed after 4 attempts"</c>.
+    /// Empty array when both agents complete successfully — never null.
+    /// Populated by <c>TestRunJobProcessor</c> before invoking stage 5.
+    /// </summary>
+    public string[] GenerationWarnings { get; set; } = [];
+
     /// <summary>Blob Storage URI of the rendered report for this run. Populated by ReportWriterPlugin (feature 0009).</summary>
     public string? ReportBlobUri { get; set; }
     /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>

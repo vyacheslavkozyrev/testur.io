@@ -9,6 +9,7 @@ using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Pipeline.AgentRouter;
+using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
 using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
@@ -73,6 +74,9 @@ public static class DependencyInjection
         services.AddAzureOpenAI();
         services.AddMemoryRetrieval();
 
+        // Generator agents pipeline stage (feature 0028).
+        services.AddGenerators();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -122,8 +126,13 @@ public static class DependencyInjection
             var reportDeliveryStep = sp.GetRequiredService<ReportDeliveryStep>();
             var agentRouter = sp.GetRequiredService<IAgentRouter>();
             var memoryRetrievalService = sp.GetRequiredService<IMemoryRetrievalService>();
+            var promptTemplateRepository = sp.GetRequiredService<IPromptTemplateRepository>();
+            var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
-            return new TestRunJobProcessor(sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp, queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService, logger);
+            return new TestRunJobProcessor(
+                sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
+                queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
+                promptTemplateRepository, testGeneratorFactory, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
