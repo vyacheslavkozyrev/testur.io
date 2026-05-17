@@ -426,10 +426,26 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
 
-                // Feature 0043: replace the DashboardEventRelay hosted service with a no-op so the
-                // test host does not attempt a real Service Bus connection during startup.
+                // Feature 0043: remove the DashboardEventRelay singleton and its companion
+                // IHostedService registration so the test host does not attempt a real Service
+                // Bus connection during startup.
+                // Program.cs uses AddSingleton<DashboardEventRelay>(factory) +
+                // AddHostedService(sp => sp.GetRequiredService<DashboardEventRelay>()) — the
+                // IHostedService descriptor has a non-null ImplementationFactory and no
+                // ImplementationType (unlike typed AddHostedService<T>() registrations).
+                // Removing descriptors matching that shape targets only the relay; other hosted
+                // services registered by the framework (e.g. generic host lifetime) use typed
+                // ImplementationType descriptors and are left intact.
                 services.RemoveAll<DashboardEventRelay>();
-                services.RemoveAll<IHostedService>();
+                var relayDescriptors = services
+                    .Where(d =>
+                        d.ServiceType == typeof(IHostedService) &&
+                        d.ImplementationType is null &&
+                        d.ImplementationInstance is null &&
+                        d.ImplementationFactory is not null)
+                    .ToList();
+                foreach (var descriptor in relayDescriptors)
+                    services.Remove(descriptor);
 
                 services.AddAuthentication("Test")
                     .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });

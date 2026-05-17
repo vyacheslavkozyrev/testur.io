@@ -9,6 +9,12 @@ export interface UseDashboardStreamOptions {
    * The caller should fall back to a one-time re-fetch and stop expecting live data.
    */
   onFallback: () => void;
+  /**
+   * Invoked when the connection drops and a reconnect attempt is scheduled.
+   * Called with `true` when reconnect back-off begins, `false` when the connection is restored.
+   * Not called if the connection is cleanly closed (e.g. on unmount).
+   */
+  onReconnecting?: (reconnecting: boolean) => void;
   /** Set to true to open the SSE connection (e.g. after the snapshot has loaded). */
   enabled: boolean;
 }
@@ -27,12 +33,15 @@ const MAX_ATTEMPTS = 5;
 export function useDashboardStream({
   onUpdate,
   onFallback,
+  onReconnecting,
   enabled,
 }: UseDashboardStreamOptions): void {
   const onUpdateRef = useRef(onUpdate);
   const onFallbackRef = useRef(onFallback);
+  const onReconnectingRef = useRef(onReconnecting);
   onUpdateRef.current = onUpdate;
   onFallbackRef.current = onFallback;
+  onReconnectingRef.current = onReconnecting;
 
   const attemptsRef = useRef(0);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,6 +67,8 @@ export function useDashboardStream({
     es.onopen = () => {
       // Reset attempt counter on a successful connection.
       attemptsRef.current = 0;
+      // Notify caller that the connection is healthy (clears any reconnecting indicator).
+      onReconnectingRef.current?.(false);
     };
 
     es.onmessage = (evt: MessageEvent<string>) => {
@@ -79,6 +90,9 @@ export function useDashboardStream({
         onFallbackRef.current();
         return;
       }
+
+      // Signal the caller that reconnect back-off is in progress.
+      onReconnectingRef.current?.(true);
 
       const delay = Math.min(
         INITIAL_DELAY_MS * Math.pow(2, attemptsRef.current - 1),

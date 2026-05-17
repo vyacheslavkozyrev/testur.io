@@ -89,11 +89,16 @@ export default function DashboardPage() {
     void refetch();
   }, [refetch]);
 
+  const handleReconnecting = useCallback((reconnecting: boolean) => {
+    setIsReconnecting(reconnecting);
+  }, []);
+
   // Open the SSE stream only after the snapshot has loaded successfully.
   useDashboardStream({
     enabled: !!data && !isFallback,
     onUpdate: handleStreamUpdate,
     onFallback: handleFallback,
+    onReconnecting: handleReconnecting,
   });
 
   const content = useMemo(() => {
