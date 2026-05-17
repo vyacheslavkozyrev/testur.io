@@ -14,6 +14,7 @@ using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
+using Testurio.Infrastructure.Seeding;
 
 namespace Testurio.Infrastructure;
 
@@ -159,6 +160,22 @@ public static class DependencyInjection
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new StatsRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        // Feature 0028: prompt template repository for generator agents (stage 4).
+        services.AddSingleton<IPromptTemplateRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PromptTemplateRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        // Feature 0028: seeder that writes initial PromptTemplate documents to Cosmos at startup.
+        services.AddSingleton<PromptTemplateSeeder>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
