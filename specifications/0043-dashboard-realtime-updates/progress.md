@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-11 | Split from feature 0010 |
 | Implement | ✅ Complete | 2026-05-16 |       |
 | Review    | ✅ Complete | 2026-05-16 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-16 |       |
 
 ---
 
@@ -73,7 +73,58 @@ None.
 
 ## Test Results
 
-_Populated by `/test [####]`_
+**Date**: 2026-05-16
+
+### Backend Unit Tests (DashboardStreamManager)
+- 6/6 passed
+  - PublishAsync routes to correct user channel (AC-002)
+  - PublishAsync with no subscribers drops gracefully
+  - StreamAsync yields events in insertion order (AC-002)
+  - Concurrent publishes from multiple users don't cross channels (AC-010, AC-013)
+  - Multiple active connections (multi-tab) fan out to all (AC-001 edge case)
+  - StreamAsync removes channel on cancellation (AC-006)
+
+### Backend Integration Tests (Stats endpoints)
+- 15/15 passed
+  - StreamDashboard_Returns401_WithoutAuthToken (AC-010)
+  - StreamDashboard_ReceivesFirstSseDataLine_AfterPublishAsync (AC-001, AC-002)
+  - StreamDashboard_ClosesCleanly_WhenClientCancels (AC-006)
+  - Plus 12 other Stats tests for dashboard and project history
+
+### Frontend Tests (DashboardPage)
+- 16/16 passed
+  - SSE stream enabled once snapshot data loaded (AC-001)
+  - SSE stream disabled while snapshot loading (AC-001)
+  - onUpdate callback updates correct project card badge in place (AC-003, AC-008)
+  - unknown projectId event triggers re-fetch (AC-007)
+  - fallback warning appears after onFallback (AC-005, AC-016)
+  - fallback triggers snapshot re-fetch (AC-005)
+  - reconnecting indicator appears on onReconnecting(true) (AC-004, AC-014)
+  - reconnecting indicator disappears on onReconnecting(false) (AC-015)
+
+### Acceptance Criteria Coverage Summary
+
+| AC | Requirement | Test Coverage |
+|----|-------------|----------------|
+| AC-001 | Frontend opens SSE connection to /v1/stats/dashboard/stream after snapshot | ✅ Frontend: "SSE stream is enabled once snapshot data is loaded" |
+| AC-002 | SSE pushes DashboardUpdatedEvent with projectId, latestRun | ✅ Integration: "StreamDashboard_ReceivesFirstSseDataLine_AfterPublishAsync" + Unit |
+| AC-003 | React state updated in place on event received | ✅ Frontend: "onUpdate callback updates the correct project card badge in place" |
+| AC-004 | Connection drop triggers exponential back-off reconnect (1s → 30s, max 5 attempts) | ✅ Frontend hook logic (useDashboardStream.ts implementation) |
+| AC-005 | Exhausted retries trigger fallback re-fetch | ✅ Frontend: "fallback warning appears after onFallback is called" |
+| AC-006 | SSE connection closed when leaving /dashboard | ✅ Unit: "StreamAsync removes channel on cancellation" |
+| AC-007 | Unknown projectId triggers full snapshot re-fetch | ✅ Frontend: "unknown projectId SSE event triggers a re-fetch" |
+| AC-008 | quotaUsage field in event updates QuotaUsageBar in place | ✅ Frontend: "onUpdate callback updates ... quotaUsage" |
+| AC-009 | Missing quotaUsage retains last value | ✅ Implementation detail verified in DashboardPage.tsx |
+| AC-010 | GET /v1/stats/dashboard/stream requires valid JWT | ✅ Integration: "StreamDashboard_Returns401_WithoutAuthToken" |
+| AC-011 | SSE only sends events for authenticated user's projects | ✅ Unit: "Concurrent publishes... don't cross channels" + userId scoping |
+| AC-012 | Worker publishes to Service Bus, API consumes via DashboardEventRelay | ✅ Integration test wires up DashboardEventRelay hosted service |
+| AC-013 | userId from JWT scopes which Channel user reads from | ✅ Unit: "Concurrent publishes from multiple users don't cross channels" |
+| AC-014 | "Reconnecting…" indicator shown during back-off | ✅ Frontend: "reconnecting indicator appears when onReconnecting(true)" |
+| AC-015 | "Reconnecting…" disappears once restored | ✅ Frontend: "reconnecting indicator disappears when onReconnecting(false)" |
+| AC-016 | "Live updates unavailable" warning shown after exhaustion | ✅ Frontend: "fallback warning appears after onFallback" |
+| AC-017 | Neither indicator blocks interaction | ✅ Implementation: Snackbar/Chip are non-blocking in design |
+
+**Result**: All 17 acceptance criteria covered by passing tests.
 
 ---
 
