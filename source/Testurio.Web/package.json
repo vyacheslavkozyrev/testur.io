@@ -13,6 +13,7 @@
     "msw:init": "msw init public/ --save"
   },
   "dependencies": {
+    "@azure/msal-browser": "^4.25.1",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@mui/icons-material": "^6.5.0",
