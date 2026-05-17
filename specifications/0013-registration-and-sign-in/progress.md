@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-17 |       |
 | Implement | ✅ Complete | 2026-05-17 |       |
 | Review    | ✅ Complete | 2026-05-17 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-17 |       |
 
 ---
 
@@ -58,7 +58,14 @@
 
 ## Test Results
 
-_Populated by `/test [####]`_
+### 2026-05-17
+
+- 4 test suites, 37 tests — all passed (0 failures, 0 skipped).
+- `useAuth.test.ts` (11 tests): `useSignIn`, `useSignUp`, `useForgotPassword`, `useSignOut` hooks — all mutation paths, returnUrl guard, error exposure.
+- `SignInPage.test.tsx` (7 tests): form fields, Forgot password / Create account links, submit with trimmed email, loading state, invalid credentials, rate-limit error, generic error.
+- `SignUpPage.test.tsx` (9 tests): three-field form, password policy (length/uppercase), mismatch error, loading state, duplicate-email error with sign-in link, generic error.
+- `ForgotPasswordPage.test.tsx` (8 tests): email field, loading state, confirmation message (anti-enumeration), Back to sign in link, form hidden in confirmation state, generic error.
+- T030 (E2E) remains deferred — requires live or fully mocked B2C/Next.js server; explicitly out of scope per plan.
 
 ---
 
