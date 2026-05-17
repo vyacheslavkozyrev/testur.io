@@ -26,12 +26,32 @@ public class TestResult
 
     /// <summary>
     /// AI-generated recommendation for this run.
-    /// Typical values: <c>"approve"</c>, <c>"investigate"</c>, <c>"block"</c>.
+    /// One of: <c>"approve"</c>, <c>"request_fixes"</c>, or <c>"flag_for_manual_review"</c>.
     /// </summary>
     public required string Recommendation { get; init; }
 
+    // ─── Scenario counts (feature 0030) ──────────────────────────────────────
+
+    /// <summary>Total number of API scenarios that were executed.</summary>
+    public int TotalApiScenarios { get; init; }
+
+    /// <summary>Number of API scenarios where all assertions passed.</summary>
+    public int PassedApiScenarios { get; init; }
+
+    /// <summary>Total number of UI E2E scenarios that were executed.</summary>
+    public int TotalUiE2eScenarios { get; init; }
+
+    /// <summary>Number of UI E2E scenarios where all steps passed.</summary>
+    public int PassedUiE2eScenarios { get; init; }
+
     /// <summary>Total wall-clock duration of all scenario executions in milliseconds.</summary>
     public long TotalDurationMs { get; init; }
+
+    /// <summary>
+    /// The ID of the comment posted to the originating ADO/Jira ticket by <c>ReportWriter</c>.
+    /// <c>null</c> when the post-back failed or has not yet been attempted.
+    /// </summary>
+    public string? PmCommentId { get; init; }
 
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
