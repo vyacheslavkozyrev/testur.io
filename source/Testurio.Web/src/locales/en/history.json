@@ -1,0 +1,52 @@
+{
+  "chart": {
+    "title": "Pass / Fail Trend",
+    "rangeToggleAriaLabel": "Select time range",
+    "range7": "Last 7 days",
+    "range30": "Last 30 days",
+    "range90": "Last 90 days",
+    "xAxisLabel": "Date",
+    "passedLabel": "Passed",
+    "failedLabel": "Failed",
+    "emptyState": "No test runs in the selected period."
+  },
+  "table": {
+    "ariaLabel": "Test run history",
+    "columnStory": "Story",
+    "columnStatus": "Status",
+    "columnDate": "Date",
+    "columnDuration": "Duration",
+    "columnScenarios": "Scenarios",
+    "scenarioCount": "{{passed}} / {{total}} passed"
+  },
+  "scenarioCard": {
+    "screenshotAlt": "Test screenshot"
+  },
+  "panel": {
+    "title": "{{storyTitle}}",
+    "noData": "Run detail",
+    "projectSettingsTooltip": "Go to project settings",
+    "projectSettingsAriaLabel": "Project settings",
+    "closeAriaLabel": "Close panel",
+    "structuredView": "Structured",
+    "rawReport": "Raw report",
+    "rawReportDisabledTooltip": "No raw report available for this run."
+  },
+  "verdict": {
+    "passed": "Passed",
+    "failed": "Failed"
+  },
+  "recommendation": {
+    "approve": "Approve and merge",
+    "request_fixes": "Request fixes",
+    "flag_for_manual_review": "Flag for manual review"
+  },
+  "page": {
+    "title": "Test History",
+    "projectSettingsButton": "Project Settings",
+    "emptyState": "No test runs yet. Trigger a run from your PM tool to see results here.",
+    "errorMessage": "Failed to load test history.",
+    "retryButton": "Retry",
+    "projectNotFound": "Project not found or you do not have access to it."
+  }
+}

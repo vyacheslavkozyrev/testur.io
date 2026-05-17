@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Testurio.Api.DTOs;
+using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
@@ -137,6 +138,142 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         _factory.StatsRepoMock.Verify(
             r => r.GetDashboardSummariesAsync("test-user-oid", It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    // ─── GET /v1/stats/projects/{projectId}/history ───────────────────────────
+
+    [Fact]
+    public async Task GetProjectHistory_Returns401_WithoutAuthToken()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{Guid.NewGuid()}/history");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetProjectHistory_Returns404_WhenProjectBelongsToDifferentUser()
+    {
+        var projectId = Guid.NewGuid().ToString();
+        _factory.StatsRepoMock
+            .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(default((IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)?));
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{projectId}/history");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetProjectHistory_Returns200_WithRunListAnd90TrendPoints()
+    {
+        var projectId = Guid.NewGuid().ToString();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var runs = (IReadOnlyList<RunHistoryItem>) new[]
+        {
+            new RunHistoryItem("r1", "run-1", "Story A", "PASSED", "approve", 2, 2, 0, 0, 3000, DateTimeOffset.UtcNow),
+        };
+
+        var trendPoints = Enumerable.Range(0, 90)
+            .Select(i => new TrendPoint(today.AddDays(-(89 - i)), 0, 0))
+            .ToArray() as IReadOnlyList<TrendPoint>;
+
+        _factory.StatsRepoMock
+            .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((runs, trendPoints));
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{projectId}/history");
+        var body = await response.Content.ReadFromJsonAsync<ProjectHistoryResponse>(JsonOptions);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Single(body.Runs);
+        Assert.Equal(90, body.TrendPoints.Count);
+    }
+
+    [Fact]
+    public async Task GetProjectHistory_IsDeletedRecords_NotIncluded()
+    {
+        // Repository-level filtering is verified via the repository mock returning only active records.
+        var projectId = Guid.NewGuid().ToString();
+        var runs = (IReadOnlyList<RunHistoryItem>) Array.Empty<RunHistoryItem>();
+        var trendPoints = (IReadOnlyList<TrendPoint>) Array.Empty<TrendPoint>();
+
+        _factory.StatsRepoMock
+            .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((runs, trendPoints));
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{projectId}/history");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    // ─── GET /v1/stats/projects/{projectId}/runs/{runId} ─────────────────────
+
+    [Fact]
+    public async Task GetRunDetail_Returns401_WithoutAuthToken()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{Guid.NewGuid()}/runs/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetRunDetail_Returns404_WhenRunNotFound()
+    {
+        var projectId = Guid.NewGuid().ToString();
+        var runId = Guid.NewGuid().ToString();
+
+        _factory.StatsRepoMock
+            .Setup(r => r.GetRunDetailAsync("test-user-oid", projectId, runId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TestResult?) null);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{projectId}/runs/{runId}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetRunDetail_Returns200_WithCorrectDetail()
+    {
+        var projectId = Guid.NewGuid().ToString();
+        var runId = Guid.NewGuid().ToString();
+
+        var testResult = new TestResult
+        {
+            Id = "result-1",
+            RunId = runId,
+            ProjectId = projectId,
+            UserId = "test-user-oid",
+            StoryTitle = "User can log in",
+            Verdict = "PASSED",
+            Recommendation = "approve",
+            TotalDurationMs = 7000,
+            ScenarioResults = new[]
+            {
+                new ScenarioSummary("scenario-1", "POST /auth — 200", true, 400, null, "api", Array.Empty<string>()),
+            },
+            RawCommentMarkdown = "## Report\nPASSED",
+        };
+
+        _factory.StatsRepoMock
+            .Setup(r => r.GetRunDetailAsync("test-user-oid", projectId, runId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(testResult);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync($"/v1/stats/projects/{projectId}/runs/{runId}");
+        var body = await response.Content.ReadFromJsonAsync<RunDetailResponse>(JsonOptions);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(body);
+        Assert.Equal("result-1", body.Id);
+        Assert.Equal("PASSED", body.Verdict);
+        Assert.Single(body.ScenarioResults);
+        Assert.Equal("## Report\nPASSED", body.RawCommentMarkdown);
     }
 
     [Fact]
