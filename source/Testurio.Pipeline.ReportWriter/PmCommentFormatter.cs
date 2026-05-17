@@ -57,6 +57,29 @@ public static class PmCommentFormatter
                     foreach (var uri in scenario.ScreenshotUris)
                         sb.AppendLine($"  [View screenshot]({uri})");
                 }
+
+                // AC-027/AC-028/AC-029/AC-030: per-step sub-table for UI E2E scenarios only.
+                if (scenario.TestType == "ui_e2e" && scenario.Steps is { Count: > 0 })
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("  | # | Action | Result | Detail |");
+                    sb.AppendLine("  |---|--------|--------|--------|");
+                    foreach (var step in scenario.Steps)
+                    {
+                        var stepIcon = step.Passed ? "✅" : "❌";
+                        var detail = string.Empty;
+                        if (!step.Passed && !string.IsNullOrEmpty(step.ErrorMessage))
+                        {
+                            // AC-029: include screenshot link for failed assertion steps.
+                            if (step.ScreenshotBlobUri is not null)
+                                detail = $"{step.ErrorMessage} [Screenshot]({step.ScreenshotBlobUri})";
+                            else
+                                detail = step.ErrorMessage;
+                        }
+
+                        sb.AppendLine($"  | {step.StepIndex} | `{step.Action}` | {stepIcon} | {detail} |");
+                    }
+                }
             }
 
             sb.AppendLine();
