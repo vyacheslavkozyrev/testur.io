@@ -29,6 +29,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly IPromptTemplateRepository _promptTemplateRepository;
     private readonly ITestGeneratorFactory _testGeneratorFactory;
     private readonly IExecutorRouter _executorRouter;
+    private readonly IReportWriter _reportWriter;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -44,6 +45,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         IPromptTemplateRepository promptTemplateRepository,
         ITestGeneratorFactory testGeneratorFactory,
         IExecutorRouter executorRouter,
+        IReportWriter reportWriter,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -61,6 +63,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _promptTemplateRepository = promptTemplateRepository;
         _testGeneratorFactory = testGeneratorFactory;
         _executorRouter = executorRouter;
+        _reportWriter = reportWriter;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -142,6 +145,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             // (e.g. missing PromptTemplate — AC-005), and ExecutorRouterException (AC-004 — both
             // scenario lists empty) are permanent failures — dead-letter so Service Bus does not retry
             // and flood the LLM with repeated calls for the same broken run.
+            // ReportWriterException (AC-023) is a transient failure — abandon so the message is retried.
             if (ex is StoryParserException or ScenarioGenerationException or InvalidOperationException
                     or ExecutorRouterException)
                 await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
@@ -227,8 +231,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         // Any other executor exception is appended to ExecutionWarnings and the pipeline continues.
         var executionResult = await RunExecutorStageAsync(testRun, project, generatorResults, cancellationToken);
 
-        // Stage 6: Build and post the report to Jira (feature 0004).
-        await _reportDeliveryStep.ExecuteAsync(testRun, cancellationToken);
+        // Stage 6: Generate verdict report, post PM tool comment, persist TestResult (feature 0030).
+        await RunReportWriterStageAsync(testRun, project, parsedStory, executionResult, cancellationToken);
     }
 
     /// <summary>
@@ -376,6 +380,55 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     }
 
     /// <summary>
+    /// Executes stage 6 of the pipeline: calls <see cref="IReportWriter.WriteAsync"/> to generate
+    /// the verdict report, post a PM tool comment, and persist the <see cref="TestResult"/> to Cosmos.
+    /// </summary>
+    /// <remarks>
+    /// On <see cref="ReportWriterException"/> (AC-023): sets <c>TestRun.Status</c> to
+    /// <c>ReportFailed</c>, persists the status, and re-throws so <see cref="OnMessageAsync"/>
+    /// abandons the message for retry.
+    /// On success, <paramref name="testRun"/> has <c>Status = Completed</c> and
+    /// <c>PmCommentId</c> set (AC-024 / AC-025).
+    /// </remarks>
+    private async Task RunReportWriterStageAsync(
+        TestRun testRun,
+        Core.Entities.Project project,
+        ParsedStory parsedStory,
+        ExecutionResult executionResult,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _reportWriter.WriteAsync(parsedStory, executionResult, project, testRun, cancellationToken);
+            LogReportWritten(_logger, testRun.Id);
+        }
+        catch (ReportWriterException)
+        {
+            // AC-023: ReportWriter already set Status = ReportFailed on the in-memory testRun.
+            try
+            {
+                await _testRunRepository.UpdateAsync(testRun, CancellationToken.None);
+            }
+            catch (Exception updateEx)
+            {
+                LogStatusUpdateFailed(_logger, testRun.Id, updateEx);
+            }
+            throw;
+        }
+
+        // AC-024: persist Completed status and PmCommentId to Cosmos.
+        try
+        {
+            await _testRunRepository.UpdateAsync(testRun, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogStatusUpdateFailed(_logger, testRun.Id, ex);
+            // Non-fatal — TestResult was already persisted; proceed to stage 7.
+        }
+    }
+
+    /// <summary>
     /// Builds a <see cref="WorkItem"/> from the test run and project context.
     /// Description and AcceptanceCriteria are empty at this point — full story content is fetched
     /// from Jira/ADO inside ScenarioGenerationStep (feature 0002). The WorkItem here is used
@@ -446,4 +499,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Service Bus processor error on {EntityPath}")]
     private static partial void LogServiceBusError(ILogger logger, string entityPath, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "ReportWriter stage completed for test run {TestRunId}")]
+    private static partial void LogReportWritten(ILogger logger, string testRunId);
 }
