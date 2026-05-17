@@ -16,7 +16,7 @@
   - `BillingInterval` enum (`monthly | annual`)
 - [x] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
   - `list(): Promise<PlanDefinition[]>`
-- [ ] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
+- [x] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
   - `queryKey: ['plans']`; `staleTime: 60 * 60 * 1000` (matches server `max-age`)
 - [ ] T008 [UI] Add MSW mock handler for `GET /v1/plans` — `source/Testurio.Web/src/mocks/handlers/plans.ts`
 - [ ] T009 [UI] Create `PublicHeader` component (sticky; logo left; nav links centre; auth-aware action area right: Sign In + Get Started for guests, Go to Dashboard for signed-in users; hamburger collapse on mobile) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.tsx`
