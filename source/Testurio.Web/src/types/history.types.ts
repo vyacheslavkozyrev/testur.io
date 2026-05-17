@@ -31,6 +31,7 @@ export interface ProjectHistoryResponse {
 }
 
 export interface ScenarioSummary {
+  scenarioId: string;
   title: string;
   passed: boolean;
   durationMs: number;

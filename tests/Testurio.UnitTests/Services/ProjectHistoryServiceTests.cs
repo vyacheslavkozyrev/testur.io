@@ -153,6 +153,7 @@ public class ProjectHistoryServiceTests
     public async Task GetRunDetailAsync_WhenFound_MapsAllFields()
     {
         var scenario = new ScenarioSummary(
+            ScenarioId: "scenario-1",
             Title: "POST /auth — returns 200",
             Passed: true,
             DurationMs: 320,

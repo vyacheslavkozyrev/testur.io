@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -32,6 +32,11 @@ export default function RunDetailPanel({ projectId, runId, onClose }: RunDetailP
   const styles = getStyles(theme);
 
   const [showRaw, setShowRaw] = useState(false);
+
+  // AC-031: reset to structured view whenever a different run is opened.
+  useEffect(() => {
+    setShowRaw(false);
+  }, [runId]);
 
   const { data: run, isPending } = useRunDetail(projectId, runId);
 
@@ -129,8 +134,8 @@ export default function RunDetailPanel({ projectId, runId, onClose }: RunDetailP
             </Box>
           ) : (
             <Stack spacing={2}>
-              {run.scenarioResults.map((scenario, i) => (
-                <ScenarioCard key={i} scenario={scenario} />
+              {run.scenarioResults.map((scenario) => (
+                <ScenarioCard key={scenario.scenarioId} scenario={scenario} />
               ))}
             </Stack>
           )

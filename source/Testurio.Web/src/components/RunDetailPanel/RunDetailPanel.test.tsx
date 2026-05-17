@@ -37,9 +37,9 @@ i18nInstance.use(initReactI18next).init({
         'panel.rawReportDisabledTooltip': 'No raw report available for this run.',
         'verdict.passed': 'Passed',
         'verdict.failed': 'Failed',
-        'recommendation.approve': 'Approve',
-        'recommendation.investigate': 'Investigate',
-        'recommendation.block': 'Block',
+        'recommendation.approve': 'Approve and merge',
+        'recommendation.request_fixes': 'Request fixes',
+        'recommendation.flag_for_manual_review': 'Flag for manual review',
         'scenarioCard.screenshotAlt': 'Test screenshot',
       },
     },
@@ -57,8 +57,8 @@ const sampleRunDetail: RunDetailResponse = {
   totalDurationMs: 7000,
   createdAt: '2026-05-16T10:05:00Z',
   scenarioResults: [
-    { title: 'POST /auth — 200', passed: true, durationMs: 400, errorSummary: null, testType: 'api', screenshotUris: [] },
-    { title: 'POST /auth — 401', passed: true, durationMs: 320, errorSummary: null, testType: 'api', screenshotUris: [] },
+    { scenarioId: 'sc-1', title: 'POST /auth — 200', passed: true, durationMs: 400, errorSummary: null, testType: 'api', screenshotUris: [] },
+    { scenarioId: 'sc-2', title: 'POST /auth — 401', passed: true, durationMs: 320, errorSummary: null, testType: 'api', screenshotUris: [] },
   ],
   rawCommentMarkdown: '## Report\n**Verdict:** PASSED',
 };
@@ -135,9 +135,9 @@ describe('RunDetailPanel', () => {
 
   it('maps recommendation correctly for all three values', () => {
     const recommendations = [
-      { value: 'approve', label: 'Approve' },
-      { value: 'investigate', label: 'Investigate' },
-      { value: 'block', label: 'Block' },
+      { value: 'approve', label: 'Approve and merge' },
+      { value: 'request_fixes', label: 'Request fixes' },
+      { value: 'flag_for_manual_review', label: 'Flag for manual review' },
     ];
 
     recommendations.forEach(({ value, label }) => {

@@ -255,7 +255,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             TotalDurationMs = 7000,
             ScenarioResults = new[]
             {
-                new ScenarioSummary("POST /auth — 200", true, 400, null, "api", Array.Empty<string>()),
+                new ScenarioSummary("scenario-1", "POST /auth — 200", true, 400, null, "api", Array.Empty<string>()),
             },
             RawCommentMarkdown = "## Report\nPASSED",
         };

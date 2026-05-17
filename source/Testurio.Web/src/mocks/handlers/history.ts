@@ -39,7 +39,7 @@ const mockHistoryResponse: ProjectHistoryResponse = {
       runId: RUN_ID_2,
       storyTitle: 'Admin can export user list as CSV',
       verdict: 'FAILED',
-      recommendation: 'investigate',
+      recommendation: 'request_fixes',
       totalApiScenarios: 2,
       passedApiScenarios: 1,
       totalUiE2eScenarios: 0,
@@ -61,6 +61,7 @@ const mockRunDetailResponse: RunDetailResponse = {
   createdAt: '2026-05-16T10:05:00Z',
   scenarioResults: [
     {
+      scenarioId: '00000000-0000-0000-0001-000000000001',
       title: 'POST /auth/reset — valid email returns 200',
       passed: true,
       durationMs: 320,
@@ -69,6 +70,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       screenshotUris: [],
     },
     {
+      scenarioId: '00000000-0000-0000-0001-000000000002',
       title: 'POST /auth/reset — unknown email returns 404',
       passed: true,
       durationMs: 290,
@@ -77,6 +79,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       screenshotUris: [],
     },
     {
+      scenarioId: '00000000-0000-0000-0001-000000000003',
       title: 'POST /auth/reset — malformed email returns 400',
       passed: true,
       durationMs: 210,
@@ -85,6 +88,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       screenshotUris: [],
     },
     {
+      scenarioId: '00000000-0000-0000-0001-000000000004',
       title: 'Reset password link navigates to set-new-password screen',
       passed: true,
       durationMs: 11520,

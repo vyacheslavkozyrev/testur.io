@@ -25,6 +25,7 @@ i18nInstance.use(initReactI18next).init({
 
 function makeScenario(overrides: Partial<ScenarioSummary> = {}): ScenarioSummary {
   return {
+    scenarioId: 'scenario-1',
     title: 'POST /auth — returns 200',
     passed: true,
     durationMs: 320,
