@@ -10,7 +10,7 @@
 - [x] T006 [UI] Add Next.js API route `GET /api/auth/me`: reads `testurio_session` cookie, validates the B2C ID token, returns `AuthUser`; returns `401` if no valid session — `source/Testurio.Web/src/app/api/auth/me/route.ts`
 - [x] T007 [UI] Add Next.js API route `POST /api/auth/sign-out`: clears the `testurio_session` cookie, returns `200` with the B2C logout URL — `source/Testurio.Web/src/app/api/auth/sign-out/route.ts`
 - [x] T008 [UI] Add Next.js API route `POST /api/auth/session`: receives a B2C ID token from the client, verifies it, sets the `testurio_session` HttpOnly cookie, returns `AuthUser` — `source/Testurio.Web/src/app/api/auth/session/route.ts`
-- [ ] T009 [UI] Update MSW mock handler for `GET /api/auth/me` to also mock `POST /api/auth/sign-out` and `POST /api/auth/session` — `source/Testurio.Web/src/mocks/handlers/auth.ts`
+- [x] T009 [UI] Update MSW mock handler for `GET /api/auth/me` to also mock `POST /api/auth/sign-out` and `POST /api/auth/session` — `source/Testurio.Web/src/mocks/handlers/auth.ts`
 - [ ] T010 [UI] Add `useSignIn` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [ ] T011 [UI] Add `useSignUp` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [ ] T012 [UI] Add `useForgotPassword` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
