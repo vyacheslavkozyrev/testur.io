@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
@@ -10,10 +12,13 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Moq;
 using Testurio.Api.DTOs;
+using Testurio.Api.Services;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Events;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Infrastructure;
@@ -307,6 +312,89 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Equal("proj-norun", body.Projects[2].ProjectId);
     }
 
+    // ─── GET /v1/stats/dashboard/stream — SSE ────────────────────────────────
+
+    [Fact]
+    public async Task StreamDashboard_Returns401_WithoutAuthToken()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/v1/stats/dashboard/stream");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task StreamDashboard_ReceivesFirstSseDataLine_AfterPublishAsync()
+    {
+        var client = CreateAuthenticatedClient();
+
+        // Start reading the SSE stream in the background.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var responseTask = client.GetAsync(
+            "/v1/stats/dashboard/stream",
+            HttpCompletionOption.ResponseHeadersRead,
+            cts.Token);
+
+        // Give the server time to open the connection and register the channel.
+        await Task.Delay(200, cts.Token);
+
+        // Publish an event via the in-process IDashboardStreamManager.
+        var streamManager = _factory.Services.GetRequiredService<IDashboardStreamManager>();
+        var @event = new DashboardUpdatedEvent(
+            "proj-sse-test",
+            new LatestRunSummary("run-sse", RunStatus.Passed, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow),
+            null);
+
+        await streamManager.PublishAsync("test-user-oid", @event, cts.Token);
+
+        var response = await responseTask;
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/event-stream", response.Content.Headers.ContentType?.MediaType);
+
+        // Read until the first data line arrives.
+        await using var stream = await response.Content.ReadAsStreamAsync(cts.Token);
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        string? line = null;
+        while (!cts.IsCancellationRequested)
+        {
+            line = await reader.ReadLineAsync(cts.Token);
+            if (line is not null && line.StartsWith("data:", StringComparison.Ordinal))
+                break;
+        }
+
+        Assert.NotNull(line);
+        Assert.StartsWith("data:", line, StringComparison.Ordinal);
+
+        var json = line["data: ".Length..];
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal("proj-sse-test", doc.RootElement.GetProperty("projectId").GetString());
+    }
+
+    [Fact]
+    public async Task StreamDashboard_ClosesCleanly_WhenClientCancels()
+    {
+        var client = CreateAuthenticatedClient();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        var response = await client.GetAsync(
+            "/v1/stats/dashboard/stream",
+            HttpCompletionOption.ResponseHeadersRead,
+            cts.Token);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        // Cancel the connection — should not throw on the client side.
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(CancellationToken.None);
+            using var reader = new StreamReader(stream);
+            // Keep reading until the cancellation propagates to the content stream.
+            while (true)
+                await reader.ReadLineAsync(cts.Token);
+        });
+    }
+
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IStatsRepository> _statsRepo = new();
@@ -337,6 +425,11 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             builder.ConfigureTestServices(services =>
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
+
+                // Feature 0043: replace the DashboardEventRelay hosted service with a no-op so the
+                // test host does not attempt a real Service Bus connection during startup.
+                services.RemoveAll<DashboardEventRelay>();
+                services.RemoveAll<IHostedService>();
 
                 services.AddAuthentication("Test")
                     .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", _ => { });
