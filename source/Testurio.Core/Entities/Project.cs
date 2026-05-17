@@ -77,6 +77,10 @@ public class Project
     /// <summary>When true, screenshot attachments are included in the rendered report. Default: true. Only meaningful when test_type is ui_e2e or both.</summary>
     public bool ReportIncludeScreenshots { get; set; } = true;
 
+    // Configurable API request timeout — feature 0022
+    /// <summary>Per-request timeout in seconds applied to every HTTP and Playwright step. Defaults to 30.</summary>
+    public int RequestTimeoutSeconds { get; set; } = 30;
+
     // Testing environment access configuration — feature 0017
     public AccessMode AccessMode { get; set; } = AccessMode.IpAllowlist;
     /// <summary>Basic Auth username stored directly (non-sensitive). Key Vault holds the password only.</summary>

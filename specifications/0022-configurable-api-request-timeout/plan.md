@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `RequestTimeoutSeconds` property (default `30`, range enforced by domain constant) to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
+- [x] T001 [Domain] Add `RequestTimeoutSeconds` property (default `30`, range enforced by domain constant) to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
 - [ ] T002 [Domain] Add `ProjectConstants` static class with `RequestTimeoutMinSeconds = 5`, `RequestTimeoutMaxSeconds = 120`, and `RequestTimeoutDefaultSeconds = 30` — `source/Testurio.Core/Constants/ProjectConstants.cs`
 - [ ] T003 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `CreateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [ ] T004 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `UpdateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
