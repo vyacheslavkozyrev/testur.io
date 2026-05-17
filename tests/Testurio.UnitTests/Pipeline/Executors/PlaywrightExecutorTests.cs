@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Playwright;
 using Moq;
 using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
@@ -13,6 +14,7 @@ namespace Testurio.UnitTests.Pipeline.Executors;
 /// - Credential modes: IpAllowlist, BasicAuth, HeaderToken
 /// - <see cref="StepExecutionResult"/> field contract (AC-039)
 /// - Screenshot capture contract (AC-030, AC-032, AC-033, AC-034)
+/// - Per-action timeout configuration via <see cref="PlaywrightExecutor.ApplyPageTimeout"/>
 /// <para>
 /// Full browser automation (navigate/click/fill/assert steps) is covered by integration
 /// tests that exercise a real Playwright browser. These unit tests focus on the
@@ -37,6 +39,48 @@ public class PlaywrightExecutorTests
         _credentialProvider.Object,
         _screenshotStorage.Object,
         NullLogger<PlaywrightExecutor>.Instance);
+
+    // ─── ApplyPageTimeout ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void ApplyPageTimeout_CallsSetDefaultTimeout_WithConvertedMilliseconds()
+    {
+        var pageMock = new Mock<IPage>(MockBehavior.Loose);
+
+        PlaywrightExecutor.ApplyPageTimeout(pageMock.Object, timeoutSeconds: 30);
+
+        pageMock.Verify(p => p.SetDefaultTimeout(30_000f), Times.Once);
+    }
+
+    [Fact]
+    public void ApplyPageTimeout_ConvertsSecondsToMilliseconds_Correctly()
+    {
+        var pageMock = new Mock<IPage>(MockBehavior.Loose);
+
+        PlaywrightExecutor.ApplyPageTimeout(pageMock.Object, timeoutSeconds: 5);
+
+        pageMock.Verify(p => p.SetDefaultTimeout(5_000f), Times.Once);
+    }
+
+    [Fact]
+    public void ApplyPageTimeout_HandlesMaximumTimeout_Correctly()
+    {
+        var pageMock = new Mock<IPage>(MockBehavior.Loose);
+
+        PlaywrightExecutor.ApplyPageTimeout(pageMock.Object, timeoutSeconds: 120);
+
+        pageMock.Verify(p => p.SetDefaultTimeout(120_000f), Times.Once);
+    }
+
+    [Fact]
+    public void ApplyPageTimeout_CallsSetDefaultTimeout_ExactlyOnce()
+    {
+        var pageMock = new Mock<IPage>(MockBehavior.Loose);
+
+        PlaywrightExecutor.ApplyPageTimeout(pageMock.Object, timeoutSeconds: 45);
+
+        pageMock.Verify(p => p.SetDefaultTimeout(It.IsAny<float>()), Times.Once);
+    }
 
     // ─── BuildContextOptions: credential mode mapping ─────────────────────────
 
@@ -95,20 +139,30 @@ public class PlaywrightExecutorTests
             p.ResolveAsync(DefaultProject, It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task BuildContextOptionsAsync_ReturnsIpAllowlistOptions_WhenNoCredentialsNeeded()
+    {
+        _credentialProvider
+            .Setup(p => p.ResolveAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ProjectAccessCredentials.IpAllowlist());
+
+        var sut = CreateSut();
+        var options = await sut.BuildContextOptionsAsync(DefaultProject, CancellationToken.None);
+
+        Assert.Null(options.HttpCredentials);
+        Assert.Null(options.ExtraHTTPHeaders);
+    }
+
     // ─── Screenshot storage contract ──────────────────────────────────────────
 
     [Fact]
     public async Task ScreenshotStorage_UploadAsync_InterfaceContract_ReturnsUri()
     {
-        // Verifies the IScreenshotStorage interface signature: correct parameter types
-        // and return type (string URI). PlaywrightExecutor calls this interface on
-        // assertion-step failures (AC-030/AC-032) — the integration tests exercise the
-        // full execution path; this test pins the interface contract used by the executor.
         var userId = Guid.NewGuid();
         var runId  = Guid.NewGuid();
         const string scenarioId = "sc1";
         const int stepIndex = 2;
-        var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47 }; // PNG magic bytes
+        var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47 };
         const string expectedUri = "https://blob.example.com/screenshots/sc1/step-2.png";
 
         _screenshotStorage
@@ -126,18 +180,12 @@ public class PlaywrightExecutorTests
     [Fact]
     public async Task ScreenshotStorage_UploadFailure_DoesNotChangeStepPassed()
     {
-        // AC-033: if Blob upload fails, ScreenshotBlobUri is null and step.Passed is unchanged.
-        // Verifies the executor's CaptureScreenshotAsync swallows the upload exception.
-        // The executor catches all exceptions from IScreenshotStorage.UploadAsync and
-        // returns null for ScreenshotBlobUri without rethrowing.
         _screenshotStorage
             .Setup(s => s.UploadAsync(
                 It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(),
                 It.IsAny<int>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Blob service unavailable"));
 
-        // A StepExecutionResult with a failed assertion step and null ScreenshotBlobUri
-        // represents the outcome when upload fails (AC-033 contract).
         var result = new StepExecutionResult
         {
             StepIndex = 0,
@@ -147,12 +195,10 @@ public class PlaywrightExecutorTests
             ScreenshotBlobUri = null
         };
 
-        // Step is still failed (Passed = false) and ScreenshotBlobUri is null.
         Assert.False(result.Passed);
         Assert.Null(result.ScreenshotBlobUri);
         Assert.Equal("Element not found", result.ErrorMessage);
 
-        // Simulate a single upload attempt so _screenshotStorage mock is exercised.
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _screenshotStorage.Object.UploadAsync(
                 "user", Guid.NewGuid(), "sc1", 0, []));
@@ -213,7 +259,6 @@ public class PlaywrightExecutorTests
     [Fact]
     public void StepExecutionResult_NonAssertionFailedStep_HasNullScreenshotUri()
     {
-        // Non-assertion steps (navigate, click, fill) should never have a screenshot URI.
         var result = new StepExecutionResult
         {
             StepIndex = 0,
@@ -288,7 +333,6 @@ public class PlaywrightExecutorTests
     [InlineData("https://other.example.com/", "https://staging.example.com/*", false)]
     public void AssertUrl_MatchingLogic_CorrectResult(string currentUrl, string expected, bool shouldPass)
     {
-        // Replicate the URL-matching logic from PlaywrightExecutor to verify the spec.
         bool urlMatches = expected.EndsWith('*')
             ? currentUrl.StartsWith(expected.TrimEnd('*'), StringComparison.Ordinal)
             : currentUrl == expected;

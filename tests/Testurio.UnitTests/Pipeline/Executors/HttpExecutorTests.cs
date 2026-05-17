@@ -3,15 +3,16 @@ using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Core.Entities;
-using Testurio.Core.Models;
 using Testurio.Core.Interfaces;
+using Testurio.Core.Models;
 using Testurio.Pipeline.Executors;
 
 namespace Testurio.UnitTests.Pipeline.Executors;
 
 /// <summary>
 /// Unit tests for <see cref="HttpExecutor"/> covering all assertion types and edge cases
-/// defined in feature 0029 acceptance criteria (AC-007 through AC-017).
+/// defined in feature 0029 acceptance criteria (AC-007 through AC-017), plus the
+/// per-request timeout logic from <see cref="HttpExecutor.SendWithTimeoutAsync"/>.
 /// HTTP responses are injected via a custom <see cref="DelegatingHandler"/> — no real network calls.
 /// </summary>
 public class HttpExecutorTests
@@ -392,6 +393,91 @@ public class HttpExecutorTests
         Assert.True(captured!.Headers.Contains("X-Tenant-Id"));
     }
 
+    // ─── SendWithTimeoutAsync — success path ──────────────────────────────────
+
+    [Fact]
+    public async Task SendWithTimeoutAsync_ReturnsResponse_WhenRequestCompletesWithinTimeout()
+    {
+        var handler = new InstantResponseHandler(HttpStatusCode.OK);
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.com") };
+
+        var (response, elapsedMs) = await HttpExecutor.SendWithTimeoutAsync(
+            client,
+            new HttpRequestMessage(HttpMethod.Get, "/api/health"),
+            timeoutSeconds: 30,
+            runToken: CancellationToken.None);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(elapsedMs >= 0, "ElapsedMs should be a non-negative number");
+    }
+
+    [Fact]
+    public async Task SendWithTimeoutAsync_RecordsDurationMs_OnSuccess()
+    {
+        var handler = new DelayedResponseHandler(delay: TimeSpan.FromMilliseconds(50));
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.com") };
+
+        var (_, elapsedMs) = await HttpExecutor.SendWithTimeoutAsync(
+            client,
+            new HttpRequestMessage(HttpMethod.Get, "/api/health"),
+            timeoutSeconds: 10,
+            runToken: CancellationToken.None);
+
+        Assert.True(elapsedMs >= 40, $"Expected elapsedMs >= 40 but got {elapsedMs}");
+    }
+
+    // ─── SendWithTimeoutAsync — timeout path ──────────────────────────────────
+
+    [Fact]
+    public async Task SendWithTimeoutAsync_ThrowsTimeoutException_WhenTimeoutElapsesBeforeResponse()
+    {
+        var handler = new NeverRespondingHandler();
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.com") };
+
+        var ex = await Assert.ThrowsAsync<TimeoutException>(() =>
+            HttpExecutor.SendWithTimeoutAsync(
+                client,
+                new HttpRequestMessage(HttpMethod.Get, "/slow"),
+                timeoutSeconds: 1,
+                runToken: CancellationToken.None));
+
+        Assert.Contains("Timeout", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("1s", ex.Message);
+    }
+
+    [Fact]
+    public async Task SendWithTimeoutAsync_TimeoutMessage_IncludesConfiguredTimeoutValue()
+    {
+        var handler = new NeverRespondingHandler();
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.com") };
+
+        var ex = await Assert.ThrowsAsync<TimeoutException>(() =>
+            HttpExecutor.SendWithTimeoutAsync(
+                client,
+                new HttpRequestMessage(HttpMethod.Get, "/slow"),
+                timeoutSeconds: 5,
+                runToken: CancellationToken.None));
+
+        Assert.Contains("5s", ex.Message);
+    }
+
+    [Fact]
+    public async Task SendWithTimeoutAsync_DoesNotThrowTimeout_WhenRunTokenCancelledFirst()
+    {
+        var handler = new NeverRespondingHandler();
+        var client = new HttpClient(handler) { BaseAddress = new Uri("https://example.com") };
+
+        using var runCts = new CancellationTokenSource();
+        runCts.CancelAfter(TimeSpan.FromMilliseconds(50));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            HttpExecutor.SendWithTimeoutAsync(
+                client,
+                new HttpRequestMessage(HttpMethod.Get, "/slow"),
+                timeoutSeconds: 60,
+                runToken: runCts.Token));
+    }
+
     // ─── Helper types ─────────────────────────────────────────────────────────
 
     private sealed class StaticResponseHandler(HttpResponseMessage response) : HttpMessageHandler
@@ -421,5 +507,32 @@ public class HttpExecutorTests
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
             => Task.FromResult(factory(request));
+    }
+
+    private sealed class InstantResponseHandler(HttpStatusCode statusCode) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(statusCode));
+    }
+
+    private sealed class DelayedResponseHandler(TimeSpan delay) : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(delay, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
+
+    private sealed class NeverRespondingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
     }
 }

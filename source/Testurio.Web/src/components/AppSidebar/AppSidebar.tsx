@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import { SIDEBAR_ACTIVE_BG, SIDEBAR_ACTIVE_TEXT, SIDEBAR_BG, SIDEBAR_DIVIDER, SIDEBAR_HOVER, SIDEBAR_MUTED, SIDEBAR_TEXT } from '@/theme/theme';
 import { useSidebarState } from '@/hooks/useSidebarState';
+import { useSignOut } from '@/hooks/useAuth';
 import { DASHBOARD_ROUTE, PROJECTS_ROUTE, SETTINGS_ROUTE } from '@/routes/routes';
 
 const EXPANDED_WIDTH = 240;
@@ -49,21 +50,14 @@ export default function AppSidebar() {
   const theme = useTheme();
   const [collapsed, toggle] = useSidebarState();
   const pathname = usePathname();
-  const [signingOut, setSigningOut] = useState(false);
+  const signOut = useSignOut();
   const styles = getStyles(theme, collapsed);
 
-  const handleSignOut = useCallback(async () => {
-    setSigningOut(true);
-    try {
-      const logoutUrl = new URL('/v2.0/logout', process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? 'https://login.microsoftonline.com');
-      logoutUrl.searchParams.set('post_logout_redirect_uri', window.location.origin + '/');
-      window.location.href = logoutUrl.toString();
-    } catch {
-      // If the redirect preparation fails, show an error and re-enable the button.
-      // A toast implementation would go here; for now we reset the state.
-      setSigningOut(false);
-    }
-  }, []);
+  const handleSignOut = useCallback(() => {
+    signOut.mutate();
+  }, [signOut]);
+
+  const signingOut = signOut.isPending;
 
   const signOutButton = (
     <ListItemButton
