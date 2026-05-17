@@ -5,7 +5,7 @@
 ### Backend
 
 - [x] T001 [App] Create `PlanDefinitionDto` DTO (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features) — `source/Testurio.Api/DTOs/Plans/PlanDefinitionDto.cs`
-- [ ] T002 [Config] Define `PlanCatalog` static class with four plan constants (Test Junior / Test Pro / Team / Centurio) — `source/Testurio.Api/Configuration/PlanCatalog.cs`
+- [x] T002 [Config] Define `PlanCatalog` static class with four plan constants (Test Junior / Test Pro / Team / Centurio) — `source/Testurio.Api/Configuration/PlanCatalog.cs`
 - [ ] T003 [API] Add `GET /v1/plans` public endpoint (no auth; returns `PlanCatalog.All`; sets `Cache-Control: public, max-age=3600`) — `source/Testurio.Api/Endpoints/PlanEndpoints.cs`
 - [ ] T004 [API] Register `PlanEndpoints` in `Program.cs` — `source/Testurio.Api/Program.cs`
 
