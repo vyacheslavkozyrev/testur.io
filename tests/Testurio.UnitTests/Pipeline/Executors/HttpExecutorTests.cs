@@ -26,6 +26,7 @@ public class HttpExecutorTests
         HttpExecutor.ApplyApiAuthCredentials(request, new ApiTestAuthCredentials.None());
 
         Assert.Null(request.Headers.Authorization);
+        Assert.False(request.Headers.Contains("Authorization"));
     }
 
     // ─── ApplyApiAuthCredentials — Bearer ─────────────────────────────────────
@@ -106,19 +107,6 @@ public class HttpExecutorTests
             Convert.FromBase64String(request.Headers.Authorization.Parameter!));
         Assert.Equal("user:pass", decoded);
     }
-
-    // ─── No auth header leaked in None case ───────────────────────────────────
-
-    [Fact]
-    public void ApplyApiAuthCredentials_None_DoesNotSetAuthorizationHeader()
-    {
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://example.com/api/data");
-
-        HttpExecutor.ApplyApiAuthCredentials(request, new ApiTestAuthCredentials.None());
-
-        Assert.False(request.Headers.Contains("Authorization"));
-    }
-
 
     // ─── SendWithTimeoutAsync — success path ──────────────────────────────────
 

@@ -238,6 +238,72 @@ public class ProjectApiAuthServiceTests
             "projects--proj-1--api-auth-bearer-token", string.Empty, It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task UpdateAsync_SwitchingFromApiKeyToNone_ClearsApiKeyValueSecret()
+    {
+        var project = MakeProject();
+        project.ApiAuthMethod = ApiAuthMethod.ApiKey;
+        project.ApiAuthApiKeyName = "X-Api-Key";
+        project.ApiAuthApiKeyPlacement = ApiAuthApiKeyPlacement.Header;
+        project.ApiAuthApiKeyValueSecretUri = "projects--proj-1--api-auth-api-key-value";
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+        _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateProjectApiAuthRequest { ApiAuthMethod = "none" };
+        await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--api-auth-api-key-value", string.Empty, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SwitchingFromBasicToNone_ClearsBasicPasswordSecret()
+    {
+        var project = MakeProject();
+        project.ApiAuthMethod = ApiAuthMethod.Basic;
+        project.ApiAuthBasicUsername = "api-user";
+        project.ApiAuthBasicPasswordSecretUri = "projects--proj-1--api-auth-basic-password";
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+        _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var request = new UpdateProjectApiAuthRequest { ApiAuthMethod = "none" };
+        await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--api-auth-basic-password", string.Empty, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BearerToBearerWithFailingStore_DoesNotUpdateCosmos_AndDoesNotAttemptCleanup()
+    {
+        var project = MakeProject();
+        project.ApiAuthMethod = ApiAuthMethod.Bearer;
+        project.ApiAuthBearerTokenSecretUri = "projects--proj-1--api-auth-bearer-token";
+
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _secretResolver.Setup(s => s.StoreAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Key Vault unavailable"));
+
+        var request = new UpdateProjectApiAuthRequest { ApiAuthMethod = "bearer", ApiAuthBearerToken = "new-tok" };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateAsync("user-1", "proj-1", request));
+
+        _repository.Verify(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()), Times.Never);
+        _secretResolver.Verify(s => s.StoreAsync(
+            "projects--proj-1--api-auth-bearer-token", string.Empty, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     // ─── UpdateAsync — ownership / not found ─────────────────────────────────
 
     [Fact]

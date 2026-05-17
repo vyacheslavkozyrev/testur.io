@@ -30,7 +30,7 @@ const ApiAuthMethodSelector = forwardRef<ApiAuthMethodSelectorHandle, ApiAuthMet
   function ApiAuthMethodSelector({ projectId }, ref) {
     const { t } = useTranslation('projectApiAuth');
     const theme = useTheme();
-    const styles = getStyles(theme);
+    const styles = useMemo(() => getStyles(theme), [theme]);
 
     const { data: auth, isPending, isError } = useProjectApiAuth(projectId);
     const updateAuth = useUpdateProjectApiAuth(projectId);
@@ -62,21 +62,23 @@ const ApiAuthMethodSelector = forwardRef<ApiAuthMethodSelectorHandle, ApiAuthMet
 
     const validate = useCallback((): boolean => {
       const errors: Record<string, string> = {};
-      const sameMethod = auth?.apiAuthMethod === selectedMethod;
+      const existingBearer = auth?.apiAuthMethod === 'bearer' && auth?.apiAuthBearerTokenConfigured;
+      const existingApiKeyValue = auth?.apiAuthMethod === 'api_key' && auth?.apiAuthApiKeyValueConfigured;
+      const existingBasicPassword = auth?.apiAuthMethod === 'basic' && auth?.apiAuthBasicPasswordConfigured;
 
       if (selectedMethod === 'bearer') {
-        if (!bearerToken.trim() && !sameMethod)
+        if (!bearerToken.trim() && !existingBearer)
           errors.bearerToken = t('validation.tokenRequired');
       }
 
       if (selectedMethod === 'api_key') {
         if (!apiKeyName.trim()) errors.apiKeyName = t('validation.keyNameRequired');
-        if (!apiKeyValue.trim() && !sameMethod) errors.apiKeyValue = t('validation.keyValueRequired');
+        if (!apiKeyValue.trim() && !existingApiKeyValue) errors.apiKeyValue = t('validation.keyValueRequired');
       }
 
       if (selectedMethod === 'basic') {
         if (!basicUsername.trim()) errors.basicUsername = t('validation.usernameRequired');
-        if (!basicPassword.trim() && !sameMethod) errors.basicPassword = t('validation.passwordRequired');
+        if (!basicPassword.trim() && !existingBasicPassword) errors.basicPassword = t('validation.passwordRequired');
       }
 
       setValidationErrors(errors);
@@ -257,26 +259,21 @@ const ApiAuthMethodSelector = forwardRef<ApiAuthMethodSelectorHandle, ApiAuthMet
 export default ApiAuthMethodSelector;
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme) =>
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useMemo(
-    () => ({
-      root: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(2),
-      },
-      credentialFields: {
-        marginLeft: theme.spacing(4),
-        marginBottom: theme.spacing(1),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(2),
-        maxWidth: 400,
-      },
-      selectLabel: {
-        marginBottom: theme.spacing(0.5),
-      },
-    }),
-    [theme],
-  );
+const getStyles = (theme: Theme) => ({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+  },
+  credentialFields: {
+    marginLeft: theme.spacing(4),
+    marginBottom: theme.spacing(1),
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+    maxWidth: 400,
+  },
+  selectLabel: {
+    marginBottom: theme.spacing(0.5),
+  },
+});

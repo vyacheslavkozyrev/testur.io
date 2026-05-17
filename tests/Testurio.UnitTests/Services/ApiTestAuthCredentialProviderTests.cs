@@ -164,6 +164,20 @@ public class ApiTestAuthCredentialProviderTests
         await Assert.ThrowsAsync<CredentialRetrievalException>(() => _sut.ResolveAsync(project));
     }
 
+    // ─── Empty/revoked secrets ────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ResolveAsync_ThrowsCredentialRetrievalException_WhenBearerTokenResolvedEmpty()
+    {
+        var project = MakeProject(ApiAuthMethod.Bearer);
+        project.ApiAuthBearerTokenSecretUri = "projects--proj-1--api-auth-bearer-token";
+
+        _secretResolver.Setup(s => s.ResolveAsync("projects--proj-1--api-auth-bearer-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(string.Empty);
+
+        await Assert.ThrowsAsync<CredentialRetrievalException>(() => _sut.ResolveAsync(project));
+    }
+
     // ─── Key Vault unreachable ─────────────────────────────────────────────────
 
     [Fact]

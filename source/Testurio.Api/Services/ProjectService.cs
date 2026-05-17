@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Testurio.Api.DTOs;
 using Testurio.Core.Constants;
 using Testurio.Core.Entities;
+using Testurio.Core.Enums;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.KeyVault;
 
@@ -192,12 +193,12 @@ public partial class ProjectService : IProjectService
         RequestTimeoutSeconds: project.RequestTimeoutSeconds == 0
             ? ProjectConstants.RequestTimeoutDefaultSeconds
             : project.RequestTimeoutSeconds,
-        ApiAuthMethod: project.ApiAuthMethod.ToString().ToLowerInvariant() switch
+        ApiAuthMethod: project.ApiAuthMethod switch
         {
-            "bearer"  => "bearer",
-            "apikey"  => "api_key",
-            "basic"   => "basic",
-            _         => "none",
+            ApiAuthMethod.Bearer => "bearer",
+            ApiAuthMethod.ApiKey => "api_key",
+            ApiAuthMethod.Basic  => "basic",
+            _                    => "none",
         },
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);

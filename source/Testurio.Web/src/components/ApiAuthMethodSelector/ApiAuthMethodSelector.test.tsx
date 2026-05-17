@@ -284,6 +284,26 @@ describe('ApiAuthMethodSelector — imperative handle: save()', () => {
     await waitFor(() => { expect(tokenInput.value).toBe(''); });
   });
 
+  it('shows validation error when bearer method is loaded but no existing token is stored and user types nothing', async () => {
+    mockUseProjectApiAuthResult = {
+      data: {
+        ...mockAuthNone,
+        apiAuthMethod: 'bearer',
+        apiAuthBearerTokenConfigured: false,
+      },
+      isPending: false,
+      isError: false,
+    };
+    const ref = React.createRef<ApiAuthMethodSelectorHandle>();
+    renderComponent(ref);
+    await waitFor(() => expect(screen.getByLabelText(/Token/i)).toBeInTheDocument());
+    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('Token is required.')).toBeInTheDocument();
+    });
+  });
+
   it('propagates mutateAsync error to caller', async () => {
     mockMutateAsync.mockRejectedValue(new Error('Network error'));
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();

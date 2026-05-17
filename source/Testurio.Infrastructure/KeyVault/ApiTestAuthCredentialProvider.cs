@@ -43,7 +43,7 @@ public sealed class ApiTestAuthCredentialProvider : IApiTestAuthCredentialProvid
         catch (Exception ex)
         {
             throw new CredentialRetrievalException(
-                $"Failed to retrieve API auth credentials for project {project.Id}: {ex.Message}", ex);
+                $"Failed to retrieve API auth credentials for project {project.Id}. See inner exception for details.", ex);
         }
     }
 
@@ -54,6 +54,9 @@ public sealed class ApiTestAuthCredentialProvider : IApiTestAuthCredentialProvid
                 $"Project {project.Id} is configured for Bearer auth but ApiAuthBearerTokenSecretUri is not set.");
 
         var token = await _secretResolver.ResolveAsync(project.ApiAuthBearerTokenSecretUri, ct);
+        if (string.IsNullOrWhiteSpace(token))
+            throw new CredentialRetrievalException(
+                $"Project {project.Id} bearer token secret resolved to an empty value. The secret may have been revoked.");
         return new ApiTestAuthCredentials.Bearer(token);
     }
 
@@ -68,6 +71,9 @@ public sealed class ApiTestAuthCredentialProvider : IApiTestAuthCredentialProvid
                 $"Project {project.Id} is configured for ApiKey auth but ApiAuthApiKeyValueSecretUri is not set.");
 
         var value = await _secretResolver.ResolveAsync(project.ApiAuthApiKeyValueSecretUri, ct);
+        if (string.IsNullOrWhiteSpace(value))
+            throw new CredentialRetrievalException(
+                $"Project {project.Id} API key secret resolved to an empty value. The secret may have been revoked.");
         return new ApiTestAuthCredentials.ApiKey(project.ApiAuthApiKeyName, project.ApiAuthApiKeyPlacement, value);
     }
 
@@ -82,6 +88,9 @@ public sealed class ApiTestAuthCredentialProvider : IApiTestAuthCredentialProvid
                 $"Project {project.Id} is configured for Basic auth but ApiAuthBasicPasswordSecretUri is not set.");
 
         var password = await _secretResolver.ResolveAsync(project.ApiAuthBasicPasswordSecretUri, ct);
+        if (string.IsNullOrWhiteSpace(password))
+            throw new CredentialRetrievalException(
+                $"Project {project.Id} basic auth password secret resolved to an empty value. The secret may have been revoked.");
         return new ApiTestAuthCredentials.Basic(project.ApiAuthBasicUsername, password);
     }
 }
