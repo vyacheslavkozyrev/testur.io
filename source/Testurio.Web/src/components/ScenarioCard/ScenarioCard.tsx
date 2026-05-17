@@ -154,6 +154,10 @@ const getStyles = (theme: Theme) =>
       screenshots: {
         mt: theme.spacing(1),
       },
+      chevron: {
+        ml: 'auto',
+        flexShrink: 0,
+      },
       thumbnailLink: {
         display: 'block',
         borderRadius: theme.shape.borderRadius,

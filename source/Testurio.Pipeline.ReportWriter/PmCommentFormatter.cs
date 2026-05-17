@@ -58,8 +58,9 @@ public static class PmCommentFormatter
                         sb.AppendLine($"  [View screenshot]({uri})");
                 }
 
-                // AC-027/AC-028/AC-029/AC-030: per-step sub-table for UI E2E scenarios only.
-                if (scenario.TestType == "ui_e2e" && scenario.Steps is { Count: > 0 })
+                // AC-027/AC-028/AC-029/AC-030: per-step sub-table for failed UI E2E scenarios only.
+                // Passed scenarios are omitted from the step table to keep the report concise.
+                if (!scenario.Passed && scenario.TestType == "ui_e2e" && scenario.Steps is { Count: > 0 })
                 {
                     sb.AppendLine();
                     sb.AppendLine("  | # | Action | Result | Detail |");
