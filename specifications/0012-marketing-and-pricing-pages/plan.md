@@ -34,7 +34,7 @@
 ### Frontend — Pricing Page
 
 - [x] T017 [UI] Create `BillingIntervalToggle` component (Monthly / Annual toggle; Monthly selected by default; emits `onChange(interval: BillingInterval)`) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
-- [ ] T018 [UI] Create `PlanCard` component (plan name, feature checklist, monthly/annual price, annual discount badge when interval=annual, "Most popular" badge when `isPopular`, CTA button — label and href determined by auth state: "Get started free" → `/auth/register?plan=<id>&interval=<interval>` for guests; "Upgrade" → `/billing?plan=<id>&interval=<interval>` for authenticated users) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
+- [x] T018 [UI] Create `PlanCard` component (plan name, feature checklist, monthly/annual price, annual discount badge when interval=annual, "Most popular" badge when `isPopular`, CTA button — label and href determined by auth state: "Get started free" → `/auth/register?plan=<id>&interval=<interval>` for guests; "Upgrade" → `/billing?plan=<id>&interval=<interval>` for authenticated users) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
 - [ ] T019 [UI] Create `PricingPage` page (wraps with `PublicLayout`; renders `BillingIntervalToggle`; calls `usePlans`; shows skeleton placeholders while loading; shows inline error with retry on failure; renders four `PlanCard` components in a responsive 4-2-1 column grid) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.tsx`
 
 ### Frontend — i18n & Routing
