@@ -25,7 +25,7 @@
 
 ### Frontend — Landing Page
 
-- [ ] T012 [UI] Create `HeroSection` component (headline, subheadline, primary CTA → `/auth/register`, secondary CTA scroll-to `#how-it-works`) — `source/Testurio.Web/src/components/HeroSection/HeroSection.tsx`
+- [x] T012 [UI] Create `HeroSection` component (headline, subheadline, primary CTA → `/auth/register`, secondary CTA scroll-to `#how-it-works`) — `source/Testurio.Web/src/components/HeroSection/HeroSection.tsx`
 - [ ] T013 [UI] Create `FeaturesSection` component (responsive 3-2-1 column grid; six feature tiles each with icon, title, description) — `source/Testurio.Web/src/components/FeaturesSection/FeaturesSection.tsx`
 - [ ] T014 [UI] Create `HowItWorksSection` component (`id="how-it-works"`; five numbered steps in timeline layout; each with title + one-sentence description) — `source/Testurio.Web/src/components/HowItWorksSection/HowItWorksSection.tsx`
 - [ ] T015 [UI] Create `PricingTeaserSection` component (headline; summary text; four plan name + entry price + one key feature; "See all plans" button → `/pricing`) — `source/Testurio.Web/src/components/PricingTeaserSection/PricingTeaserSection.tsx`
