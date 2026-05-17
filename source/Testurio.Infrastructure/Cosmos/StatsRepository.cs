@@ -268,6 +268,7 @@ public class StatsRepository : IStatsRepository
         TestRunStatus.Completed              => RunStatus.Passed,
         TestRunStatus.Failed                 => RunStatus.Failed,
         TestRunStatus.ReportDeliveryFailed   => RunStatus.Failed,
+        TestRunStatus.ReportFailed           => RunStatus.Failed,
         TestRunStatus.Skipped                => RunStatus.Cancelled,
         _                                    => RunStatus.Failed,
     };
