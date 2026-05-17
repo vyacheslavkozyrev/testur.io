@@ -6,13 +6,10 @@ namespace Testurio.Infrastructure.Cosmos;
 
 /// <summary>
 /// Reads <see cref="PromptTemplate"/> documents from the <c>PromptTemplates</c> Cosmos DB container.
-/// The container has no logical partition key on user data — templates are global/shared documents,
-/// so a single partition key value (<c>"template"</c>) is used for all documents.
+/// Partition key path is <c>/templateType</c> — each template type is its own logical partition.
 /// </summary>
 public sealed class PromptTemplateRepository : IPromptTemplateRepository
 {
-    private const string PartitionKeyValue = "template";
-
     private readonly Container _container;
 
     public PromptTemplateRepository(CosmosClient cosmosClient, string databaseName)
@@ -30,7 +27,7 @@ public sealed class PromptTemplateRepository : IPromptTemplateRepository
         {
             var response = await _container.ReadItemAsync<PromptTemplate>(
                 templateType,
-                new PartitionKey(PartitionKeyValue),
+                new PartitionKey(templateType),
                 cancellationToken: cancellationToken);
 
             return response.Resource;

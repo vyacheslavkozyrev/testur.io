@@ -1,5 +1,7 @@
+using Microsoft.Extensions.Logging;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Worker;
 
@@ -18,12 +20,30 @@ else
 
 var host = builder.Build();
 
-// Feature 0028: seed initial PromptTemplate documents before the worker starts processing messages.
-// The seeder is idempotent — it skips documents that already exist so manual edits are preserved.
-using (var scope = host.Services.CreateScope())
+var startupLogger = host.Services.GetRequiredService<ILogger<Program>>();
+
+using var startupCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+try
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<PromptTemplateSeeder>();
-    await seeder.SeedAsync();
+    var initializer = host.Services.GetRequiredService<CosmosDbInitializer>();
+    await initializer.InitializeAsync(startupCts.Token);
+}
+catch (Exception ex)
+{
+    startupLogger.LogCritical(ex, "Cosmos DB initialization failed. Worker cannot start.");
+    throw;
+}
+
+try
+{
+    var seeder = host.Services.GetRequiredService<PromptTemplateSeeder>();
+    await seeder.SeedAsync(startupCts.Token);
+}
+catch (Exception ex)
+{
+    startupLogger.LogCritical(ex, "Prompt template seeding failed. Worker cannot start.");
+    throw;
 }
 
 host.Run();

@@ -179,6 +179,13 @@ public static class DependencyInjection
             return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<CosmosDbInitializer>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new CosmosDbInitializer(cosmos, opts.CosmosDatabaseName);
+        });
+
         // Feature 0043: singleton SSE fan-out manager — must outlive individual HTTP requests.
         services.AddSingleton<IDashboardStreamManager, DashboardStreamManager>();
 

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
 using Testurio.Core.Models;
 
@@ -7,18 +6,10 @@ namespace Testurio.Infrastructure.Seeding;
 /// <summary>
 /// Seeds the initial <see cref="PromptTemplate"/> documents into the <c>PromptTemplates</c>
 /// Cosmos DB container at worker startup (feature 0028).
-/// <para>
-/// Uses an <c>upsert</c> strategy so the seeder is idempotent: re-running it does not overwrite
-/// documents that have been updated via the Cosmos portal or a manual migration.
-/// However, to avoid silently downgrading manually edited templates, the seeder only upserts
-/// when the document does not already exist (checked via a point-read before write).
-/// </para>
-/// Call <see cref="SeedAsync"/> once at host startup, before the worker begins processing messages.
+/// Idempotent — skips documents that already exist so manual edits are preserved.
 /// </summary>
 public sealed class PromptTemplateSeeder
 {
-    private const string PartitionKeyValue = "template";
-
     private static readonly PromptTemplate ApiTestGeneratorTemplate = new()
     {
         Id = "api_test_generator",
@@ -96,11 +87,6 @@ public sealed class PromptTemplateSeeder
         _container = cosmosClient.GetContainer(databaseName, "PromptTemplates");
     }
 
-    /// <summary>
-    /// Upserts the initial seed templates into the <c>PromptTemplates</c> container.
-    /// Existing documents are not overwritten — a point-read is performed first, and the
-    /// upsert is skipped when the document already exists, preserving any manual edits.
-    /// </summary>
     public async Task SeedAsync(CancellationToken cancellationToken = default)
     {
         await SeedTemplateAsync(ApiTestGeneratorTemplate, cancellationToken);
@@ -111,40 +97,17 @@ public sealed class PromptTemplateSeeder
     {
         try
         {
-            // Point-read first — skip upsert when the document already exists.
             await _container.ReadItemAsync<PromptTemplate>(
                 template.Id,
-                new PartitionKey(PartitionKeyValue),
+                new PartitionKey(template.TemplateType),
                 cancellationToken: cancellationToken);
-
-            // Document exists; skip seeding to preserve any manual edits.
         }
         catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            // Document does not exist — create it with the seed data.
-            // Store a wrapper with the partition key field included.
-            var document = new PromptTemplateDocument(template, PartitionKeyValue);
             await _container.CreateItemAsync(
-                document,
-                new PartitionKey(PartitionKeyValue),
+                template,
+                new PartitionKey(template.TemplateType),
                 cancellationToken: cancellationToken);
         }
-    }
-
-    /// <summary>
-    /// Internal wrapper that adds the <c>pk</c> partition key field required by the Cosmos container.
-    /// The <see cref="Template"/> positional property is excluded from serialisation so only the
-    /// flat fields (<c>id</c>, <c>templateType</c>, etc.) and <c>pk</c> are written to the document.
-    /// </summary>
-    private sealed record PromptTemplateDocument(
-        [property: JsonIgnore] PromptTemplate Template,
-        string Pk)
-    {
-        public string Id => Template.Id;
-        public string TemplateType => Template.TemplateType;
-        public string Version => Template.Version;
-        public string SystemPrompt => Template.SystemPrompt;
-        public string GeneratorInstruction => Template.GeneratorInstruction;
-        public int MaxScenarios => Template.MaxScenarios;
     }
 }

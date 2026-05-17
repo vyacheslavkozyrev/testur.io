@@ -95,7 +95,6 @@ After a test run, the QA lead can add a comment to the originating ADO or Jira t
 
 ---
 
-
 ## MVP — Project Management
 
 **[0006]: Project Creation & Core Configuration** `MVP`
@@ -164,7 +163,7 @@ Each subscription plan defines a maximum number of test run triggers per day. Wh
 
 ---
 
-## MVP — Statistics & Dashboard
+## MVP — Statistics & Dashboard - Completed
 
 **[0010a]: Private Cabinet Main Layout & Navigation** `MVP`
 _Business Outcome: Gives every authenticated page a consistent, recognisable shell so QA leads can orient themselves and navigate without friction._
