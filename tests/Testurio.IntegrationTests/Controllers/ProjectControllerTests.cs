@@ -370,6 +370,108 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    // ─── RequestTimeoutSeconds validation — feature 0022 ────────────────────
+
+    [Fact]
+    public async Task UpdateProject_Returns200_AndPersistsRequestTimeoutSeconds()
+    {
+        // AC-004, AC-005: valid requestTimeoutSeconds value is persisted and returned
+        var existing = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var client = CreateAuthenticatedClient();
+        var request = new UpdateProjectRequest("My App", "https://app.example.com", "Smoke.", null, RequestTimeoutSeconds: 60);
+        var response = await client.PutAsJsonAsync("/v1/projects/proj-001", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(60, body!.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task UpdateProject_Returns400_WhenRequestTimeoutSeconds_IsBelowMinimum()
+    {
+        // AC-020: value below 5 returns 400 Bad Request with ValidationProblemDetails
+        var client = CreateAuthenticatedClient();
+        var payload = new { name = "My App", productUrl = "https://app.example.com", testingStrategy = "Smoke.", requestTimeoutSeconds = 4 };
+        var response = await client.PutAsJsonAsync("/v1/projects/proj-001", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("RequestTimeoutSeconds", body!.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task UpdateProject_Returns400_WhenRequestTimeoutSeconds_IsAboveMaximum()
+    {
+        // AC-020: value above 120 returns 400 Bad Request with ValidationProblemDetails
+        var client = CreateAuthenticatedClient();
+        var payload = new { name = "My App", productUrl = "https://app.example.com", testingStrategy = "Smoke.", requestTimeoutSeconds = 121 };
+        var response = await client.PutAsJsonAsync("/v1/projects/proj-001", payload);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
+        Assert.NotNull(body);
+        Assert.Contains("RequestTimeoutSeconds", body!.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task UpdateProject_ReturnsDefault30_WhenRequestTimeoutSeconds_IsOmitted()
+    {
+        // AC-006, AC-009: when the field is omitted the response should include 30
+        var existing = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var client = CreateAuthenticatedClient();
+        // Omit requestTimeoutSeconds — the DTO default (30) will be used
+        var payload = new { name = "My App", productUrl = "https://app.example.com", testingStrategy = "Smoke." };
+        var response = await client.PutAsJsonAsync("/v1/projects/proj-001", payload);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(30, body!.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task GetProject_IncludesRequestTimeoutSeconds_InResponse()
+    {
+        // AC-008: GET /api/projects/{id} includes requestTimeoutSeconds in the response body
+        var project = MakeProject();
+        project.RequestTimeoutSeconds = 45;
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var client = CreateAuthenticatedClient();
+        var response = await client.GetAsync("/v1/projects/proj-001");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ProjectDto>();
+        Assert.NotNull(body);
+        Assert.Equal(45, body!.RequestTimeoutSeconds);
+    }
+
     // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
