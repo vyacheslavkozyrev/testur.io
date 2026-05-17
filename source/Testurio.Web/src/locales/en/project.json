@@ -65,6 +65,16 @@
     "message": "You have unsaved changes in Settings.",
     "link": "Go to Settings"
   },
+  "requestTimeout": {
+    "field": {
+      "label": "Request Timeout (seconds)",
+      "helperText": "Set a timeout between {{min}} and {{max}} seconds for each HTTP and Playwright step."
+    },
+    "validation": {
+      "required": "Request timeout is required.",
+      "range": "Request timeout must be between {{min}} and {{max}} seconds."
+    }
+  },
   "customPrompt": {
     "section": {
       "title": "Custom Test Generation Prompt",

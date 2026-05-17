@@ -5,6 +5,7 @@ export interface ProjectDto {
   testingStrategy: string;
   customPrompt: string | null;
   allowedWorkItemTypes: string[] | null;
+  requestTimeoutSeconds: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +19,7 @@ export interface CreateProjectRequest {
   productUrl: string;
   testingStrategy: string;
   customPrompt?: string | null;
+  requestTimeoutSeconds?: number;
 }
 
 export interface UpdateProjectRequest {
@@ -25,6 +27,7 @@ export interface UpdateProjectRequest {
   productUrl: string;
   testingStrategy: string;
   customPrompt?: string | null;
+  requestTimeoutSeconds?: number;
 }
 
 export interface PromptCheckRequest {

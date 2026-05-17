@@ -16,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import NextLink from 'next/link';
 import { useTheme, type Theme } from '@mui/material/styles';
 import AccessModeSelector, { type AccessModeSelectorHandle } from '@/components/AccessModeSelector/AccessModeSelector';
+import RequestTimeoutField from '@/components/RequestTimeoutField/RequestTimeoutField';
 import { PROJECTS_ROUTE } from '@/routes/routes';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
@@ -58,6 +59,8 @@ export default function ProjectSettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [savedCustomPrompt, setSavedCustomPrompt] = useState<string>('');
+  const [requestTimeoutSeconds, setRequestTimeoutSeconds] = useState<number>(30);
+  const [savedRequestTimeoutSeconds, setSavedRequestTimeoutSeconds] = useState<number>(30);
   const [saveBarState, setSaveBarState] = useState<SaveBarState>('clean');
   const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false });
   const [pendingSections, setPendingSections] = useState<PendingSections>({ projectInfo: true, reportSettings: true });
@@ -73,6 +76,9 @@ export default function ProjectSettingsPage() {
       const serverValue = project.customPrompt ?? '';
       setCustomPrompt(serverValue);
       setSavedCustomPrompt(serverValue);
+      const serverTimeout = project.requestTimeoutSeconds ?? 30;
+      setRequestTimeoutSeconds(serverTimeout);
+      setSavedRequestTimeoutSeconds(serverTimeout);
     }
   }, [project?.projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -85,8 +91,9 @@ export default function ProjectSettingsPage() {
     const reportDirty = reportSettingsRef.current?.isDirty ?? false;
     const accessDirty = accessRef.current?.isDirty ?? false;
     const promptDirty = customPrompt !== savedCustomPrompt;
-    return formDirty || reportDirty || accessDirty || promptDirty;
-  }, [customPrompt, savedCustomPrompt]);
+    const timeoutDirty = requestTimeoutSeconds !== savedRequestTimeoutSeconds;
+    return formDirty || reportDirty || accessDirty || promptDirty || timeoutDirty;
+  }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds]);
 
   // Poll computeDirty() after every render — form isDirty lives in a ref and
   // cannot be a dep, so no deps array is intentional. Guard prevents setState
@@ -109,9 +116,9 @@ export default function ProjectSettingsPage() {
 
   const handleCaptureFormData = useCallback(
     (data: CreateProjectRequest | UpdateProjectRequest) => {
-      capturedFormData.current = { ...data, customPrompt: customPrompt || null };
+      capturedFormData.current = { ...data, customPrompt: customPrompt || null, requestTimeoutSeconds };
     },
-    [customPrompt],
+    [customPrompt, requestTimeoutSeconds],
   );
 
   const handleSaveAll = useCallback(async () => {
@@ -175,12 +182,13 @@ export default function ProjectSettingsPage() {
       setSaveBarState('dirty');
     } else {
       setSavedCustomPrompt(customPrompt);
+      setSavedRequestTimeoutSeconds(requestTimeoutSeconds);
       setPendingSections({ projectInfo: true, reportSettings: true });
       setSaveBarState('saved');
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
       saveTimerRef.current = window.setTimeout(() => setSaveBarState('clean'), 2000);
     }
-  }, [pendingSections, customPrompt, updateProject, updateReportSettings]);
+  }, [pendingSections, customPrompt, requestTimeoutSeconds, updateProject, updateReportSettings]);
 
   const handleDeleteConfirm = useCallback(() => {
     deleteProject.mutate(projectId ?? '', {
@@ -285,6 +293,10 @@ export default function ProjectSettingsPage() {
             <Typography variant="body2" color="text.secondary">
               {t('access.section.description')}
             </Typography>
+            <RequestTimeoutField
+              value={requestTimeoutSeconds}
+              onChange={setRequestTimeoutSeconds}
+            />
             <AccessModeSelector ref={accessRef} projectId={project.projectId} />
           </Paper>
 
