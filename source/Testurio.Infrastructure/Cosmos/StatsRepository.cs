@@ -9,7 +9,7 @@ namespace Testurio.Infrastructure.Cosmos;
 /// <summary>
 /// Implements <see cref="IStatsRepository"/> using Cosmos DB containers:
 /// <c>Projects</c> (partition key: <c>userId</c>), <c>TestRuns</c> (partition key: <c>projectId</c>),
-/// and <c>TestResults</c> (partition key: <c>userId</c>).
+/// and <c>TestResults</c> (partition key: <c>projectId</c>).
 /// </summary>
 public class StatsRepository : IStatsRepository
 {
@@ -152,7 +152,7 @@ public class StatsRepository : IStatsRepository
         }
 
         // 2. Fetch all non-deleted TestResult documents for this project, sorted by createdAt desc.
-        //    TestResults partition key is userId — no cross-partition fan-out needed.
+        //    TestResults partition key is projectId — no cross-partition fan-out needed.
         var resultQuery = new QueryDefinition(
             "SELECT * FROM c " +
             "WHERE c.userId = @userId AND c.projectId = @projectId " +
@@ -164,7 +164,7 @@ public class StatsRepository : IStatsRepository
         var results = new List<TestResult>();
         using var resultIterator = _testResultsContainer.GetItemQueryIterator<TestResult>(
             resultQuery,
-            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(projectId) });
 
         while (resultIterator.HasMoreResults)
         {
@@ -244,17 +244,15 @@ public class StatsRepository : IStatsRepository
 
         using var iterator = _testResultsContainer.GetItemQueryIterator<TestResult>(
             query,
-            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(projectId) });
 
         while (iterator.HasMoreResults)
         {
             var page = await iterator.ReadNextAsync(cancellationToken);
             foreach (var result in page)
             {
-                // Verify the result belongs to the requested project.
-                if (result.ProjectId != projectId)
-                    return null;
-                return result;
+                if (result.ProjectId == projectId)
+                    return result;
             }
         }
 
