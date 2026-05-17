@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Testurio.Core.Constants;
 
 namespace Testurio.Api.DTOs;
 
@@ -12,6 +13,7 @@ public sealed record ProjectDto(
     string TestingStrategy,
     string? CustomPrompt,
     string[]? AllowedWorkItemTypes,
+    int RequestTimeoutSeconds,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
@@ -33,7 +35,10 @@ public sealed record CreateProjectRequest(
     string TestingStrategy,
 
     [property: MaxLength(5000)]
-    string? CustomPrompt = null);
+    string? CustomPrompt = null,
+
+    [property: Range(ProjectConstants.RequestTimeoutMinSeconds, ProjectConstants.RequestTimeoutMaxSeconds)]
+    int RequestTimeoutSeconds = ProjectConstants.RequestTimeoutDefaultSeconds);
 
 /// <summary>
 /// Request body for updating an existing project's core configuration (PUT /v1/projects/{id}).
@@ -52,4 +57,7 @@ public sealed record UpdateProjectRequest(
     string TestingStrategy,
 
     [property: MaxLength(5000)]
-    string? CustomPrompt = null);
+    string? CustomPrompt = null,
+
+    [property: Range(ProjectConstants.RequestTimeoutMinSeconds, ProjectConstants.RequestTimeoutMaxSeconds)]
+    int RequestTimeoutSeconds = ProjectConstants.RequestTimeoutDefaultSeconds);

@@ -4,9 +4,9 @@
 
 - [x] T001 [Domain] Add `RequestTimeoutSeconds` property (default `30`, range enforced by domain constant) to `Project` entity — `source/Testurio.Core/Entities/Project.cs`
 - [x] T002 [Domain] Add `ProjectConstants` static class with `RequestTimeoutMinSeconds = 5`, `RequestTimeoutMaxSeconds = 120`, and `RequestTimeoutDefaultSeconds = 30` — `source/Testurio.Core/Constants/ProjectConstants.cs`
-- [ ] T003 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `CreateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
-- [ ] T004 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `UpdateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
-- [ ] T005 [App] Add `RequestTimeoutSeconds` property to `ProjectDto` response record — `source/Testurio.Api/DTOs/ProjectDto.cs`
+- [x] T003 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `CreateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
+- [x] T004 [App] Add `RequestTimeoutSeconds` field (`[Range(5, 120)]`, optional with default 30) to `UpdateProjectRequest` DTO — `source/Testurio.Api/DTOs/ProjectDto.cs`
+- [x] T005 [App] Add `RequestTimeoutSeconds` property to `ProjectDto` response record — `source/Testurio.Api/DTOs/ProjectDto.cs`
 - [ ] T006 [App] Update `ProjectService.CreateAsync` to write `RequestTimeoutSeconds` (from request, defaulting to `ProjectConstants.RequestTimeoutDefaultSeconds`) to the new `Project` field — `source/Testurio.Api/Services/ProjectService.cs`
 - [ ] T007 [App] Update `ProjectService.UpdateAsync` to write `RequestTimeoutSeconds` from the update request — `source/Testurio.Api/Services/ProjectService.cs`
 - [ ] T008 [App] Update `ProjectService.ToDto` to include `RequestTimeoutSeconds` in the mapped `ProjectDto` — `source/Testurio.Api/Services/ProjectService.cs`
