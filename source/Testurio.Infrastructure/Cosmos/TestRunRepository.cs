@@ -80,7 +80,7 @@ public class TestRunRepository : ITestRunRepository
     {
         // ReplaceItemAsync serialises the full TestRun entity, including fields added by
         // feature 0025 (ParserMode), feature 0026 (ResolvedTestTypes, ClassificationReason),
-        // and feature 0028 (GenerationWarnings).
+        // feature 0028 (GenerationWarnings), and feature 0029 (ExecutionWarnings).
         // Cosmos DB's schema-less model makes these additions additive and backwards-compatible —
         // existing run documents without new fields deserialise fine (nullable/default values apply).
         var response = await _container.ReplaceItemAsync(testRun, testRun.Id, new PartitionKey(testRun.ProjectId), cancellationToken: cancellationToken);
