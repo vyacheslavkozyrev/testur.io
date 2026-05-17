@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.Azure.Cosmos;
 using Testurio.Core.Models;
 
@@ -132,8 +133,12 @@ public sealed class PromptTemplateSeeder
 
     /// <summary>
     /// Internal wrapper that adds the <c>pk</c> partition key field required by the Cosmos container.
+    /// The <see cref="Template"/> positional property is excluded from serialisation so only the
+    /// flat fields (<c>id</c>, <c>templateType</c>, etc.) and <c>pk</c> are written to the document.
     /// </summary>
-    private sealed record PromptTemplateDocument(PromptTemplate Template, string Pk)
+    private sealed record PromptTemplateDocument(
+        [property: JsonIgnore] PromptTemplate Template,
+        string Pk)
     {
         public string Id => Template.Id;
         public string TemplateType => Template.TemplateType;

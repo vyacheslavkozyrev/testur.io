@@ -46,8 +46,7 @@ public sealed partial class ApiTestGeneratorAgent : ITestGeneratorAgent
     /// <inheritdoc />
     public async Task<GeneratorResults> GenerateAsync(GeneratorContext context, CancellationToken ct)
     {
-        var systemPrompt = string.Empty;
-        var userPrompt = _promptAssembly.Assemble(context, out systemPrompt);
+        var userPrompt = _promptAssembly.Assemble(context, out var systemPrompt);
 
         // Build the message history for the retry loop.
         // The retry appends the previous raw response and a correction instruction before each retry.

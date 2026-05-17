@@ -135,9 +135,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
                 LogStatusUpdateFailed(_logger, message.TestRunId, updateEx);
             }
 
-            // StoryParserException and ScenarioGenerationException are permanent failures — dead-letter
-            // so Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
-            if (ex is StoryParserException or ScenarioGenerationException)
+            // StoryParserException, ScenarioGenerationException, and InvalidOperationException
+            // (e.g. missing PromptTemplate — AC-005) are permanent failures — dead-letter so
+            // Service Bus does not retry and flood the LLM with repeated calls for the same broken run.
+            if (ex is StoryParserException or ScenarioGenerationException or InvalidOperationException)
                 await args.DeadLetterMessageAsync(args.Message, ex.GetType().Name, ex.Message, CancellationToken.None);
             else
                 await args.AbandonMessageAsync(args.Message, cancellationToken: CancellationToken.None);

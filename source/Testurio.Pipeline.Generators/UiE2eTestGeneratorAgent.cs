@@ -48,8 +48,7 @@ public sealed partial class UiE2eTestGeneratorAgent : ITestGeneratorAgent
     /// <inheritdoc />
     public async Task<GeneratorResults> GenerateAsync(GeneratorContext context, CancellationToken ct)
     {
-        var systemPrompt = string.Empty;
-        var userPrompt = _promptAssembly.Assemble(context, out systemPrompt);
+        var userPrompt = _promptAssembly.Assemble(context, out var systemPrompt);
 
         var messages = new List<(string Role, string Content)>
         {
