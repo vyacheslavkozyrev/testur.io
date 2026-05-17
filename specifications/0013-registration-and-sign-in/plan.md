@@ -27,11 +27,11 @@
 - [x] T023 [UI] Restore the auth guard in the `(authenticated)` layout: uncomment server-side session check, redirect to `/sign-in?returnUrl=<path>` when session is missing or invalid — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
 - [x] T024 [UI] Update root `page.tsx` to use real session validation from the session cookie (replace cookie-existence stub with `getSessionUserId` helper that validates the token) — `source/Testurio.Web/src/app/page.tsx`
 - [x] T025 [UI] Wire the Sign Out sidebar button: update `AppSidebar.handleSignOut` to call `POST /api/auth/sign-out` then redirect to `/sign-in` (replaces the current direct B2C logout URL construction) — `source/Testurio.Web/src/components/AppSidebar/AppSidebar.tsx`
-- [ ] T026 [Test] Unit tests for `useSignIn`, `useSignUp`, `useForgotPassword`, `useSignOut` hooks — `source/Testurio.Web/src/hooks/__tests__/useAuth.test.ts`
-- [ ] T027 [Test] Component tests for `SignInPage`: renders form fields, shows inline error on wrong credentials, disables submit while loading, `returnUrl` redirect applied — `source/Testurio.Web/src/views/SignInPage/SignInPage.test.tsx`
-- [ ] T028 [Test] Component tests for `SignUpPage`: renders form fields, password mismatch error, password policy error, duplicate email error, redirects to dashboard on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.test.tsx`
-- [ ] T029 [Test] Component tests for `ForgotPasswordPage`: renders email field, shows confirmation message after submit regardless of whether email exists, Back to sign-in link present — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.test.tsx`
-- [ ] T030 [Test] E2E tests: sign-in happy path → lands on dashboard; sign-up happy path → lands on dashboard; unauthenticated access to `/dashboard` → redirected to `/sign-in?returnUrl=/dashboard`; sign-out → redirected to `/sign-in` — `source/Testurio.Web/e2e/auth.spec.ts`
+- [x] T026 [Test] Unit tests for `useSignIn`, `useSignUp`, `useForgotPassword`, `useSignOut` hooks — `source/Testurio.Web/src/hooks/__tests__/useAuth.test.ts`
+- [x] T027 [Test] Component tests for `SignInPage`: renders form fields, shows inline error on wrong credentials, disables submit while loading, `returnUrl` redirect applied — `source/Testurio.Web/src/views/SignInPage/SignInPage.test.tsx`
+- [x] T028 [Test] Component tests for `SignUpPage`: renders form fields, password mismatch error, password policy error, duplicate email error, redirects to dashboard on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.test.tsx`
+- [x] T029 [Test] Component tests for `ForgotPasswordPage`: renders email field, shows confirmation message after submit regardless of whether email exists, Back to sign-in link present — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.test.tsx`
+- [ ] T030 [Test] E2E tests: sign-in happy path → lands on dashboard; sign-up happy path → lands on dashboard; unauthenticated access to `/dashboard` → redirected to `/sign-in?returnUrl=/dashboard`; sign-out → redirected to `/sign-in` — `source/Testurio.Web/e2e/auth.spec.ts` _(deferred — requires live B2C instance or full mock server)_
 
 ## Rationale
 
