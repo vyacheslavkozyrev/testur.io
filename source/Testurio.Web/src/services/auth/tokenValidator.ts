@@ -4,20 +4,20 @@
  * This module is Node.js only (Next.js API routes / Server Components).
  * Do not import it in client components.
  *
- * Validation strategy (MVP):
- * - Decode the JWT payload without a crypto library dependency.
+ * Validation strategy:
+ * - Verify the RS256 signature using the B2C JWKS endpoint.
+ * - JWKS is cached via jose's built-in RemoteJWKSet caching.
  * - Check `exp` claim to reject expired tokens.
- * - Check `iss` to ensure it originates from the configured B2C tenant.
+ * - Check `iss` claim against the exact full B2C issuer URL.
  * - Extract `oid`, `email`/`emails`, and `name` claims → return `AuthUser`.
  *
- * Note: Full signature verification (RS256 using B2C JWKS endpoint) is deferred
- * to a post-MVP hardening sprint. At MVP the token is treated as trusted because
- * it is only ever received from the client immediately after MSAL acquisition
- * and stored in an HttpOnly cookie. The cookie itself cannot be tampered with
- * client-side, making signature verification a defence-in-depth addition rather
- * than a primary trust boundary at this stage.
+ * Expected env vars:
+ *   NEXT_PUBLIC_B2C_AUTHORITY  — full authority URL, e.g.
+ *     https://<tenant>.b2clogin.com/<tenant>.onmicrosoft.com/B2C_1_susi
+ *   NEXT_PUBLIC_B2C_TENANT     — tenant domain, e.g. <tenant>.onmicrosoft.com
  */
 
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { AuthUser } from '@/types/layout.types';
 
 interface RawIdTokenClaims {
@@ -38,55 +38,66 @@ interface RawIdTokenClaims {
 }
 
 /**
- * Decodes a JWT without verifying the signature (see module docblock for rationale).
- * Returns `null` if the token is malformed.
+ * Lazily-initialised RemoteJWKSet. jose caches the JWKS internally and
+ * re-fetches only when a matching key is not found (standard JWK cache
+ * semantics), so we reuse a single instance across requests.
  */
-function decodeJwtPayload(token: string): RawIdTokenClaims | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 3) return null;
-    // Base64url → Base64 → decode
-    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-    const decoded = Buffer.from(padded, 'base64').toString('utf-8');
-    return JSON.parse(decoded) as RawIdTokenClaims;
-  } catch {
-    return null;
+let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
+
+function getJwks(): ReturnType<typeof createRemoteJWKSet> {
+  if (!_jwks) {
+    const authority = process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '';
+    // B2C JWKS endpoint: <authority>/discovery/v2.0/keys
+    const jwksUrl = new URL(`${authority.replace(/\/$/, '')}/discovery/v2.0/keys`);
+    _jwks = createRemoteJWKSet(jwksUrl);
   }
+  return _jwks;
 }
 
 /**
  * Validates an Azure AD B2C ID token and maps its claims to `AuthUser`.
- * Returns `null` if validation fails (expired, wrong issuer, missing claims).
+ *
+ * - Verifies the RS256 signature against the B2C JWKS endpoint.
+ * - Checks the `iss` claim with an exact full-URL match.
+ * - Checks the `exp` claim (jose rejects expired tokens automatically).
+ *
+ * Returns `null` if validation fails for any reason.
  */
 export async function decodeAndValidateIdToken(token: string): Promise<AuthUser | null> {
-  const claims = decodeJwtPayload(token);
-  if (!claims) return null;
+  try {
+    const jwks = getJwks();
 
-  // Check expiry
-  const nowSec = Math.floor(Date.now() / 1000);
-  if (claims.exp !== undefined && claims.exp < nowSec) return null;
+    const { payload } = await jwtVerify(token, jwks, {
+      algorithms: ['RS256'],
+    });
 
-  // Check issuer contains the configured tenant (lenient prefix match for B2C variants)
-  const expectedTenant = process.env.NEXT_PUBLIC_B2C_TENANT;
-  if (expectedTenant && claims.iss && !claims.iss.includes(expectedTenant)) {
+    const claims = payload as unknown as RawIdTokenClaims;
+
+    // Exact issuer match — must equal the full B2C issuer URL.
+    // B2C issues tokens with `iss` = <authority>/v2.0 (trailing slash variants exist).
+    const authority = (process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '').replace(/\/$/, '');
+    const expectedIssuer = `${authority}/v2.0/`;
+    if (claims.iss !== expectedIssuer) {
+      return null;
+    }
+
+    const oid = claims.oid ?? claims.sub;
+    if (!oid) return null;
+
+    // Resolve email: standard claim or B2C `emails` array
+    const email =
+      claims.email ??
+      (Array.isArray(claims.emails) && claims.emails.length > 0 ? claims.emails[0] : undefined);
+
+    if (!email) return null;
+
+    return {
+      id: oid,
+      displayName: claims.name ?? null,
+      email,
+      avatarUrl: undefined,
+    };
+  } catch {
     return null;
   }
-
-  const oid = claims.oid ?? claims.sub;
-  if (!oid) return null;
-
-  // Resolve email: standard claim or B2C `emails` array
-  const email =
-    claims.email ??
-    (Array.isArray(claims.emails) && claims.emails.length > 0 ? claims.emails[0] : undefined);
-
-  if (!email) return null;
-
-  return {
-    id: oid,
-    displayName: claims.name ?? null,
-    email,
-    avatarUrl: undefined,
-  };
 }

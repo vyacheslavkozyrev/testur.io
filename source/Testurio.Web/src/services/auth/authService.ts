@@ -35,6 +35,29 @@ function makeAuthError(code: string, message: string): AuthError {
   return { code, message };
 }
 
+// ─── Internal helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Called after sign-up completes to auto-sign the user in using the B2C continuation token.
+ */
+async function signInFromContinuation(
+  continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> }
+): Promise<AuthUser> {
+  const signInResult = await continuationState.signIn({ scopes: loginScopes });
+
+  if (!signInResult.isCompleted()) {
+    throw makeAuthError('UNKNOWN', 'Auto sign-in after registration did not complete.');
+  }
+
+  const idToken = signInResult.resultData?.getIdToken();
+  if (!idToken) {
+    throw makeAuthError('UNKNOWN', 'No ID token received after registration.');
+  }
+
+  const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
+  return data;
+}
+
 // ─── authService ──────────────────────────────────────────────────────────────
 
 export const authService = {
@@ -87,8 +110,16 @@ export const authService = {
       throw makeAuthError('UNKNOWN', 'No ID token received from B2C.');
     }
 
-    const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
-    return data;
+    try {
+      const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
+      return data;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr?.response?.status === 429) {
+        throw makeAuthError('RATE_LIMITED', 'Too many sign-in attempts. Please wait and try again.');
+      }
+      throw err;
+    }
   },
 
   /**
@@ -131,7 +162,7 @@ export const authService = {
         throw makeAuthError('UNKNOWN', 'Sign-up did not complete after password submission.');
       }
       // Auto sign-in via continuation token
-      return authService._signInFromContinuation(pwResult.state);
+      return signInFromContinuation(pwResult.state);
     }
 
     if (!signUpResult.isCompleted()) {
@@ -139,23 +170,30 @@ export const authService = {
     }
 
     // Auto sign-in via continuation token
-    return authService._signInFromContinuation(signUpResult.state);
+    return signInFromContinuation(signUpResult.state);
   },
 
   /**
    * Initiates the B2C Self-Service Password Reset (SSPR) flow.
    * B2C sends a verification code to the email address.
    * This method resolves once the request is submitted; it does NOT wait for the email.
-   * Always resolves without throwing — the caller shows a generic confirmation message
-   * regardless of whether the account exists (prevents enumeration).
+   *
+   * Swallows "account not found" / "invalid username" errors to prevent account enumeration —
+   * the caller always shows a generic confirmation message.
+   * Re-throws unexpected errors so the hook can expose `isError` for non-enumeration failures.
    */
   async forgotPassword({ email }: ForgotPasswordRequest): Promise<void> {
     try {
       const client = await getMsalClient();
       await client.resetPassword({ username: email });
-      // We don't await the full flow — just trigger it and resolve.
-    } catch {
-      // Intentionally swallowed to prevent account enumeration.
+    } catch (err: unknown) {
+      // Only swallow "not found" / "invalid username" errors (prevent enumeration).
+      // Re-throw everything else so the UI can surface unexpected failures.
+      const msalErr = err as { isUserNotFound?: () => boolean; isInvalidUsername?: () => boolean };
+      if (msalErr?.isUserNotFound?.() || msalErr?.isInvalidUsername?.()) {
+        return;
+      }
+      throw err;
     }
   },
 
@@ -179,29 +217,5 @@ export const authService = {
     } catch {
       return null;
     }
-  },
-
-  // ─── Internal helpers ──────────────────────────────────────────────────────
-
-  /**
-   * Called after sign-up completes to auto-sign the user in using the B2C continuation token.
-   * @internal
-   */
-  async _signInFromContinuation(
-    continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> }
-  ): Promise<AuthUser> {
-    const signInResult = await continuationState.signIn({ scopes: loginScopes });
-
-    if (!signInResult.isCompleted()) {
-      throw makeAuthError('UNKNOWN', 'Auto sign-in after registration did not complete.');
-    }
-
-    const idToken = signInResult.resultData?.getIdToken();
-    if (!idToken) {
-      throw makeAuthError('UNKNOWN', 'No ID token received after registration.');
-    }
-
-    const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
-    return data;
   },
 };

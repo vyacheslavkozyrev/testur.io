@@ -43,17 +43,17 @@ function createWrapper() {
 describe('useSignIn', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('calls authService.signIn with trimmed email and password', async () => {
+  it('calls authService.signIn with the email and password passed to mutate', async () => {
     mockAuthService.signIn.mockResolvedValue(mockAuthUser);
 
     const { result } = renderHook(() => useSignIn(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.mutate({ email: '  test@example.com  ', password: 'Password1' });
+      result.current.mutate({ email: 'test@example.com', password: 'Password1' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockAuthService.signIn).toHaveBeenCalledWith({ email: '  test@example.com  ', password: 'Password1' });
+    expect(mockAuthService.signIn).toHaveBeenCalledWith({ email: 'test@example.com', password: 'Password1' });
   });
 
   it('redirects to /dashboard on success when no returnUrl', async () => {
@@ -162,7 +162,7 @@ describe('useForgotPassword', () => {
   });
 
   it('resolves even when authService.forgotPassword throws (no account enumeration)', async () => {
-    // forgotPassword in authService swallows errors — so the hook should always resolve
+    // forgotPassword in authService swallows "not found" errors — so the hook should always resolve
     mockAuthService.forgotPassword.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useForgotPassword(), { wrapper: createWrapper() });
@@ -173,6 +173,18 @@ describe('useForgotPassword', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.isError).toBe(false);
+  });
+
+  it('exposes isError when authService.forgotPassword throws an unexpected error', async () => {
+    mockAuthService.forgotPassword.mockRejectedValue(new Error('network'));
+
+    const { result } = renderHook(() => useForgotPassword(), { wrapper: createWrapper() });
+
+    act(() => {
+      result.current.mutate({ email: 'user@example.com' });
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 
@@ -210,7 +222,7 @@ describe('useSignOut', () => {
     expect(window.location.href).toBe('/sign-in');
   });
 
-  it('falls back to /sign-in when authService.signOut rejects', async () => {
+  it('falls back to /sign-in via router.replace when authService.signOut rejects', async () => {
     mockAuthService.signOut.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() => useSignOut(), { wrapper: createWrapper() });
@@ -220,6 +232,6 @@ describe('useSignOut', () => {
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(window.location.href).toBe('/sign-in');
+    expect(mockRouterReplace).toHaveBeenCalledWith('/sign-in');
   });
 });

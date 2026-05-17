@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { decodeAndValidateIdToken } from '@/services/auth/tokenValidator';
+import { getSessionStore } from '@/app/api/auth/session/route';
 
 /**
  * GET /api/auth/me
  *
- * Reads the `testurio_session` HttpOnly cookie, validates the B2C ID token
- * contained within it, and returns the signed-in user's identity.
+ * Reads the `testurio_session` HttpOnly cookie, looks up the session ID in the
+ * server-side session store, and returns the signed-in user's identity.
  *
  * Returns 401 Unauthorized if:
  * - The cookie is absent
- * - The token is expired or malformed
- * - Token validation fails for any reason
+ * - The session ID is not found in the store
+ * - The session has expired
  */
 export async function GET(): Promise<NextResponse> {
   const cookieStore = await cookies();
@@ -21,10 +21,24 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const user = await decodeAndValidateIdToken(sessionCookie.value);
-  if (!user) {
+  const sessionStore = getSessionStore();
+  const session = sessionStore.get(sessionCookie.value);
+
+  if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  return NextResponse.json(user);
+  // Check session expiry
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (session.exp < nowSec) {
+    sessionStore.delete(sessionCookie.value);
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return NextResponse.json({
+    id: session.userId,
+    email: session.email,
+    displayName: session.displayName,
+    avatarUrl: session.avatarUrl,
+  });
 }

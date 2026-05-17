@@ -49,6 +49,13 @@ export default function ForgotPasswordPage() {
           {t('forgotPassword.subtitle')}
         </Typography>
 
+        {/* Error state */}
+        {forgotPassword.isError && (
+          <Alert severity="error" sx={styles.alert}>
+            {t('forgotPassword.errorGeneric')}
+          </Alert>
+        )}
+
         {/* Confirmation state */}
         {forgotPassword.isSuccess ? (
           <Box sx={styles.confirmationBox}>
