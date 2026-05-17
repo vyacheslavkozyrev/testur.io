@@ -88,6 +88,7 @@ builder.Services.AddScoped<IPromptCheckService, PromptCheckService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 builder.Services.AddOptions<PMToolConnectionServiceOptions>()

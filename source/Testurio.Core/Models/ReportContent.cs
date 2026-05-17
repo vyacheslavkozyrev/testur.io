@@ -4,6 +4,7 @@ namespace Testurio.Core.Models;
 /// Structured result for a single test scenario produced by the test executor.
 /// Populated by <c>ReportWriter</c> (feature 0030) from <c>ExecutionResult</c> data.
 /// </summary>
+/// <param name="ScenarioId">Stable unique identifier for this scenario (UUID v4 or generator-assigned key).</param>
 /// <param name="Title">Human-readable scenario title.</param>
 /// <param name="Passed">Whether all assertions in this scenario passed.</param>
 /// <param name="DurationMs">Total execution duration in milliseconds.</param>
@@ -18,6 +19,7 @@ namespace Testurio.Core.Models;
 /// Populated by <c>ReportWriter</c> from <c>UiE2eScenarioResult</c> step data.
 /// </param>
 public record ScenarioSummary(
+    string ScenarioId,
     string Title,
     bool Passed,
     long DurationMs,

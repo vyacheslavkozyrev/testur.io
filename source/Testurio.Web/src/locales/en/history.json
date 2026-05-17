@@ -37,9 +37,9 @@
     "failed": "Failed"
   },
   "recommendation": {
-    "approve": "Approve",
-    "investigate": "Investigate",
-    "block": "Block"
+    "approve": "Approve and merge",
+    "request_fixes": "Request fixes",
+    "flag_for_manual_review": "Flag for manual review"
   },
   "page": {
     "title": "Test History",
