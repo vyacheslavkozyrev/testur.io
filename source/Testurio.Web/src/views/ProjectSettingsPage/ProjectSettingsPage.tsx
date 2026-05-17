@@ -15,7 +15,7 @@ import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import NextLink from 'next/link';
 import { useTheme, type Theme } from '@mui/material/styles';
-import AccessModeSelector from '@/components/AccessModeSelector/AccessModeSelector';
+import AccessModeSelector, { type AccessModeSelectorHandle } from '@/components/AccessModeSelector/AccessModeSelector';
 import { PROJECTS_ROUTE } from '@/routes/routes';
 import CustomPromptField from '@/components/CustomPromptField/CustomPromptField';
 import ProjectDeleteDialog from '@/components/ProjectDeleteDialog/ProjectDeleteDialog';
@@ -34,6 +34,7 @@ type TabValue = 'settings' | 'integration';
 interface SectionErrors {
   projectInfo: boolean;
   reportSettings: boolean;
+  access: boolean;
 }
 
 interface PendingSections {
@@ -58,11 +59,12 @@ export default function ProjectSettingsPage() {
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [savedCustomPrompt, setSavedCustomPrompt] = useState<string>('');
   const [saveBarState, setSaveBarState] = useState<SaveBarState>('clean');
-  const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false });
+  const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false });
   const [pendingSections, setPendingSections] = useState<PendingSections>({ projectInfo: true, reportSettings: true });
 
   const projectFormRef = useRef<ProjectFormHandle>(null);
   const reportSettingsRef = useRef<ReportSettingsSectionHandle>(null);
+  const accessRef = useRef<AccessModeSelectorHandle>(null);
   const capturedFormData = useRef<UpdateProjectRequest | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -81,8 +83,9 @@ export default function ProjectSettingsPage() {
   const computeDirty = useCallback((): boolean => {
     const formDirty = projectFormRef.current?.isDirty ?? false;
     const reportDirty = reportSettingsRef.current?.isDirty ?? false;
+    const accessDirty = accessRef.current?.isDirty ?? false;
     const promptDirty = customPrompt !== savedCustomPrompt;
-    return formDirty || reportDirty || promptDirty;
+    return formDirty || reportDirty || accessDirty || promptDirty;
   }, [customPrompt, savedCustomPrompt]);
 
   // Poll computeDirty() after every render — form isDirty lives in a ref and
@@ -113,10 +116,11 @@ export default function ProjectSettingsPage() {
 
   const handleSaveAll = useCallback(async () => {
     setSaveBarState('saving');
-    setSectionErrors({ projectInfo: false, reportSettings: false });
+    setSectionErrors({ projectInfo: false, reportSettings: false, access: false });
 
     let projectInfoOk = !pendingSections.projectInfo;
     let reportSettingsOk = !pendingSections.reportSettings;
+    let accessOk = !(accessRef.current?.isDirty ?? false);
 
     if (pendingSections.projectInfo) {
       const valid = await projectFormRef.current?.triggerSubmit();
@@ -149,13 +153,23 @@ export default function ProjectSettingsPage() {
       }
     }
 
+    if (accessRef.current?.isDirty) {
+      try {
+        await accessRef.current.save();
+        accessOk = true;
+      } catch {
+        accessOk = false;
+      }
+    }
+
     const newErrors: SectionErrors = {
       projectInfo: !projectInfoOk,
       reportSettings: !reportSettingsOk,
+      access: !accessOk,
     };
     setSectionErrors(newErrors);
 
-    const anyError = newErrors.projectInfo || newErrors.reportSettings;
+    const anyError = newErrors.projectInfo || newErrors.reportSettings || newErrors.access;
     if (anyError) {
       setPendingSections({ projectInfo: newErrors.projectInfo, reportSettings: newErrors.reportSettings });
       setSaveBarState('dirty');
@@ -260,13 +274,18 @@ export default function ProjectSettingsPage() {
 
           {/* Testing environment access card */}
           <Paper variant="outlined" sx={styles.card}>
+            {sectionErrors.access && (
+              <Alert severity="error" sx={styles.cardAlert}>
+                {t('settings.saveError')}
+              </Alert>
+            )}
             <Typography variant="subtitle1" color="text.primary">
               {t('access.section.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {t('access.section.description')}
             </Typography>
-            <AccessModeSelector projectId={project.projectId} />
+            <AccessModeSelector ref={accessRef} projectId={project.projectId} />
           </Paper>
 
           {/* Report settings card */}

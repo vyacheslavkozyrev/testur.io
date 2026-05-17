@@ -64,6 +64,8 @@ jest.mock('@/hooks/useReportSettings', () => ({
   useRemoveReportTemplate: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
+const mockUpdateAccessMutateAsync = jest.fn().mockResolvedValue({});
+
 jest.mock('@/hooks/useProjectAccess', () => ({
   useProjectAccess: () => ({
     data: {
@@ -76,7 +78,7 @@ jest.mock('@/hooks/useProjectAccess', () => ({
     isError: false,
   }),
   useUpdateProjectAccess: () => ({
-    mutate: jest.fn(),
+    mutateAsync: mockUpdateAccessMutateAsync,
     isPending: false,
     isError: false,
     isSuccess: false,
@@ -222,6 +224,7 @@ const mockUseParams = useParams as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUpdateAccessMutateAsync.mockResolvedValue({});
   mockUseRouter.mockReturnValue({ push: mockPush });
   mockUseParams.mockReturnValue({ projectId: PROJECT_ID });
 
@@ -397,6 +400,52 @@ describe('ProjectSettingsPage', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /saved/i })).toBeInTheDocument();
+    });
+  });
+
+  it('enables save button when access mode is changed', async () => {
+    const user = userEvent.setup();
+    render(
+      <Wrapper>
+        <ProjectSettingsPage />
+      </Wrapper>,
+    );
+
+    await user.click(screen.getByLabelText('HTTP Basic Auth'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled();
+    });
+  });
+
+  it('includes access section in unified save when access mode is dirty', async () => {
+    const user = userEvent.setup();
+    render(
+      <Wrapper>
+        <ProjectSettingsPage />
+      </Wrapper>,
+    );
+
+    // Switch to basicAuth (different from server value ipAllowlist → makes access dirty)
+    await user.click(screen.getByLabelText('HTTP Basic Auth'));
+    await user.type(screen.getByLabelText(/Username/i), 'admin');
+    const passwordInput = screen.getAllByLabelText(/Password/i).find(
+      (el) => (el as HTMLInputElement).type === 'password',
+    )!;
+    await user.type(passwordInput, 's3cret');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /save changes/i })).not.toBeDisabled();
+    });
+
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /save changes/i }));
+    });
+
+    await waitFor(() => {
+      expect(mockUpdateAccessMutateAsync).toHaveBeenCalledWith(
+        expect.objectContaining({ accessMode: 'basicAuth', basicAuthUser: 'admin' }),
+      );
     });
   });
 

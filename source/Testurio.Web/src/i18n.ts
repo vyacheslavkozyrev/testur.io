@@ -7,6 +7,7 @@ import pmToolEn from '@/locales/en/pmTool.json';
 import reportSettingsEn from '@/locales/en/reportSettings.json';
 import projectAccessEn from '@/locales/en/projectAccess.json';
 import dashboardEn from '@/locales/en/dashboard.json';
+import historyEn from '@/locales/en/history.json';
 
 i18n.use(initReactI18next).init({
   lng: 'en',
@@ -22,6 +23,7 @@ i18n.use(initReactI18next).init({
       reportSettings: reportSettingsEn,
       projectAccess: projectAccessEn,
       dashboard: dashboardEn,
+      history: historyEn,
     },
   },
 });

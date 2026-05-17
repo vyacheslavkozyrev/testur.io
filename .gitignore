@@ -6,7 +6,6 @@
 **/Debug
 **/Release
 **/TestResults
-**/worktrees
 
 # Ignore build results
 
@@ -17,3 +16,7 @@
 
 **/.next
 **/node_modules
+
+# Ignore Claude agent worktrees
+
+.claude/worktrees/agent-*
