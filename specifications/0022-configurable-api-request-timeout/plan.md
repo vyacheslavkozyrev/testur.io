@@ -15,7 +15,7 @@
 - [x] T011 [UI] Add `requestTimeoutSeconds` field to `ProjectDto` and `UpdateProjectRequest` TypeScript types — `source/Testurio.Web/src/types/project.types.ts`
 - [x] T012 [UI] Update `projectService` API client to include `requestTimeoutSeconds` in create and update payloads — `source/Testurio.Web/src/services/project/projectService.ts`
 - [x] T013 [UI] Update React Query hooks (`useProject`, `useCreateProject`, `useUpdateProject`) to pass and return `requestTimeoutSeconds` — `source/Testurio.Web/src/hooks/useProject.ts`
-- [ ] T014 [UI] Update MSW mock handlers to include `requestTimeoutSeconds: 30` in mock project responses — `source/Testurio.Web/src/mocks/handlers/project.ts`
+- [x] T014 [UI] Update MSW mock handlers to include `requestTimeoutSeconds: 30` in mock project responses — `source/Testurio.Web/src/mocks/handlers/project.ts`
 - [ ] T015 [UI] Add `RequestTimeoutField` component (numeric input, min=5, max=120, step=1, required) and integrate it into the Testing Environment section of `ProjectSettingsPage` alongside the access mode selector from feature 0017 — `source/Testurio.Web/src/components/RequestTimeoutField/RequestTimeoutField.tsx`
 - [ ] T016 [UI] Add translation keys for the timeout field (label, helper text, validation errors) — `source/Testurio.Web/src/locales/en/project.json`
 - [ ] T017 [Test] Backend unit tests for `ProjectService`: `CreateAsync` defaults to `30` when `requestTimeoutSeconds` omitted; `UpdateAsync` persists supplied value; `ToDto` maps `RequestTimeoutSeconds` — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
