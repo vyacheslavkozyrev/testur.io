@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw';
-import type { DashboardResponse } from '@/types/dashboard.types';
+import type { DashboardResponse, DashboardUpdatedEvent } from '@/types/dashboard.types';
 
 const mockDashboardResponse: DashboardResponse = {
   projects: [
@@ -42,6 +42,45 @@ const mockDashboardResponse: DashboardResponse = {
   },
 };
 
+/**
+ * Mock SSE event emitted for the first project in the snapshot.
+ * Tests that exercise live-update behaviour can dispatch a custom 'sse-event' on
+ * the window to inject additional events without replacing this handler.
+ */
+const mockSseEvent: DashboardUpdatedEvent = {
+  projectId: '00000000-0000-0000-0000-000000000001',
+  latestRun: {
+    runId: '00000000-0000-0000-0000-000000000099',
+    status: 'Running',
+    startedAt: new Date().toISOString(),
+    completedAt: null,
+  },
+  quotaUsage: null,
+};
+
 export const dashboardHandlers = [
   http.get('/v1/stats/dashboard', () => HttpResponse.json(mockDashboardResponse)),
+
+  // Feature 0043: SSE stream handler.
+  // Returns a ReadableStream that immediately pushes one mock event and then stays open.
+  // In tests that need to inject additional events, use the streamManager or a custom handler.
+  http.get('/v1/stats/dashboard/stream', () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        const data = `data: ${JSON.stringify(mockSseEvent)}\n\n`;
+        controller.enqueue(encoder.encode(data));
+        // Leave the stream open — MSW keeps the response alive until the test tears down.
+      },
+    });
+
+    return new HttpResponse(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
+  }),
 ];
