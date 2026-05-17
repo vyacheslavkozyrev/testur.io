@@ -81,6 +81,18 @@ public class Project
     /// <summary>Per-request timeout in seconds applied to every HTTP and Playwright step. Defaults to 30.</summary>
     public int RequestTimeoutSeconds { get; set; } = 30;
 
+    // API test authentication — feature 0023
+    public ApiAuthMethod ApiAuthMethod { get; set; } = ApiAuthMethod.None;
+    /// <summary>Key Vault secret URI for the Bearer token. Never the raw value.</summary>
+    public string? ApiAuthBearerTokenSecretUri { get; set; }
+    public string? ApiAuthApiKeyName { get; set; }
+    public ApiAuthApiKeyPlacement ApiAuthApiKeyPlacement { get; set; } = ApiAuthApiKeyPlacement.Header;
+    /// <summary>Key Vault secret URI for the API key value. Never the raw value.</summary>
+    public string? ApiAuthApiKeyValueSecretUri { get; set; }
+    public string? ApiAuthBasicUsername { get; set; }
+    /// <summary>Key Vault secret URI for the Basic Auth password. Never the raw value.</summary>
+    public string? ApiAuthBasicPasswordSecretUri { get; set; }
+
     // Testing environment access configuration — feature 0017
     public AccessMode AccessMode { get; set; } = AccessMode.IpAllowlist;
     /// <summary>Basic Auth username stored directly (non-sensitive). Key Vault holds the password only.</summary>
