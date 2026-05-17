@@ -15,9 +15,9 @@
 - [x] T011 [UI] Add `useSignUp` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [x] T012 [UI] Add `useForgotPassword` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [x] T013 [UI] Add `useSignOut` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
-- [ ] T014 [UI] Create `SignInPage` view: email + password form, Forgot password link, Create account link, inline error handling, loading state, `returnUrl` redirect on success — `source/Testurio.Web/src/views/SignInPage/SignInPage.tsx`
-- [ ] T015 [UI] Create `SignUpPage` view: email + password + confirm-password form, inline validation, loading state, redirect to `/dashboard` on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.tsx`
-- [ ] T016 [UI] Create `ForgotPasswordPage` view: email field, submit → confirmation message, Back to sign-in link — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.tsx`
+- [x] T014 [UI] Create `SignInPage` view: email + password form, Forgot password link, Create account link, inline error handling, loading state, `returnUrl` redirect on success — `source/Testurio.Web/src/views/SignInPage/SignInPage.tsx`
+- [x] T015 [UI] Create `SignUpPage` view: email + password + confirm-password form, inline validation, loading state, redirect to `/dashboard` on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.tsx`
+- [x] T016 [UI] Create `ForgotPasswordPage` view: email field, submit → confirmation message, Back to sign-in link — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.tsx`
 - [ ] T017 [UI] Add Next.js page for `/sign-in` that renders `SignInPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-in/page.tsx`
 - [ ] T018 [UI] Add Next.js page for `/sign-up` that renders `SignUpPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-up/page.tsx`
 - [ ] T019 [UI] Add Next.js page for `/forgot-password` that renders `ForgotPasswordPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/forgot-password/page.tsx`
