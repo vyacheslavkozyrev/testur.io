@@ -17,10 +17,18 @@
     "columnDate": "Date",
     "columnDuration": "Duration",
     "columnScenarios": "Scenarios",
-    "scenarioCount": "{{passed}} / {{total}} passed"
+    "columnUiE2e": "UI E2E",
+    "scenarioCount": "{{passed}} / {{total}} passed",
+    "uiE2eCount": "{{passed}} / {{total}}",
+    "uiE2eNone": "—"
   },
   "scenarioCard": {
-    "screenshotAlt": "Test screenshot"
+    "screenshotAlt": "Test screenshot",
+    "expandSteps": "Expand step details",
+    "collapseSteps": "Collapse step details"
+  },
+  "uiStepList": {
+    "screenshotAlt": "Screenshot at step {{index}}"
   },
   "panel": {
     "title": "{{storyTitle}}",
