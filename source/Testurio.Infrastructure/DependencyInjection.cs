@@ -16,6 +16,7 @@ using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Sse;
+using Testurio.Infrastructure.Storage;
 
 namespace Testurio.Infrastructure;
 
@@ -184,6 +185,14 @@ public static class DependencyInjection
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new CosmosDbInitializer(cosmos, opts.CosmosDatabaseName);
+        });
+
+        // Feature 0029: screenshot storage for PlaywrightExecutor assertion-step failures.
+        services.AddSingleton<IScreenshotStorage>(sp =>
+        {
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BlobScreenshotStorage>>();
+            return new BlobScreenshotStorage(serviceClient, logger);
         });
 
         // Feature 0043: singleton SSE fan-out manager — must outlive individual HTTP requests.
