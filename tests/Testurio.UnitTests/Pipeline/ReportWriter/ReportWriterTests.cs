@@ -333,6 +333,177 @@ public class ReportWriterTests
         Assert.All(capturedTokens, ct => Assert.Equal(cts.Token, ct));
     }
 
+    // ─── Feature 0018: BuildScenarioSummaries step mapping ───────────────────
+
+    [Fact]
+    public async Task WriteAsync_ApiResult_ScenarioSummaryHasNullSteps()
+    {
+        // AC-024: API scenario summaries must have Steps == null.
+        var sut = CreateSut();
+        var execution = PassedApiExecution;
+
+        _llmClient.Setup(c => c.CompleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BuildValidClaudeResponse());
+        _secretResolver.Setup(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("value");
+        _jiraClient.Setup(j => j.PostCommentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JiraCommentResult.Success("cmt-1"));
+
+        TestResult? saved = null;
+        _testResultRepo.Setup(r => r.SaveAsync(It.IsAny<TestResult>(), It.IsAny<CancellationToken>()))
+            .Callback<TestResult, CancellationToken>((r, _) => saved = r)
+            .Returns(Task.CompletedTask);
+
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+
+        Assert.NotNull(saved);
+        var apiSummary = saved.ScenarioResults.Single(s => s.TestType == "api");
+        Assert.Null(apiSummary.Steps);
+    }
+
+    [Fact]
+    public async Task WriteAsync_UiE2eResult_ScenarioSummaryHasCorrectSteps()
+    {
+        // AC-010: UI E2E scenario summaries have a non-null Steps list with correct fields.
+        var sut = CreateSut();
+        var execution = new ExecutionResult
+        {
+            ApiResults = [],
+            UiE2eResults = [new UiE2eScenarioResult
+            {
+                ScenarioId = "u1",
+                Title = "Login flow",
+                Passed = true,
+                DurationMs = 800,
+                StepResults = [
+                    new StepExecutionResult { StepIndex = 0, Action = "navigate", Passed = true,  ErrorMessage = null, ScreenshotBlobUri = null },
+                    new StepExecutionResult { StepIndex = 1, Action = "click",    Passed = true,  ErrorMessage = null, ScreenshotBlobUri = null },
+                    new StepExecutionResult { StepIndex = 2, Action = "assert_url", Passed = true, ErrorMessage = null, ScreenshotBlobUri = null },
+                ]
+            }]
+        };
+
+        const string response = """
+            {
+                "verdict": "PASSED",
+                "recommendation": "approve",
+                "scenario_summaries": [
+                    { "scenario_id": "u1", "title": "Login flow", "passed": true, "duration_ms": 800, "error_summary": null }
+                ]
+            }
+            """;
+
+        _llmClient.Setup(c => c.CompleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        _secretResolver.Setup(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("value");
+        _jiraClient.Setup(j => j.PostCommentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JiraCommentResult.Success("cmt-1"));
+
+        TestResult? saved = null;
+        _testResultRepo.Setup(r => r.SaveAsync(It.IsAny<TestResult>(), It.IsAny<CancellationToken>()))
+            .Callback<TestResult, CancellationToken>((r, _) => saved = r)
+            .Returns(Task.CompletedTask);
+
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+
+        Assert.NotNull(saved);
+        var uiSummary = saved.ScenarioResults.Single(s => s.TestType == "ui_e2e");
+        Assert.NotNull(uiSummary.Steps);
+        Assert.Equal(3, uiSummary.Steps.Count);
+
+        // AC-010: StepIndex is 1-based.
+        Assert.Equal(1, uiSummary.Steps[0].StepIndex);
+        Assert.Equal("navigate", uiSummary.Steps[0].Action);
+        Assert.True(uiSummary.Steps[0].Passed);
+        Assert.Null(uiSummary.Steps[0].ErrorMessage);
+        Assert.Null(uiSummary.Steps[0].ScreenshotBlobUri);
+
+        Assert.Equal(2, uiSummary.Steps[1].StepIndex);
+        Assert.Equal("click", uiSummary.Steps[1].Action);
+
+        Assert.Equal(3, uiSummary.Steps[2].StepIndex);
+        Assert.Equal("assert_url", uiSummary.Steps[2].Action);
+    }
+
+    [Fact]
+    public async Task WriteAsync_MixedApiAndUiE2e_StepsNullabilityIsCorrect()
+    {
+        // AC-010: mixed run — API summary has null Steps, UI E2E summary has non-null Steps.
+        var sut = CreateSut();
+        var execution = new ExecutionResult
+        {
+            ApiResults = [new ApiScenarioResult
+            {
+                ScenarioId = "a1", Title = "GET /users", Passed = true,
+                DurationMs = 100, AssertionResults = []
+            }],
+            UiE2eResults = [new UiE2eScenarioResult
+            {
+                ScenarioId = "u1",
+                Title = "Login flow",
+                Passed = false,
+                DurationMs = 500,
+                StepResults = [
+                    new StepExecutionResult
+                    {
+                        StepIndex = 0, Action = "assert_text", Passed = false,
+                        ErrorMessage = "Expected 'Hello' but got 'Error'",
+                        ScreenshotBlobUri = "https://blob.example.com/step1.png"
+                    }
+                ]
+            }]
+        };
+
+        const string response = """
+            {
+                "verdict": "FAILED",
+                "recommendation": "request_fixes",
+                "scenario_summaries": [
+                    { "scenario_id": "a1", "title": "GET /users",  "passed": true,  "duration_ms": 100, "error_summary": null },
+                    { "scenario_id": "u1", "title": "Login flow",  "passed": false, "duration_ms": 500, "error_summary": "Step 1 failed" }
+                ]
+            }
+            """;
+
+        _llmClient.Setup(c => c.CompleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(response);
+        _secretResolver.Setup(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("value");
+        _jiraClient.Setup(j => j.PostCommentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JiraCommentResult.Success("cmt-1"));
+
+        TestResult? saved = null;
+        _testResultRepo.Setup(r => r.SaveAsync(It.IsAny<TestResult>(), It.IsAny<CancellationToken>()))
+            .Callback<TestResult, CancellationToken>((r, _) => saved = r)
+            .Returns(Task.CompletedTask);
+
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+
+        Assert.NotNull(saved);
+        var apiSummary = saved.ScenarioResults.Single(s => s.TestType == "api");
+        var uiSummary = saved.ScenarioResults.Single(s => s.TestType == "ui_e2e");
+
+        // API → null steps.
+        Assert.Null(apiSummary.Steps);
+
+        // UI E2E → non-null steps with correct detail.
+        Assert.NotNull(uiSummary.Steps);
+        Assert.Single(uiSummary.Steps);
+        var step = uiSummary.Steps[0];
+        Assert.Equal(1, step.StepIndex);
+        Assert.Equal("assert_text", step.Action);
+        Assert.False(step.Passed);
+        Assert.Equal("Expected 'Hello' but got 'Error'", step.ErrorMessage);
+        Assert.Equal("https://blob.example.com/step1.png", step.ScreenshotBlobUri);
+    }
+
     // ─── AC-018: TestResult counts ────────────────────────────────────────────
 
     [Fact]

@@ -50,6 +50,12 @@ export default function RunHistoryTable({ runs, onRowClick }: RunHistoryTablePro
     [onRowClick],
   );
 
+  // AC-018: show the UI E2E column only when at least one run in the list has ui_e2e scenarios.
+  const showUiE2eColumn = useMemo(
+    () => runs.some((r) => r.totalUiE2eScenarios > 0),
+    [runs],
+  );
+
   return (
     <TableContainer component={Paper} variant="outlined">
       <Table aria-label={t('table.ariaLabel')}>
@@ -60,6 +66,7 @@ export default function RunHistoryTable({ runs, onRowClick }: RunHistoryTablePro
             <TableCell>{t('table.columnDate')}</TableCell>
             <TableCell>{t('table.columnDuration')}</TableCell>
             <TableCell>{t('table.columnScenarios')}</TableCell>
+            {showUiE2eColumn && <TableCell>{t('table.columnUiE2e')}</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -92,6 +99,19 @@ export default function RunHistoryTable({ runs, onRowClick }: RunHistoryTablePro
                   })}
                 </Typography>
               </TableCell>
+              {/* AC-016/AC-017: ui_e2e column — dash when no ui_e2e scenarios */}
+              {showUiE2eColumn && (
+                <TableCell>
+                  <Typography variant="body2">
+                    {run.totalUiE2eScenarios > 0
+                      ? t('table.uiE2eCount', {
+                          passed: run.passedUiE2eScenarios,
+                          total: run.totalUiE2eScenarios,
+                        })
+                      : t('table.uiE2eNone')}
+                  </Typography>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

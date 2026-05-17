@@ -283,10 +283,14 @@ public sealed partial class ReportWriter : IReportWriter
             string testType;
             IReadOnlyList<string> screenshotUris;
 
+            IReadOnlyList<StepSummary>? steps;
+
             if (apiIndex.ContainsKey(summary.ScenarioId))
             {
                 testType = "api";
                 screenshotUris = [];
+                // AC-024: API scenario summaries always have Steps = null.
+                steps = null;
             }
             else if (uiIndex.TryGetValue(summary.ScenarioId, out var uiResult))
             {
@@ -297,6 +301,16 @@ public sealed partial class ReportWriter : IReportWriter
                     .Select(s => s.ScreenshotBlobUri!)
                     .ToList()
                     .AsReadOnly();
+                // AC-010: map each StepExecutionResult to a StepSummary (1-based index).
+                steps = uiResult.StepResults
+                    .Select(s => new StepSummary(
+                        StepIndex: s.StepIndex + 1,
+                        Action: s.Action,
+                        Passed: s.Passed,
+                        ErrorMessage: s.ErrorMessage,
+                        ScreenshotBlobUri: s.ScreenshotBlobUri))
+                    .ToList()
+                    .AsReadOnly();
             }
             else
             {
@@ -305,9 +319,10 @@ public sealed partial class ReportWriter : IReportWriter
                 LogUnknownScenarioId(_logger, summary.ScenarioId);
                 testType = "unknown";
                 screenshotUris = [];
+                steps = null;
             }
 
-            enriched.Add(summary with { TestType = testType, ScreenshotUris = screenshotUris });
+            enriched.Add(summary with { TestType = testType, ScreenshotUris = screenshotUris, Steps = steps });
         }
 
         return enriched.AsReadOnly();
