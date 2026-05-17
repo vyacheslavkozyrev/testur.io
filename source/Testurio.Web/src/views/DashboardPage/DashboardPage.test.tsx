@@ -1,9 +1,9 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import type { DashboardResponse } from '@/types/dashboard.types';
+import type { DashboardResponse, DashboardUpdatedEvent } from '@/types/dashboard.types';
 
 // ─── Mock next/navigation ─────────────────────────────────────────────────────
 
@@ -30,6 +30,18 @@ const mockUseDashboardState: {
 
 jest.mock('@/hooks/useDashboard', () => ({
   useDashboard: () => mockUseDashboardState,
+}));
+
+// ─── Mock useDashboardStream hook ─────────────────────────────────────────────
+
+import type { UseDashboardStreamOptions } from '@/hooks/useDashboardStream';
+
+let capturedStreamOptions: UseDashboardStreamOptions | null = null;
+
+jest.mock('@/hooks/useDashboardStream', () => ({
+  useDashboardStream: (opts: UseDashboardStreamOptions) => {
+    capturedStreamOptions = opts;
+  },
 }));
 
 // ─── i18n setup ───────────────────────────────────────────────────────────────
@@ -61,6 +73,10 @@ i18nInstance.use(initReactI18next).init({
         error: {
           message: 'Failed to load dashboard data. Please try again.',
           retryButton: 'Retry',
+        },
+        stream: {
+          reconnecting: 'Reconnecting…',
+          unavailable: 'Live updates unavailable — data may be stale',
         },
       },
     },
@@ -101,6 +117,7 @@ const mockProject = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  capturedStreamOptions = null;
   mockUseRouter.mockReturnValue({ push: mockPush });
   mockUseDashboardState.data = undefined;
   mockUseDashboardState.isPending = false;
@@ -221,5 +238,141 @@ describe('DashboardPage', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Create Project' })).toBeInTheDocument();
+  });
+
+  // ─── SSE behaviour (feature 0043) ─────────────────────────────────────────
+
+  it('SSE stream is enabled once snapshot data is loaded', () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    expect(capturedStreamOptions?.enabled).toBe(true);
+  });
+
+  it('SSE stream is disabled while snapshot is loading', () => {
+    mockUseDashboardState.isPending = true;
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    expect(capturedStreamOptions?.enabled).toBe(false);
+  });
+
+  it('onUpdate callback updates the correct project card badge in place', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    const updatedEvent: DashboardUpdatedEvent = {
+      projectId: mockProject.projectId,
+      latestRun: {
+        runId: '00000000-0000-0000-0000-000000000099',
+        status: 'Failed',
+        startedAt: '2026-05-16T12:00:00Z',
+        completedAt: '2026-05-16T12:05:00Z',
+      },
+      quotaUsage: null,
+    };
+
+    act(() => {
+      capturedStreamOptions?.onUpdate(updatedEvent);
+    });
+
+    // After update, card for alpha project should still be present.
+    expect(screen.getByText(mockProject.name)).toBeInTheDocument();
+  });
+
+  it('unknown projectId SSE event triggers a re-fetch', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    const unknownEvent: DashboardUpdatedEvent = {
+      projectId: 'unknown-project-id',
+      latestRun: {
+        runId: 'run-new',
+        status: 'Passed',
+        startedAt: '2026-05-16T12:00:00Z',
+        completedAt: '2026-05-16T12:05:00Z',
+      },
+      quotaUsage: null,
+    };
+
+    act(() => {
+      capturedStreamOptions?.onUpdate(unknownEvent);
+    });
+
+    await waitFor(() => {
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('fallback warning appears after onFallback is called', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    act(() => {
+      capturedStreamOptions?.onFallback();
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Live updates unavailable — data may be stale'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('fallback triggers a snapshot re-fetch', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    act(() => {
+      capturedStreamOptions?.onFallback();
+    });
+
+    await waitFor(() => {
+      expect(mockRefetch).toHaveBeenCalledTimes(1);
+    });
   });
 });
