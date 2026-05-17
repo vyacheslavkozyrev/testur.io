@@ -11,7 +11,7 @@
 
 ### Frontend — Shared Public Layout
 
-- [ ] T005 [UI] Add plan types — `source/Testurio.Web/src/types/plan.types.ts`
+- [x] T005 [UI] Add plan types — `source/Testurio.Web/src/types/plan.types.ts`
   - `PlanDefinition` (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features)
   - `BillingInterval` enum (`monthly | annual`)
 - [ ] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
