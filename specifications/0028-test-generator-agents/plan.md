@@ -4,7 +4,7 @@
 
 - [x] T001 [Domain] Create `ApiTestScenario` record and `Assertion` hierarchy (`StatusCodeAssertion`, `JsonPathAssertion`, `HeaderAssertion`) — `source/Testurio.Core/Models/ApiTestScenario.cs`
 - [x] T002 [Domain] Create `UiE2eTestScenario` record and `UiStep` hierarchy (`NavigateStep`, `ClickStep`, `FillStep`, `AssertVisibleStep`, `AssertTextStep`, `AssertUrlStep`) — `source/Testurio.Core/Models/UiE2eTestScenario.cs`
-- [ ] T003 [Domain] Create `GeneratorResults` record (`IReadOnlyList<ApiTestScenario> ApiScenarios`, `IReadOnlyList<UiE2eTestScenario> UiE2eScenarios`) — `source/Testurio.Core/Models/GeneratorResults.cs`
+- [x] T003 [Domain] Create `GeneratorResults` record (`IReadOnlyList<ApiTestScenario> ApiScenarios`, `IReadOnlyList<UiE2eTestScenario> UiE2eScenarios`) — `source/Testurio.Core/Models/GeneratorResults.cs`
 - [ ] T004 [Domain] Create `PromptTemplate` record (`id`, `templateType`, `version`, `systemPrompt`, `generatorInstruction`, `maxScenarios`) — `source/Testurio.Core/Models/PromptTemplate.cs`
 - [ ] T005 [Domain] Create `GeneratorContext` record (`ParsedStory`, `MemoryRetrievalResult`, `ProjectConfig`, `PromptTemplate`, `Guid TestRunId`) — `source/Testurio.Core/Models/GeneratorContext.cs`
 - [ ] T006 [Domain] Extend `ITestGeneratorAgent` (stubbed in 0026 T003) with `GenerateAsync(GeneratorContext context, CancellationToken ct) → Task<GeneratorResults>` — `source/Testurio.Core/Interfaces/ITestGeneratorAgent.cs`
