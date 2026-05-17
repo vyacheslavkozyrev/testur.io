@@ -41,7 +41,7 @@
 
 - [x] T020 [UI] Add landing page translation keys — `source/Testurio.Web/src/locales/en/landing.json`
 - [x] T021 [UI] Add pricing page translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
-- [ ] T022 [UI] Register `/` route (→ `LandingPage`) and `/pricing` route (→ `PricingPage`) as public routes — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T022 [UI] Register `/` route (→ `LandingPage`) and `/pricing` route (→ `PricingPage`) as public routes — `source/Testurio.Web/src/routes/routes.tsx`
 
 ### Tests
 
