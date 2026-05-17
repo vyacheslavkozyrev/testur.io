@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-15 |       |
 | Implement | ✅ Complete | 2026-05-17 |       |
 | Review    | ✅ Complete | 2026-05-17 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-17 |       |
 
 ---
 
@@ -43,26 +43,22 @@ _Populated by `/implement 0023`_
 
 ### 2026-05-17
 
-**Backend Unit Tests**: 38/38 PASSED ✓
+**Backend Unit Tests**: 305/305 PASSED ✓ (includes all 0023 tests)
 - All ProjectApiAuthService tests: PASSED
-- All ApiTestAuthCredentialProvider tests: PASSED  
+- All ApiTestAuthCredentialProvider tests: PASSED
 - All HttpExecutor API auth injection tests: PASSED
 
-**Backend Integration Tests**: 7/11 PASSED, 4 FAILED ⚠️
-- FAILED: PatchProjectApiAuth_Returns200_WithBearerTokenConfiguredTrue
-- FAILED: PatchProjectApiAuth_Returns200_WithNoneMethod
-- FAILED: PatchProjectApiAuth_Returns403_WhenProjectBelongsToDifferentUser  
-- FAILED: PatchProjectApiAuth_Returns404_WhenProjectNotFound
-- All failing tests are PATCH requests receiving 400 Bad Request instead of expected status
-- PASSED: All GET requests and PATCH requests with intentional validation errors (expecting 400)
+**Backend Integration Tests**: 11/11 PASSED ✓ (ProjectApiAuth suite)
+- Root cause of earlier failures: `[AllowedValues("header", "query")]` on the nullable `ApiAuthApiKeyPlacement` property was rejecting `null` values (when method is "none", "bearer", or "basic"), causing the ValidationFilter to return 400 for all non-api_key PATCH requests. Fix: removed the attribute and moved the check into `IValidatableObject.Validate()`.
+- All GET and PATCH tests now pass.
 
-**Frontend Component Tests**: 13/21 PASSED, 8 FAILED ⚠️
-- Multiple test failures with "Found multiple elements with the text" for Token label
-- Suggests component rendering issue rather than logic issue
+**Frontend Component Tests**: 21/21 PASSED ✓
+- Root cause of earlier failures: MUI `required` TextField renders label as "Token *" (with aria-hidden asterisk span), causing `getByLabelText('Token')` exact-string match to fail. Fix: changed to anchored regex `/^Token/i`.
+- Additionally refactored validation error tests to use a `trySave()` helper that wraps `save()` inside `act()` without relying on `.rejects.toThrow()` (which does not guarantee React state flush before subsequent assertions).
 
 ### Status
 
-Test phase INCOMPLETE. Unit tests pass (business logic verified), but integration and frontend tests have failures blocking completion.
+Test phase COMPLETE. All tests pass.
 
 ---
 

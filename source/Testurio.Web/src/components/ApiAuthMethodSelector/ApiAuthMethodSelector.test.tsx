@@ -90,6 +90,21 @@ function renderComponent(ref?: React.Ref<ApiAuthMethodSelectorHandle>) {
   );
 }
 
+// Calls save() inside act() and returns the thrown error (or undefined on success).
+// Using this pattern instead of expect(act(...)).rejects.toThrow() guarantees
+// React state updates are flushed before subsequent assertions run.
+async function trySave(ref: React.RefObject<ApiAuthMethodSelectorHandle>): Promise<Error | undefined> {
+  let caught: Error | undefined;
+  await act(async () => {
+    try {
+      await ref.current?.save();
+    } catch (e) {
+      caught = e as Error;
+    }
+  });
+  return caught;
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockMutateAsync.mockResolvedValue({});
@@ -113,13 +128,13 @@ describe('ApiAuthMethodSelector — UI', () => {
   it('selecting Bearer Token shows a Token field', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('Bearer Token'));
-    expect(screen.getByLabelText(/Token/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Token/i)).toBeInTheDocument();
   });
 
   it('Token field renders as type="password" (masked)', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('Bearer Token'));
-    const input = screen.getByLabelText(/Token/i) as HTMLInputElement;
+    const input = screen.getByLabelText(/^Token/i) as HTMLInputElement;
     expect(input.type).toBe('password');
   });
 
@@ -197,8 +212,8 @@ describe('ApiAuthMethodSelector — UI', () => {
       isError: false,
     };
     renderComponent();
-    await waitFor(() => expect(screen.getByLabelText(/Token/i)).toBeInTheDocument());
-    const tokenInput = screen.getByLabelText(/Token/i) as HTMLInputElement;
+    await waitFor(() => expect(screen.getByLabelText(/^Token/i)).toBeInTheDocument());
+    const tokenInput = screen.getByLabelText(/^Token/i) as HTMLInputElement;
     expect(tokenInput.placeholder).toBe('••••••••');
   });
 
@@ -244,7 +259,7 @@ describe('ApiAuthMethodSelector — imperative handle: save()', () => {
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();
     renderComponent(ref);
     await userEvent.click(screen.getByLabelText('Bearer Token'));
-    await userEvent.type(screen.getByLabelText(/Token/i), 'my-tok');
+    await userEvent.type(screen.getByLabelText(/^Token/i), 'my-tok');
     await act(async () => { await ref.current?.save(); });
     expect(mockMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ apiAuthMethod: 'bearer', apiAuthBearerToken: 'my-tok' }),
@@ -255,29 +270,27 @@ describe('ApiAuthMethodSelector — imperative handle: save()', () => {
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();
     renderComponent(ref);
     await userEvent.click(screen.getByLabelText('Bearer Token'));
-    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    const err = await trySave(ref);
+    expect(err).toBeDefined();
     expect(mockMutateAsync).not.toHaveBeenCalled();
-    await waitFor(() => {
-      expect(screen.getByText('Token is required.')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Token is required.')).toBeInTheDocument();
   });
 
   it('shows validation error when basic username is empty', async () => {
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();
     renderComponent(ref);
     await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    const err = await trySave(ref);
+    expect(err).toBeDefined();
     expect(mockMutateAsync).not.toHaveBeenCalled();
-    await waitFor(() => {
-      expect(screen.getByText('Username is required.')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Username is required.')).toBeInTheDocument();
   });
 
   it('clears secret fields after successful save', async () => {
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();
     renderComponent(ref);
     await userEvent.click(screen.getByLabelText('Bearer Token'));
-    const tokenInput = screen.getByLabelText(/Token/i) as HTMLInputElement;
+    const tokenInput = screen.getByLabelText(/^Token/i) as HTMLInputElement;
     await userEvent.type(tokenInput, 'tok-value');
     expect(tokenInput.value).toBe('tok-value');
     await act(async () => { await ref.current?.save(); });
@@ -296,12 +309,11 @@ describe('ApiAuthMethodSelector — imperative handle: save()', () => {
     };
     const ref = React.createRef<ApiAuthMethodSelectorHandle>();
     renderComponent(ref);
-    await waitFor(() => expect(screen.getByLabelText(/Token/i)).toBeInTheDocument());
-    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    await waitFor(() => expect(screen.getByLabelText(/^Token/i)).toBeInTheDocument());
+    const err = await trySave(ref);
+    expect(err).toBeDefined();
     expect(mockMutateAsync).not.toHaveBeenCalled();
-    await waitFor(() => {
-      expect(screen.getByText('Token is required.')).toBeInTheDocument();
-    });
+    expect(screen.getByText('Token is required.')).toBeInTheDocument();
   });
 
   it('propagates mutateAsync error to caller', async () => {

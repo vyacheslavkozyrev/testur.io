@@ -39,7 +39,6 @@ public sealed class UpdateProjectApiAuthRequest : IValidatableObject
     [MaxLength(200)]
     public string? ApiAuthApiKeyName { get; init; }
 
-    [AllowedValues("header", "query")]
     public string? ApiAuthApiKeyPlacement { get; init; }
 
     [MaxLength(5000)]
@@ -68,6 +67,9 @@ public sealed class UpdateProjectApiAuthRequest : IValidatableObject
             if (string.IsNullOrWhiteSpace(ApiAuthApiKeyPlacement))
                 yield return new ValidationResult(
                     "Key placement is required when apiAuthMethod is 'api_key'.", [nameof(ApiAuthApiKeyPlacement)]);
+            else if (ApiAuthApiKeyPlacement != "header" && ApiAuthApiKeyPlacement != "query")
+                yield return new ValidationResult(
+                    "Key placement must be 'header' or 'query'.", [nameof(ApiAuthApiKeyPlacement)]);
             if (string.IsNullOrWhiteSpace(ApiAuthApiKeyValue))
                 yield return new ValidationResult(
                     "Key value is required when apiAuthMethod is 'api_key'.", [nameof(ApiAuthApiKeyValue)]);
