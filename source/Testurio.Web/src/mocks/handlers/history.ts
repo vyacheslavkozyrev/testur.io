@@ -68,6 +68,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       errorSummary: null,
       testType: 'api',
       screenshotUris: [],
+      steps: null,
     },
     {
       scenarioId: '00000000-0000-0000-0001-000000000002',
@@ -77,6 +78,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       errorSummary: null,
       testType: 'api',
       screenshotUris: [],
+      steps: null,
     },
     {
       scenarioId: '00000000-0000-0000-0001-000000000003',
@@ -86,6 +88,7 @@ const mockRunDetailResponse: RunDetailResponse = {
       errorSummary: null,
       testType: 'api',
       screenshotUris: [],
+      steps: null,
     },
     {
       scenarioId: '00000000-0000-0000-0001-000000000004',
@@ -95,6 +98,12 @@ const mockRunDetailResponse: RunDetailResponse = {
       errorSummary: null,
       testType: 'ui_e2e',
       screenshotUris: [],
+      steps: [
+        { stepIndex: 1, action: 'navigate', passed: true, errorMessage: null, screenshotBlobUri: null },
+        { stepIndex: 2, action: 'click', passed: true, errorMessage: null, screenshotBlobUri: null },
+        { stepIndex: 3, action: 'fill', passed: true, errorMessage: null, screenshotBlobUri: null },
+        { stepIndex: 4, action: 'assert_url', passed: true, errorMessage: null, screenshotBlobUri: null },
+      ],
     },
   ],
   rawCommentMarkdown:
