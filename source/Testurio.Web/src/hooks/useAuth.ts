@@ -14,6 +14,25 @@ export const AUTH_KEYS = {
 };
 
 /**
+ * Returns a safe redirect path from `returnUrl`.
+ * Rejects absolute URLs and protocol-relative URLs to prevent open-redirect attacks.
+ * Only allows relative paths that start with '/' but not '//'.
+ */
+function getSafeReturnUrl(returnUrl?: string): string {
+  if (!returnUrl) return DASHBOARD_ROUTE;
+  try {
+    // If `returnUrl` parses as a valid URL it is absolute — reject it.
+    new URL(returnUrl);
+    return DASHBOARD_ROUTE;
+  } catch {
+    // Not a valid absolute URL — check it's a safe relative path.
+    return returnUrl.startsWith('/') && !returnUrl.startsWith('//')
+      ? returnUrl
+      : DASHBOARD_ROUTE;
+  }
+}
+
+/**
  * Mutation hook for signing in with email and password.
  *
  * On success:
@@ -30,12 +49,7 @@ export function useSignIn(returnUrl?: string) {
     mutationFn: (req) => authService.signIn(req),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: AUTH_KEYS.me });
-      // Guard against open-redirect: only allow relative same-origin paths
-      const safe =
-        returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')
-          ? returnUrl
-          : DASHBOARD_ROUTE;
-      router.replace(safe);
+      router.replace(getSafeReturnUrl(returnUrl));
     },
   });
 }
@@ -66,11 +80,11 @@ export function useSignUp() {
 /**
  * Mutation hook for initiating the forgot-password flow.
  *
- * Always resolves (never rejects) — the confirmation message is shown
- * regardless of whether the email is registered (prevents account enumeration).
+ * Resolves on success or on "account not found" errors (prevents enumeration).
+ * Rejects with an error for unexpected failures, allowing `isError` to be exposed.
  */
 export function useForgotPassword() {
-  return useMutation<void, never, ForgotPasswordRequest>({
+  return useMutation<void, Error, ForgotPasswordRequest>({
     mutationFn: (req) => authService.forgotPassword(req),
   });
 }
@@ -87,6 +101,7 @@ export function useForgotPassword() {
  */
 export function useSignOut() {
   const qc = useQueryClient();
+  const router = useRouter();
 
   return useMutation<string, AuthError | ApiError, void>({
     mutationFn: () => authService.signOut(),
@@ -96,7 +111,7 @@ export function useSignOut() {
     },
     onError: () => {
       qc.removeQueries({ queryKey: AUTH_KEYS.me });
-      window.location.href = SIGN_IN_ROUTE;
+      router.replace(SIGN_IN_ROUTE);
     },
   });
 }

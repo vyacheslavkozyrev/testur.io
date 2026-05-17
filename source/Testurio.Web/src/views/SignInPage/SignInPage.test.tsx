@@ -3,6 +3,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import SignInPage from './SignInPage';
 
 // ─── Mock next/navigation ─────────────────────────────────────────────────────
 
@@ -58,7 +59,6 @@ i18nInstance.use(initReactI18next).init({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderSignInPage() {
-  const { default: SignInPage } = jest.requireActual('./SignInPage');
   return render(
     <I18nextProvider i18n={i18nInstance}>
       <ThemeProvider theme={createTheme()}>
@@ -117,14 +117,11 @@ describe('SignInPage', () => {
     expect(screen.getByText('Incorrect email or password')).toBeInTheDocument();
   });
 
-  it('shows rate limit error when status is 429', () => {
+  it('shows rate limit error when code is RATE_LIMITED', () => {
     mockSignInState.isError = true;
-    mockSignInState.error = { code: 'RATE_LIMIT', message: 'Rate limited.' } as { code: string; message: string };
-    // Rate limit fires via the status check — simulate via a different code path
-    // The generic error is shown for unknown codes
+    mockSignInState.error = { code: 'RATE_LIMITED', message: 'Rate limited.' };
     renderSignInPage();
-    // Generic message shown for unrecognised codes
-    expect(screen.getByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    expect(screen.getByText('Too many attempts. Please wait a moment and try again.')).toBeInTheDocument();
   });
 
   it('shows generic error for unknown error codes', () => {

@@ -3,6 +3,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import ForgotPasswordPage from './ForgotPasswordPage';
 
 // ─── Mock next/navigation ─────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ i18nInstance.use(initReactI18next).init({
           sending: 'Sending…',
           confirmationMessage: 'If an account exists for that email, a reset link has been sent.',
           backToSignIn: 'Back to sign in',
+          errorGeneric: 'Something went wrong. Please try again.',
         },
       },
     },
@@ -51,7 +53,6 @@ i18nInstance.use(initReactI18next).init({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderForgotPasswordPage() {
-  const { default: ForgotPasswordPage } = jest.requireActual('./ForgotPasswordPage');
   return render(
     <I18nextProvider i18n={i18nInstance}>
       <ThemeProvider theme={createTheme()}>
@@ -121,5 +122,11 @@ describe('ForgotPasswordPage', () => {
     // Form fields should not be visible in confirmation state
     expect(screen.queryByLabelText(/Email/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Send reset link/i })).not.toBeInTheDocument();
+  });
+
+  it('shows a generic error alert when isError is true', () => {
+    mockForgotPasswordState.isError = true;
+    renderForgotPasswordPage();
+    expect(screen.getByText('Something went wrong. Please try again.')).toBeInTheDocument();
   });
 });

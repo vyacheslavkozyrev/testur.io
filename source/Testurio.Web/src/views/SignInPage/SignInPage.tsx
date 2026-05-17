@@ -21,14 +21,13 @@ interface SignInFormValues {
   password: string;
 }
 
-function getErrorMessage(error: AuthError | { status?: number } | null, t: (key: string) => string): string {
+function getErrorMessage(error: AuthError | null, t: (key: string) => string): string {
   if (!error) return '';
   const authError = error as AuthError;
   if (authError.code === 'INVALID_CREDENTIALS' || authError.code === 'USER_NOT_FOUND') {
     return t('signIn.errorInvalidCredentials');
   }
-  const apiError = error as { status?: number };
-  if (apiError.status === 429) {
+  if (authError.code === 'RATE_LIMITED') {
     return t('signIn.errorRateLimit');
   }
   return t('signIn.errorGeneric');
@@ -56,7 +55,7 @@ export default function SignInPage() {
     [signIn],
   );
 
-  const errorMessage = getErrorMessage(signIn.error, t);
+  const errorMessage = getErrorMessage(signIn.error as AuthError | null, t);
 
   return (
     <Box sx={styles.page}>
@@ -106,13 +105,11 @@ export default function SignInPage() {
 
           {/* Forgot password link */}
           <Box sx={styles.forgotRow}>
-            <Typography
-              component={Link}
-              href={FORGOT_PASSWORD_ROUTE}
-              sx={styles.link}
-            >
-              {t('signIn.forgotPassword')}
-            </Typography>
+            <Link href={FORGOT_PASSWORD_ROUTE} style={{ textDecoration: 'none' }}>
+              <Typography sx={styles.link}>
+                {t('signIn.forgotPassword')}
+              </Typography>
+            </Link>
           </Box>
 
           <Button
@@ -130,9 +127,11 @@ export default function SignInPage() {
         {/* Sign-up link */}
         <Typography sx={styles.footerText}>
           {t('signIn.noAccount')}{' '}
-          <Typography component={Link} href={SIGN_UP_ROUTE} sx={styles.link}>
-            {t('signIn.createAccount')}
-          </Typography>
+          <Link href={SIGN_UP_ROUTE} style={{ textDecoration: 'none' }}>
+            <Typography component="span" sx={styles.link}>
+              {t('signIn.createAccount')}
+            </Typography>
+          </Link>
         </Typography>
       </Box>
     </Box>

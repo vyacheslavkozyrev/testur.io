@@ -1,44 +1,45 @@
 import { redirect } from 'next/navigation';
-import { cookies, headers } from 'next/headers';
-import { decodeAndValidateIdToken } from '@/services/auth/tokenValidator';
+import { cookies } from 'next/headers';
+import { getSessionStore } from '@/app/api/auth/session/route';
 import PrivateCabinetLayout from '@/components/PrivateCabinetLayout/PrivateCabinetLayout';
 import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
- * Validates the `testurio_session` cookie and returns the user ID, or null if
- * the session is absent, expired, or malformed.
+ * Secondary server-side session guard for the authenticated layout.
+ *
+ * The primary guard is the middleware (src/middleware.ts) which runs on the
+ * Edge and redirects unauthenticated requests before they reach this layout.
+ * This check provides defence-in-depth: it validates the session against the
+ * server-side store and rejects expired or invalid sessions.
  */
-async function getSessionUserId(): Promise<string | null> {
+async function validateSession(): Promise<boolean> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('testurio_session');
-  if (!sessionCookie?.value) return null;
+  if (!sessionCookie?.value) return false;
 
-  const user = await decodeAndValidateIdToken(sessionCookie.value);
-  return user?.id ?? null;
+  const sessionStore = getSessionStore();
+  const session = sessionStore.get(sessionCookie.value);
+  if (!session) return false;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  return session.exp >= nowSec;
 }
 
 /**
  * Auth-guarded layout for all authenticated pages.
  *
- * Server-side session check fires before any page content renders:
- * - Valid session  → render the private cabinet shell with the page content.
- * - No/invalid session → redirect to /sign-in?returnUrl=<requested-path>
- *   so the user is returned to their original destination after sign-in.
+ * Primary auth check is performed by middleware (src/middleware.ts).
+ * This layout provides a secondary defence-in-depth validation.
  */
 export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const userId = await getSessionUserId();
+  const valid = await validateSession();
 
-  if (!userId) {
-    const headerStore = await headers();
-    // x-invoke-path is the internal Next.js header that carries the requested path.
-    // Fall back to '/' if not present.
-    const requestedPath = headerStore.get('x-invoke-path') ?? '/';
-    const returnUrl = encodeURIComponent(requestedPath);
-    redirect(`${SIGN_IN_ROUTE}?returnUrl=${returnUrl}`);
+  if (!valid) {
+    redirect(SIGN_IN_ROUTE);
   }
 
   return <PrivateCabinetLayout>{children}</PrivateCabinetLayout>;

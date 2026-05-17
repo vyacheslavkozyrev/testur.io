@@ -3,6 +3,7 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import SignUpPage from './SignUpPage';
 
 // ─── Mock next/navigation ─────────────────────────────────────────────────────
 
@@ -64,7 +65,6 @@ i18nInstance.use(initReactI18next).init({
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function renderSignUpPage() {
-  const { default: SignUpPage } = jest.requireActual('./SignUpPage');
   return render(
     <I18nextProvider i18n={i18nInstance}>
       <ThemeProvider theme={createTheme()}>

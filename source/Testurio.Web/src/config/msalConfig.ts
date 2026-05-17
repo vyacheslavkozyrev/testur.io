@@ -1,5 +1,4 @@
 import type { Configuration } from '@azure/msal-browser';
-import type { CustomAuthConfiguration } from '@azure/msal-browser/dist/custom_auth/configuration/CustomAuthConfiguration.js';
 
 /**
  * Azure AD B2C tenant and user-flow constants.
@@ -44,10 +43,35 @@ export const loginScopes: string[] = (
 ).split(' ').filter(Boolean);
 
 /**
+ * Minimal interface for the CustomAuthPublicClientApplication configuration.
+ * Mirrors only the fields consumed by the authService — avoids importing from
+ * internal dist paths of @azure/msal-browser.
+ */
+interface CustomAuthConfig extends Configuration {
+  customAuth: {
+    authApiProxyUrl: string;
+    challengeTypes: string[];
+  };
+}
+
+// Guard: fail fast at module load time if the native auth URL is not configured.
+// Skipped in test environments where B2C is not available.
+if (
+  typeof process !== 'undefined' &&
+  process.env.NODE_ENV !== 'test' &&
+  !process.env.NEXT_PUBLIC_B2C_NATIVE_AUTH_URL
+) {
+  throw new Error(
+    '[msalConfig] NEXT_PUBLIC_B2C_NATIVE_AUTH_URL is required but not set. ' +
+    'Set it to the Entra External ID (CIAM) native authentication proxy URL.',
+  );
+}
+
+/**
  * Configuration for `CustomAuthPublicClientApplication` (MSAL Native Auth).
  * Requires an Entra External ID (CIAM) tenant with Native Authentication enabled.
  */
-export const customAuthConfig: CustomAuthConfiguration = {
+export const customAuthConfig: CustomAuthConfig = {
   ...msalConfig,
   customAuth: {
     authApiProxyUrl: process.env.NEXT_PUBLIC_B2C_NATIVE_AUTH_URL ?? '',

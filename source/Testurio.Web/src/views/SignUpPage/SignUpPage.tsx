@@ -24,16 +24,19 @@ interface SignUpFormValues {
   confirmPassword: string;
 }
 
-function getErrorMessage(error: AuthError | { status?: number } | null, t: (key: string) => string): string {
+function getErrorMessage(error: AuthError | null, t: (key: string) => string): string {
   if (!error) return '';
-  const authError = error as AuthError;
-  if (authError.code === 'USER_ALREADY_EXISTS') {
+  if (error.code === 'USER_ALREADY_EXISTS') {
     return t('signUp.errorUserExists');
   }
-  if (authError.code === 'INVALID_PASSWORD') {
+  if (error.code === 'INVALID_PASSWORD') {
     return t('signUp.errorInvalidPassword');
   }
   return t('signUp.errorGeneric');
+}
+
+function shouldShowSignInLink(error: AuthError | null): boolean {
+  return error?.code === 'USER_ALREADY_EXISTS';
 }
 
 export default function SignUpPage() {
@@ -59,7 +62,9 @@ export default function SignUpPage() {
     [signUp],
   );
 
-  const errorMessage = getErrorMessage(signUp.error, t);
+  const authError = signUp.error as AuthError | null;
+  const errorMessage = getErrorMessage(authError, t);
+  const showSignInLink = shouldShowSignInLink(authError);
 
   return (
     <Box sx={styles.page}>
@@ -76,10 +81,10 @@ export default function SignUpPage() {
         {signUp.isError && (
           <Alert severity="error" sx={styles.alert}>
             {errorMessage}{' '}
-            {(signUp.error as AuthError)?.code === 'USER_ALREADY_EXISTS' && (
-              <Typography component={Link} href={SIGN_IN_ROUTE} sx={styles.inlineLink}>
+            {showSignInLink && (
+              <Link href={SIGN_IN_ROUTE} style={{ color: 'inherit', textDecoration: 'underline' }}>
                 {t('signUp.signInInstead')}
-              </Typography>
+              </Link>
             )}
           </Alert>
         )}
@@ -114,9 +119,11 @@ export default function SignUpPage() {
                 message: t('signUp.passwordMinLength'),
               },
               validate: (value) => {
-                if (!/[A-Z]/.test(value)) return t('signUp.passwordUppercase');
-                if (!/[a-z]/.test(value)) return t('signUp.passwordLowercase');
-                if (!/[0-9]/.test(value)) return t('signUp.passwordDigit');
+                const failures: string[] = [];
+                if (!/[A-Z]/.test(value)) failures.push(t('signUp.passwordUppercase'));
+                if (!/[a-z]/.test(value)) failures.push(t('signUp.passwordLowercase'));
+                if (!/[0-9]/.test(value)) failures.push(t('signUp.passwordDigit'));
+                if (failures.length > 0) return failures.join(' ');
                 return true;
               },
             })}
@@ -152,9 +159,11 @@ export default function SignUpPage() {
         {/* Sign-in link */}
         <Typography sx={styles.footerText}>
           {t('signUp.hasAccount')}{' '}
-          <Typography component={Link} href={SIGN_IN_ROUTE} sx={styles.link}>
-            {t('signUp.signIn')}
-          </Typography>
+          <Link href={SIGN_IN_ROUTE} style={{ textDecoration: 'none' }}>
+            <Typography component="span" sx={styles.link}>
+              {t('signUp.signIn')}
+            </Typography>
+          </Link>
         </Typography>
       </Box>
     </Box>
@@ -211,13 +220,6 @@ const getStyles = (theme: Theme) =>
         textDecoration: 'none',
         '&:hover': { textDecoration: 'underline' },
         cursor: 'pointer',
-      },
-      inlineLink: {
-        ...theme.typography.body2,
-        color: 'inherit',
-        textDecoration: 'underline',
-        cursor: 'pointer',
-        display: 'inline',
       },
       submitButton: {
         mt: theme.spacing(1),
