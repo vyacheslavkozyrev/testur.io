@@ -14,14 +14,14 @@ public static class PlanEndpoints
     {
         var plans = app.MapGroup("/v1/plans");
 
-        plans.MapGet("/", GetPlansAsync)
+        plans.MapGet("/", GetPlans)
              .WithName("GetPlans")
              .AllowAnonymous();
 
         return app;
     }
 
-    private static Ok<IReadOnlyList<PlanDefinitionDto>> GetPlansAsync(HttpResponse response)
+    private static Ok<IReadOnlyList<PlanDefinitionDto>> GetPlans(HttpResponse response)
     {
         response.Headers.CacheControl = "public, max-age=3600";
         return TypedResults.Ok(PlanCatalog.All);

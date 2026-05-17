@@ -82,7 +82,7 @@ export default function PricingPage() {
           <Grid container spacing={3} alignItems="stretch">
             {isPending
               ? Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-                  <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Grid key={i} size={{ xs: 12, sm: 6, lg: 3 }}>
                     <Skeleton
                       variant="rectangular"
                       height={500}
