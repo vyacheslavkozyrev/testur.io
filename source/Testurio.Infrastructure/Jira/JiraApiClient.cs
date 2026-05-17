@@ -21,8 +21,8 @@ public partial class JiraApiClient : IJiraApiClient
     /// Posts <paramref name="commentBody"/> as a plain-text comment on the specified Jira issue.
     /// Uses REST API v2 which accepts wiki markup directly as a string, ensuring that
     /// the Jira-formatted text produced by <c>ReportBuilderService</c> renders correctly.
-    /// Returns a <see cref="JiraCommentResult"/> carrying the HTTP status and error body on
-    /// failure so callers can record diagnostic detail against the run (AC-014).
+    /// Returns a <see cref="JiraCommentResult"/> carrying the comment ID on success, or the
+    /// HTTP status and error body on failure so callers can record diagnostic detail (AC-014).
     /// </summary>
     public async Task<JiraCommentResult> PostCommentAsync(
         string baseUrl,
@@ -64,7 +64,21 @@ public partial class JiraApiClient : IJiraApiClient
             return JiraCommentResult.Failure((int)response.StatusCode, errorBody);
         }
 
-        return JiraCommentResult.Success();
+        // Parse the comment ID from the response body (AC-015: PmCommentId must be set).
+        string? commentId = null;
+        try
+        {
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(responseBody);
+            if (doc.RootElement.TryGetProperty("id", out var idElement))
+                commentId = idElement.GetString();
+        }
+        catch
+        {
+            // Comment ID is best-effort — the post succeeded so we return success regardless.
+        }
+
+        return JiraCommentResult.Success(commentId);
     }
 
     [LoggerMessage(Level = LogLevel.Warning,

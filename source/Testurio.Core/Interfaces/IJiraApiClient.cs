@@ -9,6 +9,12 @@ public sealed class JiraCommentResult
 {
     public bool IsSuccess { get; private init; }
 
+    /// <summary>
+    /// The Jira-assigned comment ID returned in the response body on success.
+    /// <c>null</c> when the post failed or the response body could not be parsed.
+    /// </summary>
+    public string? CommentId { get; private init; }
+
     /// <summary>HTTP status code returned by Jira (0 if a network error prevented a response).</summary>
     public int StatusCode { get; private init; }
 
@@ -17,7 +23,9 @@ public sealed class JiraCommentResult
 
     private JiraCommentResult() { }
 
-    public static JiraCommentResult Success() => new() { IsSuccess = true };
+    /// <summary>Creates a success result with the optional Jira-assigned comment ID.</summary>
+    public static JiraCommentResult Success(string? commentId = null) =>
+        new() { IsSuccess = true, CommentId = commentId };
 
     public static JiraCommentResult Failure(int statusCode, string errorDetail) =>
         new() { IsSuccess = false, StatusCode = statusCode, ErrorDetail = errorDetail };

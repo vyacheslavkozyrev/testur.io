@@ -108,7 +108,7 @@ public sealed partial class PmToolCommentPoster
 
         var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri ?? string.Empty, ct);
 
-        var success = await _adoClient.PostCommentAsync(
+        var commentId = await _adoClient.PostCommentAsync(
             project.AdoOrgUrl!,
             project.AdoProjectName!,
             workItem.AdoWorkItemId.Value,
@@ -116,7 +116,7 @@ public sealed partial class PmToolCommentPoster
             commentBody,
             ct);
 
-        if (!success)
+        if (commentId is null)
             LogAdoCommentFailed(_logger, workItem.IssueKey);
         else
             LogCommentPosted(_logger, workItem.IssueKey, "ADO");

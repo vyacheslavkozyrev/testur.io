@@ -87,7 +87,11 @@ public partial class ADOClient : IADOClient
         return new ADOConnectionTestResult(false, (int)response.StatusCode, errorBody);
     }
 
-    public async Task<bool> PostCommentAsync(
+    /// <summary>
+    /// Posts a comment on an ADO work item and returns the ADO-assigned comment ID on success,
+    /// or <c>null</c> when the request fails or the response cannot be parsed.
+    /// </summary>
+    public async Task<string?> PostCommentAsync(
         string orgUrl,
         string projectName,
         int workItemId,
@@ -111,17 +115,30 @@ public partial class ADOClient : IADOClient
         catch (Exception ex)
         {
             LogNetworkError(_logger, orgUrl, ex);
-            return false;
+            return null;
         }
 
         if (!response.IsSuccessStatusCode)
         {
             var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
             LogCommentFailed(_logger, workItemId, (int)response.StatusCode, errorBody);
-            return false;
+            return null;
         }
 
-        return true;
+        // Parse the comment ID from the response body (AC-015: PmCommentId must be set).
+        try
+        {
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(responseBody);
+            if (doc.RootElement.TryGetProperty("id", out var idElement))
+                return idElement.GetInt32().ToString();
+        }
+        catch
+        {
+            // Comment ID is best-effort — the post succeeded so return null rather than throw.
+        }
+
+        return null;
     }
 
     public async Task DeregisterWebhookAsync(

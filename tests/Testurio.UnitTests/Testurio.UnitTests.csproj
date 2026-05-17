@@ -30,6 +30,7 @@
     <ProjectReference Include="..\..\source\Testurio.Pipeline.MemoryRetrieval\Testurio.Pipeline.MemoryRetrieval.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.Executors\Testurio.Pipeline.Executors.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Pipeline.StoryParser\Testurio.Pipeline.StoryParser.csproj" />
+    <ProjectReference Include="..\..\source\Testurio.Pipeline.ReportWriter\Testurio.Pipeline.ReportWriter.csproj" />
     <ProjectReference Include="..\..\source\Testurio.Plugins\Testurio.Plugins.csproj" />
   </ItemGroup>
 

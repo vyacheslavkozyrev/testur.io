@@ -172,6 +172,14 @@ public static class DependencyInjection
             return new PromptTemplateRepository(cosmos, opts.CosmosDatabaseName);
         });
 
+        // Feature 0030: test result repository for ReportWriter (stage 6).
+        services.AddSingleton<ITestResultRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestResultRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         // Feature 0028: seeder that writes initial PromptTemplate documents to Cosmos at startup.
         services.AddSingleton<PromptTemplateSeeder>(sp =>
         {

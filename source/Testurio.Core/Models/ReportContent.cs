@@ -26,3 +26,26 @@ public record ScenarioSummary(
     string? ErrorSummary,
     string TestType,
     IReadOnlyList<string> ScreenshotUris);
+
+/// <summary>
+/// Structured AI-generated report produced by <c>ReportWriter</c> (feature 0030)
+/// after all test scenarios have been executed.
+/// Returned by Claude after analysing the <c>ExecutionResult</c> and used to
+/// render the PM tool comment and persist the <c>TestResult</c> document.
+/// </summary>
+/// <param name="Verdict">
+/// Overall verdict: <c>"PASSED"</c> if every scenario passed; <c>"FAILED"</c> otherwise.
+/// Validated by <c>ReportWriter</c> against the raw <c>ExecutionResult</c> before acceptance.
+/// </param>
+/// <param name="Recommendation">
+/// AI recommendation — exactly one of <c>"approve"</c>, <c>"request_fixes"</c>,
+/// or <c>"flag_for_manual_review"</c>.
+/// </param>
+/// <param name="ScenarioSummaries">
+/// Per-scenario summaries in execution order.
+/// Contains only the scenario types that were executed (no phantom entries).
+/// </param>
+public record ReportContent(
+    string Verdict,
+    string Recommendation,
+    IReadOnlyList<ScenarioSummary> ScenarioSummaries);

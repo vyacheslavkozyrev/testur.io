@@ -12,6 +12,7 @@ using Testurio.Pipeline.AgentRouter;
 using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
+using Testurio.Pipeline.ReportWriter;
 using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
 using Testurio.Plugins.StoryParserPlugin;
@@ -84,6 +85,11 @@ public static class DependencyInjection
         // IHttpClientFactory is provided by AddHttpClient registrations above.
         services.AddExecutors();
 
+        // ReportWriter pipeline stage (feature 0030).
+        // Prerequisites: ILlmGenerationClient, IJiraApiClient, IADOClient, ISecretResolver,
+        // ITestResultRepository — all registered above by AddWorkerServices/AddInfrastructure.
+        services.AddReportWriter();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -136,11 +142,12 @@ public static class DependencyInjection
             var promptTemplateRepository = sp.GetRequiredService<IPromptTemplateRepository>();
             var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
             var executorRouter = sp.GetRequiredService<IExecutorRouter>();
+            var reportWriter = sp.GetRequiredService<IReportWriter>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
             return new TestRunJobProcessor(
                 sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
                 queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
-                promptTemplateRepository, testGeneratorFactory, executorRouter, logger);
+                promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
