@@ -59,6 +59,16 @@ public class TestRun
     /// </summary>
     public string[] ExecutionWarnings { get; set; } = [];
 
+    // ─── ReportWriter metadata (stage 6 — feature 0030) ──────────────────────
+
+    /// <summary>
+    /// The ID of the comment posted to the originating ADO/Jira ticket by <c>ReportWriter</c>.
+    /// Set by <c>ReportWriter.WriteAsync</c> when the PM tool post-back succeeds.
+    /// <c>null</c> when post-back failed (non-fatal) or has not yet been attempted.
+    /// Readable by stage 7 (FeedbackLoop) and stage 8 (MemoryWriter) without re-reading from Cosmos.
+    /// </summary>
+    public string? PmCommentId { get; set; }
+
     /// <summary>Blob Storage URI of the rendered report for this run. Populated by ReportWriterPlugin (feature 0009).</summary>
     public string? ReportBlobUri { get; set; }
     /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>
