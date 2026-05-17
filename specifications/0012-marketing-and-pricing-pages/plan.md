@@ -14,7 +14,7 @@
 - [x] T005 [UI] Add plan types — `source/Testurio.Web/src/types/plan.types.ts`
   - `PlanDefinition` (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features)
   - `BillingInterval` enum (`monthly | annual`)
-- [ ] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
+- [x] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
   - `list(): Promise<PlanDefinition[]>`
 - [ ] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
   - `queryKey: ['plans']`; `staleTime: 60 * 60 * 1000` (matches server `max-age`)
