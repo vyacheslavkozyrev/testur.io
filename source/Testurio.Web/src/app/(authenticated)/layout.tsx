@@ -1,27 +1,46 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { getSessionStore } from '@/app/api/auth/session/route';
 import PrivateCabinetLayout from '@/components/PrivateCabinetLayout/PrivateCabinetLayout';
+import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
- * Checks whether a valid B2C session cookie exists server-side.
- * Returns the authenticated user ID from the session, or null if unauthenticated.
+ * Secondary server-side session guard for the authenticated layout.
  *
- * Feature 0013 will replace this stub with a real MSAL token validation.
+ * The primary guard is the middleware (src/middleware.ts) which runs on the
+ * Edge and redirects unauthenticated requests before they reach this layout.
+ * This check provides defence-in-depth: it validates the session against the
+ * server-side store and rejects expired or invalid sessions.
  */
-async function getSessionUserId(): Promise<string | null> {
+async function validateSession(): Promise<boolean> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('testurio_session');
-  return sessionCookie?.value ?? null;
+  if (!sessionCookie?.value) return false;
+
+  const sessionStore = getSessionStore();
+  const session = sessionStore.get(sessionCookie.value);
+  if (!session) return false;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  return session.exp >= nowSec;
 }
 
+/**
+ * Auth-guarded layout for all authenticated pages.
+ *
+ * Primary auth check is performed by middleware (src/middleware.ts).
+ * This layout provides a secondary defence-in-depth validation.
+ */
 export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // TODO(0013): restore auth guard — temporarily bypassed for local visual testing
-  // const userId = await getSessionUserId();
-  // if (!userId) redirect('/sign-in');
+  const valid = await validateSession();
+
+  if (!valid) {
+    redirect(SIGN_IN_ROUTE);
+  }
 
   return <PrivateCabinetLayout>{children}</PrivateCabinetLayout>;
 }
