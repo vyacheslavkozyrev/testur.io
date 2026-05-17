@@ -1,18 +1,19 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider } from '@mui/material/styles';
 import { theme } from '@/theme/theme';
-import AccessModeSelector from './AccessModeSelector';
+import AccessModeSelector, { type AccessModeSelectorHandle } from './AccessModeSelector';
 import type { ProjectAccessDto } from '@/types/projectAccess.types';
 
 // ─── Mock hooks ───────────────────────────────────────────────────────────────
 
-const mockMutate = jest.fn();
+const mockMutateAsync = jest.fn().mockResolvedValue({});
 const mockUpdateAccessState = {
-  mutate: mockMutate,
+  mutateAsync: mockMutateAsync,
   isPending: false,
   isError: false,
   isSuccess: false,
@@ -45,9 +46,6 @@ i18nInstance.use(initReactI18next).init({
     en: {
       projectAccess: {
         modeLabel: 'Environment access method',
-        saveButton: 'Save access configuration',
-        saveSuccess: 'Access configuration saved.',
-        saveError: 'Failed to save access configuration. Please try again.',
         loadError: 'Failed to load access configuration.',
         'modes.ipAllowlist.label': 'IP Allowlisting (Recommended)',
         'modes.ipAllowlist.description': 'Add the Testurio static egress IPs to your staging environment firewall.',
@@ -75,11 +73,11 @@ i18nInstance.use(initReactI18next).init({
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
-function renderComponent() {
+function renderComponent(ref?: React.Ref<AccessModeSelectorHandle>) {
   return render(
     <I18nextProvider i18n={i18nInstance}>
       <ThemeProvider theme={theme}>
-        <AccessModeSelector projectId="proj-001" />
+        <AccessModeSelector ref={ref} projectId="proj-001" />
       </ThemeProvider>
     </I18nextProvider>,
   );
@@ -87,6 +85,7 @@ function renderComponent() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMutateAsync.mockResolvedValue({});
   mockUseProjectAccessResult = {
     data: mockAccessData,
     isPending: false,
@@ -99,7 +98,7 @@ beforeEach(() => {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('AccessModeSelector', () => {
+describe('AccessModeSelector — UI', () => {
   it('renders all three mode options', () => {
     renderComponent();
     expect(screen.getByText('IP Allowlisting (Recommended)')).toBeInTheDocument();
@@ -114,48 +113,39 @@ describe('AccessModeSelector', () => {
 
   it('shows username and password fields when basicAuth is selected', async () => {
     renderComponent();
-    const basicAuthRadio = screen.getByLabelText('HTTP Basic Auth');
-    await userEvent.click(basicAuthRadio);
-
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
     expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
-    const passwordFields = screen.getAllByLabelText(/Password/i);
-    expect(passwordFields.length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/Password/i).length).toBeGreaterThan(0);
   });
 
   it('password field renders as type="password" (masked)', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-
     const passwordInput = screen.getAllByLabelText(/Password/i).find(
       (el) => (el as HTMLInputElement).type === 'password',
     );
-    expect(passwordInput).toBeDefined();
     expect((passwordInput as HTMLInputElement).type).toBe('password');
   });
 
   it('shows header name and value fields when headerToken is selected', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('Custom Header Token'));
-
     expect(screen.getByLabelText(/Header Name/i)).toBeInTheDocument();
-    const valueFields = screen.getAllByLabelText(/Header Value/i);
-    expect(valueFields.length).toBeGreaterThan(0);
+    expect(screen.getAllByLabelText(/Header Value/i).length).toBeGreaterThan(0);
   });
 
   it('header value field renders as type="password" (masked)', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('Custom Header Token'));
-
     const valueInput = screen.getAllByLabelText(/Header Value/i).find(
       (el) => (el as HTMLInputElement).type === 'password',
     );
-    expect(valueInput).toBeDefined();
+    expect((valueInput as HTMLInputElement).type).toBe('password');
   });
 
-  it('hides IP panel when switching from ipAllowlist to basicAuth', async () => {
+  it('hides IP panel when switching to basicAuth', async () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-
     expect(screen.queryByText('1. Copy the IP addresses shown above.')).not.toBeInTheDocument();
   });
 
@@ -163,88 +153,141 @@ describe('AccessModeSelector', () => {
     renderComponent();
     await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
     await userEvent.click(screen.getByLabelText('IP Allowlisting (Recommended)'));
-
     expect(screen.queryByLabelText(/Username/i)).not.toBeInTheDocument();
-  });
-
-  it('shows validation error when saving basicAuth with empty username', async () => {
-    renderComponent();
-    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-    await userEvent.click(screen.getByText('Save access configuration'));
-
-    await waitFor(() => {
-      expect(screen.getByText('Username is required.')).toBeInTheDocument();
-    });
-    expect(mockMutate).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error when saving basicAuth with empty password', async () => {
-    renderComponent();
-    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-    await userEvent.type(screen.getByLabelText(/Username/i), 'admin');
-    await userEvent.click(screen.getByText('Save access configuration'));
-
-    await waitFor(() => {
-      expect(screen.getByText('Password is required.')).toBeInTheDocument();
-    });
-    expect(mockMutate).not.toHaveBeenCalled();
-  });
-
-  it('shows validation error for invalid header name (with spaces)', async () => {
-    renderComponent();
-    await userEvent.click(screen.getByLabelText('Custom Header Token'));
-    await userEvent.type(screen.getByLabelText(/Header Name/i), 'X Testurio Token');
-    await userEvent.type(screen.getAllByLabelText(/Header Value/i)[0], 'tok-abc');
-    await userEvent.click(screen.getByText('Save access configuration'));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Header name must contain only alphanumeric characters and hyphens.'),
-      ).toBeInTheDocument();
-    });
-    expect(mockMutate).not.toHaveBeenCalled();
-  });
-
-  it('calls mutate with correct payload when saving ipAllowlist', async () => {
-    renderComponent();
-    await userEvent.click(screen.getByText('Save access configuration'));
-
-    expect(mockMutate).toHaveBeenCalledWith(
-      { accessMode: 'ipAllowlist' },
-      expect.any(Object),
-    );
-  });
-
-  it('calls mutate with correct payload when saving basicAuth', async () => {
-    renderComponent();
-    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-    await userEvent.type(screen.getByLabelText(/Username/i), 'admin');
-    await userEvent.type(screen.getAllByLabelText(/Password/i).find(
-      (el) => (el as HTMLInputElement).type === 'password',
-    )!, 's3cret');
-    await userEvent.click(screen.getByText('Save access configuration'));
-
-    expect(mockMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        accessMode: 'basicAuth',
-        basicAuthUser: 'admin',
-        basicAuthPass: 's3cret',
-      }),
-      expect.any(Object),
-    );
-  });
-
-  it('shows error alert when save fails', () => {
-    mockUpdateAccessState.isError = true;
-    renderComponent();
-
-    expect(screen.getByText('Failed to save access configuration. Please try again.')).toBeInTheDocument();
   });
 
   it('shows error alert when loading fails', () => {
     mockUseProjectAccessResult = { data: undefined, isPending: false, isError: true };
     renderComponent();
-
     expect(screen.getByText('Failed to load access configuration.')).toBeInTheDocument();
+  });
+
+  it('has no standalone save button', () => {
+    renderComponent();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+});
+
+describe('AccessModeSelector — imperative handle: isDirty', () => {
+  it('is false when no changes made (ipAllowlist, same as server)', () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    expect(ref.current?.isDirty).toBe(false);
+  });
+
+  it('is true after switching mode from server value', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
+    expect(ref.current?.isDirty).toBe(true);
+  });
+
+  it('is false after switching mode and switching back', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
+    await userEvent.click(screen.getByLabelText('IP Allowlisting (Recommended)'));
+    expect(ref.current?.isDirty).toBe(false);
+  });
+
+  it('is true when basicAuth username differs from server value', async () => {
+    mockUseProjectAccessResult = {
+      data: { projectId: 'proj-001', accessMode: 'basicAuth', basicAuthUser: 'admin', headerTokenName: null },
+      isPending: false,
+      isError: false,
+    };
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await waitFor(() => expect(screen.getByLabelText(/Username/i)).toBeInTheDocument());
+    await userEvent.clear(screen.getByLabelText(/Username/i));
+    await userEvent.type(screen.getByLabelText(/Username/i), 'new-user');
+    expect(ref.current?.isDirty).toBe(true);
+  });
+
+  it('is true when a new password is typed (secret field)', async () => {
+    mockUseProjectAccessResult = {
+      data: { projectId: 'proj-001', accessMode: 'basicAuth', basicAuthUser: 'admin', headerTokenName: null },
+      isPending: false,
+      isError: false,
+    };
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await waitFor(() => expect(screen.getAllByLabelText(/Password/i).length).toBeGreaterThan(0));
+    const passwordInput = screen.getAllByLabelText(/Password/i).find(
+      (el) => (el as HTMLInputElement).type === 'password',
+    )!;
+    await userEvent.type(passwordInput, 'newpass');
+    expect(ref.current?.isDirty).toBe(true);
+  });
+});
+
+describe('AccessModeSelector — imperative handle: save()', () => {
+  it('calls mutateAsync with ipAllowlist payload', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await act(async () => { await ref.current?.save(); });
+    expect(mockMutateAsync).toHaveBeenCalledWith({ accessMode: 'ipAllowlist' });
+  });
+
+  it('calls mutateAsync with basicAuth payload', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
+    await userEvent.type(screen.getByLabelText(/Username/i), 'admin');
+    const passwordInput = screen.getAllByLabelText(/Password/i).find(
+      (el) => (el as HTMLInputElement).type === 'password',
+    )!;
+    await userEvent.type(passwordInput, 's3cret');
+    await act(async () => { await ref.current?.save(); });
+    expect(mockMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ accessMode: 'basicAuth', basicAuthUser: 'admin', basicAuthPass: 's3cret' }),
+    );
+  });
+
+  it('throws and shows validation error when basicAuth username is empty', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
+    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByText('Username is required.')).toBeInTheDocument();
+    });
+  });
+
+  it('throws and shows validation error for invalid header name', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('Custom Header Token'));
+    await userEvent.type(screen.getByLabelText(/Header Name/i), 'X Testurio Token');
+    await userEvent.type(screen.getAllByLabelText(/Header Value/i)[0], 'tok-abc');
+    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    expect(mockMutateAsync).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(
+        screen.getByText('Header name must contain only alphanumeric characters and hyphens.'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('clears secret fields after successful save', async () => {
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
+    await userEvent.type(screen.getByLabelText(/Username/i), 'admin');
+    const passwordInput = screen.getAllByLabelText(/Password/i).find(
+      (el) => (el as HTMLInputElement).type === 'password',
+    )! as HTMLInputElement;
+    await userEvent.type(passwordInput, 's3cret');
+    expect(passwordInput.value).toBe('s3cret');
+    await act(async () => { await ref.current?.save(); });
+    await waitFor(() => { expect(passwordInput.value).toBe(''); });
+  });
+
+  it('propagates mutateAsync error so caller can catch it', async () => {
+    mockMutateAsync.mockRejectedValue(new Error('Network error'));
+    const ref = React.createRef<AccessModeSelectorHandle>();
+    renderComponent(ref);
+    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow('Network error');
   });
 });
