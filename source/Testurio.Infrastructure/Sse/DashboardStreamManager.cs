@@ -32,7 +32,7 @@ public sealed partial class DashboardStreamManager : IDashboardStreamManager
     }
 
     /// <inheritdoc />
-    public async Task PublishAsync(
+    public Task PublishAsync(
         string userId,
         DashboardUpdatedEvent @event,
         CancellationToken cancellationToken = default)
@@ -43,7 +43,7 @@ public sealed partial class DashboardStreamManager : IDashboardStreamManager
             // can pick up events published before the first connection opens.
             // We do NOT create a dangling channel here; events are dropped if no subscriber is present.
             LogNoSubscribers(_logger, userId);
-            return;
+            return Task.CompletedTask;
         }
 
         foreach (var (_, channel) in connections)
@@ -60,6 +60,7 @@ public sealed partial class DashboardStreamManager : IDashboardStreamManager
         }
 
         LogPublished(_logger, userId, @event.ProjectId, connections.Count);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

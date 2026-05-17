@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Testurio.Core.Enums;
 using Testurio.Core.Events;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;

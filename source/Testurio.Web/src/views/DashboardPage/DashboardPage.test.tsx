@@ -375,4 +375,55 @@ describe('DashboardPage', () => {
       expect(mockRefetch).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('reconnecting indicator appears when onReconnecting(true) is called', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    act(() => {
+      capturedStreamOptions?.onReconnecting?.(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Reconnecting…')).toBeInTheDocument();
+    });
+  });
+
+  it('reconnecting indicator disappears when onReconnecting(false) is called', async () => {
+    mockUseDashboardState.data = {
+      projects: [mockProject],
+      quotaUsage: DEFAULT_QUOTA,
+    };
+
+    render(
+      <Wrapper>
+        <DashboardPage />
+      </Wrapper>,
+    );
+
+    // First show, then hide the indicator.
+    act(() => {
+      capturedStreamOptions?.onReconnecting?.(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Reconnecting…')).toBeInTheDocument();
+    });
+
+    act(() => {
+      capturedStreamOptions?.onReconnecting?.(false);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Reconnecting…')).not.toBeInTheDocument();
+    });
+  });
 });
