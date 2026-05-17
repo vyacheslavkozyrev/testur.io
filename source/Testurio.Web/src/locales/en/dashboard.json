@@ -20,5 +20,9 @@
   "error": {
     "message": "Failed to load dashboard data. Please try again.",
     "retryButton": "Retry"
+  },
+  "stream": {
+    "reconnecting": "Reconnecting…",
+    "unavailable": "Live updates unavailable — data may be stale"
   }
 }
