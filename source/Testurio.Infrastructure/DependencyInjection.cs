@@ -15,6 +15,7 @@ using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Sse;
 
 namespace Testurio.Infrastructure;
 
@@ -177,6 +178,9 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
+
+        // Feature 0043: singleton SSE fan-out manager — must outlive individual HTTP requests.
+        services.AddSingleton<IDashboardStreamManager, DashboardStreamManager>();
 
         services.AddHttpClient<IJiraApiClient, JiraApiClient>();
         services.AddHttpClient<IJiraStoryClient, JiraStoryClient>();
