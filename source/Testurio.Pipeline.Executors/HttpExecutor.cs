@@ -69,7 +69,7 @@ public sealed partial class HttpExecutor : IHttpExecutor
             response = await client.SendAsync(request, ct);
             responseBody = await response.Content.ReadAsStringAsync(ct);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or OperationCanceledException)
+        catch (HttpRequestException ex)
         {
             requestException = ex;
         }
@@ -269,7 +269,7 @@ public sealed partial class HttpExecutor : IHttpExecutor
     /// Resolves access credentials for the project and returns a pre-configured
     /// <see cref="HttpClient"/> with the appropriate authentication header applied.
     /// </summary>
-    public async Task<HttpClient> CreateAuthenticatedClientAsync(
+    internal async Task<HttpClient> CreateAuthenticatedClientAsync(
         Project project, CancellationToken cancellationToken = default)
     {
         ProjectAccessCredentials credentials;

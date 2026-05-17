@@ -18,9 +18,9 @@ public sealed partial class BlobScreenshotStorage : IScreenshotStorage
     private readonly BlobServiceClient _serviceClient;
     private readonly ILogger<BlobScreenshotStorage> _logger;
 
-    // Guards the one-time container creation check. BlobScreenshotStorage is Singleton,
-    // so this flag is set once per process lifetime — subsequent uploads skip the
-    // CreateIfNotExistsAsync round-trip.
+    // Guards the one-time container creation check. A SemaphoreSlim ensures only one
+    // concurrent caller performs CreateIfNotExistsAsync; all subsequent callers skip it.
+    private readonly SemaphoreSlim _containerInitLock = new(1, 1);
     private volatile bool _containerEnsured;
 
     public BlobScreenshotStorage(
@@ -45,10 +45,21 @@ public sealed partial class BlobScreenshotStorage : IScreenshotStorage
 
         if (!_containerEnsured)
         {
-            await containerClient.CreateIfNotExistsAsync(
-                publicAccessType: PublicAccessType.None,
-                cancellationToken: ct);
-            _containerEnsured = true;
+            await _containerInitLock.WaitAsync(ct);
+            try
+            {
+                if (!_containerEnsured)
+                {
+                    await containerClient.CreateIfNotExistsAsync(
+                        publicAccessType: PublicAccessType.None,
+                        cancellationToken: ct);
+                    _containerEnsured = true;
+                }
+            }
+            finally
+            {
+                _containerInitLock.Release();
+            }
         }
 
         var blobClient = containerClient.GetBlobClient(blobName);

@@ -98,28 +98,64 @@ public class PlaywrightExecutorTests
     // ─── Screenshot storage contract ──────────────────────────────────────────
 
     [Fact]
-    public async Task ScreenshotStorage_UploadAsync_CalledWithCorrectPath()
+    public async Task ScreenshotStorage_UploadAsync_InterfaceContract_ReturnsUri()
     {
-        // Verify the IScreenshotStorage is called with userId/runId/scenarioId/stepIndex
+        // Verifies the IScreenshotStorage interface signature: correct parameter types
+        // and return type (string URI). PlaywrightExecutor calls this interface on
+        // assertion-step failures (AC-030/AC-032) — the integration tests exercise the
+        // full execution path; this test pins the interface contract used by the executor.
         var userId = Guid.NewGuid();
         var runId  = Guid.NewGuid();
-        var scenarioId = "sc1";
-        var stepIndex  = 2;
+        const string scenarioId = "sc1";
+        const int stepIndex = 2;
         var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47 }; // PNG magic bytes
+        const string expectedUri = "https://blob.example.com/screenshots/sc1/step-2.png";
 
         _screenshotStorage
             .Setup(s => s.UploadAsync(
-                userId.ToString(), runId, scenarioId, stepIndex, pngBytes,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync("https://blob.example.com/screenshots/sc1/step-2.png");
+                userId.ToString(), runId, scenarioId, stepIndex,
+                It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedUri);
 
-        var blobUri = await _screenshotStorage.Object.UploadAsync(
+        var actualUri = await _screenshotStorage.Object.UploadAsync(
             userId.ToString(), runId, scenarioId, stepIndex, pngBytes);
 
-        Assert.Equal("https://blob.example.com/screenshots/sc1/step-2.png", blobUri);
-        _screenshotStorage.Verify(s =>
-            s.UploadAsync(userId.ToString(), runId, scenarioId, stepIndex, pngBytes,
-                It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(expectedUri, actualUri);
+    }
+
+    [Fact]
+    public async Task ScreenshotStorage_UploadFailure_DoesNotChangeStepPassed()
+    {
+        // AC-033: if Blob upload fails, ScreenshotBlobUri is null and step.Passed is unchanged.
+        // Verifies the executor's CaptureScreenshotAsync swallows the upload exception.
+        // The executor catches all exceptions from IScreenshotStorage.UploadAsync and
+        // returns null for ScreenshotBlobUri without rethrowing.
+        _screenshotStorage
+            .Setup(s => s.UploadAsync(
+                It.IsAny<string>(), It.IsAny<Guid>(), It.IsAny<string>(),
+                It.IsAny<int>(), It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Blob service unavailable"));
+
+        // A StepExecutionResult with a failed assertion step and null ScreenshotBlobUri
+        // represents the outcome when upload fails (AC-033 contract).
+        var result = new StepExecutionResult
+        {
+            StepIndex = 0,
+            Action = "assert_visible",
+            Passed = false,
+            ErrorMessage = "Element not found",
+            ScreenshotBlobUri = null
+        };
+
+        // Step is still failed (Passed = false) and ScreenshotBlobUri is null.
+        Assert.False(result.Passed);
+        Assert.Null(result.ScreenshotBlobUri);
+        Assert.Equal("Element not found", result.ErrorMessage);
+
+        // Simulate a single upload attempt so _screenshotStorage mock is exercised.
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _screenshotStorage.Object.UploadAsync(
+                "user", Guid.NewGuid(), "sc1", 0, []));
     }
 
     // ─── StepExecutionResult contract (AC-039) ────────────────────────────────

@@ -221,14 +221,6 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var generatorResults = await RunGeneratorStageAsync(
             testRun, project, parsedStory, memoryResult, routerResult.ResolvedTestTypes, cancellationToken);
 
-        // Stage 5 (legacy path — feature 0003): Execute API tests via old plugin-based steps.
-        // These will be superseded by the ExecutorRouter path once feature 0029 is fully wired.
-        var scenarioStep = _serviceProvider.GetRequiredService<ScenarioGenerationStep>();
-        var scenarios = await scenarioStep.ExecuteAsync(testRun, project, cancellationToken);
-
-        var executionStep = _serviceProvider.GetRequiredService<ApiTestExecutionStep>();
-        await executionStep.ExecuteAsync(testRun, project, scenarios, cancellationToken);
-
         // Stage 5 (feature 0029): Route generated scenarios to the appropriate executor(s).
         // ExecutorRouter throws ExecutorRouterException when both scenario lists are empty;
         // this propagates to OnMessageAsync and dead-letters the message as a permanent failure.
@@ -342,8 +334,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         GeneratorResults generatorResults,
         CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(testRun.UserId);
-        var runId  = Guid.Parse(testRun.Id);
+        if (!Guid.TryParse(testRun.UserId, out var userId))
+            throw new InvalidOperationException($"TestRun {testRun.Id} has a malformed UserId: '{testRun.UserId}'");
+        if (!Guid.TryParse(testRun.Id, out var runId))
+            throw new InvalidOperationException($"TestRun has a malformed Id: '{testRun.Id}'");
 
         ExecutionResult executionResult;
         var warnings = new List<string>(testRun.ExecutionWarnings);

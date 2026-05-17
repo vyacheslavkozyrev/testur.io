@@ -66,7 +66,7 @@ public sealed partial class PlaywrightExecutor : IPlaywrightExecutor
         }
         finally
         {
-            await browser.CloseAsync();
+            await browser.DisposeAsync();
         }
     }
 
@@ -103,6 +103,8 @@ public sealed partial class PlaywrightExecutor : IPlaywrightExecutor
                     });
                     continue;
                 }
+
+                ct.ThrowIfCancellationRequested();
 
                 var stepResult = await ExecuteStepAsync(
                     page, step, i, scenario.Id, userId, runId, ct);
@@ -247,7 +249,7 @@ public sealed partial class PlaywrightExecutor : IPlaywrightExecutor
     /// Resolves access credentials and builds the <see cref="BrowserNewContextOptions"/>
     /// with appropriate authentication configuration for the project's staging environment.
     /// </summary>
-    public async Task<BrowserNewContextOptions> BuildContextOptionsAsync(
+    internal async Task<BrowserNewContextOptions> BuildContextOptionsAsync(
         Project project, CancellationToken cancellationToken = default)
     {
         ProjectAccessCredentials credentials;

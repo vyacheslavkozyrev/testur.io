@@ -38,8 +38,10 @@ RUN apt-get update && apt-get install -y \
 COPY --from=build /app/publish .
 
 # Install Playwright Chromium browser into the published app's Playwright browser path.
-# The dotnet tool is not available in the runtime image; use the bundled playwright script instead.
+# The playwright.sh helper script is published alongside the app binaries by the
+# Microsoft.Playwright NuGet package. PLAYWRIGHT_BROWSERS_PATH controls where browsers
+# are installed so they are available at the same path at runtime.
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
-RUN dotnet /app/Microsoft.Playwright.dll install chromium
+RUN chmod +x /app/playwright.sh && /app/playwright.sh install chromium
 
 ENTRYPOINT ["dotnet", "Testurio.Worker.dll"]
