@@ -18,7 +18,7 @@
   - `list(): Promise<PlanDefinition[]>`
 - [x] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
   - `queryKey: ['plans']`; `staleTime: 60 * 60 * 1000` (matches server `max-age`)
-- [ ] T008 [UI] Add MSW mock handler for `GET /v1/plans` — `source/Testurio.Web/src/mocks/handlers/plans.ts`
+- [x] T008 [UI] Add MSW mock handler for `GET /v1/plans` — `source/Testurio.Web/src/mocks/handlers/plans.ts`
 - [ ] T009 [UI] Create `PublicHeader` component (sticky; logo left; nav links centre; auth-aware action area right: Sign In + Get Started for guests, Go to Dashboard for signed-in users; hamburger collapse on mobile) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.tsx`
 - [ ] T010 [UI] Create `PublicFooter` component (logo, nav links, copyright, Privacy Policy and Terms of Service placeholder links) — `source/Testurio.Web/src/components/PublicFooter/PublicFooter.tsx`
 - [ ] T011 [UI] Create `PublicLayout` wrapper (renders `PublicHeader` + `{children}` + `PublicFooter`; no sidebar) — `source/Testurio.Web/src/components/PublicLayout/PublicLayout.tsx`
