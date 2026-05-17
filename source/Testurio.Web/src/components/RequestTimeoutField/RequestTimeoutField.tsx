@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import TextField from '@mui/material/TextField';
 import { useTheme, type Theme } from '@mui/material/styles';
 
+// Mirror of ProjectConstants.RequestTimeoutMinSeconds / MaxSeconds (Testurio.Core).
+// Update both locations if the range changes.
 const MIN_TIMEOUT = 5;
 const MAX_TIMEOUT = 120;
 
@@ -21,7 +23,7 @@ export default function RequestTimeoutField({ value, onChange, error }: RequestT
 
   const validationError = useMemo(() => {
     if (error) return error;
-    if (value === null || value === undefined || Number.isNaN(value)) {
+    if (value === null || value === undefined || Number.isNaN(value) || value === 0) {
       return t('requestTimeout.validation.required');
     }
     if (!Number.isInteger(value) || value < MIN_TIMEOUT || value > MAX_TIMEOUT) {

@@ -164,8 +164,9 @@ public class ProjectServiceTests
     [Fact]
     public async Task CreateAsync_DefaultsRequestTimeoutSeconds_To30_WhenNotExplicitlySupplied()
     {
-        // The default value on the DTO record is 30 (ProjectConstants.RequestTimeoutDefaultSeconds).
-        // When the DTO is constructed with defaults, CreateAsync must write 30 to the entity.
+        // The DTO record default parameter is 30 (ProjectConstants.RequestTimeoutDefaultSeconds).
+        // CreateAsync passes it straight through to the entity — no special sentinel handling needed
+        // because [Range(5,120)] validation on the DTO prevents 0 from ever reaching the service.
         var userId = "user-1";
         var request = new CreateProjectRequest("My App", "https://app.example.com", "Smoke tests.");
         // request.RequestTimeoutSeconds == 30 by default via the record default parameter

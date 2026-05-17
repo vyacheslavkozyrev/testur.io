@@ -107,7 +107,9 @@ public sealed partial class HttpExecutor
         HttpClient client,
         HttpRequestMessage request,
         int timeoutSeconds,
-        CancellationToken runToken)
+        CancellationToken runToken,
+        string? projectId = null,
+        ILogger? logger = null)
     {
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
         using var linkedCts  = CancellationTokenSource.CreateLinkedTokenSource(runToken, timeoutCts.Token);
@@ -122,6 +124,8 @@ public sealed partial class HttpExecutor
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !runToken.IsCancellationRequested)
         {
             sw.Stop();
+            if (logger is not null && projectId is not null)
+                LogRequestTimedOut(logger, projectId, timeoutSeconds, sw.ElapsedMilliseconds);
             throw new TimeoutException(
                 $"Timeout — request exceeded {timeoutSeconds}s",
                 new OperationCanceledException(linkedCts.Token));

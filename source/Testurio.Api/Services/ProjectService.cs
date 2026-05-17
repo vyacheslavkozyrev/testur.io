@@ -81,9 +81,7 @@ public partial class ProjectService : IProjectService
             ProductUrl = request.ProductUrl,
             TestingStrategy = request.TestingStrategy,
             CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt,
-            RequestTimeoutSeconds = request.RequestTimeoutSeconds == 0
-                ? ProjectConstants.RequestTimeoutDefaultSeconds
-                : request.RequestTimeoutSeconds,
+            RequestTimeoutSeconds = request.RequestTimeoutSeconds,
         };
 
         // Establish the Key Vault namespace for this project (no Azure SDK call — naming only).
