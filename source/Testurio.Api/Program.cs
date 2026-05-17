@@ -89,6 +89,18 @@ builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
+
+// Feature 0043: SSE relay — subscribe to run-status-changed Service Bus messages and fan out to SSE channels.
+builder.Services.AddSingleton<DashboardEventRelay>(sp =>
+{
+    var sbClient = sp.GetRequiredService<Azure.Messaging.ServiceBus.ServiceBusClient>();
+    var topicName = builder.Configuration["Infrastructure:RunStatusChangedQueueName"] ?? "run-status-changed";
+    var streamManager = sp.GetRequiredService<IDashboardStreamManager>();
+    var logger = sp.GetRequiredService<ILogger<DashboardEventRelay>>();
+    return new DashboardEventRelay(sbClient, topicName, streamManager, logger);
+});
+builder.Services.AddHostedService(sp => sp.GetRequiredService<DashboardEventRelay>());
+
 builder.Services.AddSingleton<JiraWebhookSignatureFilter>();
 builder.Services.AddTransient<RequestBodyBufferingMiddleware>();
 builder.Services.AddOptions<PMToolConnectionServiceOptions>()
