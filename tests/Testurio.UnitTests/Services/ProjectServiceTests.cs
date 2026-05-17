@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Testurio.Api.DTOs;
 using Testurio.Api.Services;
+using Testurio.Core.Constants;
 using Testurio.Core.Entities;
 using Testurio.Core.Repositories;
 
@@ -156,6 +157,97 @@ public class ProjectServiceTests
 
         Assert.Equal(ProjectOperationResult.NotFound, result);
         Assert.Null(dto);
+    }
+
+    // ─── RequestTimeoutSeconds — feature 0022 ─────────────────────────────────
+
+    [Fact]
+    public async Task CreateAsync_DefaultsRequestTimeoutSeconds_To30_WhenNotExplicitlySupplied()
+    {
+        // The DTO record default parameter is 30 (ProjectConstants.RequestTimeoutDefaultSeconds).
+        // CreateAsync passes it straight through to the entity — no special sentinel handling needed
+        // because [Range(5,120)] validation on the DTO prevents 0 from ever reaching the service.
+        var userId = "user-1";
+        var request = new CreateProjectRequest("My App", "https://app.example.com", "Smoke tests.");
+        // request.RequestTimeoutSeconds == 30 by default via the record default parameter
+
+        Project? captured = null;
+        _repository.Setup(r => r.CreateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .Callback<Project, CancellationToken>((p, _) => captured = p)
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var result = await _sut.CreateAsync(userId, request);
+
+        Assert.NotNull(captured);
+        Assert.Equal(ProjectConstants.RequestTimeoutDefaultSeconds, captured!.RequestTimeoutSeconds);
+        Assert.Equal(ProjectConstants.RequestTimeoutDefaultSeconds, result.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task CreateAsync_PersistsExplicitRequestTimeoutSeconds()
+    {
+        var userId = "user-1";
+        var request = new CreateProjectRequest("My App", "https://app.example.com", "Smoke tests.", null, RequestTimeoutSeconds: 60);
+
+        Project? captured = null;
+        _repository.Setup(r => r.CreateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .Callback<Project, CancellationToken>((p, _) => captured = p)
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var result = await _sut.CreateAsync(userId, request);
+
+        Assert.NotNull(captured);
+        Assert.Equal(60, captured!.RequestTimeoutSeconds);
+        Assert.Equal(60, result.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PersistsRequestTimeoutSeconds_FromRequest()
+    {
+        var existing = MakeProject();
+        _repository.Setup(r => r.GetByProjectIdAsync("proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repository.Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var request = new UpdateProjectRequest("Updated Name", "https://updated.example.com", "E2E focus.", null, RequestTimeoutSeconds: 90);
+        var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.NotNull(dto);
+        Assert.Equal(90, dto!.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task ToDto_MapsRequestTimeoutSeconds_FromEntity()
+    {
+        var project = MakeProject();
+        project.RequestTimeoutSeconds = 45;
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _sut.GetAsync("user-1", "proj-1");
+
+        Assert.NotNull(result);
+        Assert.Equal(45, result!.RequestTimeoutSeconds);
+    }
+
+    [Fact]
+    public async Task ToDto_Returns30_WhenEntityRequestTimeoutSeconds_IsZero()
+    {
+        // Existing documents that lack the field will deserialise RequestTimeoutSeconds as 0.
+        // ToDto must return the default (30) in that case (AC-009).
+        var project = MakeProject();
+        project.RequestTimeoutSeconds = 0;
+        _repository.Setup(r => r.GetByIdAsync("user-1", "proj-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+
+        var result = await _sut.GetAsync("user-1", "proj-1");
+
+        Assert.NotNull(result);
+        Assert.Equal(ProjectConstants.RequestTimeoutDefaultSeconds, result!.RequestTimeoutSeconds);
     }
 
     // ─── DeleteAsync ──────────────────────────────────────────────────────────
