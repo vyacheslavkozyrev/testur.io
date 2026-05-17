@@ -86,9 +86,9 @@ describe('RunDetailPanel', () => {
 
   it('renders loading skeleton when isPending is true', () => {
     mockRunDetailResult = { data: undefined, isPending: true };
-    const { container } = renderComponent();
-    // MUI Skeleton renders with role="progressbar" or a div with MuiSkeleton class
-    const skeletons = container.querySelectorAll('[class*="MuiSkeleton"]');
+    renderComponent();
+    // MUI Drawer renders into a portal — query from document.body
+    const skeletons = document.body.querySelectorAll('[class*="MuiSkeleton"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 

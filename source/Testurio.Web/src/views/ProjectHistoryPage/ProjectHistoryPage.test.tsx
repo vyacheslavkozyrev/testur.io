@@ -188,8 +188,8 @@ describe('ProjectHistoryPage', () => {
     const panel = screen.getByTestId('run-detail-panel');
     expect(panel).toHaveAttribute('data-run-id', 'run-1');
 
-    // Close panel
+    // Close panel — runId becomes null, React removes the attribute from the DOM
     await user.click(screen.getByText('close'));
-    expect(panel).toHaveAttribute('data-run-id', '');
+    expect(panel).not.toHaveAttribute('data-run-id');
   });
 });

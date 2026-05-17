@@ -64,7 +64,7 @@ public class ProjectHistoryServiceTests
     {
         _statsRepository
             .Setup(r => r.GetProjectHistoryAsync("user-1", "project-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)? default);
+            .ReturnsAsync(default((IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)?));
 
         var result = await _sut.GetHistoryAsync("user-1", "project-1");
 
@@ -161,8 +161,16 @@ public class ProjectHistoryServiceTests
             TestType: "api",
             ScreenshotUris: Array.Empty<string>());
 
-        var testResult = MakeTestResult() with
+        var testResult = new TestResult
         {
+            Id = "result-1",
+            RunId = "run-1",
+            ProjectId = "project-1",
+            UserId = "user-1",
+            StoryTitle = "User story",
+            Verdict = "PASSED",
+            Recommendation = "approve",
+            TotalDurationMs = 5000,
             ScenarioResults = new[] { scenario },
             RawCommentMarkdown = "## Report\nPASSED",
         };

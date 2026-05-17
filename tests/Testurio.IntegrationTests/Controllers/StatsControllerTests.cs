@@ -156,7 +156,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         var projectId = Guid.NewGuid().ToString();
         _factory.StatsRepoMock
             .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)? default);
+            .ReturnsAsync(default((IReadOnlyList<RunHistoryItem> Runs, IReadOnlyList<TrendPoint> TrendPoints)?));
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync($"/v1/stats/projects/{projectId}/history");
