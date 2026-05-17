@@ -11,10 +11,10 @@
 - [x] T007 [UI] Add Next.js API route `POST /api/auth/sign-out`: clears the `testurio_session` cookie, returns `200` with the B2C logout URL — `source/Testurio.Web/src/app/api/auth/sign-out/route.ts`
 - [x] T008 [UI] Add Next.js API route `POST /api/auth/session`: receives a B2C ID token from the client, verifies it, sets the `testurio_session` HttpOnly cookie, returns `AuthUser` — `source/Testurio.Web/src/app/api/auth/session/route.ts`
 - [x] T009 [UI] Update MSW mock handler for `GET /api/auth/me` to also mock `POST /api/auth/sign-out` and `POST /api/auth/session` — `source/Testurio.Web/src/mocks/handlers/auth.ts`
-- [ ] T010 [UI] Add `useSignIn` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
-- [ ] T011 [UI] Add `useSignUp` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
-- [ ] T012 [UI] Add `useForgotPassword` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
-- [ ] T013 [UI] Add `useSignOut` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
+- [x] T010 [UI] Add `useSignIn` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
+- [x] T011 [UI] Add `useSignUp` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
+- [x] T012 [UI] Add `useForgotPassword` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
+- [x] T013 [UI] Add `useSignOut` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [ ] T014 [UI] Create `SignInPage` view: email + password form, Forgot password link, Create account link, inline error handling, loading state, `returnUrl` redirect on success — `source/Testurio.Web/src/views/SignInPage/SignInPage.tsx`
 - [ ] T015 [UI] Create `SignUpPage` view: email + password + confirm-password form, inline validation, loading state, redirect to `/dashboard` on success — `source/Testurio.Web/src/views/SignUpPage/SignUpPage.tsx`
 - [ ] T016 [UI] Create `ForgotPasswordPage` view: email field, submit → confirmation message, Back to sign-in link — `source/Testurio.Web/src/views/ForgotPasswordPage/ForgotPasswordPage.tsx`
@@ -22,7 +22,7 @@
 - [ ] T018 [UI] Add Next.js page for `/sign-up` that renders `SignUpPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/sign-up/page.tsx`
 - [ ] T019 [UI] Add Next.js page for `/forgot-password` that renders `ForgotPasswordPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/forgot-password/page.tsx`
 - [ ] T020 [UI] Add `(auth)` route group layout — a minimal wrapper with no header/sidebar, just `{children}` — `source/Testurio.Web/src/app/(auth)/layout.tsx`
-- [ ] T021 [UI] Add auth route constants: `SIGN_IN_ROUTE`, `SIGN_UP_ROUTE`, `FORGOT_PASSWORD_ROUTE` — `source/Testurio.Web/src/routes/routes.ts`
+- [x] T021 [UI] Add auth route constants: `SIGN_IN_ROUTE`, `SIGN_UP_ROUTE`, `FORGOT_PASSWORD_ROUTE` — `source/Testurio.Web/src/routes/routes.ts`
 - [ ] T022 [UI] Add auth translation keys (all strings for sign-in, sign-up, forgot-password pages) — `source/Testurio.Web/src/locales/en/auth.json`
 - [ ] T023 [UI] Restore the auth guard in the `(authenticated)` layout: uncomment server-side session check, redirect to `/sign-in?returnUrl=<path>` when session is missing or invalid — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
 - [ ] T024 [UI] Update root `page.tsx` to use real session validation from the session cookie (replace cookie-existence stub with `getSessionUserId` helper that validates the token) — `source/Testurio.Web/src/app/page.tsx`

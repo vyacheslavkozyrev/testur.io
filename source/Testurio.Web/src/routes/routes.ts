@@ -4,6 +4,16 @@
  * across components, navigation links, and redirect logic.
  */
 
+// ─── Auth routes (feature 0013) ───────────────────────────────────────────────
+
+export const SIGN_IN_ROUTE = '/sign-in';
+
+export const SIGN_UP_ROUTE = '/sign-up';
+
+export const FORGOT_PASSWORD_ROUTE = '/forgot-password';
+
+// ─── Authenticated routes ─────────────────────────────────────────────────────
+
 export const DASHBOARD_ROUTE = '/dashboard';
 
 export const PROJECTS_ROUTE = '/projects';
