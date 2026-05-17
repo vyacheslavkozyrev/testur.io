@@ -211,6 +211,13 @@ public sealed partial class ReportWriter : IReportWriter
             if (string.IsNullOrEmpty(verdict) || string.IsNullOrEmpty(recommendation))
                 return false;
 
+            // AC-002/AC-005: reject any response that does not use the exact canonical values.
+            if (verdict is not ("PASSED" or "FAILED"))
+                return false;
+
+            if (recommendation is not ("approve" or "request_fixes" or "flag_for_manual_review"))
+                return false;
+
             var summaries = new List<ScenarioSummary>();
             foreach (var item in summariesEl.EnumerateArray())
             {
@@ -261,7 +268,7 @@ public sealed partial class ReportWriter : IReportWriter
     /// Enriches the Claude-produced summaries with test type and screenshot URIs from the
     /// raw execution result (AC-008 / AC-011).
     /// </summary>
-    private static IReadOnlyList<ScenarioSummary> BuildScenarioSummaries(
+    private IReadOnlyList<ScenarioSummary> BuildScenarioSummaries(
         ReportContent report,
         ExecutionResult execution)
     {
@@ -293,7 +300,9 @@ public sealed partial class ReportWriter : IReportWriter
             }
             else
             {
-                // Scenario not found in either result list — keep as-is without screenshot data.
+                // Scenario not found in either result list — log a warning so phantom entries
+                // are observable before they reach the persisted TestResult document.
+                LogUnknownScenarioId(_logger, summary.ScenarioId);
                 testType = "unknown";
                 screenshotUris = [];
             }
@@ -463,4 +472,8 @@ public sealed partial class ReportWriter : IReportWriter
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "ReportWriter: ADO token not configured for {IssueKey} — comment skipped")]
     private static partial void LogAdoCredentialsMissing(ILogger logger, string issueKey);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "ReportWriter: scenario '{ScenarioId}' returned by Claude was not found in ApiResults or UiE2eResults — stored with TestType 'unknown'")]
+    private static partial void LogUnknownScenarioId(ILogger logger, string scenarioId);
 }

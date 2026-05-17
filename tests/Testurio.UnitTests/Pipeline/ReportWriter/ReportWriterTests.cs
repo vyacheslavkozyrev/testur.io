@@ -294,8 +294,43 @@ public class ReportWriterTests
         // Act
         await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, cts.Token);
 
-        // Assert
+        // Assert — token is forwarded on first call.
         Assert.Equal(cts.Token, capturedToken);
+    }
+
+    // ─── AC-007: cancellation token forwarded to retry call ──────────────────
+
+    [Fact]
+    public async Task WriteAsync_CancellationTokenForwardedToRetryLlmCall()
+    {
+        // Arrange
+        var sut = CreateSut();
+        using var cts = new CancellationTokenSource();
+        var capturedTokens = new List<CancellationToken>();
+        var callCount = 0;
+
+        _llmClient.Setup(c => c.CompleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, CancellationToken>((_, _, ct) => capturedTokens.Add(ct))
+            .ReturnsAsync(() =>
+            {
+                callCount++;
+                return callCount == 1 ? "invalid json response" : BuildValidClaudeResponse();
+            });
+        _secretResolver.Setup(s => s.ResolveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("value");
+        _jiraClient.Setup(j => j.PostCommentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(JiraCommentResult.Success("cmt-1"));
+        _testResultRepo.Setup(r => r.SaveAsync(It.IsAny<TestResult>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, cts.Token);
+
+        // Assert — token is forwarded on both the first attempt and the retry (AC-007).
+        Assert.Equal(2, capturedTokens.Count);
+        Assert.All(capturedTokens, ct => Assert.Equal(cts.Token, ct));
     }
 
     // ─── AC-018: TestResult counts ────────────────────────────────────────────
