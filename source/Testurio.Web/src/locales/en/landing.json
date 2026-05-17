@@ -1,0 +1,113 @@
+{
+  "publicHeader": {
+    "logoAriaLabel": "Testurio home",
+    "nav": {
+      "home": "Home",
+      "pricing": "Pricing"
+    },
+    "action": {
+      "signIn": "Sign In",
+      "getStarted": "Get Started",
+      "dashboard": "Go to Dashboard",
+      "openMenu": "Open navigation menu",
+      "closeMenu": "Close navigation menu"
+    }
+  },
+  "publicFooter": {
+    "logoAriaLabel": "Testurio home",
+    "nav": {
+      "home": "Home",
+      "pricing": "Pricing"
+    },
+    "legal": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    },
+    "copyright": "© 2026 Testurio. All rights reserved."
+  },
+  "hero": {
+    "headline": "Automated testing, triggered by your stories",
+    "subheadline": "Testurio reads your user stories and runs AI-generated tests automatically — no test scripts to write.",
+    "primaryCta": "Get started free",
+    "secondaryCta": "See how it works"
+  },
+  "features": {
+    "title": "Everything you need for automated testing",
+    "aiGeneration": {
+      "title": "AI Test Generation",
+      "description": "Claude generates test scenarios from your user stories automatically."
+    },
+    "autoTrigger": {
+      "title": "Automatic Triggering",
+      "description": "Tests start the moment a story moves to your chosen status in ADO or Jira."
+    },
+    "apiTesting": {
+      "title": "API Testing",
+      "description": "Validates endpoints, status codes, and response shapes on every run."
+    },
+    "uiE2e": {
+      "title": "UI End-to-End Testing",
+      "description": "Playwright drives real browsers through your user flows automatically."
+    },
+    "pmIntegration": {
+      "title": "PM Tool Integration",
+      "description": "Results are posted back as comments on the originating ADO or Jira ticket."
+    },
+    "memoryLayer": {
+      "title": "Test Memory Layer",
+      "description": "Successful scenarios are stored and reused as examples in future generations."
+    }
+  },
+  "howItWorks": {
+    "title": "How it works",
+    "steps": {
+      "connectPm": {
+        "title": "Connect your PM tool",
+        "description": "Link your Azure DevOps or Jira project with a single token — takes under two minutes."
+      },
+      "moveStory": {
+        "title": "Move a story to \"In Testing\"",
+        "description": "Testurio listens for the status change and immediately queues a test run."
+      },
+      "aiReads": {
+        "title": "AI reads the story and generates scenarios",
+        "description": "Claude analyses the acceptance criteria and produces typed test scenarios."
+      },
+      "testsRun": {
+        "title": "Tests run automatically",
+        "description": "API and UI end-to-end tests execute against your staging environment in parallel."
+      },
+      "resultsPosted": {
+        "title": "Results posted back to your ticket",
+        "description": "A structured verdict with pass/fail details appears as a comment on the story."
+      }
+    }
+  },
+  "pricingTeaser": {
+    "title": "Simple, transparent pricing",
+    "summary": "Simple, transparent pricing. Start free, scale as you grow.",
+    "cta": "See all plans",
+    "plans": {
+      "testJunior": {
+        "name": "Test Junior",
+        "price": "Free",
+        "feature": "50 test runs / day"
+      },
+      "testPro": {
+        "name": "Test Pro",
+        "price": "$49 / mo",
+        "feature": "Unlimited runs + AI memory"
+      },
+      "team": {
+        "name": "Team",
+        "price": "$149 / mo",
+        "feature": "Unlimited projects + priority support"
+      },
+      "centurio": {
+        "name": "Centurio",
+        "price": "$399 / mo",
+        "feature": "All test types + SLA guarantee"
+      }
+    }
+  }
+}
