@@ -6,7 +6,7 @@
 | --------- | ----------- | ---------- | ----- |
 | Specify   | ✅ Complete | 2026-05-11 | Split from feature 0010 |
 | Plan      | ✅ Complete | 2026-05-11 | Split from feature 0010 |
-| Implement | ⏳ Pending  |            |       |
+| Implement | ✅ Complete | 2026-05-16 |       |
 | Review    | ⏳ Pending  |            |       |
 | Test      | ⏳ Pending  |            |       |
 
@@ -14,7 +14,14 @@
 
 ## Implementation Notes
 
-_Populated by `/implement [####]`_
+- T001–T003: IDashboardStreamManager interface + DashboardStreamManager (in-memory Channel<T> per userId) registered as singleton in Infrastructure DI.
+- T004: DashboardEventRelay hosted service in Testurio.Api consumes run-status-changed Service Bus queue; RunStatusChangedMessage contract defined alongside; registered via AddHostedService.
+- T005: GET /v1/stats/dashboard/stream SSE endpoint added to existing StatsEndpoints.cs route group.
+- T006: useDashboardStream hook with exponential back-off reconnect (1 s → 30 s, 5 attempts) and onFallback callback.
+- T007: SSE MSW mock handler added to existing dashboard handlers file.
+- T008: DashboardPage extended with useDashboardStream wiring, local project overrides state, quotaUsage override, reconnecting chip, and fallback alert.
+- T009: stream.reconnecting and stream.unavailable i18n keys added.
+- T010–T012: Unit, integration, and frontend component tests for all SSE behaviour.
 
 ---
 
