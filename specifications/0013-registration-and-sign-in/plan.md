@@ -23,7 +23,7 @@
 - [x] T019 [UI] Add Next.js page for `/forgot-password` that renders `ForgotPasswordPage`; page is outside the `(authenticated)` route group — `source/Testurio.Web/src/app/(auth)/forgot-password/page.tsx`
 - [x] T020 [UI] Add `(auth)` route group layout — a minimal wrapper with no header/sidebar, just `{children}` — `source/Testurio.Web/src/app/(auth)/layout.tsx`
 - [x] T021 [UI] Add auth route constants: `SIGN_IN_ROUTE`, `SIGN_UP_ROUTE`, `FORGOT_PASSWORD_ROUTE` — `source/Testurio.Web/src/routes/routes.ts`
-- [ ] T022 [UI] Add auth translation keys (all strings for sign-in, sign-up, forgot-password pages) — `source/Testurio.Web/src/locales/en/auth.json`
+- [x] T022 [UI] Add auth translation keys (all strings for sign-in, sign-up, forgot-password pages) — `source/Testurio.Web/src/locales/en/auth.json`
 - [ ] T023 [UI] Restore the auth guard in the `(authenticated)` layout: uncomment server-side session check, redirect to `/sign-in?returnUrl=<path>` when session is missing or invalid — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
 - [ ] T024 [UI] Update root `page.tsx` to use real session validation from the session cookie (replace cookie-existence stub with `getSessionUserId` helper that validates the token) — `source/Testurio.Web/src/app/page.tsx`
 - [ ] T025 [UI] Wire the Sign Out sidebar button: update `AppSidebar.handleSignOut` to call `POST /api/auth/sign-out` then redirect to `/sign-in` (replaces the current direct B2C logout URL construction) — `source/Testurio.Web/src/components/AppSidebar/AppSidebar.tsx`

@@ -8,6 +8,7 @@ import reportSettingsEn from '@/locales/en/reportSettings.json';
 import projectAccessEn from '@/locales/en/projectAccess.json';
 import dashboardEn from '@/locales/en/dashboard.json';
 import historyEn from '@/locales/en/history.json';
+import authEn from '@/locales/en/auth.json';
 
 i18n.use(initReactI18next).init({
   lng: 'en',
@@ -24,6 +25,7 @@ i18n.use(initReactI18next).init({
       projectAccess: projectAccessEn,
       dashboard: dashboardEn,
       history: historyEn,
+      auth: authEn,
     },
   },
 });
