@@ -192,6 +192,13 @@ public partial class ProjectService : IProjectService
         RequestTimeoutSeconds: project.RequestTimeoutSeconds == 0
             ? ProjectConstants.RequestTimeoutDefaultSeconds
             : project.RequestTimeoutSeconds,
+        ApiAuthMethod: project.ApiAuthMethod.ToString().ToLowerInvariant() switch
+        {
+            "bearer"  => "bearer",
+            "apikey"  => "api_key",
+            "basic"   => "basic",
+            _         => "none",
+        },
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 
