@@ -37,8 +37,10 @@ public interface IADOClient
 
     /// <summary>
     /// Posts a comment on an ADO work item.
+    /// Returns the string comment ID assigned by ADO on success, or <c>null</c> when the post fails
+    /// or the response body cannot be parsed.
     /// </summary>
-    Task<bool> PostCommentAsync(
+    Task<string?> PostCommentAsync(
         string orgUrl,
         string projectName,
         int workItemId,

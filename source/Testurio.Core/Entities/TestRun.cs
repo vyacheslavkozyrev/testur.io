@@ -48,6 +48,27 @@ public class TestRun
     /// </summary>
     public string[] GenerationWarnings { get; set; } = [];
 
+    // ─── ExecutorRouter metadata (stage 5 — feature 0029) ────────────────────
+
+    /// <summary>
+    /// Infrastructure-level warnings accumulated during the executor stage.
+    /// Each entry describes one non-fatal error encountered during execution,
+    /// e.g. a screenshot upload failure or an individual executor timeout.
+    /// Empty array when both executors complete without infrastructure-level errors — never null.
+    /// Populated by <c>TestRunJobProcessor</c> before invoking stage 6.
+    /// </summary>
+    public string[] ExecutionWarnings { get; set; } = [];
+
+    // ─── ReportWriter metadata (stage 6 — feature 0030) ──────────────────────
+
+    /// <summary>
+    /// The ID of the comment posted to the originating ADO/Jira ticket by <c>ReportWriter</c>.
+    /// Set by <c>ReportWriter.WriteAsync</c> when the PM tool post-back succeeds.
+    /// <c>null</c> when post-back failed (non-fatal) or has not yet been attempted.
+    /// Readable by stage 7 (FeedbackLoop) and stage 8 (MemoryWriter) without re-reading from Cosmos.
+    /// </summary>
+    public string? PmCommentId { get; set; }
+
     /// <summary>Blob Storage URI of the rendered report for this run. Populated by ReportWriterPlugin (feature 0009).</summary>
     public string? ReportBlobUri { get; set; }
     /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>

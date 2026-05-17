@@ -51,6 +51,12 @@
       "description": "Configure how the test executor authenticates against your staging environment."
     }
   },
+  "apiAuth": {
+    "section": {
+      "title": "API Authentication",
+      "description": "Configure how the test executor authenticates individual API test requests against your product."
+    }
+  },
   "tabs": {
     "settings": "Settings",
     "integration": "Integration"

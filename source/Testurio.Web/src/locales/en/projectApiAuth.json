@@ -1,0 +1,42 @@
+{
+  "methodLabel": "API Authentication Method",
+  "loadError": "Failed to load API authentication settings.",
+  "methods": {
+    "none": {
+      "label": "None (unauthenticated)"
+    },
+    "bearer": {
+      "label": "Bearer Token",
+      "tokenLabel": "Token",
+      "tokenStoredHint": "A token is stored. Enter a new value to replace it."
+    },
+    "apiKey": {
+      "label": "API Key",
+      "keyNameLabel": "Key Name",
+      "keyNameHint": "The header or query parameter name, e.g. X-Api-Key",
+      "placementLabel": "Placement",
+      "placementHeader": "Header",
+      "placementQuery": "Query Parameter",
+      "placementHint": "Where to inject the key in each request",
+      "keyValueLabel": "Key Value",
+      "keyValueStoredHint": "A value is stored. Enter a new value to replace it."
+    },
+    "basic": {
+      "label": "HTTP Basic Auth",
+      "usernameLabel": "Username",
+      "passwordLabel": "Password",
+      "passwordStoredHint": "A password is stored. Enter a new value to replace it."
+    }
+  },
+  "validation": {
+    "tokenRequired": "Token is required.",
+    "keyNameRequired": "Key name is required.",
+    "keyValueRequired": "Key value is required.",
+    "usernameRequired": "Username is required.",
+    "passwordRequired": "Password is required."
+  },
+  "confirmation": {
+    "saved": "API authentication settings saved.",
+    "cleared": "API authentication method switched and previous credentials cleared."
+  }
+}

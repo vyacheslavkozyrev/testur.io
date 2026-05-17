@@ -124,7 +124,7 @@ public sealed partial class SkipCommentPoster
 
         var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri, ct);
 
-        var success = await _adoClient.PostCommentAsync(
+        var commentId = await _adoClient.PostCommentAsync(
             project.AdoOrgUrl!,
             project.AdoProjectName!,
             workItemId,
@@ -132,7 +132,7 @@ public sealed partial class SkipCommentPoster
             commentBody,
             ct);
 
-        if (!success)
+        if (commentId is null)
             LogAdoCommentFailed(_logger, testRun.JiraIssueKey);
         else
             LogCommentPosted(_logger, testRun.JiraIssueKey, "ADO");
