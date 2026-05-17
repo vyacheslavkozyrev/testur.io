@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Api.DTOs;
+using Testurio.Core.Constants;
 using Testurio.Core.Entities;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.KeyVault;
@@ -80,6 +81,9 @@ public partial class ProjectService : IProjectService
             ProductUrl = request.ProductUrl,
             TestingStrategy = request.TestingStrategy,
             CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt,
+            RequestTimeoutSeconds = request.RequestTimeoutSeconds == 0
+                ? ProjectConstants.RequestTimeoutDefaultSeconds
+                : request.RequestTimeoutSeconds,
         };
 
         // Establish the Key Vault namespace for this project (no Azure SDK call — naming only).
@@ -112,6 +116,7 @@ public partial class ProjectService : IProjectService
         existing.ProductUrl = request.ProductUrl;
         existing.TestingStrategy = request.TestingStrategy;
         existing.CustomPrompt = string.IsNullOrWhiteSpace(request.CustomPrompt) ? null : request.CustomPrompt;
+        existing.RequestTimeoutSeconds = request.RequestTimeoutSeconds;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
         var updated = await _projectRepository.UpdateAsync(existing, cancellationToken);
@@ -186,6 +191,9 @@ public partial class ProjectService : IProjectService
         TestingStrategy: project.TestingStrategy,
         CustomPrompt: project.CustomPrompt,
         AllowedWorkItemTypes: project.AllowedWorkItemTypes,
+        RequestTimeoutSeconds: project.RequestTimeoutSeconds == 0
+            ? ProjectConstants.RequestTimeoutDefaultSeconds
+            : project.RequestTimeoutSeconds,
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);
 
