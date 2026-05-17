@@ -11,7 +11,7 @@
 - [x] T007 [Domain] Create `IPromptTemplateRepository` interface (`GetAsync(string templateType, CancellationToken) → Task<PromptTemplate>`) — `source/Testurio.Core/Interfaces/IPromptTemplateRepository.cs`
 - [x] T008 [Domain] Create `TestGeneratorException` (`TestType testType`, `int Attempts`, `string LastRawResponse`, `Exception innerException`) — `source/Testurio.Core/Exceptions/TestGeneratorException.cs`
 - [x] T009 [Domain] Extend `TestRun` entity (defined in 0026 T006) with `GenerationWarnings` (`string[]`, default empty array) — `source/Testurio.Core/Entities/TestRun.cs`
-- [ ] T010 [Infra] Implement `PromptTemplateRepository` (`IPromptTemplateRepository`; reads from `PromptTemplates` Cosmos container by `id = templateType`; throws `InvalidOperationException` when document not found) — `source/Testurio.Infrastructure/Cosmos/PromptTemplateRepository.cs`
+- [x] T010 [Infra] Implement `PromptTemplateRepository` (`IPromptTemplateRepository`; reads from `PromptTemplates` Cosmos container by `id = templateType`; throws `InvalidOperationException` when document not found) — `source/Testurio.Infrastructure/Cosmos/PromptTemplateRepository.cs`
 - [ ] T011 [Infra] Register `IPromptTemplateRepository` as `PromptTemplateRepository` in infrastructure DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T012 [Infra] Seed initial `PromptTemplate` documents (`api_test_generator` with `maxScenarios: 10`; `ui_e2e_test_generator` with `maxScenarios: 5`) in Cosmos startup seeder — `source/Testurio.Infrastructure/Seeding/PromptTemplateSeeder.cs`
 - [ ] T013 [Infra] Update `TestRunRepository` Cosmos write path to persist `generationWarnings` field — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
