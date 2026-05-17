@@ -6,10 +6,10 @@
 - [x] T002 [Config] Add B2C environment variables to `.env.local` and document them: `NEXT_PUBLIC_B2C_TENANT`, `NEXT_PUBLIC_B2C_CLIENT_ID`, `NEXT_PUBLIC_B2C_AUTHORITY`, `NEXT_PUBLIC_B2C_KNOWN_AUTHORITY`, `NEXT_PUBLIC_B2C_REDIRECT_URI`, `NEXT_PUBLIC_B2C_SCOPES` — `source/Testurio.Web/.env.local`
 - [x] T003 [Config] Create MSAL configuration module that reads env vars and exports a typed `msalConfig` object and `b2cPolicies` constants — `source/Testurio.Web/src/config/msalConfig.ts`
 - [x] T004 [UI] Add auth TypeScript types: `SignInRequest`, `SignUpRequest`, `ForgotPasswordRequest`, `AuthTokenClaims`, `AuthError` — `source/Testurio.Web/src/types/auth.types.ts`
-- [ ] T005 [UI] Implement `authService`: wraps `@azure/msal-browser` to expose `signIn(email, password)`, `signUp(email, password)`, `forgotPassword(email)`, `signOut()`, `getSession()` — `source/Testurio.Web/src/services/auth/authService.ts`
-- [ ] T006 [UI] Add Next.js API route `GET /api/auth/me`: reads `testurio_session` cookie, validates the B2C ID token, returns `AuthUser`; returns `401` if no valid session — `source/Testurio.Web/src/app/api/auth/me/route.ts`
-- [ ] T007 [UI] Add Next.js API route `POST /api/auth/sign-out`: clears the `testurio_session` cookie, returns `200` with the B2C logout URL — `source/Testurio.Web/src/app/api/auth/sign-out/route.ts`
-- [ ] T008 [UI] Add Next.js API route `POST /api/auth/session`: receives a B2C ID token from the client, verifies it, sets the `testurio_session` HttpOnly cookie, returns `AuthUser` — `source/Testurio.Web/src/app/api/auth/session/route.ts`
+- [x] T005 [UI] Implement `authService`: wraps `@azure/msal-browser` to expose `signIn(email, password)`, `signUp(email, password)`, `forgotPassword(email)`, `signOut()`, `getSession()` — `source/Testurio.Web/src/services/auth/authService.ts`
+- [x] T006 [UI] Add Next.js API route `GET /api/auth/me`: reads `testurio_session` cookie, validates the B2C ID token, returns `AuthUser`; returns `401` if no valid session — `source/Testurio.Web/src/app/api/auth/me/route.ts`
+- [x] T007 [UI] Add Next.js API route `POST /api/auth/sign-out`: clears the `testurio_session` cookie, returns `200` with the B2C logout URL — `source/Testurio.Web/src/app/api/auth/sign-out/route.ts`
+- [x] T008 [UI] Add Next.js API route `POST /api/auth/session`: receives a B2C ID token from the client, verifies it, sets the `testurio_session` HttpOnly cookie, returns `AuthUser` — `source/Testurio.Web/src/app/api/auth/session/route.ts`
 - [ ] T009 [UI] Update MSW mock handler for `GET /api/auth/me` to also mock `POST /api/auth/sign-out` and `POST /api/auth/session` — `source/Testurio.Web/src/mocks/handlers/auth.ts`
 - [ ] T010 [UI] Add `useSignIn` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`
 - [ ] T011 [UI] Add `useSignUp` React Query mutation hook — `source/Testurio.Web/src/hooks/useAuth.ts`

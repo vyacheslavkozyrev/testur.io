@@ -1,4 +1,5 @@
 import type { Configuration } from '@azure/msal-browser';
+import type { CustomAuthConfiguration } from '@azure/msal-browser/dist/custom_auth/configuration/CustomAuthConfiguration.js';
 
 /**
  * Azure AD B2C tenant and user-flow constants.
@@ -41,3 +42,15 @@ export const msalConfig: Configuration = {
 export const loginScopes: string[] = (
   process.env.NEXT_PUBLIC_B2C_SCOPES ?? 'openid profile email'
 ).split(' ').filter(Boolean);
+
+/**
+ * Configuration for `CustomAuthPublicClientApplication` (MSAL Native Auth).
+ * Requires an Entra External ID (CIAM) tenant with Native Authentication enabled.
+ */
+export const customAuthConfig: CustomAuthConfiguration = {
+  ...msalConfig,
+  customAuth: {
+    authApiProxyUrl: process.env.NEXT_PUBLIC_B2C_NATIVE_AUTH_URL ?? '',
+    challengeTypes: ['password', 'oob'],
+  },
+};
