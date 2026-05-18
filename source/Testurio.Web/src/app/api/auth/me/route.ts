@@ -37,6 +37,8 @@ export async function GET(): Promise<NextResponse> {
 
   return NextResponse.json({
     id: session.userId,
+    firstName: session.firstName,
+    lastName: session.lastName,
     email: session.email,
     displayName: session.displayName,
     avatarUrl: session.avatarUrl,

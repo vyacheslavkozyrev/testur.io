@@ -1,25 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import apiClient from '@/services/apiClient';
+import { useQuery } from '@tanstack/react-query';
+import { authService } from '@/services/auth/authService';
+import { AUTH_KEYS } from '@/hooks/useAuth';
 import type { AuthUser } from '@/types/layout.types';
 
 /**
- * Returns the signed-in user identity from the Azure AD B2C session.
- * The session is exposed via a cookie read by the Next.js API route `/api/auth/me`,
- * which decodes the B2C ID token and returns the user claims.
- *
+ * Returns the signed-in user identity from the server-side session.
+ * Deduplicates requests across all component instances via React Query.
  * Returns `null` while loading or when no valid session is present.
  */
 export function useAuthUser(): AuthUser | null {
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    apiClient
-      .get<AuthUser>('/api/auth/me')
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null));
-  }, []);
-
-  return user;
+  const { data } = useQuery<AuthUser | null>({
+    queryKey: AUTH_KEYS.me,
+    queryFn: authService.getSession,
+    staleTime: 5 * 60 * 1000,
+  });
+  return data ?? null;
 }
