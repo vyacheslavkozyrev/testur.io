@@ -21,6 +21,10 @@ const mockAdoIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: 'Closed',
+  adoFailedTransitionStatus: 'Active',
 };
 
 const mockNoIntegration: PMToolConnectionResponse = {
@@ -39,6 +43,10 @@ const mockNoIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 const mockWebhookSetup: WebhookSetupInfo = {
@@ -78,6 +86,10 @@ export const pmToolHandlers = [
       jiraApiTokenSecretUri: 'projects--proj-001--jiraApiToken',
       jiraEmailSecretUri: 'projects--proj-001--jiraEmail',
       jiraPatSecretUri: null,
+      jiraPassedTransitionStatus: 'Done',
+      jiraFailedTransitionStatus: 'Rejected',
+      adoPassedTransitionStatus: null,
+      adoFailedTransitionStatus: null,
     };
     return HttpResponse.json(jiraResponse);
   }),
