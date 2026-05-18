@@ -2,7 +2,7 @@ namespace Testurio.Api.DTOs.Plans;
 
 /// <summary>
 /// Represents a subscription plan returned by GET /v1/plans.
-/// Plan definitions are configuration constants — no database read required.
+/// Mapped from <c>PlanDocument</c> stored in the <c>Plans</c> Cosmos DB container.
 /// </summary>
 public sealed record PlanDefinitionDto(
     string Id,

@@ -5,28 +5,20 @@ import Link from 'next/link';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
-
-interface PlanTeaser {
-  nameKey: string;
-  priceKey: string;
-  featureKey: string;
-}
-
-const PLAN_TEASERS: PlanTeaser[] = [
-  { nameKey: 'pricingTeaser.plans.testJunior.name', priceKey: 'pricingTeaser.plans.testJunior.price', featureKey: 'pricingTeaser.plans.testJunior.feature' },
-  { nameKey: 'pricingTeaser.plans.testPro.name', priceKey: 'pricingTeaser.plans.testPro.price', featureKey: 'pricingTeaser.plans.testPro.feature' },
-  { nameKey: 'pricingTeaser.plans.team.name', priceKey: 'pricingTeaser.plans.team.price', featureKey: 'pricingTeaser.plans.team.feature' },
-  { nameKey: 'pricingTeaser.plans.centurio.name', priceKey: 'pricingTeaser.plans.centurio.price', featureKey: 'pricingTeaser.plans.centurio.feature' },
-];
+import { usePlans } from '@/hooks/usePlans';
 
 export default function PricingTeaserSection() {
   const { t } = useTranslation('landing');
   const theme = useTheme();
   const styles = getStyles(theme);
+  const { data: plans, isPending } = usePlans();
+
+  const displayPlans = plans ?? [];
 
   return (
     <Box sx={styles.root}>
@@ -39,21 +31,23 @@ export default function PricingTeaserSection() {
         </Typography>
 
         <Grid container spacing={3} sx={styles.grid}>
-          {PLAN_TEASERS.map((plan) => (
-            <Grid key={plan.nameKey} size={{ xs: 12, sm: 6, md: 3 }}>
-              <Box sx={styles.planCard}>
-                <Typography sx={styles.planName}>
-                  {t(plan.nameKey)}
-                </Typography>
-                <Typography sx={styles.planPrice}>
-                  {t(plan.priceKey)}
-                </Typography>
-                <Typography sx={styles.planFeature}>
-                  {t(plan.featureKey)}
-                </Typography>
-              </Box>
-            </Grid>
-          ))}
+          {isPending
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <Grid key={i} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Skeleton variant="rectangular" height={120} sx={{ borderRadius: '10px' }} />
+                </Grid>
+              ))
+            : displayPlans.map((plan) => (
+                <Grid key={plan.id} size={{ xs: 12, sm: 6, md: 3 }}>
+                  <Box sx={styles.planCard}>
+                    <Typography sx={styles.planName}>{plan.name}</Typography>
+                    <Typography sx={styles.planPrice}>
+                      {plan.monthlyPrice === 0 ? t('pricingTeaser.free') : `$${plan.monthlyPrice} / mo`}
+                    </Typography>
+                    <Typography sx={styles.planFeature}>{plan.features[0]}</Typography>
+                  </Box>
+                </Grid>
+              ))}
         </Grid>
 
         <Box sx={styles.ctaWrapper}>
@@ -79,7 +73,7 @@ const getStyles = (theme: Theme) =>
     () => ({
       root: {
         py: { xs: theme.spacing(8), md: theme.spacing(12) },
-        backgroundColor: '#ffffff',
+        backgroundColor: theme.palette.background.paper,
       },
       sectionTitle: {
         ...theme.typography.h4,
@@ -99,7 +93,7 @@ const getStyles = (theme: Theme) =>
       },
       planCard: {
         p: theme.spacing(3),
-        borderRadius: theme.shape.borderRadius,
+        borderRadius: '10px',
         border: `1px solid ${theme.palette.divider}`,
         display: 'flex',
         flexDirection: 'column',

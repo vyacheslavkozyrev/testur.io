@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { SIGN_UP_ROUTE } from '@/routes/routes';
 
@@ -63,7 +63,12 @@ const getStyles = (theme: Theme) =>
     () => ({
       root: {
         width: '100%',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.background.default} 100%)`,
+        backgroundImage: [
+          `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='1' cy='1' r='1' fill='${encodeURIComponent(theme.palette.primary.main)}' fill-opacity='0.12'/%3E%3C/svg%3E")`,
+          `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.094)} 0%, ${theme.palette.background.default} 100%)`,
+        ].join(', '),
+        backgroundRepeat: 'repeat, no-repeat',
+        backgroundSize: '24px 24px, cover',
         py: { xs: theme.spacing(8), md: theme.spacing(14) },
         overflow: 'hidden',
       },

@@ -9,6 +9,8 @@ using Testurio.Api.Services;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
 using Testurio.Infrastructure.Blob;
+using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Security;
 using Testurio.Infrastructure.Anthropic;
 
@@ -126,6 +128,44 @@ else
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var initializer = scope.ServiceProvider.GetRequiredService<CosmosDbInitializer>();
+        await initializer.InitializeAsync();
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogCritical(ex, "Cosmos DB initialization failed. API cannot start.");
+        throw;
+    }
+
+    try
+    {
+        var promptSeeder = scope.ServiceProvider.GetRequiredService<PromptTemplateSeeder>();
+        await promptSeeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogCritical(ex, "Prompt template seeding failed. API cannot start.");
+        throw;
+    }
+
+    try
+    {
+        var planSeeder = scope.ServiceProvider.GetRequiredService<PlanSeeder>();
+        await planSeeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogCritical(ex, "Plan seeding failed. API cannot start.");
+        throw;
+    }
+}
+
 // EnableBuffering must run before the request body is consumed — register it first.
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
 app.UseHttpLogging();
@@ -149,7 +189,7 @@ app.UseAuthorization();
 
 var v1 = app.MapGroup("/v1").RequireAuthorization();
 
-app.MapPlanEndpoints();
+v1.MapPlanEndpoints();
 app.MapJiraWebhooks();
 app.MapProjectEndpoints();
 app.MapProjectAccessEndpoints(v1);

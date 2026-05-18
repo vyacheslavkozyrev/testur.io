@@ -1,5 +1,3 @@
-'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import { plansService } from '@/services/plans/plansService';
 import type { PlanDefinition } from '@/types/plan.types';

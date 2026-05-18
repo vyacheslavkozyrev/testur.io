@@ -13,7 +13,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import StarIcon from '@mui/icons-material/Star';
-import { useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import type { PlanDefinition, BillingInterval } from '@/types/plan.types';
 import { SIGN_UP_ROUTE } from '@/routes/routes';
@@ -131,13 +131,13 @@ const getStyles = (theme: Theme, isPopular: boolean) =>
       root: {
         position: 'relative' as const,
         height: '100%',
-        borderRadius: theme.shape.borderRadius * 2,
+        borderRadius: '10px',
         border: isPopular
           ? `2px solid ${theme.palette.primary.main}`
           : `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.background.paper,
         boxShadow: isPopular
-          ? `0 8px 32px ${theme.palette.primary.main}28`
+          ? `0 8px 32px ${alpha(theme.palette.primary.main, 0.157)}`
           : '0 2px 8px rgba(0,0,0,0.06)',
         overflow: 'visible',
         display: 'flex',

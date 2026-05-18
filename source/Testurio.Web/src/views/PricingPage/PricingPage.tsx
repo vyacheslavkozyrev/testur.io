@@ -5,7 +5,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Grid2';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
@@ -24,13 +24,13 @@ export default function PricingPage() {
   const theme = useTheme();
   const styles = getStyles(theme);
 
-  const [interval, setInterval] = useState<BillingInterval>('monthly');
+  const [interval, setBillingInterval] = useState<BillingInterval>('monthly');
   const { data: plans, isPending, isError, refetch } = usePlans();
   const user = useAuthUser();
   const isAuthenticated = user !== null;
 
   const handleIntervalChange = useCallback((newInterval: BillingInterval) => {
-    setInterval(newInterval);
+    setBillingInterval(newInterval);
   }, []);
 
   const handleRetry = useCallback(() => {
@@ -86,7 +86,7 @@ export default function PricingPage() {
                     <Skeleton
                       variant="rectangular"
                       height={500}
-                      sx={{ borderRadius: theme.shape.borderRadius * 2 }}
+                      sx={{ borderRadius: '10px' }}
                     />
                   </Grid>
                 ))

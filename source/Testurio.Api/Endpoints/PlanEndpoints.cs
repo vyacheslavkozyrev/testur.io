@@ -1,29 +1,40 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Testurio.Api.Configuration;
 using Testurio.Api.DTOs.Plans;
+using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Endpoints;
 
 public static class PlanEndpoints
 {
-    /// <summary>
-    /// Registers the public plans endpoint.
-    /// GET /v1/plans — no authentication required; returns the static plan catalog with a 1-hour cache hint.
-    /// </summary>
-    public static IEndpointRouteBuilder MapPlanEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapPlanEndpoints(this IEndpointRouteBuilder v1)
     {
-        var plans = app.MapGroup("/v1/plans");
+        var plans = v1.MapGroup("/plans");
 
-        plans.MapGet("/", GetPlans)
+        plans.MapGet("/", GetPlansAsync)
              .WithName("GetPlans")
              .AllowAnonymous();
 
-        return app;
+        return v1;
     }
 
-    private static Ok<IReadOnlyList<PlanDefinitionDto>> GetPlans(HttpResponse response)
+    private static async Task<Ok<IReadOnlyList<PlanDefinitionDto>>> GetPlansAsync(
+        IPlanRepository repository,
+        HttpResponse response,
+        CancellationToken ct)
     {
         response.Headers.CacheControl = "public, max-age=3600";
-        return TypedResults.Ok(PlanCatalog.All);
+        var documents = await repository.ListAllAsync(ct);
+        var dtos = documents.Select(ToDto).ToList();
+        return TypedResults.Ok<IReadOnlyList<PlanDefinitionDto>>(dtos);
     }
+
+    private static PlanDefinitionDto ToDto(PlanDocument doc) => new(
+        doc.Id,
+        doc.Name,
+        doc.MonthlyPrice,
+        doc.AnnualPrice,
+        doc.AnnualDiscountPercent,
+        doc.IsPopular,
+        doc.Features);
 }
