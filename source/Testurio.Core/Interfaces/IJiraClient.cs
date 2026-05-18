@@ -1,6 +1,11 @@
 namespace Testurio.Core.Interfaces;
 
 /// <summary>
+/// Result of a Jira issue status transition attempt (feature 0024).
+/// </summary>
+public sealed record JiraTransitionResult(bool IsSuccess, int StatusCode, string? ErrorDetail);
+
+/// <summary>
 /// Metadata about a Jira project returned by the test-connection call.
 /// </summary>
 public sealed record JiraProjectInfo(string Id, string Key, string Name);
@@ -77,5 +82,20 @@ public interface IJiraClient
         string webhookId,
         string email,
         string apiToken,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transitions a Jira issue to the named status using the Jira transitions API.
+    /// First fetches available transitions, then POSTs the transition whose name matches
+    /// <paramref name="targetStatusName"/> (case-insensitive). Returns a failure result
+    /// when the status name is not found or the API call fails.
+    /// Never throws — all errors are captured in the returned result.
+    /// </summary>
+    Task<JiraTransitionResult> TransitionIssueStatusAsync(
+        string baseUrl,
+        string issueKey,
+        string email,
+        string apiToken,
+        string targetStatusName,
         CancellationToken cancellationToken = default);
 }
