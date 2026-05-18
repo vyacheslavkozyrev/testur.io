@@ -88,9 +88,11 @@ export default function PublicHeader() {
             </Button>
           ) : (
             <Box sx={styles.authActions}>
-              <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
-                {t('publicHeader.action.signIn')}
-              </Box>
+              {!isMobile && (
+                <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
+                  {t('publicHeader.action.signIn')}
+                </Box>
+              )}
               <Button
                 component={Link}
                 href={SIGN_UP_ROUTE}
@@ -208,7 +210,7 @@ const getStyles = (theme: Theme) =>
         transition: 'color 0.15s',
       },
       ctaButton: {
-        minWidth: 120,
+        minWidth: { xs: 90, sm: 120 },
         minHeight: 44,
       },
       hamburger: {

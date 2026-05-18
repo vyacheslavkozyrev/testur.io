@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-17 |       |
 | Implement | ✅ Complete | 2026-05-17 |       |
 | Review    | ✅ Complete | 2026-05-17 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-17 |       |
 
 ---
 
@@ -36,7 +36,28 @@ _Populated by `/implement 0012`_
 
 ## Test Results
 
-_Populated by `/test 0012`_
+### Frontend — 2026-05-17
+
+**Component tests** (Jest):
+- `PublicHeader.test.tsx` — 5 passed
+- `PlanCard.test.tsx` — 10 passed
+- `PricingPage.test.tsx` (in `views/`) — 8 passed
+
+**Total: 23 frontend component tests passed, 0 failed**
+
+**E2E tests** (Playwright — Chromium):
+- `e2e/marketing.spec.ts` — 25 passed, 0 failed
+
+Tests cover all acceptance criteria: AC-001 through AC-043.
+
+### Bugs fixed during test phase
+
+- `src/components/HeroSection/HeroSection.tsx` — CTA buttons had fixed `minWidth: 180` causing horizontal overflow at 375 px viewport (AC-003). Changed to responsive `minWidth: { xs: 140, sm: 180 }`.
+- `src/components/PublicHeader/PublicHeader.tsx` — Header toolbar overflowed at 375 px because the "Sign In" link + "Get Started" button + hamburger icon exceeded usable width. Changed: (1) reduced CTA `minWidth` to `{ xs: 90, sm: 120 }`, (2) hid the "Sign In" link on mobile viewports (accessible via hamburger drawer).
+
+### T026 E2E spec — created during test phase
+
+`source/Testurio.Web/e2e/marketing.spec.ts` — 25 tests covering all acceptance criteria across landing page, public header, and pricing page.
 
 ---
 

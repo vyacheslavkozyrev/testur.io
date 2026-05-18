@@ -48,7 +48,7 @@
 - [x] T023 [Test] Frontend component tests for `PublicHeader` (renders Sign In and Get Started for unauthenticated; renders Go to Dashboard for authenticated; active link is highlighted; hamburger visible below 768 px) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.test.tsx`
 - [x] T024 [Test] Frontend component tests for `PlanCard` (renders plan name, features, monthly price; renders annual price and discount badge when interval=annual; renders "Most popular" badge when isPopular; CTA href contains plan id and interval; authenticated variant shows "Upgrade" label and billing href) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
 - [x] T025 [Test] Frontend component tests for `PricingPage` (shows skeletons while loading; renders four plan cards on success; shows error state with retry button on failure; toggling to Annual updates all card prices simultaneously) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.test.tsx`
-- [ ] T026 [Test] E2E tests — `source/Testurio.Web/e2e/marketing.spec.ts`
+- [x] T026 [Test] E2E tests — `source/Testurio.Web/e2e/marketing.spec.ts`
   - Landing page loads at `/` with hero, features, how-it-works, pricing teaser, and footer all visible
   - "See how it works" CTA scrolls to the How It Works section
   - "See all plans" teaser button navigates to `/pricing`

@@ -100,13 +100,13 @@ const getStyles = (theme: Theme) =>
         mt: theme.spacing(1),
       },
       primaryCta: {
-        minWidth: 180,
+        minWidth: { xs: 140, sm: 180 },
         minHeight: 52,
         fontSize: '1rem',
         fontWeight: 600,
       },
       secondaryCta: {
-        minWidth: 180,
+        minWidth: { xs: 140, sm: 180 },
         minHeight: 52,
         fontSize: '1rem',
         fontWeight: 600,
