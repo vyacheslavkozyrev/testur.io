@@ -6,6 +6,7 @@ using Testurio.Api.Controllers;
 using Testurio.Api.Endpoints;
 using Testurio.Api.Middleware;
 using Testurio.Api.Services;
+using Testurio.Api.Webhooks;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
 using Testurio.Infrastructure.Blob;
@@ -191,6 +192,8 @@ var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 v1.MapPlanEndpoints();
 app.MapJiraWebhooks();
+app.MapAdoCommentsWebhook();
+app.MapJiraCommentsWebhook();
 app.MapProjectEndpoints();
 app.MapProjectAccessEndpoints(v1);
 app.MapProjectApiAuthEndpoints(v1);

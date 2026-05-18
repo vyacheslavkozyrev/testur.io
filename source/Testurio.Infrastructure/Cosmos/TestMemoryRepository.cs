@@ -74,4 +74,90 @@ public class TestMemoryRepository : ITestMemoryRepository
 
         return results.AsReadOnly();
     }
+
+    /// <summary>
+    /// Upserts a QA-lead feedback entry to the <c>TestMemory</c> container (feature 0031).
+    /// Upsert key: <paramref name="workItemId"/> + <paramref name="testType"/> + <c>source="qalead"</c>
+    /// within the <paramref name="userId"/> partition.
+    /// Preserves <c>id</c> and <c>createdAt</c> on update; sets <c>updatedAt = UtcNow</c> always.
+    /// <c>passRate</c> and <c>runCount</c> are omitted — qalead entries are not subject to the
+    /// quality-loop soft-delete.
+    /// </summary>
+    public async Task UpsertFeedbackAsync(
+        string userId,
+        Guid projectId,
+        string testType,
+        string feedbackText,
+        float[] storyEmbedding,
+        string workItemId,
+        string commentId,
+        CancellationToken cancellationToken = default)
+    {
+        // Query for an existing qalead entry with the same workItemId + testType within this partition.
+        var lookup = new QueryDefinition(
+            """
+            SELECT c.id, c.createdAt
+            FROM c
+            WHERE c.workItemId = @workItemId
+              AND c.testType   = @testType
+              AND c.source     = 'qalead'
+            """)
+            .WithParameter("@workItemId", workItemId)
+            .WithParameter("@testType", testType);
+
+        string? existingId = null;
+        DateTimeOffset? existingCreatedAt = null;
+
+        using var lookupIterator = _container.GetItemQueryIterator<ExistingEntry>(
+            lookup,
+            requestOptions: new QueryRequestOptions { PartitionKey = new PartitionKey(userId) });
+
+        while (lookupIterator.HasMoreResults)
+        {
+            var page = await lookupIterator.ReadNextAsync(cancellationToken);
+            var first = page.FirstOrDefault();
+            if (first is not null)
+            {
+                existingId = first.Id;
+                existingCreatedAt = first.CreatedAt;
+                break;
+            }
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
+        var document = new TestMemoryEntry
+        {
+            // Preserve id and createdAt on update; generate on insert.
+            Id = existingId ?? Guid.NewGuid().ToString(),
+            UserId = userId,
+            ProjectId = projectId.ToString(),
+            TestType = testType,
+            StoryText = feedbackText,
+            ScenarioText = null,
+            StoryEmbedding = storyEmbedding,
+            Source = "qalead",
+            WorkItemId = workItemId,
+            CommentId = commentId,
+            IsDeleted = false,
+            // PassRate and RunCount are intentionally omitted (null) for qalead entries.
+            PassRate = null,
+            RunCount = null,
+            LastUsedAt = now,
+            CreatedAt = existingCreatedAt ?? now,
+            UpdatedAt = now,
+        };
+
+        await _container.UpsertItemAsync(
+            document,
+            new PartitionKey(userId),
+            cancellationToken: cancellationToken);
+    }
+
+    // Minimal projection type used by the lookup query in UpsertFeedbackAsync.
+    private sealed class ExistingEntry
+    {
+        public string Id { get; init; } = string.Empty;
+        public DateTimeOffset? CreatedAt { get; init; }
+    }
 }
