@@ -12,6 +12,7 @@ using Testurio.Pipeline.AgentRouter;
 using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
+using Testurio.Pipeline.FeedbackLoop;
 using Testurio.Pipeline.ReportWriter;
 using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
@@ -151,6 +152,28 @@ public static class DependencyInjection
         });
 
         services.AddHostedService<WorkerBackgroundService>();
+
+        // Feature 0031: FeedbackLoop pipeline stage + CommentEventJobProcessor background service.
+        // Prerequisites already satisfied by AddWorkerServices above:
+        //   ITestRunRepository, IProjectRepository, IEmbeddingService (via AddAzureOpenAI),
+        //   ITestMemoryRepository (via AddAzureOpenAI), IJiraApiClient, IADOClient, ISecretResolver.
+        services.AddFeedbackLoop();
+
+        services.AddSingleton<CommentEventJobProcessor>(sp =>
+        {
+            var infraOpts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var sbClient = sp.GetRequiredService<ServiceBusClient>();
+            var feedbackLoop = sp.GetRequiredService<IFeedbackLoop>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CommentEventJobProcessor>>();
+            return new CommentEventJobProcessor(
+                sbClient,
+                infraOpts.CommentEventTopicName,
+                infraOpts.CommentEventSubscriptionName,
+                feedbackLoop,
+                logger);
+        });
+
+        services.AddHostedService<CommentEventBackgroundService>();
 
         return services;
     }
