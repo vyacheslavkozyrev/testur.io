@@ -108,6 +108,9 @@ const mockRunDetailResponse: RunDetailResponse = {
   ],
   rawCommentMarkdown:
     '## Test Report\n\n**Verdict:** PASSED\n\n**Recommendation:** approve\n\nAll 4 scenarios passed in 12.34 s.',
+  statusTransitionOutcome: 'succeeded',
+  statusTransitionError: null,
+  statusTransitionedTo: 'Closed',
 };
 
 export const historyHandlers = [
