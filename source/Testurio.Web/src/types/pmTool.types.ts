@@ -54,6 +54,12 @@ export interface PMToolConnectionResponse {
   jiraApiTokenSecretUri: string | null;
   jiraEmailSecretUri: string | null;
   jiraPatSecretUri: string | null;
+
+  // Post-run status transition — feature 0024
+  jiraPassedTransitionStatus: string | null;
+  jiraFailedTransitionStatus: string | null;
+  adoPassedTransitionStatus: string | null;
+  adoFailedTransitionStatus: string | null;
 }
 
 /** Response body from POST /v1/projects/{id}/integrations/test-connection */
@@ -77,6 +83,10 @@ export interface SaveADOConnectionRequest {
   authMethod: ADOAuthMethod;
   pat?: string;
   oAuthToken?: string;
+  /** Post-run transition: ADO state name to transition to when a run passes. */
+  passedTransitionStatus?: string;
+  /** Post-run transition: ADO state name to transition to when a run fails. */
+  failedTransitionStatus?: string;
 }
 
 export interface SaveJiraConnectionRequest {
@@ -87,6 +97,10 @@ export interface SaveJiraConnectionRequest {
   email?: string;
   apiToken?: string;
   pat?: string;
+  /** Post-run transition: Jira status name to transition to when a run passes. */
+  passedTransitionStatus?: string;
+  /** Post-run transition: Jira status name to transition to when a run fails. */
+  failedTransitionStatus?: string;
 }
 
 export interface UpdateTokenRequest {
