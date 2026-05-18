@@ -91,7 +91,7 @@ export default function SignUpPage() {
             <TextField
               label={t('signUp.codeLabel')}
               type="text"
-              autoComplete="off"
+              autoComplete="one-time-code"
               fullWidth
               autoFocus
               error={Boolean(codeErrors.code)}

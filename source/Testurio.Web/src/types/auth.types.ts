@@ -26,6 +26,16 @@ export interface SignUpCodeHandle {
   readonly _names: { firstName: string; lastName: string };
 }
 
+/** Opaque handle for the password-reset code step — pass to authService.submitResetCode. */
+export interface ResetPasswordCodeHandle {
+  readonly _msalState: { submitCode(code: string): Promise<unknown> };
+}
+
+/** Opaque handle for the new-password step — pass to authService.submitNewPassword. */
+export interface ResetPasswordPasswordHandle {
+  readonly _msalState: { submitNewPassword(password: string): Promise<unknown> };
+}
+
 /**
  * Decoded claims from an Azure AD B2C ID token.
  * Only the fields used by Testurio are declared here.

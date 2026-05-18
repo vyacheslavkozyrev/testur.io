@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/auth/authService';
 import type { AuthUser } from '@/types/layout.types';
-import type { AuthError, SignInRequest, SignUpRequest, ForgotPasswordRequest, SignUpCodeHandle } from '@/types/auth.types';
+import type { AuthError, SignInRequest, SignUpRequest, ForgotPasswordRequest, SignUpCodeHandle, ResetPasswordCodeHandle, ResetPasswordPasswordHandle } from '@/types/auth.types';
 import type { ApiError } from '@/types/api.types';
 import { DASHBOARD_ROUTE, SIGN_IN_ROUTE } from '@/routes/routes';
 
@@ -96,8 +96,32 @@ export function useSubmitSignUpCode() {
 }
 
 export function useForgotPassword() {
-  return useMutation<void, Error, ForgotPasswordRequest>({
+  return useMutation<ResetPasswordCodeHandle, AuthError, ForgotPasswordRequest>({
     mutationFn: (req) => authService.forgotPassword(req),
+  });
+}
+
+interface SubmitResetCodeVars {
+  code: string;
+  handle: ResetPasswordCodeHandle;
+}
+
+export function useSubmitResetCode() {
+  return useMutation<ResetPasswordPasswordHandle, AuthError, SubmitResetCodeVars>({
+    mutationFn: ({ code, handle }) => authService.submitResetCode(code, handle),
+  });
+}
+
+interface SubmitNewPasswordVars {
+  password: string;
+  handle: ResetPasswordPasswordHandle;
+}
+
+export function useSubmitNewPassword() {
+  const router = useRouter();
+  return useMutation<void, AuthError, SubmitNewPasswordVars>({
+    mutationFn: ({ password, handle }) => authService.submitNewPassword(password, handle),
+    onSuccess: () => router.replace(SIGN_IN_ROUTE),
   });
 }
 

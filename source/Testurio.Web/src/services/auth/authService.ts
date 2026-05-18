@@ -16,7 +16,7 @@ import axios from 'axios';
 import { CustomAuthPublicClientApplication } from '@azure/msal-browser/custom-auth';
 import { customAuthConfig, loginScopes } from '@/config/msalConfig';
 import type { AuthUser } from '@/types/layout.types';
-import type { AuthError, SignInRequest, SignUpRequest, ForgotPasswordRequest, SignUpCodeHandle } from '@/types/auth.types';
+import type { AuthError, SignInRequest, SignUpRequest, ForgotPasswordRequest, SignUpCodeHandle, ResetPasswordCodeHandle, ResetPasswordPasswordHandle } from '@/types/auth.types';
 
 // Separate client for Next.js API routes — uses relative URLs, not the .NET backend base URL
 const nextApiClient = axios.create({ headers: { 'Content-Type': 'application/json' } });
@@ -281,19 +281,93 @@ export const authService = {
   },
 
   /**
-   * Initiates the B2C Self-Service Password Reset (SSPR) flow.
-   * Swallows "account not found" errors to prevent account enumeration.
+   * Initiates the password-reset flow. CIAM sends a verification code to the email.
+   * Returns a `ResetPasswordCodeHandle` to pass to `submitResetCode`.
+   * "Account not found" errors are swallowed to prevent account enumeration — the UI
+   * should still show the code step so callers cannot distinguish missing accounts.
    */
-  async forgotPassword({ email }: ForgotPasswordRequest): Promise<void> {
+  async forgotPassword({ email }: ForgotPasswordRequest): Promise<ResetPasswordCodeHandle> {
+    const client = await getMsalClient();
+
+    let result: Awaited<ReturnType<typeof client.resetPassword>>;
     try {
-      const client = await getMsalClient();
-      await client.resetPassword({ username: email });
+      result = await client.resetPassword({ username: email });
     } catch (err: unknown) {
       const msalErr = err as { isUserNotFound?: () => boolean; isInvalidUsername?: () => boolean };
       if (msalErr?.isUserNotFound?.() || msalErr?.isInvalidUsername?.()) {
-        return;
+        // Return a dummy handle; the code step will fail gracefully if entered.
+        return { _msalState: { async submitCode() { throw makeAuthError('INVALID_CODE', 'Code invalid or expired.'); } } };
       }
-      throw err;
+      throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Password reset failed.');
+    }
+
+    if ((result as { isFailed?(): boolean }).isFailed?.()) {
+      const error = (result as { error?: { isUserNotFound?(): boolean; isInvalidUsername?(): boolean; message?: string } }).error;
+      if (error?.isUserNotFound?.() || error?.isInvalidUsername?.()) {
+        return { _msalState: { async submitCode() { throw makeAuthError('INVALID_CODE', 'Code invalid or expired.'); } } };
+      }
+      throw makeAuthError('UNKNOWN', error?.message ?? 'Password reset failed.');
+    }
+
+    if (!(result as { isCodeRequired?(): boolean }).isCodeRequired?.()) {
+      throw makeAuthError('UNKNOWN', 'Unexpected state after password reset initiation.');
+    }
+
+    return { _msalState: (result as { state: { submitCode(code: string): Promise<unknown> } }).state };
+  },
+
+  /**
+   * Submits the verification code from the password-reset email.
+   * Returns a `ResetPasswordPasswordHandle` to pass to `submitNewPassword`.
+   */
+  async submitResetCode(code: string, handle: ResetPasswordCodeHandle): Promise<ResetPasswordPasswordHandle> {
+    const codeResult = await (handle._msalState as {
+      submitCode(code: string): Promise<{
+        isFailed(): boolean;
+        isPasswordRequired(): boolean;
+        error?: { message?: string; isInvalidCode?(): boolean };
+        state: { submitNewPassword(password: string): Promise<unknown> };
+      }>;
+    }).submitCode(code);
+
+    if (codeResult.isFailed()) {
+      const error = codeResult.error;
+      if (error?.isInvalidCode?.()) {
+        throw makeAuthError('INVALID_CODE', 'The verification code is incorrect or has expired.');
+      }
+      throw makeAuthError('UNKNOWN', error?.message ?? 'Code verification failed.');
+    }
+
+    if (!codeResult.isPasswordRequired()) {
+      throw makeAuthError('UNKNOWN', 'Unexpected state after code verification.');
+    }
+
+    return { _msalState: codeResult.state };
+  },
+
+  /**
+   * Sets the new password after the code has been verified.
+   * On success the user must sign in again — no session is created.
+   */
+  async submitNewPassword(password: string, handle: ResetPasswordPasswordHandle): Promise<void> {
+    const result = await (handle._msalState as {
+      submitNewPassword(password: string): Promise<{
+        isFailed(): boolean;
+        isCompleted(): boolean;
+        error?: { message?: string; isInvalidPassword?(): boolean };
+      }>;
+    }).submitNewPassword(password);
+
+    if (result.isFailed()) {
+      const error = result.error;
+      if (error?.isInvalidPassword?.()) {
+        throw makeAuthError('INVALID_PASSWORD', 'Password does not meet the requirements.');
+      }
+      throw makeAuthError('UNKNOWN', error?.message ?? 'Failed to set new password.');
+    }
+
+    if (!result.isCompleted()) {
+      throw makeAuthError('UNKNOWN', 'Password reset did not complete.');
     }
   },
 
