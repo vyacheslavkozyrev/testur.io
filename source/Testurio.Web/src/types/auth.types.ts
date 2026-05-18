@@ -18,6 +18,15 @@ export interface ForgotPasswordRequest {
 }
 
 /**
+ * Opaque handle returned on CODE_REQUIRED — pass to authService.submitSignUpCode.
+ * Carries the MSAL continuation state and form-supplied name overrides.
+ */
+export interface SignUpCodeHandle {
+  readonly _msalState: { submitCode(code: string): Promise<unknown> };
+  readonly _names: { firstName: string; lastName: string };
+}
+
+/**
  * Decoded claims from an Azure AD B2C ID token.
  * Only the fields used by Testurio are declared here.
  */
@@ -39,4 +48,9 @@ export interface AuthError {
   code: string;
   /** Human-readable message passed straight from the B2C response. */
   message: string;
+  /**
+   * Present only when `code === 'CODE_REQUIRED'`.
+   * Pass this to `authService.submitSignUpCode` instead of storing module-level state.
+   */
+  signUpCodeHandle?: SignUpCodeHandle;
 }

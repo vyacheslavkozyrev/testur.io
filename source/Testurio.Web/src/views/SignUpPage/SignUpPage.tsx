@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -51,6 +51,7 @@ export default function SignUpPage() {
   const [codeStep, setCodeStep] = useState(false);
   const signUp = useSignUp();
   const submitCode = useSubmitSignUpCode();
+  const codeHandleRef = useRef<import('@/types/auth.types').SignUpCodeHandle | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<SignUpFormValues>();
   const { register: registerCode, handleSubmit: handleSubmitCode, formState: { errors: codeErrors } } = useForm<CodeFormValues>();
@@ -61,14 +62,17 @@ export default function SignUpPage() {
     (data: SignUpFormValues) => {
       signUp.mutate(
         { firstName: data.firstName.trim(), lastName: data.lastName.trim(), email: data.email.trim(), password: data.password },
-        { onError: (err) => { if ((err as AuthError).code === 'CODE_REQUIRED') setCodeStep(true); } },
+        { onError: (err) => { if ((err as AuthError).code === 'CODE_REQUIRED') { codeHandleRef.current = (err as AuthError).signUpCodeHandle ?? null; setCodeStep(true); } } },
       );
     },
     [signUp],
   );
 
   const onSubmitCode = useCallback(
-    (data: CodeFormValues) => { submitCode.mutate(data.code.trim()); },
+    (data: CodeFormValues) => {
+      if (!codeHandleRef.current) return;
+      submitCode.mutate({ code: data.code.trim(), handle: codeHandleRef.current });
+    },
     [submitCode],
   );
 
@@ -93,7 +97,7 @@ export default function SignUpPage() {
               error={Boolean(codeErrors.code)}
               helperText={codeErrors.code?.message}
               disabled={submitCode.isPending}
-              {...registerCode('code', { required: t('signUp.codeRequired2') })}
+              {...registerCode('code', { required: t('signUp.codeFieldRequired') })}
             />
             <Button
               type="submit"

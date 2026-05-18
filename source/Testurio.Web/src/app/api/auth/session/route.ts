@@ -5,11 +5,12 @@ import type { AuthUser } from '@/types/layout.types';
 /**
  * Server-side session store (in-memory, keyed by session ID).
  *
- * Stores `{userId, email, displayName, exp}` — the raw ID token is never
- * persisted in the cookie. Only the opaque session ID travels to the client.
+ * Stores verified user identity — the raw ID token is never persisted.
+ * Only the opaque session ID travels to the client as an HttpOnly cookie.
  *
- * Note: In-memory store is cleared on process restart. For production, replace
- * with a Redis or Cosmos-backed store.
+ * Survives Next.js HMR in development (anchored to globalThis) but is lost
+ * on a clean process restart or across multiple Node.js worker processes.
+ * For production, replace with a Redis or Cosmos-backed store.
  */
 interface SessionData {
   userId: string;
@@ -21,42 +22,30 @@ interface SessionData {
   exp: number;
 }
 
-// Anchored to globalThis so the store survives Next.js hot-module replacement in development.
 const g = globalThis as { _testurioSessions?: Map<string, SessionData> };
 if (!g._testurioSessions) g._testurioSessions = new Map<string, SessionData>();
-const sessionStore = g._testurioSessions;
 
 /** Returns the session store (exported for use by /api/auth/me and /api/auth/sign-out). */
 export function getSessionStore(): Map<string, SessionData> {
   return g._testurioSessions!;
 }
 
-/**
- * POST /api/auth/session
- *
- * Receives a raw B2C ID token from the client (obtained via MSAL after sign-in or sign-up),
- * validates it, stores session data server-side, and sets a `testurio_session` HttpOnly cookie
- * containing only a randomly-generated session ID.
- *
- * Returns the `AuthUser` payload so the client can update its local state immediately
- * without a follow-up `GET /api/auth/me` call.
- *
- * Returns 401 if the token is missing or fails validation.
- * Returns 400 if the request body is malformed.
- */
-interface NativeClaims {
-  oid: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
+/** Evicts all expired sessions from the store. Called lazily on each write. */
+function evictExpired(): void {
+  const store = getSessionStore();
+  const nowSec = Math.floor(Date.now() / 1000);
+  for (const [id, session] of store) {
+    if (session.exp < nowSec) store.delete(id);
+  }
 }
 
 function createSessionResponse(user: AuthUser, exp: number): NextResponse {
+  evictExpired();
+
   const sessionId = crypto.randomUUID();
   const nowSec = Math.floor(Date.now() / 1000);
 
-  sessionStore.set(sessionId, {
+  getSessionStore().set(sessionId, {
     userId: user.id,
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
@@ -77,39 +66,54 @@ function createSessionResponse(user: AuthUser, exp: number): NextResponse {
   return response;
 }
 
+/**
+ * POST /api/auth/session
+ *
+ * Receives a raw B2C ID token (obtained via MSAL native auth after sign-in or sign-up),
+ * validates its RS256 signature and claims, stores session data server-side, and sets
+ * a `testurio_session` HttpOnly cookie containing only a randomly-generated session ID.
+ *
+ * Optionally accepts `firstName` and `lastName` as supplementary display data alongside
+ * the token — these are not used for identity (oid and email always come from the
+ * verified JWT) but fill in name fields when CIAM does not include them as token claims.
+ *
+ * Returns 401 if the token is missing or fails validation.
+ * Returns 400 if the request body is malformed.
+ */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  let body: { idToken?: string; nativeClaims?: NativeClaims };
+  let body: { idToken?: string; firstName?: string | null; lastName?: string | null };
   try {
-    body = await request.json() as { idToken?: string; nativeClaims?: NativeClaims };
+    body = await request.json() as { idToken?: string; firstName?: string | null; lastName?: string | null };
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  // Native auth path — MSAL already authenticated the user; use claims directly
-  if (body.nativeClaims) {
-    const { oid, email, firstName, lastName, name } = body.nativeClaims;
-    if (!oid) return NextResponse.json({ error: 'oid claim is required' }, { status: 400 });
-
-    const resolvedFirstName = firstName ?? null;
-    const resolvedLastName = lastName ?? null;
-    const displayName = name
-      ?? ([resolvedFirstName, resolvedLastName].filter(Boolean).join(' ') || null);
-
-    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24h session
-    const user: AuthUser = { id: oid, email: email ?? '', firstName: resolvedFirstName, lastName: resolvedLastName, displayName };
-    return createSessionResponse(user, exp);
-  }
-
-  // ID token path — validate JWT signature and claims
   const { idToken } = body;
   if (!idToken || typeof idToken !== 'string') {
-    return NextResponse.json({ error: 'idToken or nativeClaims is required' }, { status: 400 });
+    return NextResponse.json({ error: 'idToken is required' }, { status: 400 });
   }
 
-  const user = await decodeAndValidateIdToken(idToken);
-  if (!user) {
+  const tokenUser = await decodeAndValidateIdToken(idToken);
+  if (!tokenUser) {
     return NextResponse.json({ error: 'Invalid or expired ID token' }, { status: 401 });
   }
+
+  // Prefer client-supplied names when the token does not include them as claims
+  // (CIAM omits given_name/family_name unless they are configured as ID token claims).
+  // These are display-only fields — identity always comes from the verified JWT.
+  const firstName = body.firstName ?? tokenUser.firstName ?? null;
+  const lastName = body.lastName ?? tokenUser.lastName ?? null;
+  const displayName = tokenUser.displayName
+    ?? ([firstName, lastName].filter(Boolean).join(' ') || null);
+
+  const user: AuthUser = {
+    id: tokenUser.id,
+    firstName,
+    lastName,
+    displayName,
+    email: tokenUser.email,
+    avatarUrl: tokenUser.avatarUrl,
+  };
 
   const tokenParts = idToken.split('.');
   let exp: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
