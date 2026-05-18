@@ -28,6 +28,9 @@ let _msalClient: CustomAuthPublicClientApplication | null = null;
 // Holds the MSAL state object between the sign-up initiation and code submission steps.
 let _signUpCodeState: { submitCode(code: string): Promise<unknown> } | null = null;
 
+// Holds first/last name provided at sign-up so they survive the OTP verification step.
+let _signUpNames: { firstName: string; lastName: string } | null = null;
+
 async function getMsalClient(): Promise<CustomAuthPublicClientApplication> {
   if (!_msalClient) {
     _msalClient = await CustomAuthPublicClientApplication.create(customAuthConfig) as CustomAuthPublicClientApplication;
@@ -47,7 +50,8 @@ function makeAuthError(code: string, message: string): AuthError {
  * Called after sign-up completes to auto-sign the user in using the B2C continuation token.
  */
 async function signInFromContinuation(
-  continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> }
+  continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> },
+  overrides?: { firstName?: string | null; lastName?: string | null },
 ): Promise<AuthUser> {
   let signInResult: Awaited<ReturnType<typeof continuationState.signIn>>;
   try {
@@ -74,13 +78,17 @@ async function signInFromContinuation(
   const claims = account?.idTokenClaims;
   const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
   const email = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? '';
+  // Prefer form-provided values (overrides) over token claims — CIAM only returns
+  // given_name/family_name in the token when they are enabled as Application claims.
+  const firstName = overrides?.firstName ?? claims?.given_name ?? null;
+  const lastName = overrides?.lastName ?? claims?.family_name ?? null;
   const name = claims?.name
-    ?? ([claims?.given_name, claims?.family_name].filter(Boolean).join(' ') || undefined)
+    ?? ([firstName, lastName].filter(Boolean).join(' ') || undefined)
     ?? account?.name;
 
   if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received after sign-in.');
 
-  const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email, name } });
+  const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email, firstName, lastName, name } });
   return data;
 }
 
@@ -142,19 +150,19 @@ export const authService = {
       idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string; given_name?: string; family_name?: string };
     } | undefined;
 
-    const idToken = (rawResult as { getIdToken?(): string | undefined } | undefined)?.getIdToken?.() ?? null;
     const claims = account?.idTokenClaims;
     const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
     const userEmail = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? email;
+    const firstName = claims?.given_name ?? null;
+    const lastName = claims?.family_name ?? null;
     const name = claims?.name
-      ?? ([claims?.given_name, claims?.family_name].filter(Boolean).join(' ') || undefined)
+      ?? ([firstName, lastName].filter(Boolean).join(' ') || undefined)
       ?? account?.name;
 
     if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received from B2C.');
 
     try {
-      const payload = idToken ? { idToken } : { nativeClaims: { oid, email: userEmail, name } };
-      const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', payload);
+      const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email: userEmail, firstName, lastName, name } });
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number } };
@@ -194,9 +202,12 @@ export const authService = {
       throw makeAuthError('UNKNOWN', error?.message ?? 'Sign-up failed.');
     }
 
+    const nameOverrides = { firstName, lastName };
+
     // Step 2: CIAM requires email verification code before completing sign-up
     if (signUpResult.isCodeRequired()) {
       _signUpCodeState = signUpResult.state;
+      _signUpNames = nameOverrides;
       throw makeAuthError('CODE_REQUIRED', 'Please check your email for a verification code.');
     }
 
@@ -213,14 +224,14 @@ export const authService = {
       if (!pwResult.isCompleted()) {
         throw makeAuthError('UNKNOWN', 'Sign-up did not complete after password submission.');
       }
-      return signInFromContinuation(pwResult.state);
+      return signInFromContinuation(pwResult.state, nameOverrides);
     }
 
     if (!signUpResult.isCompleted()) {
       throw makeAuthError('UNKNOWN', 'Sign-up did not complete — additional steps required.');
     }
 
-    return signInFromContinuation(signUpResult.state);
+    return signInFromContinuation(signUpResult.state, nameOverrides);
   },
 
   /**
@@ -251,8 +262,10 @@ export const authService = {
     }
 
     if (codeResult.isCompleted()) {
+      const names = _signUpNames;
       _signUpCodeState = null;
-      return signInFromContinuation(codeResult.state);
+      _signUpNames = null;
+      return signInFromContinuation(codeResult.state, names ?? undefined);
     }
 
     throw makeAuthError('UNKNOWN', 'Sign-up did not complete after code submission.');
@@ -288,6 +301,9 @@ export const authService = {
    */
   async signOut(): Promise<string> {
     const { data } = await nextApiClient.post<{ logoutUrl: string }>('/api/auth/sign-out');
+    _msalClient = null;
+    _signUpCodeState = null;
+    _signUpNames = null;
     return data.logoutUrl;
   },
 

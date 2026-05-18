@@ -13,6 +13,8 @@ import type { AuthUser } from '@/types/layout.types';
  */
 interface SessionData {
   userId: string;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
   displayName: string | null;
   avatarUrl?: string;
@@ -45,6 +47,8 @@ export function getSessionStore(): Map<string, SessionData> {
 interface NativeClaims {
   oid: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
   name?: string;
 }
 
@@ -54,6 +58,8 @@ function createSessionResponse(user: AuthUser, exp: number): NextResponse {
 
   sessionStore.set(sessionId, {
     userId: user.id,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
     email: user.email,
     displayName: user.displayName ?? null,
     avatarUrl: user.avatarUrl,
@@ -81,11 +87,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Native auth path — MSAL already authenticated the user; use claims directly
   if (body.nativeClaims) {
-    const { oid, email, name } = body.nativeClaims;
+    const { oid, email, firstName, lastName, name } = body.nativeClaims;
     if (!oid) return NextResponse.json({ error: 'oid claim is required' }, { status: 400 });
 
+    const resolvedFirstName = firstName ?? null;
+    const resolvedLastName = lastName ?? null;
+    const displayName = name
+      ?? ([resolvedFirstName, resolvedLastName].filter(Boolean).join(' ') || null);
+
     const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24h session
-    const user: AuthUser = { id: oid, email: email ?? '', displayName: name ?? null };
+    const user: AuthUser = { id: oid, email: email ?? '', firstName: resolvedFirstName, lastName: resolvedLastName, displayName };
     return createSessionResponse(user, exp);
   }
 

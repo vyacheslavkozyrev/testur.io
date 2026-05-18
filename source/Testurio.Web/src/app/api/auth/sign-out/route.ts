@@ -28,21 +28,11 @@ export async function POST(): Promise<NextResponse> {
     getSessionStore().delete(sessionCookie.value);
   }
 
-  // Build the B2C v2 logout URL.
-  // The correct path for Azure AD B2C is /oauth2/v2.0/logout relative to the authority.
-  // post_logout_redirect_uri sends the user to /sign-in after B2C clears its session.
-  let logoutUrl: string;
-  try {
-    const url = new URL(`${authority.replace(/\/$/, '')}/oauth2/v2.0/logout`);
-    url.searchParams.set(
-      'post_logout_redirect_uri',
-      `${process.env.NEXT_PUBLIC_B2C_REDIRECT_URI?.replace('/auth/callback', '') ?? ''}/sign-in`,
-    );
-    logoutUrl = url.toString();
-  } catch {
-    // Fallback if env vars are not configured (e.g. local dev without B2C)
-    logoutUrl = '/sign-in';
-  }
+  // Native auth does not create a browser-side Azure session, so there is no
+  // CIAM logout endpoint to call. Simply redirect to /sign-in — the server-side
+  // session and cookie have already been cleared above.
+  const logoutUrl = '/sign-in';
+  void authority; // env var retained for future use
 
   const response = NextResponse.json({ logoutUrl });
 

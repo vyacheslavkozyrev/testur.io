@@ -99,11 +99,15 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
 
     if (!email) return null;
 
+    const firstName = claims.given_name ?? null;
+    const lastName = claims.family_name ?? null;
     const displayName = claims.name
-      ?? ([claims.given_name, claims.family_name].filter(Boolean).join(' ') || null);
+      ?? ([firstName, lastName].filter(Boolean).join(' ') || null);
 
     return {
       id: oid,
+      firstName,
+      lastName,
       displayName,
       email,
       avatarUrl: undefined,

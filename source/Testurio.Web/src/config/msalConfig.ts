@@ -30,7 +30,10 @@ export const msalConfig: Configuration = {
     navigateToLoginRequestUrl: false,
   },
   cache: {
-    cacheLocation: 'sessionStorage',
+    // Use memory cache so MSAL never writes to sessionStorage.
+    // This means nulling _msalClient in authService is sufficient to fully
+    // clear auth state on sign-out — no manual sessionStorage.clear() needed.
+    cacheLocation: 'memoryStorage',
     storeAuthStateInCookie: false,
   },
 };

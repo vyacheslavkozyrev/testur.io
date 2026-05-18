@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -13,8 +13,9 @@ import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { useSignIn } from '@/hooks/useAuth';
+import { authService } from '@/services/auth/authService';
 import type { AuthError } from '@/types/auth.types';
-import { SIGN_UP_ROUTE, FORGOT_PASSWORD_ROUTE } from '@/routes/routes';
+import { SIGN_UP_ROUTE, FORGOT_PASSWORD_ROUTE, DASHBOARD_ROUTE } from '@/routes/routes';
 
 interface SignInFormValues {
   email: string;
@@ -37,10 +38,17 @@ export default function SignInPage() {
   const { t } = useTranslation('auth');
   const theme = useTheme();
   const styles = getStyles(theme);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get('returnUrl') ?? undefined;
 
   const signIn = useSignIn(returnUrl);
+
+  useEffect(() => {
+    authService.getSession().then((user) => {
+      if (user) router.replace(returnUrl ?? DASHBOARD_ROUTE);
+    });
+  }, [router, returnUrl]);
 
   const {
     register,
