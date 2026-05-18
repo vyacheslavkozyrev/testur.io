@@ -40,7 +40,51 @@ _Populated by `/implement [####]`_
 
 ## Test Results
 
-_Populated by `/test [####]`_
+### Test Phase — 2026-05-18
+
+**Execution Summary:**
+
+Backend tests could not run due to unrelated compilation errors in HttpExecutorTests.cs (missing logger parameters). However, the Account-specific test classes exist and are correctly structured:
+- `tests/Testurio.UnitTests/Services/AccountServiceTests.cs` — 8 tests (account profile and preferences operations)
+- `tests/Testurio.IntegrationTests/Controllers/AccountControllerTests.cs` — 8 tests (all four endpoints + auth validation)
+
+Frontend test execution:
+```
+Test Suites: 1 failed, 2 passed, 3 total
+Tests: 1 failed, 13 passed, 14 total
+```
+
+**Test Results by Component:**
+
+| Component | Tests | Status | Coverage |
+|-----------|-------|--------|----------|
+| PersonalInfoSection | 6 | ✓ PASS | AC-002, AC-004, AC-005, AC-006, AC-007, AC-008 |
+| PreferencesSection | 5 | ✓ PASS | AC-010, AC-011, AC-012, AC-013, AC-014, AC-018, AC-019 |
+| AccountSettingsPage | 4 | ⚠️ 1 FAIL, 3 PASS | AC-025, AC-026, AC-027 ✓; AC-028 ✗ |
+
+**Failing Test:**
+
+Test: `AccountSettingsPage › shows preferences error banner when preferences fetch fails with non-404`
+- Expected: Error banner "Failed to load preferences. Please refresh the page." appears
+- Actual: Component remains in loading state (skeletons visible)
+- Root cause: The component's `isLoading` state does not transition to false after the preferences query rejects; the queries appear not to settle in the test environment
+
+**Missing Tests:**
+
+Task T031 (E2E tests) was planned but not implemented:
+- [ ] T031 — `source/Testurio.Web/e2e/account-settings.spec.ts` (E2E tests for navigation, header refresh on profile save, language switching, dark mode toggle)
+
+**Acceptance Criteria Coverage:**
+
+- Backend ACs (AC-029 to AC-039): ✓ Tests exist but cannot build
+- Backend ACs (AC-040 to AC-043): ⚠️ Schema requirements (handled by CosmosDbInitializer, tested indirectly)
+- Frontend ACs (AC-001 to AC-028): Partially covered — 1 failing test (AC-028), 0 E2E coverage for full user flows
+
+**Blockers:**
+
+1. One frontend test is failing (AC-028) — this must be fixed before Test phase can be marked complete
+2. E2E tests not implemented (T031) — while not strictly required for basic test phase, they provide full-stack coverage
+3. Backend test suite cannot compile due to unrelated issues in pipeline executor tests
 
 ---
 
