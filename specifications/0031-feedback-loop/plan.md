@@ -3,7 +3,7 @@
 ## Tasks
 
 - [x] T001 [Domain] Create `CommentWebhookEvent` record (`string PmTool`, `string WorkItemId`, `string CommentBody`, `string CommentId`, `Guid ProjectId`) — `source/Testurio.Core/Models/CommentWebhookEvent.cs`
-- [ ] T002 [Domain] Define `IFeedbackLoop` interface (`ProcessAsync(CommentWebhookEvent evt, CancellationToken ct) → Task`) — `source/Testurio.Core/Interfaces/IFeedbackLoop.cs`
+- [x] T002 [Domain] Define `IFeedbackLoop` interface (`ProcessAsync(CommentWebhookEvent evt, CancellationToken ct) → Task`) — `source/Testurio.Core/Interfaces/IFeedbackLoop.cs`
 - [ ] T003 [Domain] Extend `ITestMemoryRepository` with `UpsertFeedbackAsync(string userId, Guid projectId, string testType, string feedbackText, float[] storyEmbedding, string workItemId, string commentId, CancellationToken ct) → Task` — `source/Testurio.Core/Interfaces/ITestMemoryRepository.cs`
 - [ ] T004 [Domain] Extend `TestMemory` entity with fields: `Source` (string, `"pipeline"` or `"qalead"`), `WorkItemId` (string, nullable), `CommentId` (string, nullable), `UpdatedAt` (DateTimeOffset, nullable) — `source/Testurio.Core/Entities/TestMemory.cs`
 - [ ] T005 [Infra] Implement `UpsertFeedbackAsync` on `TestMemoryRepository`: query by `workItemId + testType + source="qalead"` within the `userId` partition; if found, overwrite the document preserving `id` and `createdAt`; if not found, insert a new document with a generated UUID v4 `id` and `createdAt = UtcNow`; set `updatedAt = UtcNow` in all cases; omit `passRate` and `runCount` fields — `source/Testurio.Infrastructure/Cosmos/TestMemoryRepository.cs`
