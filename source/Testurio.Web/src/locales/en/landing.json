@@ -87,27 +87,6 @@
     "title": "Simple, transparent pricing",
     "summary": "Simple, transparent pricing. Start free, scale as you grow.",
     "cta": "See all plans",
-    "plans": {
-      "testJunior": {
-        "name": "Test Junior",
-        "price": "Free",
-        "feature": "50 test runs / day"
-      },
-      "testPro": {
-        "name": "Test Pro",
-        "price": "$49 / mo",
-        "feature": "Unlimited runs + AI memory"
-      },
-      "team": {
-        "name": "Team",
-        "price": "$149 / mo",
-        "feature": "Unlimited projects + priority support"
-      },
-      "centurio": {
-        "name": "Centurio",
-        "price": "$399 / mo",
-        "feature": "All test types + SLA guarantee"
-      }
-    }
+    "free": "Free"
   }
 }
