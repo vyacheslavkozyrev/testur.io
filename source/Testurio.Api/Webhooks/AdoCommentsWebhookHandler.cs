@@ -60,10 +60,12 @@ public static partial class AdoCommentsWebhookHandler
         IProjectRepository projectRepository,
         ISecretResolver secretResolver,
         ICommentEventSender commentEventSender,
-        ILogger<AdoCommentsWebhookHandler> logger,
+        ILoggerFactory loggerFactory,
         HttpContext context,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(typeof(AdoCommentsWebhookHandler).FullName!);
+
         // AC-029: validate HMAC signature before any processing.
         if (!context.Request.Headers.TryGetValue("X-Hub-Signature", out var signatureHeader) ||
             string.IsNullOrWhiteSpace(signatureHeader))
@@ -134,16 +136,16 @@ public static partial class AdoCommentsWebhookHandler
             Encoding.UTF8.GetBytes(signatureHeader));
     }
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "ADO comment webhook received without X-Hub-Signature header")]
+    [LoggerMessage(EventId = 3001, Level = LogLevel.Warning, Message = "ADO comment webhook received without X-Hub-Signature header")]
     private static partial void LogMissingSignature(ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "ADO comment webhook: no webhook secret configured for project {ProjectId}")]
+    [LoggerMessage(EventId = 3002, Level = LogLevel.Warning, Message = "ADO comment webhook: no webhook secret configured for project {ProjectId}")]
     private static partial void LogMissingSecret(ILogger logger, string projectId);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "ADO comment webhook HMAC validation failed for project {ProjectId}")]
+    [LoggerMessage(EventId = 3003, Level = LogLevel.Warning, Message = "ADO comment webhook HMAC validation failed for project {ProjectId}")]
     private static partial void LogInvalidSignature(ILogger logger, string projectId);
 
-    [LoggerMessage(Level = LogLevel.Information,
+    [LoggerMessage(EventId = 3004, Level = LogLevel.Information,
         Message = "ADO comment webhook event published for project {ProjectId} / work item {WorkItemId}")]
     private static partial void LogEventPublished(ILogger logger, string projectId, string workItemId);
 }

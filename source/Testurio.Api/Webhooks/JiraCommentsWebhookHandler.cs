@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using Testurio.Api.Middleware;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -64,10 +65,12 @@ public static partial class JiraCommentsWebhookHandler
         string projectId,
         JiraCommentCreatedPayload payload,
         ICommentEventSender commentEventSender,
-        ILogger<JiraCommentsWebhookHandler> logger,
+        ILoggerFactory loggerFactory,
         HttpContext context,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(typeof(JiraCommentsWebhookHandler).FullName!);
+
         if (!Guid.TryParse(projectId, out var projectGuid))
             return TypedResults.BadRequest();
 
@@ -90,7 +93,7 @@ public static partial class JiraCommentsWebhookHandler
         return TypedResults.Accepted((string?)null);
     }
 
-    [LoggerMessage(Level = LogLevel.Information,
+    [LoggerMessage(EventId = 3005, Level = LogLevel.Information,
         Message = "Jira comment webhook event published for project {ProjectId} / issue {IssueKey}")]
     private static partial void LogEventPublished(ILogger logger, string projectId, string issueKey);
 }
