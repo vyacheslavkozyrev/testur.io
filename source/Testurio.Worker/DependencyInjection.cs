@@ -146,11 +146,13 @@ public static class DependencyInjection
             var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
             var executorRouter = sp.GetRequiredService<IExecutorRouter>();
             var reportWriter = sp.GetRequiredService<IReportWriter>();
+            var workItemTransitionStep = sp.GetRequiredService<WorkItemTransitionStep>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
             return new TestRunJobProcessor(
                 sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
                 queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
-                promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter, logger);
+                promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter,
+                workItemTransitionStep, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
