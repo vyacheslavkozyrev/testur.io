@@ -38,7 +38,11 @@
     "closeAriaLabel": "Close panel",
     "structuredView": "Structured",
     "rawReport": "Raw report",
-    "rawReportDisabledTooltip": "No raw report available for this run."
+    "rawReportDisabledTooltip": "No raw report available for this run.",
+    "statusTransitionLabel": "Status transition:",
+    "statusTransitionSucceeded": "Moved to \"{{status}}\"",
+    "statusTransitionNotConfigured": "Not configured",
+    "statusTransitionFailed": "Transition failed — {{error}}"
   },
   "verdict": {
     "passed": "Passed",
