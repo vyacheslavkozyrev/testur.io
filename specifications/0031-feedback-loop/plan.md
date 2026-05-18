@@ -19,7 +19,7 @@
   4. For each `testType` in `TestRun.ResolvedTestTypes`: call `IEmbeddingService.EmbedAsync(feedbackText, ct)` then `ITestMemoryRepository.UpsertFeedbackAsync(...)`.
   5. Call `IPmToolClient.PostCommentAsync` with a single confirmation comment listing all resolved test types; swallow non-fatal exceptions and log a warning.
   — `source/Testurio.Pipeline.FeedbackLoop/FeedbackLoop.cs`
-- [ ] T012 [Config] Register `IFeedbackLoop` as `FeedbackLoop` in pipeline DI — `source/Testurio.Pipeline.FeedbackLoop/DependencyInjection.cs`
+- [x] T012 [Config] Register `IFeedbackLoop` as `FeedbackLoop` in pipeline DI — `source/Testurio.Pipeline.FeedbackLoop/DependencyInjection.cs`
 - [ ] T013 [Worker] Implement `CommentEventJobProcessor`: dequeue from `testurio-comment-events`, deserialise to `CommentWebhookEvent`, call `IFeedbackLoop.ProcessAsync`; on unhandled exception do not settle the message — `source/Testurio.Worker/Processors/CommentEventJobProcessor.cs`
 - [ ] T014 [Worker] Register `CommentEventJobProcessor` as a hosted background service in `Testurio.Worker` — `source/Testurio.Worker/Program.cs`
 - [ ] T015 [Test] Unit tests for `FeedbackLoop` flag detection (flag absent → no I/O; flag present, non-empty feedbackText → embedding + upsert called; flag present, empty feedbackText after strip → no I/O; case-insensitive match: `@Testurio Memorize`, `@TESTURIO MEMORIZE` → both matched; flag embedded mid-sentence → matched and stripped correctly) — `tests/Testurio.UnitTests/Pipeline/FeedbackLoop/FeedbackLoopFlagDetectionTests.cs`
