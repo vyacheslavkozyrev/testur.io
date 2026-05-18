@@ -4,6 +4,8 @@ import { projectHandlers } from '@/mocks/handlers/project';
 import { pmToolHandlers } from '@/mocks/handlers/pmTool';
 import { dashboardHandlers } from '@/mocks/handlers/dashboard';
 import { projectAccessHandlers } from '@/mocks/handlers/projectAccess';
+import { projectApiAuthHandlers } from '@/mocks/handlers/projectApiAuth';
+import { plansHandlers } from '@/mocks/handlers/plans';
 
 export const worker = setupWorker(
   ...authHandlers,
@@ -11,4 +13,6 @@ export const worker = setupWorker(
   ...pmToolHandlers,
   ...dashboardHandlers,
   ...projectAccessHandlers,
+  ...projectApiAuthHandlers,
+  ...plansHandlers,
 );

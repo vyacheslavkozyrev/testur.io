@@ -22,7 +22,10 @@ i18nInstance.use(initReactI18next).init({
         'table.columnDate': 'Date',
         'table.columnDuration': 'Duration',
         'table.columnScenarios': 'Scenarios',
+        'table.columnUiE2e': 'UI E2E',
         'table.scenarioCount': '{{passed}} / {{total}} passed',
+        'table.uiE2eCount': '{{passed}} / {{total}}',
+        'table.uiE2eNone': '—',
       },
     },
   },
@@ -116,5 +119,51 @@ describe('RunHistoryTable', () => {
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Duration')).toBeInTheDocument();
     expect(screen.getByText('Scenarios')).toBeInTheDocument();
+  });
+
+  // ─── UI E2E column visibility ──────────────────────────────────────────────
+
+  it('all runs have totalUiE2eScenarios === 0 — no UI E2E column rendered', () => {
+    const runs = [
+      makeRun({ totalUiE2eScenarios: 0, passedUiE2eScenarios: 0 }),
+      makeRun({ id: 'r2', runId: 'run-2', totalUiE2eScenarios: 0, passedUiE2eScenarios: 0 }),
+    ];
+    renderComponent(runs);
+    expect(screen.queryByText('UI E2E')).not.toBeInTheDocument();
+  });
+
+  it('at least one run has totalUiE2eScenarios > 0 — UI E2E column header present', () => {
+    const runs = [
+      makeRun({ id: 'r1', runId: 'run-1', totalUiE2eScenarios: 2, passedUiE2eScenarios: 2 }),
+      makeRun({ id: 'r2', runId: 'run-2', totalUiE2eScenarios: 0, passedUiE2eScenarios: 0 }),
+    ];
+    renderComponent(runs);
+    expect(screen.getByText('UI E2E')).toBeInTheDocument();
+  });
+
+  it('run with totalUiE2eScenarios === 0 in mixed list renders dash in UI E2E cell', () => {
+    const runs = [
+      makeRun({ id: 'r1', runId: 'run-1', storyTitle: 'Story A', totalUiE2eScenarios: 1, passedUiE2eScenarios: 1 }),
+      makeRun({ id: 'r2', runId: 'run-2', storyTitle: 'Story B', totalUiE2eScenarios: 0, passedUiE2eScenarios: 0 }),
+    ];
+    renderComponent(runs);
+    // The dash character for the run with no UI E2E scenarios
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
+  it('run with partial pass renders {passed}/{total} in UI E2E cell', () => {
+    const runs = [
+      makeRun({ id: 'r1', runId: 'run-1', totalUiE2eScenarios: 3, passedUiE2eScenarios: 1 }),
+    ];
+    renderComponent(runs);
+    expect(screen.getByText('1 / 3')).toBeInTheDocument();
+  });
+
+  it('run with all UI E2E scenarios passing renders {passed}/{total}', () => {
+    const runs = [
+      makeRun({ id: 'r1', runId: 'run-1', totalUiE2eScenarios: 2, passedUiE2eScenarios: 2 }),
+    ];
+    renderComponent(runs);
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
   });
 });

@@ -16,6 +16,7 @@ using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Sse;
+using Testurio.Infrastructure.Storage;
 
 namespace Testurio.Infrastructure;
 
@@ -171,6 +172,14 @@ public static class DependencyInjection
             return new PromptTemplateRepository(cosmos, opts.CosmosDatabaseName);
         });
 
+        // Feature 0030: test result repository for ReportWriter (stage 6).
+        services.AddSingleton<ITestResultRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new TestResultRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         // Feature 0028: seeder that writes initial PromptTemplate documents to Cosmos at startup.
         services.AddSingleton<PromptTemplateSeeder>(sp =>
         {
@@ -179,11 +188,33 @@ public static class DependencyInjection
             return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<IPlanRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<PlanSeeder>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanSeeder(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<CosmosDbInitializer>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new CosmosDbInitializer(cosmos, opts.CosmosDatabaseName);
+        });
+
+        // Feature 0029: screenshot storage for PlaywrightExecutor assertion-step failures.
+        services.AddSingleton<IScreenshotStorage>(sp =>
+        {
+            var serviceClient = sp.GetRequiredService<BlobServiceClient>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BlobScreenshotStorage>>();
+            return new BlobScreenshotStorage(serviceClient, logger);
         });
 
         // Feature 0043: singleton SSE fan-out manager — must outlive individual HTTP requests.
@@ -198,6 +229,10 @@ public static class DependencyInjection
 
         services.AddSingleton<IProjectAccessCredentialProvider>(sp =>
             new KeyVault.ProjectAccessCredentialProvider(
+                sp.GetRequiredService<ISecretResolver>()));
+
+        services.AddSingleton<IApiTestAuthCredentialProvider>(sp =>
+            new KeyVault.ApiTestAuthCredentialProvider(
                 sp.GetRequiredService<ISecretResolver>()));
 
         return services;

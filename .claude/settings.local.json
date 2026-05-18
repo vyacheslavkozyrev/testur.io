@@ -98,11 +98,7 @@
       "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-026\" --reporter=list)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm audit *)",
-      "Bash(python3 *)",
-      "Bash(az ad *)",
-      "Bash(python -c \"import json,sys; apps=json.load\\(sys.stdin\\); [print\\(a['appId'], a['displayName']\\) for a in apps]\")",
-      "Bash(az account *)",
-      "Bash(az login *)"
+      "Bash(python3 *)"
     ]
   },
   "enableAllProjectMcpServers": true
