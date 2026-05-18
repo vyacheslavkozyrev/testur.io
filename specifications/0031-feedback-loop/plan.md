@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Create `CommentWebhookEvent` record (`string PmTool`, `string WorkItemId`, `string CommentBody`, `string CommentId`, `Guid ProjectId`) — `source/Testurio.Core/Models/CommentWebhookEvent.cs`
+- [x] T001 [Domain] Create `CommentWebhookEvent` record (`string PmTool`, `string WorkItemId`, `string CommentBody`, `string CommentId`, `Guid ProjectId`) — `source/Testurio.Core/Models/CommentWebhookEvent.cs`
 - [ ] T002 [Domain] Define `IFeedbackLoop` interface (`ProcessAsync(CommentWebhookEvent evt, CancellationToken ct) → Task`) — `source/Testurio.Core/Interfaces/IFeedbackLoop.cs`
 - [ ] T003 [Domain] Extend `ITestMemoryRepository` with `UpsertFeedbackAsync(string userId, Guid projectId, string testType, string feedbackText, float[] storyEmbedding, string workItemId, string commentId, CancellationToken ct) → Task` — `source/Testurio.Core/Interfaces/ITestMemoryRepository.cs`
 - [ ] T004 [Domain] Extend `TestMemory` entity with fields: `Source` (string, `"pipeline"` or `"qalead"`), `WorkItemId` (string, nullable), `CommentId` (string, nullable), `UpdatedAt` (DateTimeOffset, nullable) — `source/Testurio.Core/Entities/TestMemory.cs`

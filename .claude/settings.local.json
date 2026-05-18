@@ -76,9 +76,7 @@
       "Skill(test)",
       "Bash(npx --yes vitest run source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.test.tsx)",
       "Bash(node *)",
-<<<<<<< HEAD
-      "WebFetch(domain:www.getunleash.io)"
-=======
+      "WebFetch(domain:www.getunleash.io)",
       "PowerShell(head *)",
       "Bash(Get-ChildItem *)",
       "Bash(dotnet test *)",
@@ -87,8 +85,8 @@
       "Bash(cat jest.config.ts)",
       "Bash(cat jest.config.json)",
       "Bash(ls jest.setup*)",
-      "Bash(cat jest.setup.ts)"
->>>>>>> 2a9fe29efd352dd6d06c57741ce2a8830280d7df
+      "Bash(cat jest.setup.ts)",
+      "Bash(cat)"
     ]
   },
   "enableAllProjectMcpServers": true
