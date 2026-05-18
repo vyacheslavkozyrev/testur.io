@@ -1,7 +1,5 @@
-/**
- * Settings route placeholder.
- * Feature 0014 will replace this with the full AccountSettingsPage component.
- */
+import AccountSettingsPage from '@/views/AccountSettingsPage/AccountSettingsPage';
+
 export default function SettingsPage() {
-  return null;
+  return <AccountSettingsPage />;
 }
