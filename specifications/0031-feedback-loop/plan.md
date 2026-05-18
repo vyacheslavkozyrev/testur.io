@@ -11,7 +11,7 @@
 - [x] T007 [API] Add `POST /webhooks/ado/comments` endpoint: validate HMAC signature (reuse existing ADO webhook auth middleware), deserialise ADO comment-created payload, map to `CommentWebhookEvent`, publish to `testurio-comment-events` Service Bus topic — `source/Testurio.Api/Webhooks/AdoCommentsWebhookHandler.cs`
 - [x] T008 [API] Add `POST /webhooks/jira/comments` endpoint: validate Jira shared secret (reuse existing Jira webhook auth middleware), deserialise Jira comment-created payload, map to `CommentWebhookEvent`, publish to `testurio-comment-events` Service Bus topic — `source/Testurio.Api/Webhooks/JiraCommentsWebhookHandler.cs`
 - [x] T009 [Infra] Provision `testurio-comment-events` Service Bus topic and subscription in Bicep — `infra/modules/servicebus.bicep`
-- [ ] T010 [Infra] Register `testurio-comment-events` topic sender in `Testurio.Api` DI and topic receiver in `Testurio.Worker` DI — `source/Testurio.Api/DependencyInjection.cs`, `source/Testurio.Worker/DependencyInjection.cs`
+- [x] T010 [Infra] Register `testurio-comment-events` topic sender in `Testurio.Api` DI and topic receiver in `Testurio.Worker` DI — `source/Testurio.Api/DependencyInjection.cs`, `source/Testurio.Worker/DependencyInjection.cs`
 - [ ] T011 [App] Implement `FeedbackLoop` (`IFeedbackLoop`):
   1. Case-insensitive substring search for `@testurio memorize` in `CommentWebhookEvent.CommentBody`; return immediately if absent.
   2. Strip flag from body and trim to produce `feedbackText`; return immediately if empty after trim.
