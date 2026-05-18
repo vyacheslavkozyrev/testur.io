@@ -90,6 +90,9 @@ public static class DependencyInjection
         // ITestResultRepository — all registered above by AddWorkerServices/AddInfrastructure.
         services.AddReportWriter();
 
+        // Feature 0024: work item status transition step (Singleton — dependencies are all Singleton).
+        services.AddSingleton<WorkItemTransitionStep>();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
