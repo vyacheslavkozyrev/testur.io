@@ -76,7 +76,6 @@
       "Skill(test)",
       "Bash(npx --yes vitest run source/Testurio.Web/src/components/Integrations/WorkItemTypeFilter/WorkItemTypeFilter.test.tsx)",
       "Bash(node *)",
-      "WebFetch(domain:www.getunleash.io)",
       "PowerShell(head *)",
       "Bash(Get-ChildItem *)",
       "Bash(dotnet test *)",
@@ -86,7 +85,20 @@
       "Bash(cat jest.config.json)",
       "Bash(ls jest.setup*)",
       "Bash(cat jest.setup.ts)",
-      "Bash(cat)"
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts --reporter=list)",
+      "Bash(npx playwright *)",
+      "Bash(PLAYWRIGHT_BROWSERS_PATH=\"C:/Users/vyach/AppData/Local/ms-playwright\" BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts --reporter=list)",
+      "Bash(npm ls *)",
+      "Bash(npx tsc *)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-017\" --reporter=list)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-017/AC-018\" --reporter=list)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-031\" --reporter=list)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-031\" --reporter=list --debug)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-036\" --reporter=list)",
+      "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-026\" --reporter=list)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm audit *)",
+      "Bash(python3 *)"
     ]
   },
   "enableAllProjectMcpServers": true

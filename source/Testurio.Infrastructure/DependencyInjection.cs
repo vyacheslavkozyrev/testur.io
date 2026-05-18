@@ -208,6 +208,20 @@ public static class DependencyInjection
             return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
+        services.AddSingleton<IPlanRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<PlanSeeder>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanSeeder(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<CosmosDbInitializer>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();

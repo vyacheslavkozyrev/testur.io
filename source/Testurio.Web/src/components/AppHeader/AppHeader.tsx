@@ -20,6 +20,8 @@ function getInitial(displayName: string): string {
 
 function getDisplayLabel(user: AuthUser | null): string {
   if (!user) return '';
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ');
+  if (fullName) return fullName;
   if (user.displayName) return user.displayName;
   return user.email.split('@')[0];
 }

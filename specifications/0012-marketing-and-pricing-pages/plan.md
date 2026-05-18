@@ -4,51 +4,51 @@
 
 ### Backend
 
-- [ ] T001 [App] Create `PlanDefinitionDto` DTO (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features) — `source/Testurio.Api/DTOs/Plans/PlanDefinitionDto.cs`
-- [ ] T002 [Config] Define `PlanCatalog` static class with four plan constants (Test Junior / Test Pro / Team / Centurio) — `source/Testurio.Api/Configuration/PlanCatalog.cs`
-- [ ] T003 [API] Add `GET /v1/plans` public endpoint (no auth; returns `PlanCatalog.All`; sets `Cache-Control: public, max-age=3600`) — `source/Testurio.Api/Endpoints/PlanEndpoints.cs`
-- [ ] T004 [API] Register `PlanEndpoints` in `Program.cs` — `source/Testurio.Api/Program.cs`
+- [x] T001 [App] Create `PlanDefinitionDto` DTO (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features) — `source/Testurio.Api/DTOs/Plans/PlanDefinitionDto.cs`
+- [x] T002 [Config] Define `PlanCatalog` static class with four plan constants (Test Junior / Test Pro / Team / Centurio) — `source/Testurio.Api/Configuration/PlanCatalog.cs`
+- [x] T003 [API] Add `GET /v1/plans` public endpoint (no auth; returns `PlanCatalog.All`; sets `Cache-Control: public, max-age=3600`) — `source/Testurio.Api/Endpoints/PlanEndpoints.cs`
+- [x] T004 [API] Register `PlanEndpoints` in `Program.cs` — `source/Testurio.Api/Program.cs`
 
 ### Frontend — Shared Public Layout
 
-- [ ] T005 [UI] Add plan types — `source/Testurio.Web/src/types/plan.types.ts`
+- [x] T005 [UI] Add plan types — `source/Testurio.Web/src/types/plan.types.ts`
   - `PlanDefinition` (id, name, monthlyPrice, annualPrice, annualDiscountPercent, isPopular, features)
   - `BillingInterval` enum (`monthly | annual`)
-- [ ] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
+- [x] T006 [UI] Add plans API client — `source/Testurio.Web/src/services/plans/plansService.ts`
   - `list(): Promise<PlanDefinition[]>`
-- [ ] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
+- [x] T007 [UI] Add `usePlans` React Query hook — `source/Testurio.Web/src/hooks/usePlans.ts`
   - `queryKey: ['plans']`; `staleTime: 60 * 60 * 1000` (matches server `max-age`)
-- [ ] T008 [UI] Add MSW mock handler for `GET /v1/plans` — `source/Testurio.Web/src/mocks/handlers/plans.ts`
-- [ ] T009 [UI] Create `PublicHeader` component (sticky; logo left; nav links centre; auth-aware action area right: Sign In + Get Started for guests, Go to Dashboard for signed-in users; hamburger collapse on mobile) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.tsx`
-- [ ] T010 [UI] Create `PublicFooter` component (logo, nav links, copyright, Privacy Policy and Terms of Service placeholder links) — `source/Testurio.Web/src/components/PublicFooter/PublicFooter.tsx`
-- [ ] T011 [UI] Create `PublicLayout` wrapper (renders `PublicHeader` + `{children}` + `PublicFooter`; no sidebar) — `source/Testurio.Web/src/components/PublicLayout/PublicLayout.tsx`
+- [x] T008 [UI] Add MSW mock handler for `GET /v1/plans` — `source/Testurio.Web/src/mocks/handlers/plans.ts`
+- [x] T009 [UI] Create `PublicHeader` component (sticky; logo left; nav links centre; auth-aware action area right: Sign In + Get Started for guests, Go to Dashboard for signed-in users; hamburger collapse on mobile) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.tsx`
+- [x] T010 [UI] Create `PublicFooter` component (logo, nav links, copyright, Privacy Policy and Terms of Service placeholder links) — `source/Testurio.Web/src/components/PublicFooter/PublicFooter.tsx`
+- [x] T011 [UI] Create `PublicLayout` wrapper (renders `PublicHeader` + `{children}` + `PublicFooter`; no sidebar) — `source/Testurio.Web/src/components/PublicLayout/PublicLayout.tsx`
 
 ### Frontend — Landing Page
 
-- [ ] T012 [UI] Create `HeroSection` component (headline, subheadline, primary CTA → `/auth/register`, secondary CTA scroll-to `#how-it-works`) — `source/Testurio.Web/src/components/HeroSection/HeroSection.tsx`
-- [ ] T013 [UI] Create `FeaturesSection` component (responsive 3-2-1 column grid; six feature tiles each with icon, title, description) — `source/Testurio.Web/src/components/FeaturesSection/FeaturesSection.tsx`
-- [ ] T014 [UI] Create `HowItWorksSection` component (`id="how-it-works"`; five numbered steps in timeline layout; each with title + one-sentence description) — `source/Testurio.Web/src/components/HowItWorksSection/HowItWorksSection.tsx`
-- [ ] T015 [UI] Create `PricingTeaserSection` component (headline; summary text; four plan name + entry price + one key feature; "See all plans" button → `/pricing`) — `source/Testurio.Web/src/components/PricingTeaserSection/PricingTeaserSection.tsx`
-- [ ] T016 [UI] Create `LandingPage` page (wraps with `PublicLayout`; composes `HeroSection`, `FeaturesSection`, `HowItWorksSection`, `PricingTeaserSection` in order) — `source/Testurio.Web/src/pages/LandingPage/LandingPage.tsx`
+- [x] T012 [UI] Create `HeroSection` component (headline, subheadline, primary CTA → `/auth/register`, secondary CTA scroll-to `#how-it-works`) — `source/Testurio.Web/src/components/HeroSection/HeroSection.tsx`
+- [x] T013 [UI] Create `FeaturesSection` component (responsive 3-2-1 column grid; six feature tiles each with icon, title, description) — `source/Testurio.Web/src/components/FeaturesSection/FeaturesSection.tsx`
+- [x] T014 [UI] Create `HowItWorksSection` component (`id="how-it-works"`; five numbered steps in timeline layout; each with title + one-sentence description) — `source/Testurio.Web/src/components/HowItWorksSection/HowItWorksSection.tsx`
+- [x] T015 [UI] Create `PricingTeaserSection` component (headline; summary text; four plan name + entry price + one key feature; "See all plans" button → `/pricing`) — `source/Testurio.Web/src/components/PricingTeaserSection/PricingTeaserSection.tsx`
+- [x] T016 [UI] Create `LandingPage` page (wraps with `PublicLayout`; composes `HeroSection`, `FeaturesSection`, `HowItWorksSection`, `PricingTeaserSection` in order) — `source/Testurio.Web/src/pages/LandingPage/LandingPage.tsx`
 
 ### Frontend — Pricing Page
 
-- [ ] T017 [UI] Create `BillingIntervalToggle` component (Monthly / Annual toggle; Monthly selected by default; emits `onChange(interval: BillingInterval)`) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
-- [ ] T018 [UI] Create `PlanCard` component (plan name, feature checklist, monthly/annual price, annual discount badge when interval=annual, "Most popular" badge when `isPopular`, CTA button — label and href determined by auth state: "Get started free" → `/auth/register?plan=<id>&interval=<interval>` for guests; "Upgrade" → `/billing?plan=<id>&interval=<interval>` for authenticated users) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
-- [ ] T019 [UI] Create `PricingPage` page (wraps with `PublicLayout`; renders `BillingIntervalToggle`; calls `usePlans`; shows skeleton placeholders while loading; shows inline error with retry on failure; renders four `PlanCard` components in a responsive 4-2-1 column grid) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.tsx`
+- [x] T017 [UI] Create `BillingIntervalToggle` component (Monthly / Annual toggle; Monthly selected by default; emits `onChange(interval: BillingInterval)`) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
+- [x] T018 [UI] Create `PlanCard` component (plan name, feature checklist, monthly/annual price, annual discount badge when interval=annual, "Most popular" badge when `isPopular`, CTA button — label and href determined by auth state: "Get started free" → `/auth/register?plan=<id>&interval=<interval>` for guests; "Upgrade" → `/billing?plan=<id>&interval=<interval>` for authenticated users) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
+- [x] T019 [UI] Create `PricingPage` page (wraps with `PublicLayout`; renders `BillingIntervalToggle`; calls `usePlans`; shows skeleton placeholders while loading; shows inline error with retry on failure; renders four `PlanCard` components in a responsive 4-2-1 column grid) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.tsx`
 
 ### Frontend — i18n & Routing
 
-- [ ] T020 [UI] Add landing page translation keys — `source/Testurio.Web/src/locales/en/landing.json`
-- [ ] T021 [UI] Add pricing page translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
-- [ ] T022 [UI] Register `/` route (→ `LandingPage`) and `/pricing` route (→ `PricingPage`) as public routes — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T020 [UI] Add landing page translation keys — `source/Testurio.Web/src/locales/en/landing.json`
+- [x] T021 [UI] Add pricing page translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
+- [x] T022 [UI] Register `/` route (→ `LandingPage`) and `/pricing` route (→ `PricingPage`) as public routes — `source/Testurio.Web/src/routes/routes.tsx`
 
 ### Tests
 
-- [ ] T023 [Test] Frontend component tests for `PublicHeader` (renders Sign In and Get Started for unauthenticated; renders Go to Dashboard for authenticated; active link is highlighted; hamburger visible below 768 px) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.test.tsx`
-- [ ] T024 [Test] Frontend component tests for `PlanCard` (renders plan name, features, monthly price; renders annual price and discount badge when interval=annual; renders "Most popular" badge when isPopular; CTA href contains plan id and interval; authenticated variant shows "Upgrade" label and billing href) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
-- [ ] T025 [Test] Frontend component tests for `PricingPage` (shows skeletons while loading; renders four plan cards on success; shows error state with retry button on failure; toggling to Annual updates all card prices simultaneously) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.test.tsx`
-- [ ] T026 [Test] E2E tests — `source/Testurio.Web/e2e/marketing.spec.ts`
+- [x] T023 [Test] Frontend component tests for `PublicHeader` (renders Sign In and Get Started for unauthenticated; renders Go to Dashboard for authenticated; active link is highlighted; hamburger visible below 768 px) — `source/Testurio.Web/src/components/PublicHeader/PublicHeader.test.tsx`
+- [x] T024 [Test] Frontend component tests for `PlanCard` (renders plan name, features, monthly price; renders annual price and discount badge when interval=annual; renders "Most popular" badge when isPopular; CTA href contains plan id and interval; authenticated variant shows "Upgrade" label and billing href) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
+- [x] T025 [Test] Frontend component tests for `PricingPage` (shows skeletons while loading; renders four plan cards on success; shows error state with retry button on failure; toggling to Annual updates all card prices simultaneously) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.test.tsx`
+- [x] T026 [Test] E2E tests — `source/Testurio.Web/e2e/marketing.spec.ts`
   - Landing page loads at `/` with hero, features, how-it-works, pricing teaser, and footer all visible
   - "See how it works" CTA scrolls to the How It Works section
   - "See all plans" teaser button navigates to `/pricing`

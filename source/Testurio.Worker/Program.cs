@@ -15,7 +15,9 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    builder.Services.AddSingleton<ISecretResolver, KeyVaultSecretResolver>();
+    var keyVaultUri = builder.Configuration["KeyVault:Uri"]
+        ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
+    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
 }
 
 var host = builder.Build();
@@ -44,6 +46,17 @@ catch (Exception ex)
 {
     startupLogger.LogCritical(ex, "Prompt template seeding failed. Worker cannot start.");
     throw;
+}
+
+try
+{
+    var planSeeder = host.Services.GetRequiredService<PlanSeeder>();
+    await planSeeder.SeedAsync(startupCts.Token);
+}
+catch (Exception ex)
+{
+    // Plan data is an API-domain concern; a seeding failure should not block pipeline execution.
+    startupLogger.LogWarning(ex, "Plan seeding failed at Worker startup — skipping. Plans will still be served by the API.");
 }
 
 host.Run();

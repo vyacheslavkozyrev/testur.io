@@ -8,11 +8,32 @@ export interface SignInRequest {
 export interface SignUpRequest {
   email: string;
   password: string;
+  firstName: string;
+  lastName: string;
 }
 
 /** Payload sent to the forgot-password mutation. */
 export interface ForgotPasswordRequest {
   email: string;
+}
+
+/**
+ * Opaque handle returned on CODE_REQUIRED — pass to authService.submitSignUpCode.
+ * Carries the MSAL continuation state and form-supplied name overrides.
+ */
+export interface SignUpCodeHandle {
+  readonly _msalState: { submitCode(code: string): Promise<unknown> };
+  readonly _names: { firstName: string; lastName: string };
+}
+
+/** Opaque handle for the password-reset code step — pass to authService.submitResetCode. */
+export interface ResetPasswordCodeHandle {
+  readonly _msalState: { submitCode(code: string): Promise<unknown> };
+}
+
+/** Opaque handle for the new-password step — pass to authService.submitNewPassword. */
+export interface ResetPasswordPasswordHandle {
+  readonly _msalState: { submitNewPassword(password: string): Promise<unknown> };
 }
 
 /**
@@ -37,4 +58,9 @@ export interface AuthError {
   code: string;
   /** Human-readable message passed straight from the B2C response. */
   message: string;
+  /**
+   * Present only when `code === 'CODE_REQUIRED'`.
+   * Pass this to `authService.submitSignUpCode` instead of storing module-level state.
+   */
+  signUpCodeHandle?: SignUpCodeHandle;
 }
