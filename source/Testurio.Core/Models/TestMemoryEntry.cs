@@ -44,7 +44,7 @@ public sealed class TestMemoryEntry
     /// Entries with <c>passRate &lt; 0.5</c> after <c>runCount &gt;= 5</c> are soft-deleted.
     /// Omitted (<c>null</c>) for QA-lead feedback entries (<see cref="Source"/> = <c>"qalead"</c>).
     /// </summary>
-    public double? PassRate { get; set; } = 1.0;
+    public double? PassRate { get; set; }
 
     /// <summary>
     /// Number of times this scenario has been reused across pipeline runs.

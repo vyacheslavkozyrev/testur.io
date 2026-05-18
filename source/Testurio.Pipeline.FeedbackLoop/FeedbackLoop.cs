@@ -98,8 +98,11 @@ public sealed partial class FeedbackLoop : IFeedbackLoop
         // AC-006: check cancellation before embedding.
         ct.ThrowIfCancellationRequested();
 
-        // AC-009 / AC-011: embed once; upsert per resolved test type.
-        // A failure on one test type does not skip the remaining types.
+        // AC-009: embed once; upsert per resolved test type.
+        // AC-018: a failure on any upsert rethrows immediately, preventing the message from being
+        // settled so Service Bus can retry. Remaining test types in the loop are not processed
+        // when an earlier upsert fails (AC-011 and AC-018 are contradictory; AC-018 is authoritative
+        // per the unit tests in FeedbackLoopTestTypeTests).
         float[]? embedding = null;
         try
         {
@@ -114,7 +117,7 @@ public sealed partial class FeedbackLoop : IFeedbackLoop
 
         foreach (var testType in resolvedTestTypes)
         {
-            var testTypeString = testType.ToString().ToLowerInvariant();
+            var testTypeString = testType.ToLowerInvariant();
 
             // AC-006: check cancellation before each upsert.
             ct.ThrowIfCancellationRequested();
@@ -145,7 +148,7 @@ public sealed partial class FeedbackLoop : IFeedbackLoop
         // AC-006: check cancellation before PM tool call.
         ct.ThrowIfCancellationRequested();
 
-        var testTypeList = string.Join(", ", resolvedTestTypes.Select(t => t.ToString().ToLowerInvariant()));
+        var testTypeList = string.Join(", ", resolvedTestTypes.Select(t => t.ToLowerInvariant()));
         var confirmationBody =
             $"✅ **Feedback captured.** Your note has been stored and will be used in future {testTypeList} test generation for this ticket.";
 

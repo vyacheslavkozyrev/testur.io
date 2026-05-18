@@ -42,7 +42,7 @@ internal sealed class AdoCommentResource
 /// </summary>
 public static partial class AdoCommentsWebhookHandler
 {
-    internal const string RoutePrefix = "/webhooks/ado";
+    internal const string RoutePrefix = "/v1/webhooks/ado";
 
     public static IEndpointRouteBuilder MapAdoCommentsWebhook(this IEndpointRouteBuilder app)
     {

@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Testurio.Core\Testurio.Core.csproj" />
-    <ProjectReference Include="..\Testurio.Infrastructure\Testurio.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
