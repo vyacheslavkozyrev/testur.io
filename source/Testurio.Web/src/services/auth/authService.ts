@@ -30,14 +30,7 @@ let _signUpCodeState: { submitCode(code: string): Promise<unknown> } | null = nu
 
 async function getMsalClient(): Promise<CustomAuthPublicClientApplication> {
   if (!_msalClient) {
-    console.log('[getMsalClient] creating MSAL client with config:', customAuthConfig);
-    try {
-      _msalClient = await CustomAuthPublicClientApplication.create(customAuthConfig) as CustomAuthPublicClientApplication;
-      console.log('[getMsalClient] MSAL client created successfully');
-    } catch (err) {
-      console.error('[getMsalClient] FAILED to create MSAL client:', err);
-      throw err;
-    }
+    _msalClient = await CustomAuthPublicClientApplication.create(customAuthConfig) as CustomAuthPublicClientApplication;
   }
   return _msalClient;
 }
@@ -59,14 +52,11 @@ async function signInFromContinuation(
   let signInResult: Awaited<ReturnType<typeof continuationState.signIn>>;
   try {
     signInResult = await continuationState.signIn({ scopes: loginScopes });
-    console.log('[signInFromContinuation] result:', signInResult);
   } catch (err) {
-    console.error('[signInFromContinuation] signIn() threw:', err);
     throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Sign-in continuation failed.');
   }
 
   if (!signInResult.isCompleted()) {
-    console.error('[signInFromContinuation] not completed. state:', signInResult.state, 'isFailed:', signInResult.isFailed?.(), 'isPasswordRequired:', signInResult.isPasswordRequired?.(), 'isCodeRequired:', signInResult.isCodeRequired?.(), 'error:', signInResult.error);
     throw makeAuthError('UNKNOWN', 'Auto sign-in after registration did not complete.');
   }
 
@@ -78,27 +68,20 @@ async function signInFromContinuation(
     localAccountId?: string;
     username?: string;
     name?: string;
-    idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string };
+    idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string; given_name?: string; family_name?: string };
   } | undefined;
-
-  console.log('[signInFromContinuation] account:', account);
 
   const claims = account?.idTokenClaims;
   const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
   const email = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? '';
-  const name = claims?.name ?? account?.name;
-
-  console.log('[signInFromContinuation] oid:', oid, 'email:', email);
+  const name = claims?.name
+    ?? ([claims?.given_name, claims?.family_name].filter(Boolean).join(' ') || undefined)
+    ?? account?.name;
 
   if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received after sign-in.');
 
-  try {
-    const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email, name } });
-    return data;
-  } catch (err) {
-    console.error('[signInFromContinuation] session POST failed:', err);
-    throw err;
-  }
+  const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email, name } });
+  return data;
 }
 
 // ─── authService ──────────────────────────────────────────────────────────────
@@ -120,15 +103,12 @@ export const authService = {
     let signInResult: Awaited<ReturnType<typeof client.signIn>>;
     try {
       signInResult = await client.signIn({ username: email, scopes: loginScopes });
-      console.log('[signIn] step1 result:', signInResult);
     } catch (err) {
-      console.error('[signIn] client.signIn() threw:', err);
       throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Sign-in failed.');
     }
 
     if (signInResult.isFailed()) {
       const error = signInResult.error;
-      console.error('[signIn] failed error:', error, 'message:', error?.message);
       if (error?.isUserNotFound() || error?.isInvalidUsername()) {
         throw makeAuthError('USER_NOT_FOUND', 'No account found for this email address.');
       }
@@ -159,14 +139,16 @@ export const authService = {
       ?? (passwordResult as unknown as Record<string, unknown>).resultData as Record<string, unknown> | undefined;
     const account = rawResult?.account as {
       localAccountId?: string; username?: string; name?: string;
-      idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string };
+      idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string; given_name?: string; family_name?: string };
     } | undefined;
 
     const idToken = (rawResult as { getIdToken?(): string | undefined } | undefined)?.getIdToken?.() ?? null;
     const claims = account?.idTokenClaims;
     const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
     const userEmail = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? email;
-    const name = claims?.name ?? account?.name;
+    const name = claims?.name
+      ?? ([claims?.given_name, claims?.family_name].filter(Boolean).join(' ') || undefined)
+      ?? account?.name;
 
     if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received from B2C.');
 
@@ -192,17 +174,17 @@ export const authService = {
    * @throws `AuthError` with code `INVALID_PASSWORD` when the password does not satisfy B2C policy.
    * @throws `AuthError` with code `UNKNOWN` for unexpected errors.
    */
-  async signUp({ email, password }: SignUpRequest): Promise<AuthUser> {
+  async signUp({ email, password, firstName, lastName }: SignUpRequest): Promise<AuthUser> {
     const client = await getMsalClient();
 
-    // Step 1: Initiate sign-up with username + password
-    console.log('[authService.signUp] calling client.signUp for', email);
-    const signUpResult = await client.signUp({ username: email, password });
-    console.log('[authService.signUp] result:', signUpResult);
+    const signUpResult = await client.signUp({
+      username: email,
+      password,
+      attributes: { givenName: firstName, surname: lastName },
+    });
 
     if (signUpResult.isFailed()) {
       const error = signUpResult.error;
-      console.error('[authService.signUp] MSAL error:', error);
       if (error?.isUserAlreadyExists()) {
         throw makeAuthError('USER_ALREADY_EXISTS', 'An account with this email already exists.');
       }

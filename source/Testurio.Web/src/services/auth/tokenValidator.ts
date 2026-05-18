@@ -31,6 +31,10 @@ interface RawIdTokenClaims {
   oid?: string;
   /** Display name from B2C profile */
   name?: string;
+  /** Given name (first name) */
+  given_name?: string;
+  /** Surname (last name) */
+  family_name?: string;
   /** Email claim (standard) */
   email?: string;
   /** Emails array (B2C custom policy variant) */
@@ -83,10 +87,7 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
     // CIAM issues tokens with iss = https://<tenantId>.ciamlogin.com/<tenantId>/v2.0 (no trailing slash)
     const tenantId = getTenantId();
     const expectedIssuer = `https://${tenantId}.ciamlogin.com/${tenantId}/v2.0`;
-    if (claims.iss !== expectedIssuer) {
-      console.error('[tokenValidator] issuer mismatch — got:', claims.iss, 'expected:', expectedIssuer);
-      return null;
-    }
+    if (claims.iss !== expectedIssuer) return null;
 
     const oid = claims.oid ?? claims.sub;
     if (!oid) return null;
@@ -98,14 +99,16 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
 
     if (!email) return null;
 
+    const displayName = claims.name
+      ?? ([claims.given_name, claims.family_name].filter(Boolean).join(' ') || null);
+
     return {
       id: oid,
-      displayName: claims.name ?? null,
+      displayName,
       email,
       avatarUrl: undefined,
     };
-  } catch (err) {
-    console.error('[tokenValidator] jwtVerify threw:', err);
+  } catch {
     return null;
   }
 }

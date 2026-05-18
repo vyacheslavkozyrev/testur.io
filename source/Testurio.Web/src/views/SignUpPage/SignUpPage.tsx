@@ -19,6 +19,8 @@ import { SIGN_IN_ROUTE } from '@/routes/routes';
 const MIN_PASSWORD_LENGTH = 8;
 
 interface SignUpFormValues {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -58,7 +60,7 @@ export default function SignUpPage() {
   const onSubmit = useCallback(
     (data: SignUpFormValues) => {
       signUp.mutate(
-        { email: data.email.trim(), password: data.password },
+        { firstName: data.firstName.trim(), lastName: data.lastName.trim(), email: data.email.trim(), password: data.password },
         { onError: (err) => { if ((err as AuthError).code === 'CODE_REQUIRED') setCodeStep(true); } },
       );
     },
@@ -129,6 +131,28 @@ export default function SignUpPage() {
         )}
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={styles.form}>
+          <Box sx={styles.nameRow}>
+            <TextField
+              label={t('signUp.firstNameLabel')}
+              type="text"
+              autoComplete="given-name"
+              fullWidth
+              error={Boolean(errors.firstName)}
+              helperText={errors.firstName?.message}
+              disabled={signUp.isPending}
+              {...register('firstName', { required: t('signUp.firstNameRequired') })}
+            />
+            <TextField
+              label={t('signUp.lastNameLabel')}
+              type="text"
+              autoComplete="family-name"
+              fullWidth
+              error={Boolean(errors.lastName)}
+              helperText={errors.lastName?.message}
+              disabled={signUp.isPending}
+              {...register('lastName', { required: t('signUp.lastNameRequired') })}
+            />
+          </Box>
           <TextField
             label={t('signUp.emailLabel')}
             type="email"
@@ -238,6 +262,10 @@ const getStyles = (theme: Theme) =>
       form: {
         display: 'flex',
         flexDirection: 'column',
+        gap: theme.spacing(2),
+      },
+      nameRow: {
+        display: 'flex',
         gap: theme.spacing(2),
       },
       link: {

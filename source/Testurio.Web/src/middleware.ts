@@ -4,8 +4,6 @@ const CIAM_PROXY_PREFIX = '/ciam-proxy';
 const CIAM_BASE = 'https://testuriob2cdevelop.ciamlogin.com/987723e6-b3c0-48b1-a2d0-2ca3520581d5';
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  console.log('[middleware] path:', request.nextUrl.pathname);
-
   // CIAM native-auth proxy — forward to Azure to avoid CORS restrictions
   if (request.nextUrl.pathname.startsWith(CIAM_PROXY_PREFIX)) {
     const upstreamPath = request.nextUrl.pathname.slice(CIAM_PROXY_PREFIX.length);
@@ -22,10 +20,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
     const upstream = await fetch(targetUrl, { method: request.method, headers, body });
     const responseText = await upstream.text();
-
-    if (!upstream.ok) {
-      console.error(`[ciam-proxy] ${upstream.status} from ${targetUrl}:`, responseText);
-    }
 
     const responseHeaders = new Headers(upstream.headers);
     responseHeaders.set('Access-Control-Allow-Origin', request.headers.get('origin') ?? '*');

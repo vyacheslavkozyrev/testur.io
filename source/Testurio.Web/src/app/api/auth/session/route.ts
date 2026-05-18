@@ -95,15 +95,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'idToken or nativeClaims is required' }, { status: 400 });
   }
 
-  // Log raw token claims in dev so we can diagnose issuer mismatches
-  if (process.env.NODE_ENV !== 'production') {
-    try {
-      const payload = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-      const claims = JSON.parse(Buffer.from(payload + '==', 'base64').toString());
-      console.log('[session] token claims:', JSON.stringify(claims));
-    } catch { /* ignore */ }
-  }
-
   const user = await decodeAndValidateIdToken(idToken);
   if (!user) {
     return NextResponse.json({ error: 'Invalid or expired ID token' }, { status: 401 });

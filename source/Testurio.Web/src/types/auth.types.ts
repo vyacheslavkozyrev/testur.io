@@ -8,6 +8,8 @@ export interface SignInRequest {
 export interface SignUpRequest {
   email: string;
   password: string;
+  firstName: string;
+  lastName: string;
 }
 
 /** Payload sent to the forgot-password mutation. */
