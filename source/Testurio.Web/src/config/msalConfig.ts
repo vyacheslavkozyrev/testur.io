@@ -1,4 +1,5 @@
 import type { Configuration } from '@azure/msal-browser';
+import type { CustomAuthConfiguration } from '@azure/msal-browser/custom-auth';
 
 /**
  * Azure AD B2C tenant and user-flow constants.
@@ -42,18 +43,6 @@ export const loginScopes: string[] = (
   process.env.NEXT_PUBLIC_B2C_SCOPES ?? 'openid profile email'
 ).split(' ').filter(Boolean);
 
-/**
- * Minimal interface for the CustomAuthPublicClientApplication configuration.
- * Mirrors only the fields consumed by the authService — avoids importing from
- * internal dist paths of @azure/msal-browser.
- */
-interface CustomAuthConfig extends Configuration {
-  customAuth: {
-    authApiProxyUrl: string;
-    challengeTypes: string[];
-  };
-}
-
 // Guard: fail fast at module load time if the native auth URL is not configured.
 // Skipped in test environments where B2C is not available.
 if (
@@ -71,7 +60,7 @@ if (
  * Configuration for `CustomAuthPublicClientApplication` (MSAL Native Auth).
  * Requires an Entra External ID (CIAM) tenant with Native Authentication enabled.
  */
-export const customAuthConfig: CustomAuthConfig = {
+export const customAuthConfig: CustomAuthConfiguration = {
   ...msalConfig,
   customAuth: {
     authApiProxyUrl: process.env.NEXT_PUBLIC_B2C_NATIVE_AUTH_URL ?? '',

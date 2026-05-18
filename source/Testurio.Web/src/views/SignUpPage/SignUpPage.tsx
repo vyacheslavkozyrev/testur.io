@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
-import { useSignUp } from '@/hooks/useAuth';
+import { useSignUp, useSubmitSignUpCode } from '@/hooks/useAuth';
 import type { AuthError } from '@/types/auth.types';
 import { SIGN_IN_ROUTE } from '@/routes/routes';
 
@@ -24,19 +24,21 @@ interface SignUpFormValues {
   confirmPassword: string;
 }
 
-function getErrorMessage(error: AuthError | null, t: (key: string) => string): string {
+interface CodeFormValues {
+  code: string;
+}
+
+function getSignUpErrorMessage(error: AuthError | null, t: (key: string) => string): string {
   if (!error) return '';
-  if (error.code === 'USER_ALREADY_EXISTS') {
-    return t('signUp.errorUserExists');
-  }
-  if (error.code === 'INVALID_PASSWORD') {
-    return t('signUp.errorInvalidPassword');
-  }
+  if (error.code === 'USER_ALREADY_EXISTS') return t('signUp.errorUserExists');
+  if (error.code === 'INVALID_PASSWORD') return t('signUp.errorInvalidPassword');
   return t('signUp.errorGeneric');
 }
 
-function shouldShowSignInLink(error: AuthError | null): boolean {
-  return error?.code === 'USER_ALREADY_EXISTS';
+function getCodeErrorMessage(error: AuthError | null, t: (key: string) => string): string {
+  if (!error) return '';
+  if (error.code === 'INVALID_CODE') return t('signUp.errorInvalidCode');
+  return t('signUp.errorGeneric');
 }
 
 export default function SignUpPage() {
@@ -44,44 +46,81 @@ export default function SignUpPage() {
   const theme = useTheme();
   const styles = getStyles(theme);
 
+  const [codeStep, setCodeStep] = useState(false);
   const signUp = useSignUp();
+  const submitCode = useSubmitSignUpCode();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<SignUpFormValues>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<SignUpFormValues>();
+  const { register: registerCode, handleSubmit: handleSubmitCode, formState: { errors: codeErrors } } = useForm<CodeFormValues>();
 
   const passwordValue = watch('password');
 
   const onSubmit = useCallback(
     (data: SignUpFormValues) => {
-      signUp.mutate({ email: data.email.trim(), password: data.password });
+      signUp.mutate(
+        { email: data.email.trim(), password: data.password },
+        { onError: (err) => { if ((err as AuthError).code === 'CODE_REQUIRED') setCodeStep(true); } },
+      );
     },
     [signUp],
   );
 
-  const authError = signUp.error as AuthError | null;
-  const errorMessage = getErrorMessage(authError, t);
-  const showSignInLink = shouldShowSignInLink(authError);
+  const onSubmitCode = useCallback(
+    (data: CodeFormValues) => { submitCode.mutate(data.code.trim()); },
+    [submitCode],
+  );
+
+  if (codeStep) {
+    return (
+      <Box sx={styles.page}>
+        <Box sx={styles.card}>
+          <Typography component="h1" sx={styles.title}>{t('signUp.title')}</Typography>
+          <Typography sx={styles.subtitle}>{t('signUp.codeRequired')}</Typography>
+          {submitCode.isError && (
+            <Alert severity="error" sx={styles.alert}>
+              {getCodeErrorMessage(submitCode.error as AuthError | null, t)}
+            </Alert>
+          )}
+          <Box component="form" onSubmit={handleSubmitCode(onSubmitCode)} noValidate sx={styles.form}>
+            <TextField
+              label={t('signUp.codeLabel')}
+              type="text"
+              autoComplete="off"
+              fullWidth
+              autoFocus
+              error={Boolean(codeErrors.code)}
+              helperText={codeErrors.code?.message}
+              disabled={submitCode.isPending}
+              {...registerCode('code', { required: t('signUp.codeRequired2') })}
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={submitCode.isPending}
+              sx={styles.submitButton}
+              startIcon={submitCode.isPending ? <CircularProgress size={18} color="inherit" /> : undefined}
+            >
+              {submitCode.isPending ? t('signUp.codeVerifying') : t('signUp.codeSubmitButton')}
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    );
+  }
+
+  const signUpError = signUp.error as AuthError | null;
 
   return (
     <Box sx={styles.page}>
       <Box sx={styles.card}>
-        {/* Heading */}
-        <Typography component="h1" sx={styles.title}>
-          {t('signUp.title')}
-        </Typography>
-        <Typography sx={styles.subtitle}>
-          {t('signUp.subtitle')}
-        </Typography>
+        <Typography component="h1" sx={styles.title}>{t('signUp.title')}</Typography>
+        <Typography sx={styles.subtitle}>{t('signUp.subtitle')}</Typography>
 
-        {/* Global error */}
-        {signUp.isError && (
+        {signUp.isError && signUpError?.code !== 'CODE_REQUIRED' && (
           <Alert severity="error" sx={styles.alert}>
-            {errorMessage}{' '}
-            {showSignInLink && (
+            {getSignUpErrorMessage(signUpError, t)}{' '}
+            {signUpError?.code === 'USER_ALREADY_EXISTS' && (
               <Link href={SIGN_IN_ROUTE} style={{ color: 'inherit', textDecoration: 'underline' }}>
                 {t('signUp.signInInstead')}
               </Link>
@@ -89,7 +128,6 @@ export default function SignUpPage() {
           </Alert>
         )}
 
-        {/* Form */}
         <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate sx={styles.form}>
           <TextField
             label={t('signUp.emailLabel')}
@@ -99,11 +137,8 @@ export default function SignUpPage() {
             error={Boolean(errors.email)}
             helperText={errors.email?.message}
             disabled={signUp.isPending}
-            {...register('email', {
-              required: t('signUp.emailRequired'),
-            })}
+            {...register('email', { required: t('signUp.emailRequired') })}
           />
-
           <TextField
             label={t('signUp.passwordLabel')}
             type="password"
@@ -114,10 +149,7 @@ export default function SignUpPage() {
             disabled={signUp.isPending}
             {...register('password', {
               required: t('signUp.passwordRequired'),
-              minLength: {
-                value: MIN_PASSWORD_LENGTH,
-                message: t('signUp.passwordMinLength'),
-              },
+              minLength: { value: MIN_PASSWORD_LENGTH, message: t('signUp.passwordMinLength') },
               validate: (value) => {
                 const failures: string[] = [];
                 if (!/[A-Z]/.test(value)) failures.push(t('signUp.passwordUppercase'));
@@ -128,7 +160,6 @@ export default function SignUpPage() {
               },
             })}
           />
-
           <TextField
             label={t('signUp.confirmPasswordLabel')}
             type="password"
@@ -139,11 +170,9 @@ export default function SignUpPage() {
             disabled={signUp.isPending}
             {...register('confirmPassword', {
               required: t('signUp.confirmPasswordRequired'),
-              validate: (value) =>
-                value === passwordValue || t('signUp.passwordMismatch'),
+              validate: (value) => value === passwordValue || t('signUp.passwordMismatch'),
             })}
           />
-
           <Button
             type="submit"
             variant="contained"
@@ -156,13 +185,10 @@ export default function SignUpPage() {
           </Button>
         </Box>
 
-        {/* Sign-in link */}
         <Typography sx={styles.footerText}>
           {t('signUp.hasAccount')}{' '}
           <Link href={SIGN_IN_ROUTE} style={{ textDecoration: 'none' }}>
-            <Typography component="span" sx={styles.link}>
-              {t('signUp.signIn')}
-            </Typography>
+            <Typography component="span" sx={styles.link}>{t('signUp.signIn')}</Typography>
           </Link>
         </Typography>
       </Box>

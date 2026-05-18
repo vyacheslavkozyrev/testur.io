@@ -19,11 +19,14 @@ interface SessionData {
   exp: number;
 }
 
-const sessionStore = new Map<string, SessionData>();
+// Anchored to globalThis so the store survives Next.js hot-module replacement in development.
+const g = globalThis as { _testurioSessions?: Map<string, SessionData> };
+if (!g._testurioSessions) g._testurioSessions = new Map<string, SessionData>();
+const sessionStore = g._testurioSessions;
 
 /** Returns the session store (exported for use by /api/auth/me and /api/auth/sign-out). */
 export function getSessionStore(): Map<string, SessionData> {
-  return sessionStore;
+  return g._testurioSessions!;
 }
 
 /**
@@ -39,42 +42,15 @@ export function getSessionStore(): Map<string, SessionData> {
  * Returns 401 if the token is missing or fails validation.
  * Returns 400 if the request body is malformed.
  */
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  let body: { idToken?: string };
-  try {
-    body = await request.json() as { idToken?: string };
-  } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-  }
+interface NativeClaims {
+  oid: string;
+  email?: string;
+  name?: string;
+}
 
-  const { idToken } = body;
-  if (!idToken || typeof idToken !== 'string') {
-    return NextResponse.json({ error: 'idToken is required' }, { status: 400 });
-  }
-
-  const user = await decodeAndValidateIdToken(idToken);
-  if (!user) {
-    return NextResponse.json({ error: 'Invalid or expired ID token' }, { status: 401 });
-  }
-
-  // Decode exp from the token payload for cookie maxAge
-  const tokenParts = idToken.split('.');
-  let exp: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // default 24h
-  if (tokenParts.length === 3) {
-    try {
-      const payload = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
-      const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
-      const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8')) as { exp?: number };
-      if (typeof decoded.exp === 'number') {
-        exp = decoded.exp;
-      }
-    } catch {
-      // use default exp
-    }
-  }
-
-  // Generate an opaque session ID — only this is stored in the cookie
+function createSessionResponse(user: AuthUser, exp: number): NextResponse {
   const sessionId = crypto.randomUUID();
+  const nowSec = Math.floor(Date.now() / 1000);
 
   sessionStore.set(sessionId, {
     userId: user.id,
@@ -84,18 +60,65 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     exp,
   });
 
-  const nowSec = Math.floor(Date.now() / 1000);
-  const maxAge = Math.max(0, exp - nowSec);
-
   const response = NextResponse.json(user);
-
   response.cookies.set('testurio_session', sessionId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/',
-    maxAge,
+    maxAge: Math.max(0, exp - nowSec),
   });
-
   return response;
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  let body: { idToken?: string; nativeClaims?: NativeClaims };
+  try {
+    body = await request.json() as { idToken?: string; nativeClaims?: NativeClaims };
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  // Native auth path — MSAL already authenticated the user; use claims directly
+  if (body.nativeClaims) {
+    const { oid, email, name } = body.nativeClaims;
+    if (!oid) return NextResponse.json({ error: 'oid claim is required' }, { status: 400 });
+
+    const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // 24h session
+    const user: AuthUser = { id: oid, email: email ?? '', displayName: name ?? null };
+    return createSessionResponse(user, exp);
+  }
+
+  // ID token path — validate JWT signature and claims
+  const { idToken } = body;
+  if (!idToken || typeof idToken !== 'string') {
+    return NextResponse.json({ error: 'idToken or nativeClaims is required' }, { status: 400 });
+  }
+
+  // Log raw token claims in dev so we can diagnose issuer mismatches
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const payload = idToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const claims = JSON.parse(Buffer.from(payload + '==', 'base64').toString());
+      console.log('[session] token claims:', JSON.stringify(claims));
+    } catch { /* ignore */ }
+  }
+
+  const user = await decodeAndValidateIdToken(idToken);
+  if (!user) {
+    return NextResponse.json({ error: 'Invalid or expired ID token' }, { status: 401 });
+  }
+
+  const tokenParts = idToken.split('.');
+  let exp: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
+  if (tokenParts.length === 3) {
+    try {
+      const payload = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+      const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8')) as { exp?: number };
+      if (typeof decoded.exp === 'number') exp = decoded.exp;
+    } catch { /* use default */ }
+  }
+
+  return createSessionResponse(user, exp);
 }

@@ -12,19 +12,32 @@
  *  getSession → GET /api/auth/me → AuthUser | null
  */
 
-import { CustomAuthPublicClientApplication } from '@azure/msal-browser';
+import axios from 'axios';
+import { CustomAuthPublicClientApplication } from '@azure/msal-browser/custom-auth';
 import { customAuthConfig, loginScopes } from '@/config/msalConfig';
-import apiClient from '@/services/apiClient';
 import type { AuthUser } from '@/types/layout.types';
+
+// Separate client for Next.js API routes — uses relative URLs, not the .NET backend base URL
+const nextApiClient = axios.create({ headers: { 'Content-Type': 'application/json' } });
 import type { AuthError, SignInRequest, SignUpRequest, ForgotPasswordRequest } from '@/types/auth.types';
 
 // ─── Singleton MSAL instance ──────────────────────────────────────────────────
 
 let _msalClient: CustomAuthPublicClientApplication | null = null;
 
+// Holds the MSAL state object between the sign-up initiation and code submission steps.
+let _signUpCodeState: { submitCode(code: string): Promise<unknown> } | null = null;
+
 async function getMsalClient(): Promise<CustomAuthPublicClientApplication> {
   if (!_msalClient) {
-    _msalClient = await CustomAuthPublicClientApplication.create(customAuthConfig) as CustomAuthPublicClientApplication;
+    console.log('[getMsalClient] creating MSAL client with config:', customAuthConfig);
+    try {
+      _msalClient = await CustomAuthPublicClientApplication.create(customAuthConfig) as CustomAuthPublicClientApplication;
+      console.log('[getMsalClient] MSAL client created successfully');
+    } catch (err) {
+      console.error('[getMsalClient] FAILED to create MSAL client:', err);
+      throw err;
+    }
   }
   return _msalClient;
 }
@@ -43,19 +56,49 @@ function makeAuthError(code: string, message: string): AuthError {
 async function signInFromContinuation(
   continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> }
 ): Promise<AuthUser> {
-  const signInResult = await continuationState.signIn({ scopes: loginScopes });
+  let signInResult: Awaited<ReturnType<typeof continuationState.signIn>>;
+  try {
+    signInResult = await continuationState.signIn({ scopes: loginScopes });
+    console.log('[signInFromContinuation] result:', signInResult);
+  } catch (err) {
+    console.error('[signInFromContinuation] signIn() threw:', err);
+    throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Sign-in continuation failed.');
+  }
 
   if (!signInResult.isCompleted()) {
+    console.error('[signInFromContinuation] not completed. state:', signInResult.state, 'isFailed:', signInResult.isFailed?.(), 'isPasswordRequired:', signInResult.isPasswordRequired?.(), 'isCodeRequired:', signInResult.isCodeRequired?.(), 'error:', signInResult.error);
     throw makeAuthError('UNKNOWN', 'Auto sign-in after registration did not complete.');
   }
 
-  const idToken = signInResult.resultData?.getIdToken();
-  if (!idToken) {
-    throw makeAuthError('UNKNOWN', 'No ID token received after registration.');
-  }
+  // resultData is exposed as `.data` in the MSAL native auth SignInResult at runtime
+  const resultData = (signInResult as unknown as Record<string, unknown>).data as Record<string, unknown> | undefined
+    ?? (signInResult as unknown as Record<string, unknown>).resultData as Record<string, unknown> | undefined;
 
-  const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
-  return data;
+  const account = resultData?.account as {
+    localAccountId?: string;
+    username?: string;
+    name?: string;
+    idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string };
+  } | undefined;
+
+  console.log('[signInFromContinuation] account:', account);
+
+  const claims = account?.idTokenClaims;
+  const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
+  const email = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? '';
+  const name = claims?.name ?? account?.name;
+
+  console.log('[signInFromContinuation] oid:', oid, 'email:', email);
+
+  if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received after sign-in.');
+
+  try {
+    const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', { nativeClaims: { oid, email, name } });
+    return data;
+  } catch (err) {
+    console.error('[signInFromContinuation] session POST failed:', err);
+    throw err;
+  }
 }
 
 // ─── authService ──────────────────────────────────────────────────────────────
@@ -74,10 +117,18 @@ export const authService = {
     const client = await getMsalClient();
 
     // Step 1: Initiate sign-in with username
-    const signInResult = await client.signIn({ username: email, scopes: loginScopes });
+    let signInResult: Awaited<ReturnType<typeof client.signIn>>;
+    try {
+      signInResult = await client.signIn({ username: email, scopes: loginScopes });
+      console.log('[signIn] step1 result:', signInResult);
+    } catch (err) {
+      console.error('[signIn] client.signIn() threw:', err);
+      throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Sign-in failed.');
+    }
 
     if (signInResult.isFailed()) {
       const error = signInResult.error;
+      console.error('[signIn] failed error:', error, 'message:', error?.message);
       if (error?.isUserNotFound() || error?.isInvalidUsername()) {
         throw makeAuthError('USER_NOT_FOUND', 'No account found for this email address.');
       }
@@ -103,15 +154,25 @@ export const authService = {
       throw makeAuthError('UNKNOWN', 'Sign-in did not complete — additional steps required.');
     }
 
-    // Step 3: Exchange the ID token for a server-side session cookie
-    const accountData = passwordResult.resultData;
-    const idToken = accountData?.getIdToken();
-    if (!idToken) {
-      throw makeAuthError('UNKNOWN', 'No ID token received from B2C.');
-    }
+    // Step 3: Exchange credentials for a server-side session cookie
+    const rawResult = (passwordResult as unknown as Record<string, unknown>).data as Record<string, unknown> | undefined
+      ?? (passwordResult as unknown as Record<string, unknown>).resultData as Record<string, unknown> | undefined;
+    const account = rawResult?.account as {
+      localAccountId?: string; username?: string; name?: string;
+      idTokenClaims?: { oid?: string; sub?: string; email?: string; emails?: string[]; name?: string };
+    } | undefined;
+
+    const idToken = (rawResult as { getIdToken?(): string | undefined } | undefined)?.getIdToken?.() ?? null;
+    const claims = account?.idTokenClaims;
+    const oid = claims?.oid ?? claims?.sub ?? account?.localAccountId;
+    const userEmail = claims?.email ?? claims?.emails?.[0] ?? account?.username ?? email;
+    const name = claims?.name ?? account?.name;
+
+    if (!oid) throw makeAuthError('UNKNOWN', 'No user identifier received from B2C.');
 
     try {
-      const { data } = await apiClient.post<AuthUser>('/api/auth/session', { idToken });
+      const payload = idToken ? { idToken } : { nativeClaims: { oid, email: userEmail, name } };
+      const { data } = await nextApiClient.post<AuthUser>('/api/auth/session', payload);
       return data;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number } };
@@ -135,10 +196,13 @@ export const authService = {
     const client = await getMsalClient();
 
     // Step 1: Initiate sign-up with username + password
+    console.log('[authService.signUp] calling client.signUp for', email);
     const signUpResult = await client.signUp({ username: email, password });
+    console.log('[authService.signUp] result:', signUpResult);
 
     if (signUpResult.isFailed()) {
       const error = signUpResult.error;
+      console.error('[authService.signUp] MSAL error:', error);
       if (error?.isUserAlreadyExists()) {
         throw makeAuthError('USER_ALREADY_EXISTS', 'An account with this email already exists.');
       }
@@ -148,7 +212,13 @@ export const authService = {
       throw makeAuthError('UNKNOWN', error?.message ?? 'Sign-up failed.');
     }
 
-    // Step 2: If B2C requires password submission as a separate step
+    // Step 2: CIAM requires email verification code before completing sign-up
+    if (signUpResult.isCodeRequired()) {
+      _signUpCodeState = signUpResult.state;
+      throw makeAuthError('CODE_REQUIRED', 'Please check your email for a verification code.');
+    }
+
+    // Step 3: If B2C requires password submission as a separate step
     if (signUpResult.isPasswordRequired()) {
       const pwResult = await signUpResult.state.submitPassword(password);
       if (pwResult.isFailed()) {
@@ -161,7 +231,6 @@ export const authService = {
       if (!pwResult.isCompleted()) {
         throw makeAuthError('UNKNOWN', 'Sign-up did not complete after password submission.');
       }
-      // Auto sign-in via continuation token
       return signInFromContinuation(pwResult.state);
     }
 
@@ -169,8 +238,42 @@ export const authService = {
       throw makeAuthError('UNKNOWN', 'Sign-up did not complete — additional steps required.');
     }
 
-    // Auto sign-in via continuation token
     return signInFromContinuation(signUpResult.state);
+  },
+
+  /**
+   * Submits the email verification code sent by CIAM during sign-up.
+   * Must be called after `signUp` resolves with a `CODE_REQUIRED` error.
+   */
+  async submitSignUpCode(code: string): Promise<AuthUser> {
+    if (!_signUpCodeState) {
+      throw makeAuthError('UNKNOWN', 'No pending sign-up code state. Please restart sign-up.');
+    }
+
+    const codeResult = await (_signUpCodeState as {
+      submitCode(code: string): Promise<{
+        isFailed(): boolean;
+        isCompleted(): boolean;
+        isPasswordRequired(): boolean;
+        error?: { message?: string; isInvalidCode?(): boolean };
+        state: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult>; submitPassword?(pw: string): Promise<unknown> };
+      }>;
+    }).submitCode(code);
+
+    if (codeResult.isFailed()) {
+      const error = codeResult.error;
+      if (error?.isInvalidCode?.()) {
+        throw makeAuthError('INVALID_CODE', 'The verification code is incorrect or has expired.');
+      }
+      throw makeAuthError('UNKNOWN', error?.message ?? 'Code verification failed.');
+    }
+
+    if (codeResult.isCompleted()) {
+      _signUpCodeState = null;
+      return signInFromContinuation(codeResult.state);
+    }
+
+    throw makeAuthError('UNKNOWN', 'Sign-up did not complete after code submission.');
   },
 
   /**
@@ -202,7 +305,7 @@ export const authService = {
    * and returns the B2C logout URL for the caller to redirect to.
    */
   async signOut(): Promise<string> {
-    const { data } = await apiClient.post<{ logoutUrl: string }>('/api/auth/sign-out');
+    const { data } = await nextApiClient.post<{ logoutUrl: string }>('/api/auth/sign-out');
     return data.logoutUrl;
   },
 
@@ -212,7 +315,7 @@ export const authService = {
    */
   async getSession(): Promise<AuthUser | null> {
     try {
-      const { data } = await apiClient.get<AuthUser>('/api/auth/me');
+      const { data } = await nextApiClient.get<AuthUser>('/api/auth/me');
       return data;
     } catch {
       return null;

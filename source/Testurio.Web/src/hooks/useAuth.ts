@@ -83,6 +83,19 @@ export function useSignUp() {
  * Resolves on success or on "account not found" errors (prevents enumeration).
  * Rejects with an error for unexpected failures, allowing `isError` to be exposed.
  */
+export function useSubmitSignUpCode() {
+  const qc = useQueryClient();
+  const router = useRouter();
+
+  return useMutation<AuthUser, AuthError | ApiError, string>({
+    mutationFn: (code) => authService.submitSignUpCode(code),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: AUTH_KEYS.me });
+      router.replace(DASHBOARD_ROUTE);
+    },
+  });
+}
+
 export function useForgotPassword() {
   return useMutation<void, Error, ForgotPasswordRequest>({
     mutationFn: (req) => authService.forgotPassword(req),

@@ -44,11 +44,18 @@ interface RawIdTokenClaims {
  */
 let _jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 
+function getTenantId(): string {
+  const authority = process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '';
+  // Authority format: https://<tenant>.ciamlogin.com/<tenantId>/v2.0
+  const match = authority.match(/\/([0-9a-f-]{36})\/v2\.0/i);
+  return match?.[1] ?? '';
+}
+
 function getJwks(): ReturnType<typeof createRemoteJWKSet> {
   if (!_jwks) {
-    const authority = process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '';
-    // B2C JWKS endpoint: <authority>/discovery/v2.0/keys
-    const jwksUrl = new URL(`${authority.replace(/\/$/, '')}/discovery/v2.0/keys`);
+    const tenantId = getTenantId();
+    // CIAM JWKS uses the tenant GUID as subdomain
+    const jwksUrl = new URL(`https://${tenantId}.ciamlogin.com/${tenantId}/discovery/v2.0/keys`);
     _jwks = createRemoteJWKSet(jwksUrl);
   }
   return _jwks;
@@ -73,11 +80,11 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
 
     const claims = payload as unknown as RawIdTokenClaims;
 
-    // Exact issuer match — must equal the full B2C issuer URL.
-    // B2C issues tokens with `iss` = <authority>/v2.0 (trailing slash variants exist).
-    const authority = (process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '').replace(/\/$/, '');
-    const expectedIssuer = `${authority}/v2.0/`;
+    // CIAM issues tokens with iss = https://<tenantId>.ciamlogin.com/<tenantId>/v2.0 (no trailing slash)
+    const tenantId = getTenantId();
+    const expectedIssuer = `https://${tenantId}.ciamlogin.com/${tenantId}/v2.0`;
     if (claims.iss !== expectedIssuer) {
+      console.error('[tokenValidator] issuer mismatch — got:', claims.iss, 'expected:', expectedIssuer);
       return null;
     }
 
@@ -97,7 +104,8 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
       email,
       avatarUrl: undefined,
     };
-  } catch {
+  } catch (err) {
+    console.error('[tokenValidator] jwtVerify threw:', err);
     return null;
   }
 }
