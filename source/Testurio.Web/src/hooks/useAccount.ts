@@ -25,11 +25,7 @@ export function useAccountPreferences() {
     queryKey: ACCOUNT_KEYS.preferences,
     queryFn: accountService.getPreferences,
     staleTime: 5 * 60 * 1000,
-    retry: (failureCount, error) => {
-      // Do not retry on 404 — it means no preferences saved yet (expected for new users)
-      if (error.status === 404) return false;
-      return failureCount < 3;
-    },
+    retry: false,
   });
 }
 
