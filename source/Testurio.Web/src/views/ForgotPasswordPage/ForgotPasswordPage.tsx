@@ -177,7 +177,7 @@ export default function ForgotPasswordPage() {
             <TextField
               label={t('forgotPassword.codeLabel')}
               type="text"
-              autoComplete="off"
+              autoComplete="one-time-code"
               fullWidth
               autoFocus
               error={Boolean(codeForm.formState.errors.code)}
