@@ -85,6 +85,12 @@ public partial class PMToolConnectionService : IPMToolConnectionService
         project.WebhookSecretUri = webhookSecretUri;
         project.WebhookSecretViewed = webhookSecretViewed;
 
+        // Post-run status transition (feature 0024) — null/empty clears previously stored values.
+        project.AdoPassedTransitionStatus = string.IsNullOrWhiteSpace(request.PassedTransitionStatus)
+            ? null : request.PassedTransitionStatus.Trim();
+        project.AdoFailedTransitionStatus = string.IsNullOrWhiteSpace(request.FailedTransitionStatus)
+            ? null : request.FailedTransitionStatus.Trim();
+
         // Clear any previous Jira fields.
         project.JiraBaseUrl = null;
         project.JiraProjectKey = null;
@@ -93,6 +99,8 @@ public partial class PMToolConnectionService : IPMToolConnectionService
         project.JiraApiTokenSecretUri = null;
         project.JiraEmailSecretUri = null;
         project.JiraPatSecretUri = null;
+        project.JiraPassedTransitionStatus = null;
+        project.JiraFailedTransitionStatus = null;
 
         project.UpdatedAt = DateTimeOffset.UtcNow;
 
