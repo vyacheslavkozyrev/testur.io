@@ -217,8 +217,6 @@ public class FeedbackLoopFlagDetectionTests
         UserId = "user-1",
         JiraIssueKey = "TEST-123",
         JiraIssueId = "10001",
-        ResolvedTestTypes = resolvedTestTypes
-            .Select(t => Enum.Parse<TestType>(t, ignoreCase: true))
-            .ToArray(),
+        ResolvedTestTypes = resolvedTestTypes,
     };
 }

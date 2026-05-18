@@ -46,7 +46,7 @@ public class FeedbackLoopIntegrationTests
     {
         var project = MakeAdoProject();
         SetupProjectAndToken(project);
-        SetupLastRun([TestType.Api]);
+        SetupLastRun(["api"]);
         SetupEmbeddingAndUpsert();
         _adoClient.Setup(a => a.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(),
@@ -82,7 +82,7 @@ public class FeedbackLoopIntegrationTests
     {
         var project = MakeJiraProject();
         SetupProjectAndToken(project);
-        SetupLastRun([TestType.UiE2e]);
+        SetupLastRun(["uie2e"]);
         SetupEmbeddingAndUpsert();
         _jiraClient.Setup(j => j.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -140,7 +140,7 @@ public class FeedbackLoopIntegrationTests
     {
         var project = MakeJiraProject();
         SetupProjectAndToken(project);
-        SetupLastRun([TestType.Api]);
+        SetupLastRun(["api"]);
         SetupEmbeddingAndUpsert();
         _jiraClient.Setup(j => j.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
@@ -211,7 +211,7 @@ public class FeedbackLoopIntegrationTests
     {
         var project = MakeJiraProject();
         SetupProjectAndToken(project);
-        SetupLastRun([TestType.Api]);
+        SetupLastRun(["api"]);
         _embeddingService.Setup(e => e.EmbedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Azure OpenAI timeout"));
 
@@ -242,7 +242,7 @@ public class FeedbackLoopIntegrationTests
             .ReturnsAsync("resolved-secret");
     }
 
-    private void SetupLastRun(TestType[] testTypes)
+    private void SetupLastRun(string[] testTypes)
     {
         _testRunRepo.Setup(r => r.GetMostRecentByWorkItemAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))

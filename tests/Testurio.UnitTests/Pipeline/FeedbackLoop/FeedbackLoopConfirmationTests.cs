@@ -50,7 +50,7 @@ public class FeedbackLoopConfirmationTests
         JiraApiTokenSecretUri = "https://vault/jira-token",
     };
 
-    private void SetupCommonMocks(TestType[] resolvedTypes, Project? project = null)
+    private void SetupCommonMocks(string[] resolvedTypes, Project? project = null)
     {
         _projectRepo.Setup(r => r.GetByProjectIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(project ?? MakeProject());
@@ -78,7 +78,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_AllUpsertSucceed_PostCommentCalledOnce()
     {
-        SetupCommonMocks([TestType.Api, TestType.UiE2e]);
+        SetupCommonMocks(["api", "uie2e"]);
         _jiraClient.Setup(j => j.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -98,7 +98,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_TwoTestTypes_ConfirmationBodyContainsBothTypes()
     {
-        SetupCommonMocks([TestType.Api, TestType.UiE2e]);
+        SetupCommonMocks(["api", "uie2e"]);
 
         string? capturedBody = null;
         _jiraClient.Setup(j => j.PostCommentAsync(
@@ -122,7 +122,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_PostCommentThrows_DoesNotRethrow()
     {
-        SetupCommonMocks([TestType.Api]);
+        SetupCommonMocks(["api"]);
         _jiraClient.Setup(j => j.PostCommentAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -145,7 +145,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_ForwardsCancellationTokenToPostComment()
     {
-        SetupCommonMocks([TestType.Api]);
+        SetupCommonMocks(["api"]);
 
         using var cts = new CancellationTokenSource();
         CancellationToken? capturedToken = null;
@@ -168,7 +168,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_ForwardsCancellationTokenToEmbedding()
     {
-        SetupCommonMocks([TestType.Api]);
+        SetupCommonMocks(["api"]);
 
         using var cts = new CancellationTokenSource();
         CancellationToken? capturedToken = null;
@@ -192,7 +192,7 @@ public class FeedbackLoopConfirmationTests
     [Fact]
     public async Task ProcessAsync_ForwardsCancellationTokenToUpsert()
     {
-        SetupCommonMocks([TestType.Api]);
+        SetupCommonMocks(["api"]);
 
         using var cts = new CancellationTokenSource();
         CancellationToken? capturedToken = null;

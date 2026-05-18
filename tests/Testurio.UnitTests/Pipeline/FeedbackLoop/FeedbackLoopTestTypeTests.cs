@@ -81,7 +81,7 @@ public class FeedbackLoopTestTypeTests
                 UserId = "user-x",
                 JiraIssueKey = "TEST-100",
                 JiraIssueId = "10100",
-                ResolvedTestTypes = [TestType.Api],
+                ResolvedTestTypes = ["api"],
             });
 
         var sut = CreateSut();
@@ -106,7 +106,7 @@ public class FeedbackLoopTestTypeTests
                 UserId = "user-x",
                 JiraIssueKey = "TEST-100",
                 JiraIssueId = "10100",
-                ResolvedTestTypes = [TestType.Api, TestType.UiE2e],
+                ResolvedTestTypes = ["api", "uie2e"],
             });
 
         var sut = CreateSut();
@@ -148,7 +148,7 @@ public class FeedbackLoopTestTypeTests
                 UserId = "user-x",
                 JiraIssueKey = "TEST-100",
                 JiraIssueId = "10100",
-                ResolvedTestTypes = [TestType.Api],
+                ResolvedTestTypes = ["api"],
             });
         _embeddingService.Setup(e => e.EmbedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("Azure OpenAI unreachable"));
@@ -174,7 +174,7 @@ public class FeedbackLoopTestTypeTests
                 UserId = "user-x",
                 JiraIssueKey = "TEST-100",
                 JiraIssueId = "10100",
-                ResolvedTestTypes = [TestType.Api, TestType.UiE2e],
+                ResolvedTestTypes = ["api", "uie2e"],
             });
 
         var callCount = 0;
