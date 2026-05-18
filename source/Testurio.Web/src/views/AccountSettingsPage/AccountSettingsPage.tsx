@@ -9,13 +9,9 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import { useTheme, type Theme } from '@mui/material/styles';
-import { useQuery } from '@tanstack/react-query';
-import { authService } from '@/services/auth/authService';
-import { AUTH_KEYS } from '@/hooks/useAuth';
-import { useAccountPreferences } from '@/hooks/useAccount';
+import { useAuthUserQuery, useAccountPreferences } from '@/hooks/useAccount';
 import PersonalInfoSection from '@/components/PersonalInfoSection/PersonalInfoSection';
 import PreferencesSection from '@/components/PreferencesSection/PreferencesSection';
-import type { AuthUser } from '@/types/layout.types';
 import type { ApiError } from '@/types/api.types';
 
 export default function AccountSettingsPage() {
@@ -27,11 +23,7 @@ export default function AccountSettingsPage() {
   const {
     data: user,
     isPending: isUserPending,
-  } = useQuery<AuthUser | null>({
-    queryKey: AUTH_KEYS.me,
-    queryFn: authService.getSession,
-    staleTime: 5 * 60 * 1000,
-  });
+  } = useAuthUserQuery();
 
   const {
     data: preferences,

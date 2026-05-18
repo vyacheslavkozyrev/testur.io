@@ -1,14 +1,10 @@
 import apiClient from '@/services/apiClient';
-import type { AccountPreferencesDto, UpdateProfileRequest, UpdatePreferencesRequest } from '@/types/account.types';
-import type { AuthUser } from '@/types/layout.types';
+import type { AccountProfileDto, AccountPreferencesDto, UpdateProfileRequest, UpdatePreferencesRequest } from '@/types/account.types';
 
 export const accountService = {
-  getProfile: (): Promise<AuthUser> =>
-    apiClient.get<AuthUser>('/api/auth/me').then((r) => r.data),
-
-  updateProfile: (body: UpdateProfileRequest): Promise<{ userId: string; displayName: string | null }> =>
+  updateProfile: (body: UpdateProfileRequest): Promise<AccountProfileDto> =>
     apiClient
-      .patch<{ userId: string; displayName: string | null }>('/v1/account/profile', body)
+      .patch<AccountProfileDto>('/v1/account/profile', body)
       .then((r) => r.data),
 
   getPreferences: (): Promise<AccountPreferencesDto> =>

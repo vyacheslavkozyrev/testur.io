@@ -1,3 +1,8 @@
+export interface AccountProfileDto {
+  userId: string;
+  displayName: string | null;
+}
+
 export interface AccountPreferencesDto {
   language: string | null;
   theme: string | null;
