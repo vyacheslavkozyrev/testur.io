@@ -20,10 +20,14 @@ public class StripeService : IStripeService
     public StripeService(IOptions<StripeOptions> options)
     {
         _options = options.Value;
-        StripeConfiguration.ApiKey = _options.SecretKey;
+        // Do NOT set StripeConfiguration.ApiKey globally — it is a static shared across
+        // the AppDomain and would be overwritten in multi-tenant or test scenarios.
+        // Pass the API key per-request via RequestOptions instead.
         _sessionService = new SessionService();
         _subscriptionService = new SubscriptionService();
     }
+
+    private RequestOptions ApiRequestOptions => new() { ApiKey = _options.SecretKey };
 
     /// <inheritdoc/>
     public async Task<string> CreateCheckoutSessionAsync(
@@ -55,13 +59,18 @@ public class StripeService : IStripeService
             SubscriptionData = new SessionSubscriptionDataOptions
             {
                 TrialPeriodDays = 14,
-                Metadata = new Dictionary<string, string> { ["userId"] = userId },
+                Metadata = new Dictionary<string, string>
+                {
+                    ["userId"]          = userId,
+                    ["plan"]            = plan.ToString(),
+                    ["billingInterval"] = billingInterval.ToString(),
+                },
             },
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl,
         };
 
-        var session = await _sessionService.CreateAsync(createOptions, cancellationToken: cancellationToken);
+        var session = await _sessionService.CreateAsync(createOptions, ApiRequestOptions, cancellationToken);
         return session.Url;
     }
 
@@ -74,7 +83,8 @@ public class StripeService : IStripeService
         {
             var subscription = await _subscriptionService.GetAsync(
                 stripeSubscriptionId,
-                cancellationToken: cancellationToken);
+                ApiRequestOptions,
+                cancellationToken);
 
             return MapToUserSubscription(subscription);
         }

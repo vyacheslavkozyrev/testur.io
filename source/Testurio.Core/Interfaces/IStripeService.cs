@@ -31,6 +31,8 @@ public interface IStripeService
 
     /// <summary>
     /// Retrieves a Stripe Subscription object by its ID.
+    /// Reserved for future use (e.g., feature 0016 — subscription management).
+    /// Not called by <c>BillingService</c> in the current feature; webhook events are used instead.
     /// </summary>
     /// <param name="stripeSubscriptionId">The Stripe subscription ID (<c>sub_*</c>).</param>
     /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>

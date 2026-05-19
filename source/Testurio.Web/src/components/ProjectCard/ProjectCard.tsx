@@ -85,17 +85,17 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               </Typography>
             )}
 
-            {isGated && (
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<PlayArrowOutlinedIcon />}
-                onClick={handleRunClick}
-                sx={styles.runButton}
-              >
-                {t('card.runTest')}
-              </Button>
-            )}
+            {/* Run test button is always visible; clicking while gated opens the UpgradeModal.
+                Non-gated runs are triggered via PM tool webhooks (no manual trigger in MVP). */}
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<PlayArrowOutlinedIcon />}
+              onClick={handleRunClick}
+              sx={styles.runButton}
+            >
+              {t('card.runTest')}
+            </Button>
           </CardContent>
         </CardActionArea>
       </Card>

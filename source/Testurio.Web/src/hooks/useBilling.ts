@@ -12,7 +12,12 @@ export const BILLING_KEYS = {
   subscription: ['billing', 'subscription'] as const,
 };
 
-/** Terminal statuses — polling stops once one of these is reached. */
+/**
+ * Terminal statuses — polling stops once one of these is reached.
+ * 'Expired' is included to prevent an infinite poll loop in the unlikely edge case
+ * where the subscription is immediately expired after checkout (e.g. fraud check).
+ * AC-023 specifies stopping on Trialing/Active; Expired is a safe additional guard.
+ */
 const TERMINAL_STATUSES: SubscriptionStatus[] = ['Trialing', 'Active', 'Expired'];
 
 /**

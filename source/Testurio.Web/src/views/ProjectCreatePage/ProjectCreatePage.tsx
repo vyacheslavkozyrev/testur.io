@@ -44,6 +44,8 @@ export default function ProjectCreatePage() {
     if (isGated) setUpgradeModalOpen(true);
   }, [isGated]);
 
+  const handleCloseUpgradeModal = useCallback(() => setUpgradeModalOpen(false), []);
+
   return (
     <Box sx={styles.root}>
       <Typography variant="h4" sx={styles.pageTitle}>
@@ -54,7 +56,7 @@ export default function ProjectCreatePage() {
       </Box>
       <UpgradeModal
         open={upgradeModalOpen}
-        onClose={useCallback(() => setUpgradeModalOpen(false), [])}
+        onClose={handleCloseUpgradeModal}
       />
     </Box>
   );

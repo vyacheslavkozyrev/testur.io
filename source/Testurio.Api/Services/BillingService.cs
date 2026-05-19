@@ -1,7 +1,7 @@
-using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Testurio.Api.DTOs.Billing;
+using Testurio.Api.Options;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
@@ -36,10 +36,11 @@ public class BillingService(
     IStripeService stripeService,
     IUserSubscriptionRepository subscriptionRepository,
     IOptions<StripeOptions> stripeOptions,
-    IConfiguration configuration,
+    IOptions<AppOptions> appOptions,
     ILogger<BillingService> logger) : IBillingService
 {
     private readonly StripeOptions _stripeOptions = stripeOptions.Value;
+    private readonly AppOptions _appOptions = appOptions.Value;
 
     public async Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(
         string userId,
@@ -47,7 +48,7 @@ public class BillingService(
         CreateCheckoutSessionRequest request,
         CancellationToken cancellationToken = default)
     {
-        var baseUrl = configuration["App:BaseUrl"] ?? "https://app.testur.io";
+        var baseUrl = _appOptions.BaseUrl;
         var successUrl = $"{baseUrl}/billing/success?session_id={{CHECKOUT_SESSION_ID}}";
         var cancelUrl = $"{baseUrl}/pricing";
 
@@ -134,6 +135,16 @@ public class BillingService(
         existing.Status = SubscriptionStatus.Trialing;
         existing.TrialEndsAt = session.Subscription?.TrialEnd;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
+
+        // Recover plan and billing interval from subscription metadata set at checkout creation.
+        var metadata = session.Subscription?.Metadata ?? new Dictionary<string, string>();
+        if (metadata.TryGetValue("plan", out var planStr) &&
+            Enum.TryParse<SubscriptionPlan>(planStr, out var plan))
+            existing.Plan = plan;
+
+        if (metadata.TryGetValue("billingInterval", out var intervalStr) &&
+            Enum.TryParse<BillingInterval>(intervalStr, out var billingInterval))
+            existing.BillingInterval = billingInterval;
 
         await subscriptionRepository.UpsertAsync(existing, cancellationToken);
 
