@@ -45,7 +45,7 @@
 - [x] T021 [UI] Create `BillingPage` view (reads plan+interval from query params; redirects to /pricing if absent; calls useCreateCheckoutSession on mount; shows loading state while redirecting to Stripe Checkout URL) — `source/Testurio.Web/src/views/BillingPage/BillingPage.tsx`
 - [x] T022 [UI] Register `/billing` authenticated route — `source/Testurio.Web/src/app/(authenticated)/billing/page.tsx`
 - [x] T023 [UI] Create `CheckoutSuccessPage` view (reads session_id query param; redirects to /pricing if absent; polls useSubscriptionStatus every 3 s; shows loading state → confirmation + "Create your first project" CTA on Trialing status → support message after 30 s timeout with polling stopped) — `source/Testurio.Web/src/views/CheckoutSuccessPage/CheckoutSuccessPage.tsx`
-- [ ] T024 [UI] Add checkout success translation keys — `source/Testurio.Web/src/locales/en/checkoutSuccess.json`
+- [x] T024 [UI] Add checkout success translation keys — `source/Testurio.Web/src/locales/en/checkoutSuccess.json`
 - [ ] T025 [UI] Register `/billing/success` authenticated route — `source/Testurio.Web/src/app/(authenticated)/billing/success/page.tsx`
 
 ### Frontend — Portal Banners and Upgrade Gate

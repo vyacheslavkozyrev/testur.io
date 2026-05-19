@@ -1,0 +1,13 @@
+{
+  "loading": {
+    "message": "Activating your trial, please wait…"
+  },
+  "confirmed": {
+    "title": "Your free trial has started!",
+    "message": "Your 14-day free trial is now active. Create your first project to get started.",
+    "cta": "Create your first project"
+  },
+  "timeout": {
+    "message": "It's taking longer than expected to activate your subscription. Please check your email for confirmation, or contact support if the issue persists."
+  }
+}
