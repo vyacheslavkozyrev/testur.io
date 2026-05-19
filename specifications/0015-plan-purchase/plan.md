@@ -35,7 +35,7 @@
 
 ### Frontend — Pricing Page (public)
 
-- [ ] T017 [UI] Add billing API types — `source/Testurio.Web/src/types/billing.types.ts`
+- [ ] T017 [UI] Add billing API types — `source/Testurio.Web/src/types/billing.types.ts` (note: `plan.types.ts` exists with `PlanDefinition` and `BillingInterval`; extend or replace with a unified `billing.types.ts`)
   - `SubscriptionPlan`, `BillingInterval`, `SubscriptionStatus` enums
   - `PlanDefinition` (id, name, features, monthlyPrice, annualPrice, annualDiscountPercent)
   - `CreateCheckoutSessionRequest`, `CheckoutSessionResponse`, `SubscriptionStatusResponse`
@@ -46,23 +46,23 @@
   - `useSubscriptionStatus()` — polls GET /api/billing/subscription; exposes status and trialDaysRemaining; stops polling once terminal status reached
   - `useCreateCheckoutSession()` — useMutation wrapping billingService.createCheckoutSession; on success redirects browser to checkoutUrl
 - [ ] T020 [UI] Add MSW mock handlers for billing endpoints — `source/Testurio.Web/src/mocks/handlers/billing.ts`
-- [ ] T021 [UI] Create `PlanCard` component (name, feature highlights, monthly/annual price, annual discount badge, "Start free trial" CTA button) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
-- [ ] T022 [UI] Create `BillingIntervalToggle` component (Monthly / Annual switch; switches all PlanCard prices simultaneously) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
-- [ ] T023 [UI] Create `PricingPage` page (four-plan grid in order: Test Junior, Test Pro, Team, Centurio; interval toggle; trial callout in header; unauthenticated CTA preserves plan+interval as query params for post-auth redirect; authenticated CTA calls useCreateCheckoutSession) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.tsx`
-- [ ] T024 [UI] Add pricing translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
-- [ ] T025 [UI] Register `/pricing` public route — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T021 [UI] Create `PlanCard` component (name, feature highlights, monthly/annual price, annual discount badge, "Start free trial" CTA button) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
+- [x] T022 [UI] Create `BillingIntervalToggle` component (Monthly / Annual switch; switches all PlanCard prices simultaneously) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
+- [x] T023 [UI] Create `PricingPage` view (four-plan grid in order: Test Junior, Test Pro, Team, Centurio; interval toggle; trial callout in header; unauthenticated CTA preserves plan+interval as query params for post-auth redirect; authenticated CTA calls useCreateCheckoutSession) — `source/Testurio.Web/src/views/PricingPage/PricingPage.tsx`
+- [x] T024 [UI] Add pricing translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
+- [x] T025 [UI] Register `/pricing` public route — `source/Testurio.Web/src/app/pricing/page.tsx`
 
 ### Frontend — Checkout Success Page
 
-- [ ] T026 [UI] Create `CheckoutSuccessPage` page (reads session_id query param; redirects to /pricing if absent; calls useSubscriptionStatus polling every 3 s; shows loading state → confirmation + "Create your first project" CTA on trialing status → support message after 30 s timeout) — `source/Testurio.Web/src/pages/CheckoutSuccessPage/CheckoutSuccessPage.tsx`
+- [ ] T026 [UI] Create `CheckoutSuccessPage` view (reads session_id query param; redirects to /pricing if absent; calls useSubscriptionStatus polling every 3 s; shows loading state → confirmation + "Create your first project" CTA on trialing status → support message after 30 s timeout) — `source/Testurio.Web/src/views/CheckoutSuccessPage/CheckoutSuccessPage.tsx`
 - [ ] T027 [UI] Add checkout success translation keys — `source/Testurio.Web/src/locales/en/checkoutSuccess.json`
-- [ ] T028 [UI] Register `/billing/success` route — `source/Testurio.Web/src/routes/routes.tsx`
+- [ ] T028 [UI] Register `/billing/success` route — `source/Testurio.Web/src/app/billing/success/page.tsx`
 
 ### Frontend — Portal Banners and Upgrade Gate
 
 - [ ] T029 [UI] Create `TrialStatusBanner` component (shows "X days remaining" banner on dashboard; amber MUI Alert style when ≤3 days remain; "Upgrade now" CTA links to /pricing; "Trial expired" variant for expired state; hidden when subscription is active) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.tsx`
 - [ ] T030 [UI] Create `UpgradeModal` component (shown when a gated action is attempted with no active plan or expired trial; links to /pricing?interval=monthly) — `source/Testurio.Web/src/components/UpgradeModal/UpgradeModal.tsx`
-- [ ] T031 [UI] Integrate `TrialStatusBanner` into the authenticated portal layout so it appears on every portal page — `source/Testurio.Web/src/components/AppLayout/AppLayout.tsx`
+- [ ] T031 [UI] Integrate `TrialStatusBanner` into the authenticated portal layout so it appears on every portal page — `source/Testurio.Web/src/components/PrivateCabinetLayout/PrivateCabinetLayout.tsx`
 - [ ] T032 [UI] Gate "Create project" action with `UpgradeModal` when subscription status is None or Expired — project creation component/page
 - [ ] T033 [UI] Gate "Trigger test run" action with `UpgradeModal` when subscription status is None or Expired — test-run trigger component/page
 - [ ] T034 [UI] Add portal billing translation keys — `source/Testurio.Web/src/locales/en/billing.json`
@@ -72,7 +72,7 @@
 - [ ] T035 [Test] Unit tests for `BillingService` (CreateCheckoutSession maps each plan+interval to the correct Price ID; GetSubscriptionStatus returns correct DTO; HandleStripeWebhookAsync upserts subscription on checkout.session.completed; updates status on customer.subscription.updated) — `tests/Testurio.UnitTests/Services/BillingServiceTests.cs`
 - [ ] T036 [Test] Unit tests for `StripeService` (CheckoutSession created with trial_period_days=14, customer_email, correct cancel_url and success_url) — `tests/Testurio.UnitTests/Infrastructure/StripeServiceTests.cs`
 - [ ] T037 [Test] Integration tests for billing endpoints (POST /api/billing/checkout returns checkoutUrl; GET /api/billing/subscription returns correct status; POST /webhooks/stripe with invalid Stripe-Signature returns 400; valid webhook upserts UserSubscription in Cosmos) — `tests/Testurio.IntegrationTests/Controllers/BillingControllerTests.cs`
-- [ ] T038 [Test] Frontend component tests for `PlanCard` (renders plan name, features, price; CTA calls onSelect; annual discount badge visible when interval is Annual; hidden when interval is Monthly) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
+- [x] T038 [Test] Frontend component tests for `PlanCard` (renders plan name, features, price; CTA calls onSelect; annual discount badge visible when interval is Annual; hidden when interval is Monthly) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
 - [ ] T039 [Test] Frontend component tests for `TrialStatusBanner` (shows correct days remaining; applies amber style at ≤3 days; renders expired variant when status is Expired; does not render when status is Active) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.test.tsx`
 - [ ] T040 [Test] Frontend component tests for `CheckoutSuccessPage` (redirects to /pricing when session_id is absent; shows loading spinner initially; shows confirmation and CTA when status becomes trialing; shows timeout support message after 30 s) — `source/Testurio.Web/src/pages/CheckoutSuccessPage/CheckoutSuccessPage.test.tsx`
 - [ ] T041 [Test] E2E tests — `source/Testurio.Web/e2e/plan-purchase.spec.ts`
