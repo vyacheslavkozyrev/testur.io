@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Stripe;
+using Stripe.BillingPortal;
 using Stripe.Checkout;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
@@ -16,6 +17,7 @@ public class StripeService : IStripeService
     private readonly StripeOptions _options;
     private readonly SessionService _sessionService;
     private readonly SubscriptionService _subscriptionService;
+    private readonly Stripe.BillingPortal.SessionService _portalSessionService;
 
     public StripeService(IOptions<StripeOptions> options)
     {
@@ -25,6 +27,7 @@ public class StripeService : IStripeService
         // Pass the API key per-request via RequestOptions instead.
         _sessionService = new SessionService();
         _subscriptionService = new SubscriptionService();
+        _portalSessionService = new Stripe.BillingPortal.SessionService();
     }
 
     private RequestOptions ApiRequestOptions => new() { ApiKey = _options.SecretKey };
@@ -83,7 +86,7 @@ public class StripeService : IStripeService
         {
             var subscription = await _subscriptionService.GetAsync(
                 stripeSubscriptionId,
-                options: null,
+                new SubscriptionGetOptions { Expand = ["default_payment_method"] },
                 ApiRequestOptions,
                 cancellationToken);
 
@@ -95,6 +98,35 @@ public class StripeService : IStripeService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<string> CreatePortalSessionAsync(
+        string stripeCustomerId,
+        string returnUrl,
+        CancellationToken cancellationToken = default)
+    {
+        var createOptions = new Stripe.BillingPortal.SessionCreateOptions
+        {
+            Customer  = stripeCustomerId,
+            ReturnUrl = returnUrl,
+        };
+
+        var session = await _portalSessionService.CreateAsync(createOptions, ApiRequestOptions, cancellationToken);
+        return session.Url;
+    }
+
+    /// <inheritdoc/>
+    public async Task ReactivateSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default)
+    {
+        var updateOptions = new SubscriptionUpdateOptions
+        {
+            CancelAtPeriodEnd = false,
+        };
+
+        await _subscriptionService.UpdateAsync(stripeSubscriptionId, updateOptions, ApiRequestOptions, cancellationToken);
+    }
+
     private static UserSubscription MapToUserSubscription(global::Stripe.Subscription subscription)
     {
         var status = subscription.Status switch
@@ -104,13 +136,19 @@ public class StripeService : IStripeService
             _          => SubscriptionStatus.Expired,
         };
 
+        var card = subscription.DefaultPaymentMethod?.Card;
+
         return new UserSubscription
         {
-            StripeSubscriptionId = subscription.Id,
-            StripeCustomerId     = subscription.CustomerId,
-            Status               = status,
-            TrialEndsAt          = subscription.TrialEnd,
-            UpdatedAt            = DateTimeOffset.UtcNow,
+            StripeSubscriptionId  = subscription.Id,
+            StripeCustomerId      = subscription.CustomerId,
+            Status                = status,
+            TrialEndsAt           = subscription.TrialEnd,
+            CurrentPeriodEnd      = subscription.CurrentPeriodEnd,
+            PaymentMethodLast4    = card?.Last4,
+            PaymentMethodExpMonth = (int?)card?.ExpMonth,
+            PaymentMethodExpYear  = (int?)card?.ExpYear,
+            UpdatedAt             = DateTimeOffset.UtcNow,
         };
     }
 }
