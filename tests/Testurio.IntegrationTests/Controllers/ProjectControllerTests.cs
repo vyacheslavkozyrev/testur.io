@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -47,12 +49,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     {
         // The test host uses a no-op auth handler that accepts any bearer token.
         var client = _factory.CreateClient();
-        // Pass a dummy Bearer token — the test host replaces authentication with a passthrough.
+        // Pass a dummy Bearer token â€” the test host replaces authentication with a passthrough.
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
         return client;
     }
 
-    // ─── GET /v1/projects ────────────────────────────────────────────────────
+    // â”€â”€â”€ GET /v1/projects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProjects_ReturnsEmptyArray_WhenNoProjects()
@@ -87,7 +89,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal("Test Project", body[0].Name);
     }
 
-    // ─── GET /v1/projects/{id} ───────────────────────────────────────────────
+    // â”€â”€â”€ GET /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProject_ReturnsProject_WhenExists()
@@ -137,7 +139,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ─── POST /v1/projects ───────────────────────────────────────────────────
+    // â”€â”€â”€ POST /v1/projects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task CreateProject_Returns201_WithNewProject()
@@ -177,7 +179,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── PUT /v1/projects/{id} ───────────────────────────────────────────────
+    // â”€â”€â”€ PUT /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task UpdateProject_Returns200_WithUpdatedProject()
@@ -232,7 +234,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ─── DELETE /v1/projects/{id} ────────────────────────────────────────────
+    // â”€â”€â”€ DELETE /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task DeleteProject_Returns204_WhenDeleted()
@@ -281,7 +283,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ─── PATCH /v1/projects/{id}/work-item-type-filter ───────────────────────
+    // â”€â”€â”€ PATCH /v1/projects/{id}/work-item-type-filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PatchWorkItemTypeFilter_Returns200_WithUpdatedProject()
@@ -370,7 +372,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ─── RequestTimeoutSeconds validation — feature 0022 ────────────────────
+    // â”€â”€â”€ RequestTimeoutSeconds validation â€” feature 0022 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task UpdateProject_Returns200_AndPersistsRequestTimeoutSeconds()
@@ -443,7 +445,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
             .ReturnsAsync((Project p, CancellationToken _) => p);
 
         var client = CreateAuthenticatedClient();
-        // Omit requestTimeoutSeconds — the DTO default (30) will be used
+        // Omit requestTimeoutSeconds â€” the DTO default (30) will be used
         var payload = new { name = "My App", productUrl = "https://app.example.com", testingStrategy = "Smoke." };
         var response = await client.PutAsJsonAsync("/v1/projects/proj-001", payload);
 
@@ -472,7 +474,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(45, body!.RequestTimeoutSeconds);
     }
 
-    // ─── Auth guard ──────────────────────────────────────────────────────────
+    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProjects_Returns401_WithoutAuthToken()
@@ -508,7 +510,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -528,7 +530,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 // Replace JWT authentication with a test scheme that reads the OID claim
                 // from a simple Base64-encoded JSON payload so endpoints can extract userId.
@@ -567,3 +571,6 @@ internal sealed class TestAuthHandler(
         return Task.FromResult(Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(ticket));
     }
 }
+
+
+

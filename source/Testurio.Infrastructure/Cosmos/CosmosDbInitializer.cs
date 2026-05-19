@@ -2,12 +2,18 @@ using Microsoft.Azure.Cosmos;
 
 namespace Testurio.Infrastructure.Cosmos;
 
+/// <summary>Abstraction for Cosmos DB startup initialisation; injectable in tests.</summary>
+public interface ICosmosDbInitializer
+{
+    Task InitializeAsync(CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Creates the Cosmos DB database and all containers at startup when they do not already exist.
 /// Safe to call against the production account — CreateIfNotExistsAsync is a no-op when the
 /// resource already exists. Primarily useful against the local emulator during development.
 /// </summary>
-public sealed class CosmosDbInitializer(CosmosClient cosmosClient, string databaseName)
+public sealed class CosmosDbInitializer(CosmosClient cosmosClient, string databaseName) : ICosmosDbInitializer
 {
     private static readonly (string Name, string PartitionKeyPath)[] Containers =
     [

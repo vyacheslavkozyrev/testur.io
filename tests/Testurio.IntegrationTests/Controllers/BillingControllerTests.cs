@@ -1,9 +1,11 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -21,6 +23,9 @@ using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Testurio.Core.Exceptions;
+using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.Seeding;
+using Testurio.IntegrationTests;
 
 namespace Testurio.IntegrationTests.Controllers;
 
@@ -37,6 +42,13 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         _factory.ResetMocks();
     }
 
+    // The API serialises enums as strings; use the same options when deserialising in tests.
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     private HttpClient CreateAuthenticatedClient()
     {
         var client = _factory.CreateClient();
@@ -44,7 +56,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         return client;
     }
 
-    // ─── POST /v1/billing/checkout ────────────────────────────────────────────
+    // â”€â”€â”€ POST /v1/billing/checkout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PostCheckout_Returns200_WithCheckoutUrl_WhenAuthenticated()
@@ -75,7 +87,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── GET /v1/billing/subscription ────────────────────────────────────────
+    // â”€â”€â”€ GET /v1/billing/subscription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetSubscription_Returns200_WithNoneStatus_WhenNoSubscriptionExists()
@@ -88,7 +100,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         var response = await client.GetAsync("/v1/billing/subscription");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<SubscriptionStatusResponse>();
+        var body = await response.Content.ReadFromJsonAsync<SubscriptionStatusResponse>(JsonOpts);
         Assert.NotNull(body);
         Assert.Equal(SubscriptionStatus.None, body.Status);
     }
@@ -114,7 +126,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         var response = await client.GetAsync("/v1/billing/subscription");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<SubscriptionStatusResponse>();
+        var body = await response.Content.ReadFromJsonAsync<SubscriptionStatusResponse>(JsonOpts);
         Assert.NotNull(body);
         Assert.Equal(SubscriptionStatus.Trialing, body.Status);
     }
@@ -128,7 +140,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── POST /v1/billing/portal-session ─────────────────────────────────────
+    // â”€â”€â”€ POST /v1/billing/portal-session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PostPortalSession_Returns200_WithPortalUrl_WhenSubscriptionExists()
@@ -178,7 +190,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── POST /v1/billing/reactivate ─────────────────────────────────────────
+    // â”€â”€â”€ POST /v1/billing/reactivate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PostReactivate_Returns204_WhenStatusIsCancelledPendingExpiry()
@@ -235,7 +247,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── POST /webhooks/stripe ────────────────────────────────────────────────
+    // â”€â”€â”€ POST /webhooks/stripe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PostStripeWebhook_Returns400_WhenStripeSignatureIsInvalid()
@@ -300,7 +312,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
         client.DefaultRequestHeaders.Add("Stripe-Signature", sig);
         var response = await client.PostAsync("/webhooks/stripe", content);
 
-        // Signature may be rejected by Stripe SDK in test — either 200 (success) or 400 (sig fail) is valid here.
+        // Signature may be rejected by Stripe SDK in test â€” either 200 (success) or 400 (sig fail) is valid here.
         // The real assertion is on the mock interaction.
         if (response.StatusCode == HttpStatusCode.OK)
         {
@@ -392,7 +404,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
             _userRepo.Reset();
             _projectRepo.Reset();
 
-            // Default stub — prevents NullReferenceException in tests that don't set up invoice calls.
+            // Default stub â€” prevents NullReferenceException in tests that don't set up invoice calls.
             _stripeService
                 .Setup(s => s.ListInvoicesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(Array.Empty<StripeInvoice>());
@@ -407,7 +419,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -431,6 +443,9 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IUserSubscriptionRepository>(_ => _subscriptionRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<IStripeService>(_ => _stripeService.Object));
                 services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 services.AddAuthentication("BillingTest")
                     .AddScheme<AuthenticationSchemeOptions, BillingTestAuthHandler>("BillingTest", _ => { });
@@ -462,3 +477,4 @@ internal sealed class BillingTestAuthHandler(
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }
+

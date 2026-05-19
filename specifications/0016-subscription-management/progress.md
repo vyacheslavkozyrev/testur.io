@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-18 |       |
 | Implement | ✅ Complete | 2026-05-19 |       |
 | Review    | ✅ Complete | 2026-05-19 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-19 |       |
 
 ---
 
@@ -44,7 +44,28 @@
 
 ## Test Results
 
-_Populated by `/test [####]`_
+**Date:** 2026-05-19
+
+**Verdict: GO — all tests passing**
+
+| Suite | Count | Result |
+| ----- | ----- | ------ |
+| .NET unit tests (`Billing\|Subscription` filter) | 17 | ✅ 17 passed |
+| .NET integration tests (`Billing\|Subscription` filter) | 15 | ✅ 15 passed |
+| Frontend component tests (Subscription\|CancellationPending\|PaymentFailed) | 22 | ✅ 22 passed |
+| **Total** | **54** | **✅ 54 passed, 0 failed** |
+
+**TypeScript:** Production source files for feature 0016 are clean. Existing project-wide TS errors (1443 total) stem from missing `@types/jest` in `tsconfig.json` affecting all test files — a pre-existing configuration gap not introduced by this feature.
+
+**Fixes made during test phase (7 issues):**
+
+1. **`StripeService` — ambiguous `SessionService` reference.** `Stripe.Checkout.SessionService` and `Stripe.BillingPortal.SessionService` clashed in the `Testurio.Infrastructure.Stripe` namespace. Resolved with C# `using` type aliases (`CheckoutSessionService`, `PortalSessionService`, etc.).
+2. **`UserSubscriptionRepository` — invalid `EnableCrossPartitionQuery` property.** Property does not exist in Cosmos SDK v3 (cross-partition queries are automatic). Removed.
+3. **`StripeServiceTests` — structural bug in test file.** Missing closing brace caused all methods from line 57 onwards to be outside the class. Also removed a duplicate `ListInvoicesAsync` test. File rewritten to correct structure.
+4. **`AccountControllerTests` — `DisplayName` used instead of `FirstName`/`LastName`.** Pre-existing mismatch against current `UserDocument` and `AccountProfileDto` shapes. Updated to use `FirstName`/`LastName`.
+5. **`ExecutorsIntegrationTests` — missing `IApiTestAuthCredentialProvider` argument.** `HttpExecutor` constructor requires 4 arguments; test was passing 3. Added mock for `IApiTestAuthCredentialProvider`.
+6. **`CosmosDbInitializer` / `PromptTemplateSeeder` / `PlanSeeder` — no testability hook.** Extracted `ICosmosDbInitializer`, `IPromptTemplateSeeder`, `IPlanSeeder` interfaces; registered via interface in `DependencyInjection.cs` and resolved via interface in `Program.cs`. Created shared `TestInfrastructure.cs` with no-op stubs; patched all 10 controller test factories to replace these services, preventing integration tests from crashing on startup when Cosmos is unavailable.
+7. **`BillingControllerTests` — invalid base64 Cosmos key + enum deserialization.** `"dummykey=="` is not valid base64 (Cosmos SDK validates immediately). Replaced with the standard Cosmos emulator key across all 10 integration test factories. Added `JsonStringEnumConverter` to `ReadFromJsonAsync<SubscriptionStatusResponse>()` calls since the API serialises enums as strings.
 
 ---
 

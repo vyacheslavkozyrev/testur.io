@@ -1,10 +1,14 @@
 using Microsoft.Extensions.Options;
 using Stripe;
-using Stripe.BillingPortal;
-using Stripe.Checkout;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
+using CheckoutSessionService = global::Stripe.Checkout.SessionService;
+using CheckoutSessionCreateOptions = global::Stripe.Checkout.SessionCreateOptions;
+using CheckoutSessionLineItemOptions = global::Stripe.Checkout.SessionLineItemOptions;
+using CheckoutSessionSubscriptionDataOptions = global::Stripe.Checkout.SessionSubscriptionDataOptions;
+using PortalSessionService = global::Stripe.BillingPortal.SessionService;
+using PortalSessionCreateOptions = global::Stripe.BillingPortal.SessionCreateOptions;
 
 namespace Testurio.Infrastructure.Stripe;
 
@@ -15,9 +19,9 @@ namespace Testurio.Infrastructure.Stripe;
 public class StripeService : IStripeService
 {
     private readonly StripeOptions _options;
-    private readonly SessionService _sessionService;
+    private readonly CheckoutSessionService _sessionService;
     private readonly SubscriptionService _subscriptionService;
-    private readonly Stripe.BillingPortal.SessionService _portalSessionService;
+    private readonly PortalSessionService _portalSessionService;
     private readonly InvoiceService _invoiceService;
 
     public StripeService(IOptions<StripeOptions> options)
@@ -26,9 +30,9 @@ public class StripeService : IStripeService
         // Do NOT set StripeConfiguration.ApiKey globally — it is a static shared across
         // the AppDomain and would be overwritten in multi-tenant or test scenarios.
         // Pass the API key per-request via RequestOptions instead.
-        _sessionService = new SessionService();
+        _sessionService = new CheckoutSessionService();
         _subscriptionService = new SubscriptionService();
-        _portalSessionService = new Stripe.BillingPortal.SessionService();
+        _portalSessionService = new PortalSessionService();
         _invoiceService = new InvoiceService();
     }
 
@@ -48,20 +52,20 @@ public class StripeService : IStripeService
         if (!_options.PriceIds.TryGetValue(priceKey, out var priceId))
             throw new InvalidOperationException($"No Stripe Price ID configured for key '{priceKey}'.");
 
-        var createOptions = new SessionCreateOptions
+        var createOptions = new CheckoutSessionCreateOptions
         {
             Mode = "subscription",
             CustomerEmail = customerEmail,
             ClientReferenceId = userId,
             LineItems =
             [
-                new SessionLineItemOptions
+                new CheckoutSessionLineItemOptions
                 {
                     Price = priceId,
                     Quantity = 1,
                 },
             ],
-            SubscriptionData = new SessionSubscriptionDataOptions
+            SubscriptionData = new CheckoutSessionSubscriptionDataOptions
             {
                 TrialPeriodDays = 14,
                 Metadata = new Dictionary<string, string>
@@ -131,7 +135,7 @@ public class StripeService : IStripeService
         string returnUrl,
         CancellationToken cancellationToken = default)
     {
-        var createOptions = new Stripe.BillingPortal.SessionCreateOptions
+        var createOptions = new PortalSessionCreateOptions
         {
             Customer  = stripeCustomerId,
             ReturnUrl = returnUrl,

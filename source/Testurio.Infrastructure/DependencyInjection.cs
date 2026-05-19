@@ -209,7 +209,7 @@ public static class DependencyInjection
         });
 
         // Feature 0028: seeder that writes initial PromptTemplate documents to Cosmos at startup.
-        services.AddSingleton<PromptTemplateSeeder>(sp =>
+        services.AddSingleton<IPromptTemplateSeeder, PromptTemplateSeeder>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
@@ -238,14 +238,14 @@ public static class DependencyInjection
 
         services.AddSingleton<IStripeService, StripeService>();
 
-        services.AddSingleton<PlanSeeder>(sp =>
+        services.AddSingleton<IPlanSeeder, PlanSeeder>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PlanSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
-        services.AddSingleton<CosmosDbInitializer>(sp =>
+        services.AddSingleton<ICosmosDbInitializer, CosmosDbInitializer>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;

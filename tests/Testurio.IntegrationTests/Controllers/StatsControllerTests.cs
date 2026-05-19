@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -68,7 +70,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     private static QuotaUsage DefaultQuota() =>
         new(3, 50, DateTimeOffset.UtcNow.Date.AddDays(1));
 
-    // ─── GET /v1/stats/dashboard — auth guard ─────────────────────────────────
+    // â”€â”€â”€ GET /v1/stats/dashboard â€” auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetDashboard_Returns401_WithoutAuthToken()
@@ -79,7 +81,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── GET /v1/stats/dashboard — success scenarios ──────────────────────────
+    // â”€â”€â”€ GET /v1/stats/dashboard â€” success scenarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetDashboard_Returns200_WithProjectsAndQuota()
@@ -145,7 +147,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             Times.Once);
     }
 
-    // ─── GET /v1/stats/projects/{projectId}/history ───────────────────────────
+    // â”€â”€â”€ GET /v1/stats/projects/{projectId}/history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProjectHistory_Returns401_WithoutAuthToken()
@@ -216,7 +218,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    // ─── GET /v1/stats/projects/{projectId}/runs/{runId} ─────────────────────
+    // â”€â”€â”€ GET /v1/stats/projects/{projectId}/runs/{runId} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetRunDetail_Returns401_WithoutAuthToken()
@@ -260,7 +262,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             TotalDurationMs = 7000,
             ScenarioResults = new[]
             {
-                new ScenarioSummary("scenario-1", "POST /auth — 200", true, 400, null, "api", Array.Empty<string>()),
+                new ScenarioSummary("scenario-1", "POST /auth â€” 200", true, 400, null, "api", Array.Empty<string>()),
             },
             RawCommentMarkdown = "## Report\nPASSED",
         };
@@ -312,7 +314,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Equal("proj-norun", body.Projects[2].ProjectId);
     }
 
-    // ─── GET /v1/stats/dashboard/stream — SSE ────────────────────────────────
+    // â”€â”€â”€ GET /v1/stats/dashboard/stream â€” SSE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task StreamDashboard_Returns401_WithoutAuthToken()
@@ -383,7 +385,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        // Cancel the connection — should not throw on the client side.
+        // Cancel the connection â€” should not throw on the client side.
         cts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
         {
@@ -409,7 +411,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -430,7 +432,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
                 // IHostedService registration so the test host does not attempt a real Service
                 // Bus connection during startup.
                 // Program.cs uses AddSingleton<DashboardEventRelay>(factory) +
-                // AddHostedService(sp => sp.GetRequiredService<DashboardEventRelay>()) — the
+                // AddHostedService(sp => sp.GetRequiredService<DashboardEventRelay>()) â€” the
                 // IHostedService descriptor has a non-null ImplementationFactory and no
                 // ImplementationType (unlike typed AddHostedService<T>() registrations).
                 // Removing descriptors matching that shape targets only the relay; other hosted
@@ -453,3 +455,6 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         }
     }
 }
+
+
+

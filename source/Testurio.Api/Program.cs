@@ -143,7 +143,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var initializer = scope.ServiceProvider.GetRequiredService<CosmosDbInitializer>();
+        var initializer = scope.ServiceProvider.GetRequiredService<ICosmosDbInitializer>();
         await initializer.InitializeAsync();
     }
     catch (Exception ex)
@@ -154,7 +154,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var promptSeeder = scope.ServiceProvider.GetRequiredService<PromptTemplateSeeder>();
+        var promptSeeder = scope.ServiceProvider.GetRequiredService<IPromptTemplateSeeder>();
         await promptSeeder.SeedAsync();
     }
     catch (Exception ex)
@@ -165,7 +165,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var planSeeder = scope.ServiceProvider.GetRequiredService<PlanSeeder>();
+        var planSeeder = scope.ServiceProvider.GetRequiredService<IPlanSeeder>();
         await planSeeder.SeedAsync();
     }
     catch (Exception ex)

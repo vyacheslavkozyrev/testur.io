@@ -3,11 +3,17 @@ using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.Seeding;
 
+/// <summary>Abstraction for plan seeding; injectable in tests.</summary>
+public interface IPlanSeeder
+{
+    Task SeedAsync(CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Seeds the initial <see cref="PlanDocument"/> records into the <c>Plans</c> Cosmos DB container.
 /// Idempotent — skips documents that already exist so edits made via the Azure portal are preserved.
 /// </summary>
-public sealed class PlanSeeder
+public sealed class PlanSeeder : IPlanSeeder
 {
     private const string PartitionKeyValue = "plan";
 

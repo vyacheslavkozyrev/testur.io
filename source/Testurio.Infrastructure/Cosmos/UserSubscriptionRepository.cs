@@ -69,7 +69,7 @@ public class UserSubscriptionRepository : IUserSubscriptionRepository
         var query = new QueryDefinition(queryText).WithParameter(paramName, paramValue);
         using var iterator = _container.GetItemQueryIterator<UserSubscription>(
             query,
-            requestOptions: new QueryRequestOptions { MaxItemCount = 1, EnableCrossPartitionQuery = true });
+            requestOptions: new QueryRequestOptions { MaxItemCount = 1 });
 
         while (iterator.HasMoreResults)
         {
