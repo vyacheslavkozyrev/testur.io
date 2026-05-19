@@ -4,7 +4,7 @@
 
 - [x] T001 [Infra] Author `infra/modules/keyvault.bicep` — RBAC access model, soft-delete 90 days, purge protection, outputs `vaultName` and `vaultUri` — `infra/modules/keyvault.bicep`
 - [x] T002 [Infra] Author `infra/modules/appinsights.bicep` — Log Analytics workspace + workspace-based Application Insights instance, outputs `instrumentationKey` and `connectionString` — `infra/modules/appinsights.bicep`
-- [ ] T003 [Infra] Author `infra/modules/acr.bicep` — Container Registry, admin disabled, outputs `loginServer` and `resourceId` — `infra/modules/acr.bicep`
+- [x] T003 [Infra] Author `infra/modules/acr.bicep` — Container Registry, admin disabled, outputs `loginServer` and `resourceId` — `infra/modules/acr.bicep`
 - [ ] T004 [Infra] Author `infra/modules/natgateway.bicep` — public IP prefix, NAT Gateway resource, subnet association parameter, outputs `publicIpAddresses` array — `infra/modules/natgateway.bicep`
 - [ ] T005 [Infra] Author `infra/modules/staticwebapp.bicep` — Static Web Apps resource, outputs `defaultHostname` and `deploymentTokenSecretName` — `infra/modules/staticwebapp.bicep`
 - [ ] T006 [Infra] Author `infra/modules/appservice.bicep` — App Service plan + Web App, .NET 10 runtime, HTTPS-only, system-assigned Managed Identity, outputs `appServiceName`, `principalId`, and `defaultHostname` — `infra/modules/appservice.bicep`
