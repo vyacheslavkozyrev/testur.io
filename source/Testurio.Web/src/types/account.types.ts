@@ -1,6 +1,7 @@
 export interface AccountProfileDto {
   userId: string;
-  displayName: string | null;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 export interface AccountPreferencesDto {
@@ -9,13 +10,14 @@ export interface AccountPreferencesDto {
 }
 
 export interface UpdateProfileRequest {
-  displayName: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface UpdatePreferencesRequest {
-  language?: 'en' | 'uk';
+  language?: SupportedLanguage;
   theme?: 'light' | 'dark';
 }
 
 export type ThemeMode = 'light' | 'dark';
-export type SupportedLanguage = 'en' | 'uk';
+export type SupportedLanguage = 'en' | 'uk' | 'es' | 'be';

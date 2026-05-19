@@ -22,38 +22,34 @@ export default function PersonalInfoSection({ user, onSaveSuccess }: PersonalInf
   const theme = useTheme();
   const styles = getStyles(theme);
 
-  const [displayName, setDisplayName] = useState(user.displayName ?? '');
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState(user.firstName ?? '');
+  const [lastName, setLastName] = useState(user.lastName ?? '');
   const [saveError, setSaveError] = useState(false);
 
   const updateProfile = useUpdateProfile();
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayName(e.target.value);
-    setValidationError(null);
+  const handleFirstNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setFirstName(e.target.value);
+    setSaveError(false);
+  }, []);
+
+  const handleLastNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLastName(e.target.value);
     setSaveError(false);
   }, []);
 
   const handleSave = useCallback(async () => {
-    const trimmed = displayName.trim();
-
-    if (!trimmed) {
-      setValidationError(t('personalInfo.validation.displayNameRequired'));
-      return;
-    }
-    if (trimmed.length > 100) {
-      setValidationError(t('personalInfo.validation.displayNameMaxLength'));
-      return;
-    }
-
     setSaveError(false);
     try {
-      await updateProfile.mutateAsync({ displayName: trimmed });
+      await updateProfile.mutateAsync({
+        firstName: firstName.trim() || undefined,
+        lastName: lastName.trim() || undefined,
+      });
       onSaveSuccess();
     } catch {
       setSaveError(true);
     }
-  }, [displayName, t, updateProfile, onSaveSuccess]);
+  }, [firstName, lastName, updateProfile, onSaveSuccess]);
 
   const isPending = updateProfile.isPending;
 
@@ -63,16 +59,26 @@ export default function PersonalInfoSection({ user, onSaveSuccess }: PersonalInf
         {t('personalInfo.title')}
       </Typography>
       <Box sx={styles.form}>
-        <TextField
-          label={t('personalInfo.fields.displayName')}
-          value={displayName}
-          onChange={handleChange}
-          disabled={isPending}
-          error={Boolean(validationError)}
-          helperText={validationError ?? undefined}
-          fullWidth
-          inputProps={{ maxLength: 101 }}
-        />
+        <Box sx={styles.nameRow}>
+          <TextField
+            label={t('personalInfo.fields.firstName')}
+            value={firstName}
+            onChange={handleFirstNameChange}
+            disabled={isPending}
+            fullWidth
+            autoComplete="given-name"
+            inputProps={{ maxLength: 100 }}
+          />
+          <TextField
+            label={t('personalInfo.fields.lastName')}
+            value={lastName}
+            onChange={handleLastNameChange}
+            disabled={isPending}
+            fullWidth
+            autoComplete="family-name"
+            inputProps={{ maxLength: 100 }}
+          />
+        </Box>
         {saveError && (
           <Alert severity="error" sx={styles.alert}>
             {t('personalInfo.errors.saveFailed')}
@@ -110,6 +116,10 @@ const getStyles = (theme: Theme) =>
         flexDirection: 'column',
         gap: theme.spacing(2),
         maxWidth: 480,
+      },
+      nameRow: {
+        display: 'flex',
+        gap: theme.spacing(2),
       },
       alert: {},
       saveButton: {

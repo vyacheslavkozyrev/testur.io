@@ -6,11 +6,8 @@
   "personalInfo": {
     "title": "Personal Information",
     "fields": {
-      "displayName": "Display Name"
-    },
-    "validation": {
-      "displayNameRequired": "Display name is required.",
-      "displayNameMaxLength": "Display name must be 100 characters or fewer."
+      "firstName": "First Name",
+      "lastName": "Last Name"
     },
     "actions": {
       "save": "Save",

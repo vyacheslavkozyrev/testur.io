@@ -20,7 +20,6 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
-import { SIDEBAR_ACTIVE_BG, SIDEBAR_ACTIVE_TEXT, SIDEBAR_BG, SIDEBAR_DIVIDER, SIDEBAR_HOVER, SIDEBAR_MUTED, SIDEBAR_TEXT } from '@/theme/theme';
 import { useSidebarState } from '@/hooks/useSidebarState';
 import { useSignOut } from '@/hooks/useAuth';
 import { DASHBOARD_ROUTE, PROJECTS_ROUTE, SETTINGS_ROUTE } from '@/routes/routes';
@@ -205,14 +204,19 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => {
+      const isDark = theme.palette.mode === 'dark';
       const width = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+      const hover = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+      const activeBg = isDark ? 'rgba(96,165,250,0.18)' : 'rgba(59,130,246,0.1)';
+      const activeText = isDark ? '#93c5fd' : '#2563eb';
+
       const navButtonBase = {
         borderRadius: `${theme.shape.borderRadius}px`,
         px: 1,
         py: 0.75,
         mb: 0.25,
-        color: SIDEBAR_TEXT,
-        '&:hover': { backgroundColor: SIDEBAR_HOVER },
+        color: theme.palette.text.primary,
+        '&:hover': { backgroundColor: hover },
         '&:focus-visible': {
           outline: `2px solid ${theme.palette.primary.main}`,
           outlineOffset: 2,
@@ -236,8 +240,8 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
           boxSizing: 'border-box' as const,
           top: HEADER_HEIGHT,
           height: `calc(100% - ${HEADER_HEIGHT}px)`,
-          backgroundColor: SIDEBAR_BG,
-          borderRight: `1px solid ${SIDEBAR_DIVIDER}`,
+          backgroundColor: theme.palette.background.paper,
+          borderRight: `1px solid ${theme.palette.divider}`,
           display: 'flex',
           flexDirection: 'column' as const,
           pt: 1,
@@ -251,8 +255,8 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
         },
         toggleButton: {
           transition: 'transform 200ms ease',
-          color: SIDEBAR_MUTED,
-          '&:hover': { backgroundColor: SIDEBAR_HOVER, color: SIDEBAR_TEXT },
+          color: theme.palette.text.secondary,
+          '&:hover': { backgroundColor: hover, color: theme.palette.text.primary },
         },
         chevron: {
           transition: 'transform 200ms ease',
@@ -267,13 +271,13 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
         },
         activeNavButton: {
           ...navButtonBase,
-          backgroundColor: SIDEBAR_ACTIVE_BG,
-          color: SIDEBAR_ACTIVE_TEXT,
-          '& .MuiListItemIcon-root': { color: SIDEBAR_ACTIVE_TEXT },
-          '&:hover': { backgroundColor: SIDEBAR_ACTIVE_BG },
+          backgroundColor: activeBg,
+          color: activeText,
+          '& .MuiListItemIcon-root': { color: activeText },
+          '&:hover': { backgroundColor: activeBg },
           '&.Mui-selected': {
-            backgroundColor: SIDEBAR_ACTIVE_BG,
-            '&:hover': { backgroundColor: SIDEBAR_ACTIVE_BG },
+            backgroundColor: activeBg,
+            '&:hover': { backgroundColor: activeBg },
           },
         },
         navIcon: {
@@ -287,15 +291,15 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
         divider: {
           mx: 1,
           my: 0.5,
-          borderColor: SIDEBAR_DIVIDER,
+          borderColor: theme.palette.divider,
         },
         signOutButton: {
           ...navButtonBase,
           backgroundColor: 'transparent',
-          color: SIDEBAR_MUTED,
+          color: theme.palette.text.secondary,
           '&:hover': {
-            backgroundColor: SIDEBAR_HOVER,
-            color: SIDEBAR_TEXT,
+            backgroundColor: hover,
+            color: theme.palette.text.primary,
           },
         },
       };

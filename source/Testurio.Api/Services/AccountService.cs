@@ -9,7 +9,7 @@ public class AccountService(IUserRepository userRepository) : IAccountService
     public async Task<AccountProfileDto> GetProfileAsync(string userId, CancellationToken cancellationToken = default)
     {
         var doc = await userRepository.GetByUserIdAsync(userId, cancellationToken);
-        return new AccountProfileDto(userId, doc?.DisplayName);
+        return new AccountProfileDto(userId, doc?.FirstName, doc?.LastName);
     }
 
     public async Task<AccountProfileDto> UpdateProfileAsync(string userId, UpdateProfileRequest request, CancellationToken cancellationToken = default)
@@ -20,11 +20,14 @@ public class AccountService(IUserRepository userRepository) : IAccountService
             ? existing
             : new UserDocument { Id = userId, UserId = userId };
 
-        doc.DisplayName = request.DisplayName.Trim();
+        if (request.FirstName is not null)
+            doc.FirstName = request.FirstName.Trim();
+        if (request.LastName is not null)
+            doc.LastName = request.LastName.Trim();
         doc.UpdatedAt = DateTimeOffset.UtcNow;
 
         var saved = await userRepository.UpsertAsync(doc, cancellationToken);
-        return new AccountProfileDto(saved.UserId, saved.DisplayName);
+        return new AccountProfileDto(saved.UserId, saved.FirstName, saved.LastName);
     }
 
     public async Task<AccountPreferencesDto?> GetPreferencesAsync(string userId, CancellationToken cancellationToken = default)

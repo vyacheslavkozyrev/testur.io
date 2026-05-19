@@ -14,12 +14,16 @@ import landingEn from '@/locales/en/landing.json';
 import pricingEn from '@/locales/en/pricing.json';
 import settingsEn from '@/locales/en/settings.json';
 import settingsUk from '@/locales/uk/settings.json';
+import settingsEs from '@/locales/es/settings.json';
+import settingsBe from '@/locales/be/settings.json';
+
+const SUPPORTED_LANGUAGES = ['en', 'uk', 'es', 'be'] as const;
 
 i18n.use(initReactI18next).init({
   lng: (() => {
     try {
       const stored = localStorage.getItem('testurio.language');
-      if (stored === 'en' || stored === 'uk') return stored;
+      if (stored && (SUPPORTED_LANGUAGES as readonly string[]).includes(stored)) return stored;
     } catch {
       // localStorage unavailable
     }
@@ -46,6 +50,12 @@ i18n.use(initReactI18next).init({
     },
     uk: {
       settings: settingsUk,
+    },
+    es: {
+      settings: settingsEs,
+    },
+    be: {
+      settings: settingsBe,
     },
   },
 });
