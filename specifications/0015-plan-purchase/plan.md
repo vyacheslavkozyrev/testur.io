@@ -31,7 +31,7 @@
   - `POST /v1/billing/checkout` — authenticated (B2C JWT); calls BillingService.CreateCheckoutSessionAsync; returns `CheckoutSessionResponse`
   - `GET /v1/billing/subscription` — authenticated; calls BillingService.GetSubscriptionStatusAsync; returns `SubscriptionStatusResponse`
   - `POST /webhooks/stripe` — unauthenticated; validates Stripe-Signature header using WebhookSecret; dispatches to BillingService.HandleStripeWebhookAsync; returns 400 on invalid signature
-- [ ] T016 [API] Register `BillingEndpoints` and `IBillingService` → `BillingService` in `Program.cs` — `source/Testurio.Api/Program.cs`
+- [x] T016 [API] Register `BillingEndpoints` and `IBillingService` → `BillingService` in `Program.cs` — `source/Testurio.Api/Program.cs`
 
 ### Frontend — Billing Types and API Layer
 
