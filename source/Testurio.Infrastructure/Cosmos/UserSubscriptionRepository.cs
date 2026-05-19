@@ -43,4 +43,42 @@ public class UserSubscriptionRepository : IUserSubscriptionRepository
             cancellationToken: cancellationToken);
         return response.Resource;
     }
+
+    /// <inheritdoc/>
+    public Task<UserSubscription?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken = default)
+        => CrossPartitionLookupAsync(
+            "SELECT * FROM c WHERE c.stripeSubscriptionId = @id",
+            "@id",
+            stripeSubscriptionId,
+            cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<UserSubscription?> GetByStripeCustomerIdAsync(string stripeCustomerId, CancellationToken cancellationToken = default)
+        => CrossPartitionLookupAsync(
+            "SELECT * FROM c WHERE c.stripeCustomerId = @id",
+            "@id",
+            stripeCustomerId,
+            cancellationToken);
+
+    private async Task<UserSubscription?> CrossPartitionLookupAsync(
+        string queryText,
+        string paramName,
+        string paramValue,
+        CancellationToken cancellationToken)
+    {
+        var query = new QueryDefinition(queryText).WithParameter(paramName, paramValue);
+        using var iterator = _container.GetItemQueryIterator<UserSubscription>(
+            query,
+            requestOptions: new QueryRequestOptions { MaxItemCount = 1 });
+
+        while (iterator.HasMoreResults)
+        {
+            var page = await iterator.ReadNextAsync(cancellationToken);
+            var item = page.FirstOrDefault();
+            if (item is not null)
+                return item;
+        }
+
+        return null;
+    }
 }

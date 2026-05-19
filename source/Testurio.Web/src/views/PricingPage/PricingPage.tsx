@@ -15,6 +15,7 @@ import BillingIntervalToggle from '@/components/BillingIntervalToggle/BillingInt
 import PlanCard from '@/components/PlanCard/PlanCard';
 import { usePlans } from '@/hooks/usePlans';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { useSubscriptionStatus } from '@/hooks/useBilling';
 import type { BillingInterval } from '@/types/plan.types';
 
 const SKELETON_COUNT = 4;
@@ -28,6 +29,7 @@ export default function PricingPage() {
   const { data: plans, isPending, isError, refetch } = usePlans();
   const user = useAuthUser();
   const isAuthenticated = user !== null;
+  const { data: subscription } = useSubscriptionStatus();
 
   const handleIntervalChange = useCallback((newInterval: BillingInterval) => {
     setBillingInterval(newInterval);
@@ -42,6 +44,17 @@ export default function PricingPage() {
     if (!plans) return undefined;
     return plans.find((p) => p.annualDiscountPercent > 0)?.annualDiscountPercent;
   }, [plans]);
+
+  // Map the subscription plan name (e.g. "TestPro") to a kebab-case id (e.g. "test-pro")
+  // then find its index in the sorted plans array — used to block downgrades.
+  const currentPlanRank = useMemo(() => {
+    if (!plans || !subscription?.plan) return null;
+    const kebab = subscription.plan.replace(/([A-Z])/g, (m, l: string, o: number) =>
+      o === 0 ? l.toLowerCase() : `-${l.toLowerCase()}`
+    );
+    const idx = plans.findIndex((p) => p.id === kebab);
+    return idx >= 0 ? idx : null;
+  }, [plans, subscription?.plan]);
 
   return (
     <PublicLayout>
@@ -90,12 +103,14 @@ export default function PricingPage() {
                     />
                   </Grid>
                 ))
-              : plans?.map((plan) => (
+              : plans?.map((plan, index) => (
                   <Grid key={plan.id} size={{ xs: 12, sm: 6, lg: 3 }}>
                     <PlanCard
                       plan={plan}
                       interval={interval}
                       isAuthenticated={isAuthenticated}
+                      planRank={index}
+                      currentPlanRank={currentPlanRank}
                     />
                   </Grid>
                 ))}

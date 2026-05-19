@@ -9,4 +9,10 @@ public sealed record SubscriptionStatusResponse(
     SubscriptionStatus Status,
     SubscriptionPlan? Plan,
     BillingInterval? BillingInterval,
-    DateTimeOffset? TrialEndsAt);
+    DateTimeOffset? TrialEndsAt,
+    DateTimeOffset CurrentPeriodEnd,
+    DateTimeOffset? CancelledAt,
+    string? PaymentMethodLast4,
+    int? PaymentMethodExpMonth,
+    int? PaymentMethodExpYear,
+    InvoiceDto[] Invoices);

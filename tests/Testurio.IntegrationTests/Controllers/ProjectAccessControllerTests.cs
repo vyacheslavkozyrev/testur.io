@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -57,7 +59,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         return client;
     }
 
-    // ─── GET /v1/projects/{projectId}/access ─────────────────────────────────
+    // â”€â”€â”€ GET /v1/projects/{projectId}/access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProjectAccess_Returns200_WithIpAllowlistMode()
@@ -118,7 +120,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── PATCH /v1/projects/{projectId}/access — IpAllowlist ─────────────────
+    // â”€â”€â”€ PATCH /v1/projects/{projectId}/access â€” IpAllowlist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithIpAllowlistMode()
@@ -145,7 +147,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         Assert.Equal(AccessMode.IpAllowlist, body.AccessMode);
     }
 
-    // ─── PATCH — BasicAuth ────────────────────────────────────────────────────
+    // â”€â”€â”€ PATCH â€” BasicAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithBasicAuthMode()
@@ -170,7 +172,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
             JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.BasicAuth, body.AccessMode);
-        // Response must not expose the password — basic_auth_user can be pre-filled
+        // Response must not expose the password â€” basic_auth_user can be pre-filled
         Assert.Null(body.HeaderTokenName);
     }
 
@@ -194,7 +196,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── PATCH — HeaderToken ──────────────────────────────────────────────────
+    // â”€â”€â”€ PATCH â€” HeaderToken â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithHeaderTokenMode()
@@ -317,7 +319,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -337,7 +339,9 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 services.AddAuthentication("Test")
                     .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
@@ -346,3 +350,6 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         }
     }
 }
+
+
+

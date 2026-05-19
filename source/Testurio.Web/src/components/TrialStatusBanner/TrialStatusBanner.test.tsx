@@ -67,6 +67,18 @@ function trialEndsAt(daysFromNow: number): string {
   return d.toISOString();
 }
 
+const BASE_SUBSCRIPTION: Pick<
+  SubscriptionStatusResponse,
+  'currentPeriodEnd' | 'cancelledAt' | 'paymentMethodLast4' | 'paymentMethodExpMonth' | 'paymentMethodExpYear' | 'invoices'
+> = {
+  currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  cancelledAt: null,
+  paymentMethodLast4: null,
+  paymentMethodExpMonth: null,
+  paymentMethodExpYear: null,
+  invoices: [],
+};
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('TrialStatusBanner', () => {
@@ -81,6 +93,7 @@ describe('TrialStatusBanner', () => {
 
   it('is hidden when status is Active', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Active',
       plan: 'TestPro',
       billingInterval: 'monthly',
@@ -92,6 +105,7 @@ describe('TrialStatusBanner', () => {
 
   it('is hidden when status is None', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'None',
       plan: null,
       billingInterval: null,
@@ -103,6 +117,7 @@ describe('TrialStatusBanner', () => {
 
   it('shows correct day count when more than 3 days remain', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Trialing',
       plan: 'TestPro',
       billingInterval: 'monthly',
@@ -114,6 +129,7 @@ describe('TrialStatusBanner', () => {
 
   it('shows singular day count when exactly 1 day remains', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Trialing',
       plan: 'TestPro',
       billingInterval: 'monthly',
@@ -125,6 +141,7 @@ describe('TrialStatusBanner', () => {
 
   it('renders in amber/warning style when 3 or fewer days remain', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Trialing',
       plan: 'TestPro',
       billingInterval: 'monthly',
@@ -139,6 +156,7 @@ describe('TrialStatusBanner', () => {
 
   it('renders "Trial expired" variant when status is Expired', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Expired',
       plan: 'TestPro',
       billingInterval: 'monthly',
@@ -150,6 +168,7 @@ describe('TrialStatusBanner', () => {
 
   it('includes "Upgrade now" CTA linking to /pricing', () => {
     mockSubscriptionState.data = {
+      ...BASE_SUBSCRIPTION,
       status: 'Trialing',
       plan: 'TestPro',
       billingInterval: 'monthly',

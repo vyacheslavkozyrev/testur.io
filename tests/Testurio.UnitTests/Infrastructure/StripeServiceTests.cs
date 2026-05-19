@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Moq;
+using Stripe;
 using Stripe.Checkout;
 using Testurio.Core.Enums;
 using Testurio.Infrastructure.Stripe;
@@ -67,5 +68,43 @@ public class StripeServiceTests
         var key = $"{plan}_{interval}";
         Assert.True(ValidOptions.PriceIds.TryGetValue(key, out var actualPriceId));
         Assert.Equal(expectedPriceId, actualPriceId);
+    }
+
+    // ─── CreatePortalSessionAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePortalSessionAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
+    {
+        // StripeService uses real Stripe SDK HTTP calls; invalid API key causes StripeException.
+        // This test verifies the method signature is callable and propagates Stripe errors.
+        // Live HTTP success is covered by integration tests.
+        var sut = new StripeService(Options.Create(ValidOptions));
+
+        await Assert.ThrowsAsync<StripeException>(() =>
+            sut.CreatePortalSessionAsync("cus_fake", "https://app.testur.io/settings"));
+    }
+
+    // ─── ReactivateSubscriptionAsync ─────────────────────────────────────────
+
+    [Fact]
+    public async Task ReactivateSubscriptionAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
+    {
+        // Verifies method signature and error propagation; live HTTP covered by integration tests.
+        var sut = new StripeService(Options.Create(ValidOptions));
+
+        await Assert.ThrowsAsync<StripeException>(() =>
+            sut.ReactivateSubscriptionAsync("sub_fake"));
+    }
+
+    // ─── ListInvoicesAsync ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListInvoicesAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
+    {
+        // Verifies method signature and error propagation; live HTTP covered by integration tests.
+        var sut = new StripeService(Options.Create(ValidOptions));
+
+        await Assert.ThrowsAsync<StripeException>(() =>
+            sut.ListInvoicesAsync("cus_fake", 20));
     }
 }

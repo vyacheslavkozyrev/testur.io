@@ -17,6 +17,8 @@
     "mostPopular": "Most popular",
     "annualDiscount": "Save {{percent}}%",
     "getStarted": "Get started free",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "currentPlan": "Current plan",
+    "downgrade": "Downgrade"
   }
 }

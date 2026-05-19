@@ -12,6 +12,7 @@ import { useTheme, type Theme } from '@mui/material/styles';
 import { useAuthUserQuery, useAccountPreferences } from '@/hooks/useAccount';
 import PersonalInfoSection from '@/components/PersonalInfoSection/PersonalInfoSection';
 import PreferencesSection from '@/components/PreferencesSection/PreferencesSection';
+import SubscriptionDetailsSection from '@/components/SubscriptionDetailsSection/SubscriptionDetailsSection';
 import type { ApiError } from '@/types/api.types';
 
 export default function AccountSettingsPage() {
@@ -86,6 +87,11 @@ export default function AccountSettingsPage() {
             />
           </>
         )}
+
+        <Divider />
+
+        {/* Subscription */}
+        <SubscriptionDetailsSection />
       </Box>
 
       <Snackbar

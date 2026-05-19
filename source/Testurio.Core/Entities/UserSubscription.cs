@@ -35,6 +35,21 @@ public class UserSubscription
     /// <summary>Stripe Subscription ID (<c>sub_*</c>), populated after the first checkout session completes.</summary>
     public string? StripeSubscriptionId { get; set; }
 
+    /// <summary>UTC timestamp when the current billing period ends.</summary>
+    public DateTimeOffset CurrentPeriodEnd { get; set; }
+
+    /// <summary>UTC timestamp when the cancellation was confirmed. <c>null</c> unless status is <see cref="SubscriptionStatus.CancelledPendingExpiry"/>.</summary>
+    public DateTimeOffset? CancelledAt { get; set; }
+
+    /// <summary>Last 4 digits of the payment method card on file, or <c>null</c> when unavailable.</summary>
+    public string? PaymentMethodLast4 { get; set; }
+
+    /// <summary>Expiry month (1–12) of the payment method card, or <c>null</c> when unavailable.</summary>
+    public int? PaymentMethodExpMonth { get; set; }
+
+    /// <summary>Expiry year (4-digit) of the payment method card, or <c>null</c> when unavailable.</summary>
+    public int? PaymentMethodExpYear { get; set; }
+
     /// <summary>UTC timestamp when this document was last written.</summary>
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

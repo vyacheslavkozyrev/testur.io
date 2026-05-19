@@ -29,7 +29,7 @@ In the Stripe Dashboard (test mode) → **Products** → create a product with 8
 Install the [Stripe CLI](https://stripe.com/docs/stripe-cli), then run:
 
 ```bash
-stripe listen --forward-to https://localhost:5001/webhooks/stripe
+stripe listen --forward-to http://localhost:5225/webhooks/stripe
 ```
 
 Copy the printed `whsec_...` value into `Stripe.WebhookSecret` in `appsettings.Development.json`.

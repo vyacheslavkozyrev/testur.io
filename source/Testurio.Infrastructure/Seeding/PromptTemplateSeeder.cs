@@ -3,12 +3,18 @@ using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.Seeding;
 
+/// <summary>Abstraction for prompt template seeding; injectable in tests.</summary>
+public interface IPromptTemplateSeeder
+{
+    Task SeedAsync(CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Seeds the initial <see cref="PromptTemplate"/> documents into the <c>PromptTemplates</c>
 /// Cosmos DB container at worker startup (feature 0028).
 /// Idempotent — skips documents that already exist so manual edits are preserved.
 /// </summary>
-public sealed class PromptTemplateSeeder
+public sealed class PromptTemplateSeeder : IPromptTemplateSeeder
 {
     private static readonly PromptTemplate ApiTestGeneratorTemplate = new()
     {

@@ -33,8 +33,8 @@ export default function CheckoutSuccessPage() {
   const [timedOut, setTimedOut] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Only poll when not timed out and session_id is present.
-  const { data: subscription } = useSubscriptionStatus(!timedOut && Boolean(sessionId));
+  const canPoll = !timedOut && Boolean(sessionId);
+  const { data: subscription } = useSubscriptionStatus(canPoll, canPoll);
 
   const isConfirmed =
     subscription?.status === 'Trialing' || subscription?.status === 'Active';

@@ -23,16 +23,15 @@ public interface IStripeService
     Task<string> CreateCheckoutSessionAsync(
         SubscriptionPlan plan,
         BillingInterval billingInterval,
-        string customerEmail,
+        string? customerEmail,
         string userId,
         string successUrl,
         string cancelUrl,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves a Stripe Subscription object by its ID.
-    /// Reserved for future use (e.g., feature 0016 — subscription management).
-    /// Not called by <c>BillingService</c> in the current feature; webhook events are used instead.
+    /// Retrieves a Stripe Subscription object by its ID, with payment method details expanded.
+    /// Used by <c>BillingService.GetSubscriptionStatusAsync</c> to populate live billing data.
     /// </summary>
     /// <param name="stripeSubscriptionId">The Stripe subscription ID (<c>sub_*</c>).</param>
     /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
@@ -40,4 +39,48 @@ public interface IStripeService
     Task<UserSubscription?> GetSubscriptionAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the most recent invoices for the given Stripe customer (up to <paramref name="limit"/>).
+    /// Returns an empty list if the customer has no invoices or the Stripe call fails.
+    /// </summary>
+    /// <param name="stripeCustomerId">The Stripe customer ID (<c>cus_*</c>).</param>
+    /// <param name="limit">Maximum number of invoices to return (1–100).</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    Task<IReadOnlyList<StripeInvoice>> ListInvoicesAsync(
+        string stripeCustomerId,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a Stripe Customer Portal session for the given customer.
+    /// </summary>
+    /// <param name="stripeCustomerId">The Stripe customer ID (<c>cus_*</c>).</param>
+    /// <param name="returnUrl">URL to redirect the user back to after they leave the portal.</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    /// <returns>The Stripe Customer Portal session URL.</returns>
+    Task<string> CreatePortalSessionAsync(
+        string stripeCustomerId,
+        string returnUrl,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reactivates a cancelled subscription by setting <c>cancel_at_period_end = false</c>.
+    /// </summary>
+    /// <param name="stripeSubscriptionId">The Stripe subscription ID (<c>sub_*</c>).</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    Task ReactivateSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Lightweight DTO carrying invoice data retrieved from Stripe.
+/// Keeps <c>Stripe.*</c> types out of the domain layer.
+/// </summary>
+public sealed record StripeInvoice(
+    DateTimeOffset Date,
+    decimal AmountPaid,
+    string Currency,
+    string Status,
+    string? PdfUrl);

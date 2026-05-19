@@ -15,5 +15,11 @@ public enum SubscriptionStatus
     Active,
 
     /// <summary>The trial or subscription has ended without renewal.</summary>
-    Expired
+    Expired,
+
+    /// <summary>The subscription is cancelled but access continues until the current period ends.</summary>
+    CancelledPendingExpiry,
+
+    /// <summary>The latest invoice payment failed; access may be at risk.</summary>
+    PaymentFailed
 }

@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -33,7 +35,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
     }
 
     private static UserDocument MakeUserDocument(string userId = "test-user-oid") =>
-        new() { Id = userId, UserId = userId, DisplayName = "Test User", Language = "en", Theme = "light" };
+        new() { Id = userId, UserId = userId, FirstName = "Test", LastName = "User", Language = "en", Theme = "light" };
 
     private HttpClient CreateAuthenticatedClient()
     {
@@ -42,10 +44,10 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         return client;
     }
 
-    // ─── GET /v1/account/profile ─────────────────────────────────────────────
+    // â”€â”€â”€ GET /v1/account/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
-    public async Task GetProfile_Returns200_WithDisplayName_WhenUserExists()
+    public async Task GetProfile_Returns200_WithName_WhenUserExists()
     {
         var doc = MakeUserDocument();
         _factory.UserRepoMock
@@ -59,11 +61,12 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         var body = await response.Content.ReadFromJsonAsync<AccountProfileDto>();
         Assert.NotNull(body);
         Assert.Equal("test-user-oid", body.UserId);
-        Assert.Equal("Test User", body.DisplayName);
+        Assert.Equal("Test", body.FirstName);
+        Assert.Equal("User", body.LastName);
     }
 
     [Fact]
-    public async Task GetProfile_Returns200_WithNullDisplayName_WhenUserNotFound()
+    public async Task GetProfile_Returns200_WithNullName_WhenUserNotFound()
     {
         _factory.UserRepoMock
             .Setup(r => r.GetByUserIdAsync("test-user-oid", It.IsAny<CancellationToken>()))
@@ -76,13 +79,14 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         var body = await response.Content.ReadFromJsonAsync<AccountProfileDto>();
         Assert.NotNull(body);
         Assert.Equal("test-user-oid", body.UserId);
-        Assert.Null(body.DisplayName);
+        Assert.Null(body.FirstName);
+        Assert.Null(body.LastName);
     }
 
-    // ─── PATCH /v1/account/profile ────────────────────────────────────────────
+    // â”€â”€â”€ PATCH /v1/account/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
-    public async Task PatchProfile_Returns200_WithUpdatedDisplayName()
+    public async Task PatchProfile_Returns200_WithUpdatedName()
     {
         _factory.UserRepoMock
             .Setup(r => r.GetByUserIdAsync("test-user-oid", It.IsAny<CancellationToken>()))
@@ -92,44 +96,45 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
             .ReturnsAsync((UserDocument doc, CancellationToken _) => doc);
 
         var client = CreateAuthenticatedClient();
-        var payload = new { displayName = "New Name" };
+        var payload = new { firstName = "New", lastName = "Name" };
         var response = await client.PatchAsJsonAsync("/v1/account/profile", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<AccountProfileDto>();
         Assert.NotNull(body);
-        Assert.Equal("New Name", body.DisplayName);
+        Assert.Equal("New", body.FirstName);
+        Assert.Equal("Name", body.LastName);
     }
 
     [Fact]
-    public async Task PatchProfile_Returns400_WhenDisplayNameIsEmpty()
+    public async Task PatchProfile_Returns400_WhenFirstNameExceeds100Chars()
     {
         var client = CreateAuthenticatedClient();
-        var payload = new { displayName = "" };
+        var payload = new { firstName = new string('a', 101) };
         var response = await client.PatchAsJsonAsync("/v1/account/profile", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
         Assert.NotNull(body);
-        Assert.Contains("DisplayName", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("FirstName", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task PatchProfile_Returns400_WhenDisplayNameExceeds100Chars()
+    public async Task PatchProfile_Returns400_WhenLastNameExceeds100Chars()
     {
         var client = CreateAuthenticatedClient();
-        var payload = new { displayName = new string('a', 101) };
+        var payload = new { lastName = new string('a', 101) };
         var response = await client.PatchAsJsonAsync("/v1/account/profile", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var body = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(jsonOptions);
         Assert.NotNull(body);
-        Assert.Contains("DisplayName", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("LastName", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
-    // ─── GET /v1/account/preferences ─────────────────────────────────────────
+    // â”€â”€â”€ GET /v1/account/preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetPreferences_Returns200_WhenUserExists()
@@ -162,7 +167,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ─── PATCH /v1/account/preferences ───────────────────────────────────────
+    // â”€â”€â”€ PATCH /v1/account/preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PatchPreferences_Returns200_WithMergedPreferences()
@@ -215,7 +220,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Contains("Theme", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
-    // ─── Auth guard ──────────────────────────────────────────────────────────
+    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetProfile_Returns401_WithoutAuthToken()
@@ -245,7 +250,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -262,7 +267,9 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
             {
                 services.Replace(ServiceDescriptor.Singleton<IUserRepository>(_ => _userRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<IProjectRepository>(_ => _projectRepo.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 services.AddAuthentication("Test")
                     .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
@@ -294,3 +301,6 @@ internal sealed class AccountTestAuthHandler(
         return Task.FromResult(Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(ticket));
     }
 }
+
+
+

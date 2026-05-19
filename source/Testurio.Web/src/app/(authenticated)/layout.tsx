@@ -3,7 +3,6 @@ import { cookies } from 'next/headers';
 import { getSessionStore } from '@/app/api/auth/session/route';
 import PrivateCabinetLayout from '@/components/PrivateCabinetLayout/PrivateCabinetLayout';
 import { ThemeContextProvider } from '@/theme/ThemeContext';
-import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
  * Auth-guarded layout for all authenticated pages.
@@ -23,18 +22,17 @@ export default async function AuthenticatedLayout({
   const sessionCookie = cookieStore.get('testurio_session');
 
   if (!sessionCookie?.value) {
-    redirect(SIGN_IN_ROUTE);
+    redirect('/api/auth/sign-out');
   }
 
   const session = getSessionStore().get(sessionCookie.value);
   if (!session) {
-    redirect(SIGN_IN_ROUTE);
+    redirect('/api/auth/sign-out');
   }
 
   const nowSec = Math.floor(Date.now() / 1000);
   if (session.exp < nowSec) {
-    getSessionStore().delete(sessionCookie.value);
-    redirect(SIGN_IN_ROUTE);
+    redirect('/api/auth/sign-out');
   }
 
   return (

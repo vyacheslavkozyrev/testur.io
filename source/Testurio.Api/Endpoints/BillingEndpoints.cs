@@ -14,6 +14,8 @@ public static class BillingEndpoints
 
         billing.MapPost("/checkout", CreateCheckoutSessionAsync).WithName("CreateCheckoutSession");
         billing.MapGet("/subscription", GetSubscriptionStatusAsync).WithName("GetSubscriptionStatus");
+        billing.MapPost("/portal-session", CreatePortalSessionAsync).WithName("CreatePortalSession");
+        billing.MapPost("/reactivate", ReactivateSubscriptionAsync).WithName("ReactivateSubscription");
 
         return v1;
     }
@@ -36,7 +38,8 @@ public static class BillingEndpoints
         var userId = user.GetUserId();
         var userEmail = user.FindFirstValue("emails")
             ?? user.FindFirstValue("email")
-            ?? string.Empty;
+            ?? user.FindFirstValue(System.Security.Claims.ClaimTypes.Email);
+
 
         var response = await billingService.CreateCheckoutSessionAsync(userId, userEmail, request, cancellationToken);
         return TypedResults.Ok(response);
@@ -50,6 +53,26 @@ public static class BillingEndpoints
         var userId = user.GetUserId();
         var response = await billingService.GetSubscriptionStatusAsync(userId, cancellationToken);
         return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<PortalSessionResponse>> CreatePortalSessionAsync(
+        ClaimsPrincipal user,
+        IBillingService billingService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        var response = await billingService.CreatePortalSessionAsync(userId, cancellationToken);
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<NoContent> ReactivateSubscriptionAsync(
+        ClaimsPrincipal user,
+        IBillingService billingService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        await billingService.ReactivateSubscriptionAsync(userId, cancellationToken);
+        return TypedResults.NoContent();
     }
 
     private static async Task<IResult> HandleStripeWebhookAsync(
