@@ -16,4 +16,16 @@ public interface IUserSubscriptionRepository
     /// Creates or replaces the subscription document for a user.
     /// </summary>
     Task<UserSubscription> UpsertAsync(UserSubscription subscription, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the subscription with the given Stripe subscription ID, or <c>null</c> if not found.
+    /// This is a cross-partition query used by webhook handlers that receive only a Stripe subscription ID.
+    /// </summary>
+    Task<UserSubscription?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the subscription with the given Stripe customer ID, or <c>null</c> if not found.
+    /// This is a cross-partition query used by webhook handlers that receive only a Stripe customer ID.
+    /// </summary>
+    Task<UserSubscription?> GetByStripeCustomerIdAsync(string stripeCustomerId, CancellationToken cancellationToken = default);
 }
