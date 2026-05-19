@@ -1,5 +1,6 @@
 using Testurio.Api.DTOs;
 using Testurio.Core.Interfaces;
+using Testurio.Core.Repositories;
 
 namespace Testurio.Api.Services;
 
@@ -32,10 +33,12 @@ public interface IProjectHistoryService
 public class ProjectHistoryService : IProjectHistoryService
 {
     private readonly IStatsRepository _statsRepository;
+    private readonly ITestRunRepository _testRunRepository;
 
-    public ProjectHistoryService(IStatsRepository statsRepository)
+    public ProjectHistoryService(IStatsRepository statsRepository, ITestRunRepository testRunRepository)
     {
         _statsRepository = statsRepository;
+        _testRunRepository = testRunRepository;
     }
 
     /// <inheritdoc/>
@@ -64,6 +67,9 @@ public class ProjectHistoryService : IProjectHistoryService
         if (testResult is null)
             return null;
 
+        // Feature 0024: fetch the TestRun to populate transition outcome fields.
+        var testRun = await _testRunRepository.GetByIdAsync(projectId, runId, cancellationToken);
+
         return new RunDetailResponse(
             Id: testResult.Id,
             RunId: testResult.RunId,
@@ -73,6 +79,9 @@ public class ProjectHistoryService : IProjectHistoryService
             TotalDurationMs: testResult.TotalDurationMs,
             CreatedAt: testResult.CreatedAt,
             ScenarioResults: testResult.ScenarioResults,
-            RawCommentMarkdown: testResult.RawCommentMarkdown);
+            RawCommentMarkdown: testResult.RawCommentMarkdown,
+            StatusTransitionOutcome: testRun?.StatusTransitionOutcome,
+            StatusTransitionError: testRun?.StatusTransitionError,
+            StatusTransitionedTo: testRun?.StatusTransitionedTo);
     }
 }

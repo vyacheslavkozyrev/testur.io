@@ -187,6 +187,90 @@ public partial class JiraAdditionalClient : IJiraClient
         return request;
     }
 
+    /// <inheritdoc />
+    public async Task<JiraTransitionResult> TransitionIssueStatusAsync(
+        string baseUrl,
+        string issueKey,
+        string email,
+        string apiToken,
+        string targetStatusName,
+        CancellationToken cancellationToken = default)
+    {
+        // Step 1: fetch available transitions for the issue.
+        var transitionsUrl = $"{baseUrl.TrimEnd('/')}/rest/api/3/issue/{Uri.EscapeDataString(issueKey)}/transitions";
+        var getRequest = BuildBasicAuthRequest(HttpMethod.Get, transitionsUrl, email, apiToken);
+
+        HttpResponseMessage getResponse;
+        try
+        {
+            getResponse = await _httpClient.SendAsync(getRequest, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogNetworkError(_logger, baseUrl, ex);
+            return new JiraTransitionResult(false, 0, ex.Message);
+        }
+
+        if (!getResponse.IsSuccessStatusCode)
+        {
+            var errorBody = await getResponse.Content.ReadAsStringAsync(cancellationToken);
+            LogTransitionFetchFailed(_logger, issueKey, (int)getResponse.StatusCode);
+            return new JiraTransitionResult(false, (int)getResponse.StatusCode, errorBody);
+        }
+
+        // Step 2: find the transition ID whose name matches targetStatusName (case-insensitive).
+        string? transitionId;
+        try
+        {
+            var body = await getResponse.Content.ReadAsStringAsync(cancellationToken);
+            using var doc = JsonDocument.Parse(body);
+            transitionId = null;
+            if (doc.RootElement.TryGetProperty("transitions", out var transitions))
+            {
+                foreach (var t in transitions.EnumerateArray())
+                {
+                    if (t.TryGetProperty("name", out var name) &&
+                        string.Equals(name.GetString(), targetStatusName, StringComparison.OrdinalIgnoreCase) &&
+                        t.TryGetProperty("id", out var id))
+                    {
+                        transitionId = id.GetString();
+                        break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return new JiraTransitionResult(false, 0, $"Failed to parse transitions response: {ex.Message}");
+        }
+
+        if (transitionId is null)
+            return new JiraTransitionResult(false, 0, $"Transition to status '{targetStatusName}' not found in Jira for issue {issueKey}");
+
+        // Step 3: POST the transition.
+        var postRequest = BuildBasicAuthRequest(HttpMethod.Post, transitionsUrl, email, apiToken);
+        var payload = JsonSerializer.Serialize(new { transition = new { id = transitionId } });
+        postRequest.Content = new System.Net.Http.StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+
+        HttpResponseMessage postResponse;
+        try
+        {
+            postResponse = await _httpClient.SendAsync(postRequest, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogNetworkError(_logger, baseUrl, ex);
+            return new JiraTransitionResult(false, 0, ex.Message);
+        }
+
+        if (postResponse.IsSuccessStatusCode)
+            return new JiraTransitionResult(true, (int)postResponse.StatusCode, null);
+
+        var postErrorBody = await postResponse.Content.ReadAsStringAsync(cancellationToken);
+        LogTransitionFailed(_logger, issueKey, targetStatusName, (int)postResponse.StatusCode);
+        return new JiraTransitionResult(false, (int)postResponse.StatusCode, postErrorBody);
+    }
+
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to fetch Jira project {ProjectKey}: HTTP {StatusCode}")]
     private static partial void LogProjectFetchFailed(ILogger logger, string projectKey, int statusCode);
 
@@ -195,4 +279,10 @@ public partial class JiraAdditionalClient : IJiraClient
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Network error communicating with Jira at {BaseUrl}")]
     private static partial void LogNetworkError(ILogger logger, string baseUrl, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to fetch transitions for Jira issue {IssueKey}: HTTP {StatusCode}")]
+    private static partial void LogTransitionFetchFailed(ILogger logger, string issueKey, int statusCode);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to transition Jira issue {IssueKey} to '{TargetStatus}': HTTP {StatusCode}")]
+    private static partial void LogTransitionFailed(ILogger logger, string issueKey, string targetStatus, int statusCode);
 }

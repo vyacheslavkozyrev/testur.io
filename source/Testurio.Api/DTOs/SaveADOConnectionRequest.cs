@@ -29,4 +29,10 @@ public sealed record SaveADOConnectionRequest(
 
     // Auth-method-specific credentials — validated conditionally by ADOConnectionValidator
     string? Pat,
-    string? OAuthToken);
+    string? OAuthToken,
+
+    // Post-run status transition — feature 0024
+    [property: MaxLength(200)]
+    string? PassedTransitionStatus,
+    [property: MaxLength(200)]
+    string? FailedTransitionStatus);

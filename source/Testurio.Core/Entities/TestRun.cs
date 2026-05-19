@@ -73,4 +73,25 @@ public class TestRun
     public string? ReportBlobUri { get; set; }
     /// <summary>Warning recorded when the custom template blob could not be fetched and the built-in default was used instead.</summary>
     public string? ReportTemplateWarning { get; set; }
+
+    // ─── WorkItemTransitionStep metadata (stage 7 — feature 0024) ────────────
+
+    /// <summary>
+    /// Outcome of the post-run status transition attempted after report delivery.
+    /// <c>null</c> until <c>WorkItemTransitionStep</c> runs.
+    /// </summary>
+    public StatusTransitionOutcome? StatusTransitionOutcome { get; set; }
+
+    /// <summary>
+    /// Error detail when <see cref="StatusTransitionOutcome"/> is <c>Failed</c>.
+    /// Contains the HTTP status code and response body, or the network error message.
+    /// <c>null</c> on success or when the transition was not configured.
+    /// </summary>
+    public string? StatusTransitionError { get; set; }
+
+    /// <summary>
+    /// The PM tool status name the work item was transitioned to on success.
+    /// <c>null</c> when the transition was not configured or failed.
+    /// </summary>
+    public string? StatusTransitionedTo { get; set; }
 }

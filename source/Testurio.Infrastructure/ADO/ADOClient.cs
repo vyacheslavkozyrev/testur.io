@@ -166,6 +166,51 @@ public partial class ADOClient : IADOClient
         }
     }
 
+    /// <inheritdoc />
+    public async Task<ADOTransitionResult> TransitionWorkItemStateAsync(
+        string orgUrl,
+        int workItemId,
+        string token,
+        string targetStateName,
+        CancellationToken cancellationToken = default)
+    {
+        // ADO work item state is updated via a PATCH with a JSON Patch document.
+        // The endpoint is org-scoped — no project name is required.
+        var url = $"{orgUrl.TrimEnd('/')}/_apis/wit/workitems/{workItemId}?api-version=7.1";
+        var request = new HttpRequestMessage(HttpMethod.Patch, url);
+        // ADO accepts a PAT encoded as Basic auth with an empty username.
+        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($":{token}"));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        var patchDocument = new[]
+        {
+            new { op = "add", path = "/fields/System.State", value = targetStateName }
+        };
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(patchDocument),
+            Encoding.UTF8,
+            "application/json-patch+json");
+
+        HttpResponseMessage response;
+        try
+        {
+            response = await _httpClient.SendAsync(request, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            LogNetworkError(_logger, orgUrl, ex);
+            return new ADOTransitionResult(false, 0, ex.Message);
+        }
+
+        if (response.IsSuccessStatusCode)
+            return new ADOTransitionResult(true, (int)response.StatusCode, null);
+
+        var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+        LogTransitionFailed(_logger, workItemId, targetStateName, (int)response.StatusCode);
+        return new ADOTransitionResult(false, (int)response.StatusCode, errorBody);
+    }
+
     private static HttpRequestMessage BuildRequest(HttpMethod method, string url, string token)
     {
         var request = new HttpRequestMessage(method, url);
@@ -187,4 +232,7 @@ public partial class ADOClient : IADOClient
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Network error communicating with ADO at {OrgUrl}")]
     private static partial void LogNetworkError(ILogger logger, string orgUrl, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to transition ADO work item {WorkItemId} to '{TargetState}': HTTP {StatusCode}")]
+    private static partial void LogTransitionFailed(ILogger logger, int workItemId, string targetState, int statusCode);
 }

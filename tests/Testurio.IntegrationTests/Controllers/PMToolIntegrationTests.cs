@@ -126,7 +126,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveADOConnectionRequest(
             "https://dev.azure.com/myorg", "My Project", "My Team",
-            "In Testing", ADOAuthMethod.Pat, "my-pat", null);
+            "In Testing", ADOAuthMethod.Pat, "my-pat", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/ado", request);
 
@@ -142,7 +142,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveADOConnectionRequest(
             "not-a-url", "My Project", "My Team",
-            "In Testing", ADOAuthMethod.Pat, "my-pat", null);
+            "In Testing", ADOAuthMethod.Pat, "my-pat", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/ado", request);
 
@@ -188,7 +188,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveJiraConnectionRequest(
             "https://myorg.atlassian.net", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null);
+            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/jira", request);
 
@@ -203,7 +203,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveJiraConnectionRequest(
             "not-a-url", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null);
+            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/jira", request);
 

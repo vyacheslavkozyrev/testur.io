@@ -278,6 +278,14 @@ public static class DependencyInjection
             new KeyVault.ApiTestAuthCredentialProvider(
                 sp.GetRequiredService<ISecretResolver>()));
 
+        // Feature 0024: work item status transition service.
+        services.AddSingleton<IWorkItemTransitionService>(sp =>
+            new WorkItemTransitionService(
+                sp.GetRequiredService<IJiraClient>(),
+                sp.GetRequiredService<IADOClient>(),
+                sp.GetRequiredService<ISecretResolver>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<WorkItemTransitionService>>()));
+
         return services;
     }
 

@@ -30,6 +30,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ITestGeneratorFactory _testGeneratorFactory;
     private readonly IExecutorRouter _executorRouter;
     private readonly IReportWriter _reportWriter;
+    private readonly WorkItemTransitionStep _workItemTransitionStep;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
     public TestRunJobProcessor(
@@ -46,6 +47,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ITestGeneratorFactory testGeneratorFactory,
         IExecutorRouter executorRouter,
         IReportWriter reportWriter,
+        WorkItemTransitionStep workItemTransitionStep,
         ILogger<TestRunJobProcessor> logger)
     {
         _processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
@@ -64,6 +66,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _testGeneratorFactory = testGeneratorFactory;
         _executorRouter = executorRouter;
         _reportWriter = reportWriter;
+        _workItemTransitionStep = workItemTransitionStep;
         _logger = logger;
 
         _processor.ProcessMessageAsync += OnMessageAsync;
@@ -232,6 +235,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var executionResult = await RunExecutorStageAsync(testRun, project, generatorResults, cancellationToken);
 
         // Stage 6: Generate verdict report, post PM tool comment, persist TestResult (feature 0030).
+        // Stage 7: Transition PM tool work item status after report delivery (feature 0024).
         await RunReportWriterStageAsync(testRun, project, parsedStory, executionResult, cancellationToken);
     }
 
@@ -382,13 +386,16 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     /// <summary>
     /// Executes stage 6 of the pipeline: calls <see cref="IReportWriter.WriteAsync"/> to generate
     /// the verdict report, post a PM tool comment, and persist the <see cref="TestResult"/> to Cosmos.
+    /// Then invokes stage 7 (<see cref="WorkItemTransitionStep"/>) to transition the originating
+    /// PM tool work item status (feature 0024).
     /// </summary>
     /// <remarks>
     /// On <see cref="ReportWriterException"/> (AC-023): sets <c>TestRun.Status</c> to
     /// <c>ReportFailed</c>, persists the status, and re-throws so <see cref="OnMessageAsync"/>
     /// abandons the message for retry.
     /// On success, <paramref name="testRun"/> has <c>Status = Completed</c> and
-    /// <c>PmCommentId</c> set (AC-024 / AC-025).
+    /// <c>PmCommentId</c> set (AC-024 / AC-025). The transition step runs after the status persist
+    /// and does not affect the run outcome.
     /// </remarks>
     private async Task RunReportWriterStageAsync(
         TestRun testRun,
@@ -426,6 +433,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             LogStatusUpdateFailed(_logger, testRun.Id, ex);
             // Non-fatal — TestResult was already persisted; proceed to stage 7.
         }
+
+        // Stage 7 (feature 0024): attempt PM tool work item status transition after report delivery.
+        // Never throws — any failure is recorded on the TestRun and the pipeline continues normally.
+        await _workItemTransitionStep.ExecuteAsync(testRun, project, executionResult, cancellationToken);
     }
 
     /// <summary>
