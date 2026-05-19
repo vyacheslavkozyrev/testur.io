@@ -1,0 +1,42 @@
+{
+  "details": {
+    "title": "Subscription",
+    "plan": "Plan",
+    "billingInterval": "Billing interval",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "currentPeriodEnd": "Current period ends",
+    "nextBillingDate": "Next billing date",
+    "paymentMethod": "Payment method",
+    "cardEndingIn": "Card ending in {{last4}}",
+    "cardExpiry": "Expires {{month}}/{{year}}",
+    "invoices": "Invoice history",
+    "invoiceDate": "Date",
+    "invoiceAmount": "Amount",
+    "invoiceStatus": "Status",
+    "invoicePdf": "PDF",
+    "invoicePdfLink": "Download",
+    "noInvoices": "No invoices yet.",
+    "manageBilling": "Manage billing",
+    "noPlan": "No active subscription",
+    "noPlanCta": "View plans",
+    "expiredMessage": "Your plan has expired.",
+    "expiredCta": "Renew plan"
+  },
+  "cancellationBanner": {
+    "message": "Your subscription is cancelled. Access continues until {{date}}.",
+    "reactivateCta": "Reactivate"
+  },
+  "reactivateDialog": {
+    "title": "Reactivate subscription",
+    "message": "Your {{plan}} plan will be reactivated. You will be charged {{amount}} on {{date}}.",
+    "confirmCta": "Confirm reactivation",
+    "cancelCta": "Cancel",
+    "successMessage": "Your subscription has been reactivated.",
+    "errorMessage": "Failed to reactivate subscription. Please try again."
+  },
+  "paymentFailedBanner": {
+    "message": "Your last payment failed. Please update your payment method to avoid losing access.",
+    "updateCta": "Update payment method"
+  }
+}
