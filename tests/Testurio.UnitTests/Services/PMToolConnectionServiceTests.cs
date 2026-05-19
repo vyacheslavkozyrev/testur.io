@@ -70,7 +70,9 @@ public class PMToolConnectionServiceTests
             InTestingStatus: "In Testing",
             AuthMethod: ADOAuthMethod.Pat,
             Pat: "my-pat",
-            OAuthToken: null);
+            OAuthToken: null,
+            PassedTransitionStatus: null,
+            FailedTransitionStatus: null);
 
         var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
 
@@ -100,7 +102,9 @@ public class PMToolConnectionServiceTests
             InTestingStatus: "In Testing",
             AuthMethod: ADOAuthMethod.Pat,
             Pat: "token",
-            OAuthToken: null);
+            OAuthToken: null,
+            PassedTransitionStatus: null,
+            FailedTransitionStatus: null);
 
         var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
 
@@ -120,7 +124,9 @@ public class PMToolConnectionServiceTests
             InTestingStatus: "In Testing",
             AuthMethod: ADOAuthMethod.Pat,
             Pat: null,
-            OAuthToken: null);
+            OAuthToken: null,
+            PassedTransitionStatus: null,
+            FailedTransitionStatus: null);
 
         var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
 
@@ -137,7 +143,7 @@ public class PMToolConnectionServiceTests
 
         var request = new SaveADOConnectionRequest(
             "https://dev.azure.com/myorg", "Project", "Team", "In Testing",
-            ADOAuthMethod.Pat, "pat", null);
+            ADOAuthMethod.Pat, "pat", null, null, null);
 
         var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
 
@@ -159,7 +165,9 @@ public class PMToolConnectionServiceTests
             AuthMethod: JiraAuthMethod.ApiToken,
             Email: "user@example.com",
             ApiToken: "my-token",
-            Pat: null);
+            Pat: null,
+            PassedTransitionStatus: null,
+            FailedTransitionStatus: null);
 
         var (result, dto, errors) = await _sut.SaveJiraConnectionAsync("user-1", "proj-1", request);
 
@@ -175,7 +183,7 @@ public class PMToolConnectionServiceTests
     {
         var request = new SaveJiraConnectionRequest(
             "not-a-url", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, "user@example.com", "token", null);
+            JiraAuthMethod.ApiToken, "user@example.com", "token", null, null, null);
 
         var (result, dto, errors) = await _sut.SaveJiraConnectionAsync("user-1", "proj-1", request);
 
@@ -188,7 +196,7 @@ public class PMToolConnectionServiceTests
     {
         var request = new SaveJiraConnectionRequest(
             "https://myorg.atlassian.net", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, null, "token", null);
+            JiraAuthMethod.ApiToken, null, "token", null, null, null);
 
         var (result, dto, errors) = await _sut.SaveJiraConnectionAsync("user-1", "proj-1", request);
 
