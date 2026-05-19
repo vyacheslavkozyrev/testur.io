@@ -26,6 +26,17 @@ public class InfrastructureOptions
     [Required] public required string CosmosDatabaseName { get; init; }
     [Required] public required string ServiceBusConnectionString { get; init; }
     [Required] public required string TestRunJobQueueName { get; init; }
+    /// <summary>
+    /// Service Bus topic name for comment-created webhook events (feature 0031).
+    /// Published by Testurio.Api webhook handlers; consumed by CommentEventJobProcessor in Testurio.Worker.
+    /// Defaults to <c>testurio-comment-events</c> when absent from configuration.
+    /// </summary>
+    public string CommentEventTopicName { get; init; } = "testurio-comment-events";
+    /// <summary>
+    /// Service Bus subscription name on the comment-events topic consumed by Testurio.Worker (feature 0031).
+    /// Defaults to <c>worker</c> when absent from configuration.
+    /// </summary>
+    public string CommentEventSubscriptionName { get; init; } = "worker";
     [Required] public required string BlobStorageConnectionString { get; init; }
     [Required] public required string ExecutionLogsBlobContainerName { get; init; }
     [Required] public required string ReportTemplatesBlobContainerName { get; init; }
@@ -119,6 +130,15 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
+        });
+
+        // Feature 0031: sender used by Testurio.Api comment webhook handlers.
+        services.AddSingleton<ICommentEventSender>(sp =>
+        {
+            var client = sp.GetRequiredService<ServiceBusClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CommentEventSender>>();
+            return new CommentEventSender(client, opts.CommentEventTopicName, logger);
         });
 
         services.AddSingleton(sp =>

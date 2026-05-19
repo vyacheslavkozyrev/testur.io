@@ -87,4 +87,35 @@ public class TestRunRepository : ITestRunRepository
         var response = await _container.ReplaceItemAsync(testRun, testRun.Id, new PartitionKey(testRun.ProjectId), cancellationToken: cancellationToken);
         return response.Resource;
     }
+
+    /// <summary>
+    /// Returns the most recent <see cref="TestRun"/> for the given <paramref name="workItemId"/>
+    /// and <paramref name="projectId"/>, ordered by <c>createdAt</c> descending, or <c>null</c>
+    /// when no prior run exists. Used by FeedbackLoop (feature 0031, AC-007).
+    /// </summary>
+    public async Task<TestRun?> GetMostRecentByWorkItemAsync(
+        string projectId,
+        string workItemId,
+        CancellationToken cancellationToken = default)
+    {
+        // JiraIssueKey is used as the work-item identifier for both Jira and ADO runs.
+        var query = _container.GetItemLinqQueryable<TestRun>(
+            requestOptions: new QueryRequestOptions
+            {
+                PartitionKey = new PartitionKey(projectId),
+                MaxItemCount = 1
+            })
+            .Where(r => r.ProjectId == projectId && r.JiraIssueKey == workItemId)
+            .OrderByDescending(r => r.CreatedAt)
+            .ToFeedIterator();
+
+        while (query.HasMoreResults)
+        {
+            var page = await query.ReadNextAsync(cancellationToken);
+            var result = page.FirstOrDefault();
+            if (result is not null) return result;
+        }
+
+        return null;
+    }
 }
