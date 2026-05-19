@@ -30,14 +30,34 @@ public interface IStripeService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Retrieves a Stripe Subscription object by its ID.
-    /// Reserved for future use (e.g., feature 0016 — subscription management).
-    /// Not called by <c>BillingService</c> in the current feature; webhook events are used instead.
+    /// Retrieves a Stripe Subscription object by its ID, with payment method details expanded.
+    /// Used by <c>BillingService.GetSubscriptionStatusAsync</c> to populate live billing data.
     /// </summary>
     /// <param name="stripeSubscriptionId">The Stripe subscription ID (<c>sub_*</c>).</param>
     /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
     /// <returns>The subscription entity, or <c>null</c> if not found.</returns>
     Task<UserSubscription?> GetSubscriptionAsync(
+        string stripeSubscriptionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates a Stripe Customer Portal session for the given customer.
+    /// </summary>
+    /// <param name="stripeCustomerId">The Stripe customer ID (<c>cus_*</c>).</param>
+    /// <param name="returnUrl">URL to redirect the user back to after they leave the portal.</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    /// <returns>The Stripe Customer Portal session URL.</returns>
+    Task<string> CreatePortalSessionAsync(
+        string stripeCustomerId,
+        string returnUrl,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reactivates a cancelled subscription by setting <c>cancel_at_period_end = false</c>.
+    /// </summary>
+    /// <param name="stripeSubscriptionId">The Stripe subscription ID (<c>sub_*</c>).</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    Task ReactivateSubscriptionAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken = default);
 }
