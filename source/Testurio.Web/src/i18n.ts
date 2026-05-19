@@ -13,6 +13,9 @@ import authEn from '@/locales/en/auth.json';
 import landingEn from '@/locales/en/landing.json';
 import pricingEn from '@/locales/en/pricing.json';
 import settingsEn from '@/locales/en/settings.json';
+import billingEn from '@/locales/en/billing.json';
+import checkoutSuccessEn from '@/locales/en/checkoutSuccess.json';
+import subscriptionManagementEn from '@/locales/en/subscriptionManagement.json';
 import settingsUk from '@/locales/uk/settings.json';
 import settingsEs from '@/locales/es/settings.json';
 import settingsBe from '@/locales/be/settings.json';
@@ -47,6 +50,9 @@ i18n.use(initReactI18next).init({
       landing: landingEn,
       pricing: pricingEn,
       settings: settingsEn,
+      billing: billingEn,
+      checkoutSuccess: checkoutSuccessEn,
+      subscriptionManagement: subscriptionManagementEn,
     },
     uk: {
       settings: settingsUk,
