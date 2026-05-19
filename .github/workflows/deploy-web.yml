@@ -1,0 +1,70 @@
+name: Deploy Web (Static Web Apps)
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'source/Testurio.Web/**'
+      - '.github/workflows/deploy-web.yml'
+
+permissions:
+  id-token: write   # required for OIDC token exchange
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and deploy Next.js to Static Web Apps
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+
+    env:
+      ENV: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: source/Testurio.Web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: source/Testurio.Web
+        run: npm ci
+
+      - name: Build Next.js
+        working-directory: source/Testurio.Web
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Retrieve Static Web Apps deployment token
+        id: swa-token
+        run: |
+          KV_NAME=${{ vars.KEY_VAULT_NAME }}
+          TOKEN=$(az keyvault secret show --vault-name "$KV_NAME" \
+            --name "swa-deployment-token" --query value -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa-token.outputs.token }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: source/Testurio.Web
+          output_location: .next
