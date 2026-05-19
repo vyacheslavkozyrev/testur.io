@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Testurio.Api.DTOs.Billing;
 using Testurio.Api.Services;
 
+
 namespace Testurio.Api.Endpoints;
 
 public static class BillingEndpoints
@@ -14,6 +15,8 @@ public static class BillingEndpoints
 
         billing.MapPost("/checkout", CreateCheckoutSessionAsync).WithName("CreateCheckoutSession");
         billing.MapGet("/subscription", GetSubscriptionStatusAsync).WithName("GetSubscriptionStatus");
+        billing.MapPost("/portal-session", CreatePortalSessionAsync).WithName("CreatePortalSession");
+        billing.MapPost("/reactivate", ReactivateSubscriptionAsync).WithName("ReactivateSubscription");
 
         return v1;
     }
@@ -50,6 +53,26 @@ public static class BillingEndpoints
         var userId = user.GetUserId();
         var response = await billingService.GetSubscriptionStatusAsync(userId, cancellationToken);
         return TypedResults.Ok(response);
+    }
+
+    private static async Task<Ok<PortalSessionResponse>> CreatePortalSessionAsync(
+        ClaimsPrincipal user,
+        IBillingService billingService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        var response = await billingService.CreatePortalSessionAsync(userId, cancellationToken);
+        return TypedResults.Ok(response);
+    }
+
+    private static async Task<NoContent> ReactivateSubscriptionAsync(
+        ClaimsPrincipal user,
+        IBillingService billingService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        await billingService.ReactivateSubscriptionAsync(userId, cancellationToken);
+        return TypedResults.NoContent();
     }
 
     private static async Task<IResult> HandleStripeWebhookAsync(
