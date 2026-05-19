@@ -152,7 +152,8 @@ public class BillingService(
             stripeEvent = EventUtility.ConstructEvent(
                 payload,
                 stripeSignature,
-                _stripeOptions.WebhookSecret);
+                _stripeOptions.WebhookSecret,
+                throwOnApiVersionMismatch: false);
         }
         catch (StripeException ex)
         {
@@ -164,6 +165,10 @@ public class BillingService(
         {
             case EventTypes.CheckoutSessionCompleted:
                 await HandleCheckoutSessionCompletedAsync(stripeEvent, cancellationToken);
+                break;
+
+            case EventTypes.CustomerSubscriptionCreated:
+                await HandleSubscriptionUpdatedAsync(stripeEvent, cancellationToken);
                 break;
 
             case EventTypes.CustomerSubscriptionUpdated:
@@ -214,8 +219,8 @@ public class BillingService(
         existing.TrialEndsAt = session.Subscription?.TrialEnd;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
-        // Recover plan and billing interval from subscription metadata set at checkout creation.
-        var metadata = session.Subscription?.Metadata ?? new Dictionary<string, string>();
+        // Recover plan and billing interval from session metadata (always present and expanded).
+        var metadata = session.Metadata ?? new Dictionary<string, string>();
         if (metadata.TryGetValue("plan", out var planStr) &&
             Enum.TryParse<SubscriptionPlan>(planStr, out var plan))
             existing.Plan = plan;

@@ -26,12 +26,14 @@ const TERMINAL_STATUSES: SubscriptionStatus[] = ['Trialing', 'Active', 'Expired'
  * Polls every 3 seconds until a terminal status is reached or `enabled` is false.
  * Refetches on window focus so returning from the Stripe portal reflects the latest state.
  *
- * @param pollUntilTerminal When true (default false), poll every 3 s and stop automatically on terminal status.
+ * @param pollUntilTerminal When true, poll every 3 s and stop automatically on terminal status.
+ * @param enabled When false, disables the query entirely (no fetch, no polling, no window-focus refetch).
  */
-export function useSubscriptionStatus(pollUntilTerminal = false) {
+export function useSubscriptionStatus(pollUntilTerminal = false, enabled = true) {
   return useQuery<SubscriptionStatusResponse, ApiError>({
     queryKey: BILLING_KEYS.subscription,
     queryFn: billingService.getSubscriptionStatus,
+    enabled,
     refetchOnWindowFocus: true,
     refetchInterval: (query) => {
       if (!pollUntilTerminal) return false;

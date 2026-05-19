@@ -26,8 +26,9 @@ public sealed class CosmosDbInitializer(CosmosClient cosmosClient, string databa
         ("ExecutionLogs",   "/projectId"),
         ("TestResults",     "/projectId"),
         ("TestMemory",      "/userId"),
-        ("PromptTemplates", "/templateType"),
-        ("Plans",           "/type"),
+        ("PromptTemplates",    "/templateType"),
+        ("Plans",              "/type"),
+        ("UserSubscriptions",  "/userId"),
     ];
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)

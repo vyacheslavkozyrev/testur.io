@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSessionStore } from '@/app/api/auth/session/route';
+import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
  * POST /api/auth/sign-out
@@ -18,6 +19,31 @@ import { getSessionStore } from '@/app/api/auth/session/route';
  *
  * The B2C v2 logout endpoint is at: <authority>/oauth2/v2.0/logout
  */
+/**
+ * GET /api/auth/sign-out
+ *
+ * Clears the session cookie and redirects to /sign-in.
+ * Used by the authenticated layout when the server-side session is missing or expired,
+ * breaking the redirect loop that occurs when the cookie outlives the in-memory store.
+ */
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('testurio_session');
+  if (sessionCookie?.value) {
+    getSessionStore().delete(sessionCookie.value);
+  }
+
+  const response = NextResponse.redirect(new URL(SIGN_IN_ROUTE, request.url));
+  response.cookies.set('testurio_session', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 0,
+  });
+  return response;
+}
+
 export async function POST(): Promise<NextResponse> {
   const authority = process.env.NEXT_PUBLIC_B2C_AUTHORITY ?? '';
 

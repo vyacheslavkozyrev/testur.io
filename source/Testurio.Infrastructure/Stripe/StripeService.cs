@@ -52,11 +52,19 @@ public class StripeService : IStripeService
         if (!_options.PriceIds.TryGetValue(priceKey, out var priceId))
             throw new InvalidOperationException($"No Stripe Price ID configured for key '{priceKey}'.");
 
+        var planMetadata = new Dictionary<string, string>
+        {
+            ["userId"]          = userId,
+            ["plan"]            = plan.ToString(),
+            ["billingInterval"] = billingInterval.ToString(),
+        };
+
         var createOptions = new CheckoutSessionCreateOptions
         {
             Mode = "subscription",
             CustomerEmail = customerEmail,
             ClientReferenceId = userId,
+            Metadata = planMetadata,
             LineItems =
             [
                 new CheckoutSessionLineItemOptions
@@ -68,12 +76,7 @@ public class StripeService : IStripeService
             SubscriptionData = new CheckoutSessionSubscriptionDataOptions
             {
                 TrialPeriodDays = 14,
-                Metadata = new Dictionary<string, string>
-                {
-                    ["userId"]          = userId,
-                    ["plan"]            = plan.ToString(),
-                    ["billingInterval"] = billingInterval.ToString(),
-                },
+                Metadata = planMetadata,
             },
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl,
