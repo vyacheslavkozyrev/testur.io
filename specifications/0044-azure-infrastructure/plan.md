@@ -6,7 +6,7 @@
 - [x] T002 [Infra] Author `infra/modules/appinsights.bicep` — Log Analytics workspace + workspace-based Application Insights instance, outputs `instrumentationKey` and `connectionString` — `infra/modules/appinsights.bicep`
 - [x] T003 [Infra] Author `infra/modules/acr.bicep` — Container Registry, admin disabled, outputs `loginServer` and `resourceId` — `infra/modules/acr.bicep`
 - [x] T004 [Infra] Author `infra/modules/natgateway.bicep` — public IP prefix, NAT Gateway resource, subnet association parameter, outputs `publicIpAddresses` array — `infra/modules/natgateway.bicep`
-- [ ] T005 [Infra] Author `infra/modules/staticwebapp.bicep` — Static Web Apps resource, outputs `defaultHostname` and `deploymentTokenSecretName` — `infra/modules/staticwebapp.bicep`
+- [x] T005 [Infra] Author `infra/modules/staticwebapp.bicep` — Static Web Apps resource, outputs `defaultHostname` and `deploymentTokenSecretName` — `infra/modules/staticwebapp.bicep`
 - [ ] T006 [Infra] Author `infra/modules/appservice.bicep` — App Service plan + Web App, .NET 10 runtime, HTTPS-only, system-assigned Managed Identity, outputs `appServiceName`, `principalId`, and `defaultHostname` — `infra/modules/appservice.bicep`
 - [ ] T007 [Infra] Author `infra/modules/containerapps.bicep` — Container Apps environment + Worker Container App, ACR image reference, Key Vault reference env vars, system-assigned Managed Identity, outputs `containerAppName` and `principalId` — `infra/modules/containerapps.bicep`
 - [ ] T008 [Infra] Author `infra/modules/aisearch.bicep` — Azure AI Search, semantic ranker enabled, vector index for `storyEmbedding` (1536 dims, cosine), environment-driven SKU, outputs `searchEndpoint` and `resourceId` — `infra/modules/aisearch.bicep`
