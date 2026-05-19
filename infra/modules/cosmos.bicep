@@ -6,6 +6,7 @@
 param location string = resourceGroup().location
 param accountName string
 param databaseName string = 'testurio'
+param serverless bool = false
 
 resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
   name: accountName
@@ -22,6 +23,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
         failoverPriority: 0
       }
     ]
+    capabilities: serverless ? [{ name: 'EnableServerless' }] : []
   }
 }
 
@@ -40,6 +42,13 @@ resource database 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2023-04-15
 // DiskANN vector index on /storyEmbedding (cosine distance, 1536 dimensions).
 // Feature 0031: composite index on (workItemId, testType, source) for efficient
 //               upsert-key lookup scoped to the userId partition.
+
+// ─── Outputs ─────────────────────────────────────────────────────────────────
+
+output cosmosAccountName string = cosmosAccount.name
+output cosmosEndpoint string = cosmosAccount.properties.documentEndpoint
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 resource testMemoryContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2023-04-15' = {
   parent: database

@@ -54,6 +54,6 @@ jobs:
       - name: Update Container App with new image
         run: |
           az containerapp update \
-            --name "${{ vars.WORKER_APP_NAME }}" \
+            --name "${{ vars.CONTAINER_APP_NAME }}" \
             --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
             --image "${{ vars.ACR_LOGIN_SERVER }}/testurio-worker:${{ steps.image-tag.outputs.tag }}"

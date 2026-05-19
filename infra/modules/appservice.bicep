@@ -8,6 +8,7 @@ param appName string
 param skuName string = 'B1'
 param appInsightsConnectionString string
 param keyVaultUri string
+param keyVaultName string
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: planName
@@ -49,6 +50,26 @@ resource webApp 'Microsoft.Web/sites@2023-01-01' = {
         {
           name: 'WEBSITE_RUN_FROM_PACKAGE'
           value: '1'
+        }
+        {
+          name: 'Stripe__SecretKey'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=stripe-secret-key)'
+        }
+        {
+          name: 'Stripe__WebhookSecret'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=stripe-webhook-secret)'
+        }
+        {
+          name: 'Cosmos__ConnectionString'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=cosmos-connection-string)'
+        }
+        {
+          name: 'ServiceBus__ConnectionString'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=servicebus-connection-string)'
+        }
+        {
+          name: 'AzureAdB2C__ClientSecret'
+          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=adb2c-client-secret)'
         }
       ]
     }

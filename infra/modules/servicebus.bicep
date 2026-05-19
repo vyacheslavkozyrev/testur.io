@@ -4,6 +4,7 @@
 
 param location string = resourceGroup().location
 param namespaceName string
+param skuName string = 'Standard'
 param testRunJobQueueName string = 'testurio-test-run-jobs'
 param commentEventTopicName string = 'testurio-comment-events'
 param commentEventSubscriptionName string = 'worker'
@@ -12,8 +13,8 @@ resource serviceBusNamespace 'Microsoft.ServiceBus/namespaces@2022-10-01-preview
   name: namespaceName
   location: location
   sku: {
-    name: 'Standard'
-    tier: 'Standard'
+    name: skuName
+    tier: skuName
   }
 }
 
@@ -59,6 +60,7 @@ resource commentEventWorkerSubscription 'Microsoft.ServiceBus/namespaces/topics/
 
 // ─── Outputs ─────────────────────────────────────────────────────────────────
 
+output serviceBusNamespaceName string = serviceBusNamespace.name
 output serviceBusNamespaceId string = serviceBusNamespace.id
 output testRunJobQueueName string = testRunJobQueue.name
 output commentEventTopicName string = commentEventTopic.name

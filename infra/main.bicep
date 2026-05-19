@@ -19,13 +19,37 @@ param apimPublisherEmail string
 
 var isProd = environment == 'prod'
 
-var appServiceSkuName   = isProd ? 'P1v3'    : 'B1'
-var acrSkuName          = isProd ? 'Standard' : 'Basic'
-var searchSkuName       = isProd ? 'standard' : 'free'
-var swaSkuName          = isProd ? 'Standard' : 'Free'
+var appServiceSkuName   = isProd ? 'P1v3'      : 'B1'
+var acrSkuName          = isProd ? 'Standard'  : 'Basic'
+var searchSkuName       = isProd ? 'standard'  : 'free'
+var swaSkuName          = isProd ? 'Standard'  : 'Free'
+var cosmosServerless    = !isProd
+var serviceBusSkuName   = isProd ? 'Premium'   : 'Standard'
 
 // Key Vault Secrets User built-in role ID
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
+
+// ─── Cosmos DB ───────────────────────────────────────────────────────────────
+
+module cosmos 'modules/cosmos.bicep' = {
+  name: 'cosmos'
+  params: {
+    location: location
+    accountName: '${prefix}-cosmos-${environment}'
+    serverless: cosmosServerless
+  }
+}
+
+// ─── Service Bus ─────────────────────────────────────────────────────────────
+
+module serviceBus 'modules/servicebus.bicep' = {
+  name: 'serviceBus'
+  params: {
+    location: location
+    namespaceName: '${prefix}-sb-${environment}'
+    skuName: serviceBusSkuName
+  }
+}
 
 // ─── Key Vault ────────────────────────────────────────────────────────────────
 
@@ -92,6 +116,7 @@ module appService 'modules/appservice.bicep' = {
     skuName: appServiceSkuName
     appInsightsConnectionString: appInsights.outputs.connectionString
     keyVaultUri: keyVault.outputs.vaultUri
+    keyVaultName: keyVault.outputs.vaultName
   }
 }
 
@@ -106,8 +131,8 @@ module containerApps 'modules/containerapps.bicep' = {
     acrLoginServer: acr.outputs.loginServer
     appInsightsConnectionString: appInsights.outputs.connectionString
     keyVaultUri: keyVault.outputs.vaultUri
-    serviceBusConnectionSecretUri: '${keyVault.outputs.vaultUri}secrets/servicebus-connection'
-    cosmosConnectionSecretUri: '${keyVault.outputs.vaultUri}secrets/cosmos-connection'
+    serviceBusConnectionSecretUri: '${keyVault.outputs.vaultUri}secrets/servicebus-connection-string'
+    cosmosConnectionSecretUri: '${keyVault.outputs.vaultUri}secrets/cosmos-connection-string'
     anthropicApiKeySecretUri: '${keyVault.outputs.vaultUri}secrets/anthropic-api-key'
   }
 }
@@ -194,6 +219,8 @@ resource workerAcrRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 
 // ─── Outputs ─────────────────────────────────────────────────────────────────
 
+output cosmosAccountName string = cosmos.outputs.cosmosAccountName
+output serviceBusNamespaceName string = serviceBus.outputs.serviceBusNamespaceName
 output keyVaultName string = keyVault.outputs.vaultName
 output keyVaultUri string = keyVault.outputs.vaultUri
 output appInsightsConnectionString string = appInsights.outputs.connectionString

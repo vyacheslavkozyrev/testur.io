@@ -157,9 +157,12 @@ echo "    Key Vault: $KV_NAME"
 
 echo "==> Seeding Key Vault secret placeholders..."
 SECRETS=(
-  "servicebus-connection"
-  "cosmos-connection"
+  "stripe-secret-key"
+  "stripe-webhook-secret"
   "anthropic-api-key"
+  "cosmos-connection-string"
+  "servicebus-connection-string"
+  "adb2c-client-secret"
   "swa-deployment-token"
 )
 
@@ -180,7 +183,7 @@ APP_REG_CLIENT_ID=$(az ad app show --id "$APP_REG_OBJECT_ID" --query appId -o ts
 TENANT_ID=$(az account show --query tenantId -o tsv)
 ACR_LOGIN_SERVER=$(echo "$OUTPUTS" | jq -r '.acrLoginServer.value')
 APP_SERVICE_NAME=$(echo "$OUTPUTS" | jq -r '.appServiceName.value')
-WORKER_APP_NAME=$(echo "$OUTPUTS" | jq -r '.workerContainerAppName.value')
+CONTAINER_APP_NAME=$(echo "$OUTPUTS" | jq -r '.workerContainerAppName.value')
 
 ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
 
@@ -197,7 +200,7 @@ printf " %-36s %s\n" "AZURE_SUBSCRIPTION_ID"             "$SUBSCRIPTION_ID"
 printf " %-36s %s\n" "AZURE_RESOURCE_GROUP_${ENV_UPPER}" "$RESOURCE_GROUP"
 printf " %-36s %s\n" "ACR_LOGIN_SERVER_${ENV_UPPER}"     "$ACR_LOGIN_SERVER"
 printf " %-36s %s\n" "APP_SERVICE_NAME_${ENV_UPPER}"     "$APP_SERVICE_NAME"
-printf " %-36s %s\n" "WORKER_APP_NAME_${ENV_UPPER}"      "$WORKER_APP_NAME"
+printf " %-36s %s\n" "CONTAINER_APP_NAME_${ENV_UPPER}"   "$CONTAINER_APP_NAME"
 printf " %-36s %s\n" "KEY_VAULT_NAME_${ENV_UPPER}"       "$KV_NAME"
 echo ""
 echo " After setting secrets, replace all Key Vault __REPLACE__ placeholders"
