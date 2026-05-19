@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY ["source/Testurio.Worker/Testurio.Worker.csproj", "source/Testurio.Worker/"]
@@ -7,8 +7,10 @@ COPY ["source/Testurio.Core/Testurio.Core.csproj", "source/Testurio.Core/"]
 COPY ["source/Testurio.Infrastructure/Testurio.Infrastructure.csproj", "source/Testurio.Infrastructure/"]
 COPY ["source/Testurio.Pipeline.AgentRouter/Testurio.Pipeline.AgentRouter.csproj", "source/Testurio.Pipeline.AgentRouter/"]
 COPY ["source/Testurio.Pipeline.Executors/Testurio.Pipeline.Executors.csproj", "source/Testurio.Pipeline.Executors/"]
+COPY ["source/Testurio.Pipeline.FeedbackLoop/Testurio.Pipeline.FeedbackLoop.csproj", "source/Testurio.Pipeline.FeedbackLoop/"]
 COPY ["source/Testurio.Pipeline.Generators/Testurio.Pipeline.Generators.csproj", "source/Testurio.Pipeline.Generators/"]
 COPY ["source/Testurio.Pipeline.MemoryRetrieval/Testurio.Pipeline.MemoryRetrieval.csproj", "source/Testurio.Pipeline.MemoryRetrieval/"]
+COPY ["source/Testurio.Pipeline.ReportWriter/Testurio.Pipeline.ReportWriter.csproj", "source/Testurio.Pipeline.ReportWriter/"]
 COPY ["source/Testurio.Pipeline.StoryParser/Testurio.Pipeline.StoryParser.csproj", "source/Testurio.Pipeline.StoryParser/"]
 COPY ["source/Testurio.Plugins/Testurio.Plugins.csproj", "source/Testurio.Plugins/"]
 
@@ -19,7 +21,7 @@ WORKDIR /src/source/Testurio.Worker
 RUN dotnet publish "Testurio.Worker.csproj" -c Release -o /app/publish --no-restore
 
 # Stage 2: Runtime with Playwright Chromium
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 # Install Playwright OS-level dependencies for Chromium
@@ -43,5 +45,13 @@ COPY --from=build /app/publish .
 # are installed so they are available at the same path at runtime.
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
 RUN chmod +x /app/playwright.sh && /app/playwright.sh install chromium
+
+# Run as non-root user for security hardening
+RUN addgroup --system --gid 1001 dotnet && \
+    adduser --system --uid 1001 --ingroup dotnet dotnet && \
+    chown -R dotnet:dotnet /app
+USER dotnet
+
+ENV DOTNET_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "Testurio.Worker.dll"]
