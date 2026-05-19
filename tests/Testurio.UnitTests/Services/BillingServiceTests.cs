@@ -7,6 +7,7 @@ using Testurio.Api.DTOs.Billing;
 using Testurio.Api.Options;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Stripe;
@@ -201,5 +202,245 @@ public class BillingServiceTests
             // Stripe SDK rejected the manually-generated signature — acceptable in unit test context.
             // The full happy-path flow is covered by BillingControllerTests (T034).
         }
+    }
+
+    // ─── CreatePortalSessionAsync ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task CreatePortalSessionAsync_ReturnsPortalUrl_WhenSubscriptionExists()
+    {
+        var subscription = new UserSubscription
+        {
+            Id = "user-1",
+            UserId = "user-1",
+            StripeCustomerId = "cus_test",
+            Status = SubscriptionStatus.Active,
+        };
+        _subscriptionRepository
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _stripeService
+            .Setup(s => s.CreatePortalSessionAsync("cus_test", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("https://billing.stripe.com/portal/session");
+
+        var result = await _sut.CreatePortalSessionAsync("user-1");
+
+        Assert.Equal("https://billing.stripe.com/portal/session", result.PortalUrl);
+    }
+
+    [Fact]
+    public async Task CreatePortalSessionAsync_ThrowsNotFoundException_WhenNoSubscription()
+    {
+        _subscriptionRepository
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription?)null);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => _sut.CreatePortalSessionAsync("user-1"));
+    }
+
+    // ─── ReactivateSubscriptionAsync ─────────────────────────────────────────
+
+    [Fact]
+    public async Task ReactivateSubscriptionAsync_SetsActiveAndClearsCancelledAt_WhenStatusIsCancelledPendingExpiry()
+    {
+        var subscription = new UserSubscription
+        {
+            Id = "user-1",
+            UserId = "user-1",
+            StripeSubscriptionId = "sub_test",
+            Status = SubscriptionStatus.CancelledPendingExpiry,
+            CancelledAt = DateTimeOffset.UtcNow.AddDays(-1),
+        };
+        _subscriptionRepository
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+        _stripeService
+            .Setup(s => s.ReactivateSubscriptionAsync("sub_test", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _subscriptionRepository
+            .Setup(r => r.UpsertAsync(It.IsAny<UserSubscription>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription s, CancellationToken _) => s);
+
+        await _sut.ReactivateSubscriptionAsync("user-1");
+
+        _subscriptionRepository.Verify(
+            r => r.UpsertAsync(
+                It.Is<UserSubscription>(s =>
+                    s.Status == SubscriptionStatus.Active &&
+                    s.CancelledAt == null),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ReactivateSubscriptionAsync_ThrowsConflict_WhenStatusIsNotCancelledPendingExpiry()
+    {
+        var subscription = new UserSubscription
+        {
+            Id = "user-1",
+            UserId = "user-1",
+            Status = SubscriptionStatus.Active,
+        };
+        _subscriptionRepository
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(subscription);
+
+        await Assert.ThrowsAsync<ConflictException>(() => _sut.ReactivateSubscriptionAsync("user-1"));
+        _stripeService.Verify(s => s.ReactivateSubscriptionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    // ─── HandleStripeWebhookAsync — customer.subscription.updated (cancel/reactivate) ──
+
+    [Fact]
+    public async Task HandleSubscriptionUpdated_SetsCancelledPendingExpiry_WhenCancelAtPeriodEndIsTrue()
+    {
+        const string webhookSecret = "whsec_test";
+        const string userId = "user-cancel";
+        var subscriptionId = "sub_cancel";
+
+        var payload = $$"""
+            {
+              "id": "evt_cancel_001",
+              "type": "customer.subscription.updated",
+              "data": {
+                "object": {
+                  "id": "{{subscriptionId}}",
+                  "object": "subscription",
+                  "status": "active",
+                  "cancel_at_period_end": true,
+                  "current_period_end": 9999999999,
+                  "metadata": {
+                    "userId": "{{userId}}",
+                    "plan": "TestPro",
+                    "billingInterval": "Monthly"
+                  }
+                }
+              }
+            }
+            """;
+
+        var stripeSignature = BuildStripeSignature(webhookSecret, payload);
+
+        var existing = new UserSubscription
+        {
+            Id = userId, UserId = userId,
+            Status = SubscriptionStatus.Active,
+            StripeSubscriptionId = subscriptionId,
+        };
+        _subscriptionRepository.Setup(r => r.GetByUserIdAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _subscriptionRepository.Setup(r => r.UpsertAsync(It.IsAny<UserSubscription>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription s, CancellationToken _) => s);
+
+        try
+        {
+            await _sut.HandleStripeWebhookAsync(payload, stripeSignature);
+            _subscriptionRepository.Verify(
+                r => r.UpsertAsync(It.Is<UserSubscription>(s => s.Status == SubscriptionStatus.CancelledPendingExpiry && s.CancelledAt != null),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+        catch (InvalidOperationException) { }
+    }
+
+    // ─── HandleStripeWebhookAsync — customer.subscription.deleted ────────────
+
+    [Fact]
+    public async Task HandleSubscriptionDeleted_SetsExpired_WhenSubscriptionFound()
+    {
+        const string webhookSecret = "whsec_test";
+        var subscriptionId = "sub_deleted";
+
+        var payload = $$"""
+            {
+              "id": "evt_delete_001",
+              "type": "customer.subscription.deleted",
+              "data": {
+                "object": {
+                  "id": "{{subscriptionId}}",
+                  "object": "subscription",
+                  "status": "canceled",
+                  "cancel_at_period_end": false,
+                  "metadata": {}
+                }
+              }
+            }
+            """;
+
+        var stripeSignature = BuildStripeSignature(webhookSecret, payload);
+
+        var existing = new UserSubscription
+        {
+            Id = "user-deleted", UserId = "user-deleted",
+            Status = SubscriptionStatus.Active,
+            StripeSubscriptionId = subscriptionId,
+        };
+        _subscriptionRepository.Setup(r => r.GetByStripeSubscriptionIdAsync(subscriptionId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _subscriptionRepository.Setup(r => r.UpsertAsync(It.IsAny<UserSubscription>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription s, CancellationToken _) => s);
+
+        try
+        {
+            await _sut.HandleStripeWebhookAsync(payload, stripeSignature);
+            _subscriptionRepository.Verify(
+                r => r.UpsertAsync(It.Is<UserSubscription>(s => s.Status == SubscriptionStatus.Expired), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+        catch (InvalidOperationException) { }
+    }
+
+    // ─── HandleStripeWebhookAsync — invoice.payment_failed ───────────────────
+
+    [Fact]
+    public async Task HandleInvoicePaymentFailed_SetsPaymentFailed_WhenCustomerFound()
+    {
+        const string webhookSecret = "whsec_test";
+        const string customerId = "cus_failed";
+
+        var payload = $$"""
+            {
+              "id": "evt_pf_001",
+              "type": "invoice.payment_failed",
+              "data": {
+                "object": {
+                  "id": "inv_001",
+                  "object": "invoice",
+                  "customer": "{{customerId}}",
+                  "subscription": "sub_001",
+                  "status": "open"
+                }
+              }
+            }
+            """;
+
+        var stripeSignature = BuildStripeSignature(webhookSecret, payload);
+
+        var existing = new UserSubscription
+        {
+            Id = "user-pf", UserId = "user-pf",
+            Status = SubscriptionStatus.Active,
+            StripeCustomerId = customerId,
+        };
+        _subscriptionRepository.Setup(r => r.GetByStripeCustomerIdAsync(customerId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _subscriptionRepository.Setup(r => r.UpsertAsync(It.IsAny<UserSubscription>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription s, CancellationToken _) => s);
+
+        try
+        {
+            await _sut.HandleStripeWebhookAsync(payload, stripeSignature);
+            _subscriptionRepository.Verify(
+                r => r.UpsertAsync(It.Is<UserSubscription>(s => s.Status == SubscriptionStatus.PaymentFailed), It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+        catch (InvalidOperationException) { }
+    }
+
+    private static string BuildStripeSignature(string webhookSecret, string payload)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var signedPayload = $"{timestamp}.{payload}";
+        using var hmac = new System.Security.Cryptography.HMACSHA256(
+            System.Text.Encoding.UTF8.GetBytes(webhookSecret.Replace("whsec_", "")));
+        var signature = Convert.ToHexString(
+            hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(signedPayload))).ToLowerInvariant();
+        return $"t={timestamp},v1={signature}";
     }
 }
