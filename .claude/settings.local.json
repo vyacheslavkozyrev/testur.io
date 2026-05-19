@@ -99,7 +99,8 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm audit *)",
       "Bash(python3 *)",
-      "Bash(grep -E \"\\\\.test\\\\.tsx?$\")"
+      "Bash(grep -E \"\\\\.test\\\\.tsx?$\")",
+      "Bash(2>&1)"
     ]
   },
   "enableAllProjectMcpServers": true
