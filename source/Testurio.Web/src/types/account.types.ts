@@ -13,9 +13,9 @@ export interface UpdateProfileRequest {
 }
 
 export interface UpdatePreferencesRequest {
-  language?: 'en' | 'uk';
+  language?: SupportedLanguage;
   theme?: 'light' | 'dark';
 }
 
 export type ThemeMode = 'light' | 'dark';
-export type SupportedLanguage = 'en' | 'uk';
+export type SupportedLanguage = 'en' | 'uk' | 'es' | 'be';

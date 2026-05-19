@@ -1,0 +1,42 @@
+{
+  "page": {
+    "title": "Configuración de cuenta",
+    "saveSuccess": "Configuración guardada"
+  },
+  "personalInfo": {
+    "title": "Información personal",
+    "fields": {
+      "displayName": "Nombre para mostrar"
+    },
+    "validation": {
+      "displayNameRequired": "El nombre para mostrar es obligatorio.",
+      "displayNameMaxLength": "El nombre debe tener 100 caracteres o menos."
+    },
+    "actions": {
+      "save": "Guardar",
+      "saving": "Guardando…"
+    },
+    "errors": {
+      "saveFailed": "Error al guardar la configuración. Por favor, inténtalo de nuevo."
+    }
+  },
+  "preferences": {
+    "title": "Preferencias",
+    "fields": {
+      "language": "Idioma",
+      "appearance": "Apariencia"
+    },
+    "theme": {
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
+    "actions": {
+      "save": "Guardar",
+      "saving": "Guardando…"
+    },
+    "errors": {
+      "saveFailed": "Error al guardar la configuración. Por favor, inténtalo de nuevo.",
+      "loadFailed": "Error al cargar las preferencias. Por favor, recarga la página."
+    }
+  }
+}

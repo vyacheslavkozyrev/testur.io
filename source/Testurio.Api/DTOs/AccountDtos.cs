@@ -22,7 +22,7 @@ public class UpdateProfileRequest
 /// </summary>
 public class UpdatePreferencesRequest
 {
-    [AllowedValues("en", "uk", ErrorMessage = "Language must be one of: en, uk.")]
+    [AllowedValues("en", "uk", "es", "be", ErrorMessage = "Language must be one of: en, uk, es, be.")]
     public string? Language { get; init; }
 
     [AllowedValues("light", "dark", ErrorMessage = "Theme must be one of: light, dark.")]

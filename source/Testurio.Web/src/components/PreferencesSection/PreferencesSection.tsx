@@ -26,12 +26,16 @@ export interface PreferencesSectionProps {
 
 const SUPPORTED_LANGUAGES: Array<{ value: SupportedLanguage; label: string }> = [
   { value: 'en', label: 'English' },
+  { value: 'es', label: 'Español' },
   { value: 'uk', label: 'Українська' },
+  { value: 'be', label: 'Беларуская' },
 ];
+
+const SUPPORTED_LANGUAGE_CODES = new Set<string>(['en', 'uk', 'es', 'be']);
 
 function detectBrowserLanguage(): SupportedLanguage {
   const browserLang = navigator.language.split('-')[0];
-  return browserLang === 'uk' ? 'uk' : 'en';
+  return SUPPORTED_LANGUAGE_CODES.has(browserLang) ? (browserLang as SupportedLanguage) : 'en';
 }
 
 export default function PreferencesSection({ preferences, onSaveSuccess }: PreferencesSectionProps) {
@@ -41,8 +45,8 @@ export default function PreferencesSection({ preferences, onSaveSuccess }: Prefe
   const { themeMode, setThemeMode } = useThemeMode();
 
   const resolveInitialLanguage = (): SupportedLanguage => {
-    if (preferences?.language === 'en' || preferences?.language === 'uk') {
-      return preferences.language;
+    if (preferences?.language && SUPPORTED_LANGUAGE_CODES.has(preferences.language)) {
+      return preferences.language as SupportedLanguage;
     }
     try {
       return detectBrowserLanguage();

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import type { ThemeMode } from '@/types/account.types';
 
 const THEME_STORAGE_KEY = 'testurio.theme';
@@ -84,7 +85,10 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
 
   return (
     <ThemeContext.Provider value={contextValue}>
-      <ThemeProvider theme={muiTheme}>{children}</ThemeProvider>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
     </ThemeContext.Provider>
   );
 }
