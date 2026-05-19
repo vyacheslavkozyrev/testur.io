@@ -54,7 +54,7 @@ jobs:
       - name: Retrieve Static Web Apps deployment token
         id: swa-token
         run: |
-          KV_NAME=${{ vars.KEY_VAULT_NAME }}
+          KV_NAME="${{ vars.KEY_VAULT_NAME }}"
           TOKEN=$(az keyvault secret show --vault-name "$KV_NAME" \
             --name "swa-deployment-token" --query value -o tsv)
           echo "::add-mask::$TOKEN"

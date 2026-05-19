@@ -301,6 +301,12 @@ The QA lead or admin can export all stored `(storyText, scenarioJson, outcome)` 
 
 ---
 
+**[0044]: Azure Infrastructure & CI/CD Deployment** `MVP`
+_Business Outcome: Enables the team to deploy and operate Testurio on Azure with repeatable, version-controlled infrastructure and automated delivery pipelines._
+All Azure resources are defined as Bicep modules (Static Web Apps, App Service, Container Apps, Cosmos DB, Service Bus, Key Vault, AD B2C, APIM, AI Search, App Insights, ACR, NAT Gateway, Front Door). A `main.bicep` root orchestrates all modules with environment-parameterised configuration. Three GitHub Actions workflows deploy each component independently: Next.js frontend → Static Web Apps, ASP.NET Core API → App Service, and .NET Worker → Container Apps via ACR. Secrets are wired through Key Vault with Managed Identity — no plaintext credentials in pipelines. A one-time `bootstrap.sh` script provisions the resource group and service principal needed to run the pipelines.
+
+---
+
 **[0042]: Pipeline Run Detail View** `Post-MVP`
 _Business Outcome: Gives QA leads and engineering leads transparency into what the pipeline did and what it cost._
 Each test run in the portal shows a per-stage breakdown: which generator agents ran, which executor handled each test type, token usage per Claude call, and estimated cost. Helps identify expensive runs and tune project configuration.

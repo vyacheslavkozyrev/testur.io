@@ -160,7 +160,7 @@ module adb2c 'modules/adb2c.bicep' = {
 // Grant 'Key Vault Secrets User' to App Service and Container Apps system identities.
 
 resource appServiceKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.name, appService.outputs.principalId, keyVaultSecretsUserRoleId)
+  name: guid(keyVault.outputs.vaultName, appService.outputs.principalId, keyVaultSecretsUserRoleId)
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
@@ -170,7 +170,7 @@ resource appServiceKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' =
 }
 
 resource workerKvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.name, containerApps.outputs.principalId, keyVaultSecretsUserRoleId)
+  name: guid(keyVault.outputs.vaultName, containerApps.outputs.principalId, keyVaultSecretsUserRoleId)
   scope: resourceGroup()
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)

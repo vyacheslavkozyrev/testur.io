@@ -11,7 +11,7 @@ param environment string = 'dev'
 var skuName = environment == 'prod' ? 'Developer' : 'Consumption'
 var skuCapacity = environment == 'prod' ? 1 : 0 // Consumption has no capacity
 
-resource apim 'Microsoft.ApiManagement/service@2023-03-01-preview' = {
+resource apim 'Microsoft.ApiManagement/service@2022-08-01' = {
   name: serviceName
   location: location
   sku: {

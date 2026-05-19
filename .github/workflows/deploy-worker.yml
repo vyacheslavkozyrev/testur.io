@@ -36,7 +36,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to Azure Container Registry
-        run: az acr login --name ${{ vars.ACR_LOGIN_SERVER }}
+        run: az acr login --name "${{ vars.ACR_LOGIN_SERVER }}"
 
       - name: Set image tag
         id: image-tag

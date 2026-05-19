@@ -13,7 +13,7 @@ param serviceBusConnectionSecretUri string
 param cosmosConnectionSecretUri string
 param anthropicApiKeySecretUri string
 
-resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-preview' = {
+resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: environmentName
   location: location
   properties: {
@@ -23,7 +23,7 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-11-02-
   }
 }
 
-resource workerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
+resource workerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
   identity: {
