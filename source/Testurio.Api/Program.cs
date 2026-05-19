@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Testurio.Api.Controllers;
 using Testurio.Api.Endpoints;
 using Testurio.Api.Middleware;
+using Testurio.Api.Options;
 using Testurio.Api.Services;
 using Testurio.Api.Webhooks;
 using Testurio.Core.Interfaces;
@@ -94,6 +95,12 @@ builder.Services.AddScoped<IProjectApiAuthService, ProjectApiAuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IBillingService, BillingService>();
+
+builder.Services.AddOptions<AppOptions>()
+    .BindConfiguration("App")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Feature 0043: SSE relay — subscribe to run-status-changed Service Bus messages and fan out to SSE channels.
 builder.Services.AddSingleton<DashboardEventRelay>(sp =>
@@ -193,6 +200,8 @@ var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 v1.MapPlanEndpoints();
 v1.MapAccountEndpoints();
+v1.MapBillingEndpoints();
+app.MapStripeWebhook();
 app.MapJiraWebhooks();
 app.MapAdoCommentsWebhook();
 app.MapJiraCommentsWebhook();

@@ -1,0 +1,18 @@
+{
+  "checkout": {
+    "redirecting": "Redirecting to checkout, please wait…"
+  },
+  "banner": {
+    "daysRemaining_one": "{{count}} day remaining in your trial.",
+    "daysRemaining_other": "{{count}} days remaining in your trial.",
+    "expired": "Your trial has expired.",
+    "upgradeCta": "Upgrade now"
+  },
+  "upgradeModal": {
+    "title": "Subscription required",
+    "message": "This action requires an active plan. Start your free 14-day trial or upgrade to unlock full access.",
+    "cta": "View plans",
+    "dismiss": "Maybe later",
+    "close": "Close"
+  }
+}

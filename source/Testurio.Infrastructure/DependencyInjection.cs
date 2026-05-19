@@ -17,6 +17,7 @@ using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Sse;
 using Testurio.Infrastructure.Storage;
+using Testurio.Infrastructure.Stripe;
 
 namespace Testurio.Infrastructure;
 
@@ -221,6 +222,21 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PlanRepository(cosmos, opts.CosmosDatabaseName);
         });
+
+        // Feature 0015: subscription repository and Stripe service.
+        services.AddSingleton<IUserSubscriptionRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new UserSubscriptionRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddOptions<StripeOptions>()
+            .BindConfiguration("Stripe")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IStripeService, StripeService>();
 
         services.AddSingleton<PlanSeeder>(sp =>
         {

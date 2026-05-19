@@ -10,7 +10,8 @@
   },
   "card": {
     "lastRun": "Last run: {{time}}",
-    "neverRun": "Never run"
+    "neverRun": "Never run",
+    "runTest": "Run test"
   },
   "emptyState": {
     "heading": "No projects yet",
