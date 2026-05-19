@@ -6,7 +6,7 @@
 
 - [x] T001 [Domain] Create `SubscriptionPlan` enum (TestJunior / TestPro / Team / Centurio) — `source/Testurio.Core/Enums/SubscriptionPlan.cs`
 - [x] T002 [Domain] Create `BillingInterval` enum (Monthly / Annual) — `source/Testurio.Core/Enums/BillingInterval.cs`
-- [ ] T003 [Domain] Create `SubscriptionStatus` enum (None / Trialing / Active / Expired) — `source/Testurio.Core/Enums/SubscriptionStatus.cs`
+- [x] T003 [Domain] Create `SubscriptionStatus` enum (None / Trialing / Active / Expired) — `source/Testurio.Core/Enums/SubscriptionStatus.cs`
 - [ ] T004 [Domain] Create `UserSubscription` entity (userId, plan, billingInterval, status, trialEndsAt, stripeCustomerId, stripeSubscriptionId) — `source/Testurio.Core/Entities/UserSubscription.cs`
 - [ ] T005 [Domain] Add `IUserSubscriptionRepository` interface (GetByUserIdAsync, UpsertAsync) — `source/Testurio.Core/Repositories/IUserSubscriptionRepository.cs`
 - [ ] T006 [Domain] Add `IStripeService` interface (CreateCheckoutSessionAsync, GetSubscriptionAsync) — `source/Testurio.Core/Interfaces/IStripeService.cs`
