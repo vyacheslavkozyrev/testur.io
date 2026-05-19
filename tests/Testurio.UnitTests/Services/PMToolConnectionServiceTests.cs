@@ -389,4 +389,163 @@ public class PMToolConnectionServiceTests
         Assert.Equal("projects--proj-1--adoToken", dto!.AdoTokenSecretUri);
         // No raw token values should be present on the DTO.
     }
+
+    // ─── Transition status fields (feature 0024) ─────────────────────────────
+
+    [Fact]
+    public async Task SaveADOConnectionAsync_PersistsTransitionStatusFields()
+    {
+        var project = MakeProject();
+        SetupProjectLookup(project);
+
+        var request = new SaveADOConnectionRequest(
+            OrgUrl: "https://dev.azure.com/myorg",
+            ProjectName: "My Project",
+            Team: "My Team",
+            InTestingStatus: "In Testing",
+            AuthMethod: ADOAuthMethod.Pat,
+            Pat: "my-pat",
+            OAuthToken: null,
+            PassedTransitionStatus: "Closed",
+            FailedTransitionStatus: "Active");
+
+        var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.Null(errors);
+        Assert.NotNull(dto);
+        Assert.Equal("Closed", dto!.AdoPassedTransitionStatus);
+        Assert.Equal("Active", dto.AdoFailedTransitionStatus);
+
+        _projectRepo.Verify(r => r.UpdateAsync(
+            It.Is<Project>(p =>
+                p.AdoPassedTransitionStatus == "Closed" &&
+                p.AdoFailedTransitionStatus == "Active"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SaveADOConnectionAsync_NullTransitionFields_PersistsNulls()
+    {
+        var project = MakeProject();
+        project.AdoPassedTransitionStatus = "PreviousValue";
+        SetupProjectLookup(project);
+
+        var request = new SaveADOConnectionRequest(
+            OrgUrl: "https://dev.azure.com/myorg",
+            ProjectName: "My Project",
+            Team: "My Team",
+            InTestingStatus: "In Testing",
+            AuthMethod: ADOAuthMethod.Pat,
+            Pat: "my-pat",
+            OAuthToken: null,
+            PassedTransitionStatus: null,
+            FailedTransitionStatus: null);
+
+        var (result, dto, errors) = await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
+
+        Assert.Null(dto!.AdoPassedTransitionStatus);
+        Assert.Null(dto.AdoFailedTransitionStatus);
+    }
+
+    [Fact]
+    public async Task SaveJiraConnectionAsync_PersistsTransitionStatusFields()
+    {
+        var project = MakeProject();
+        SetupProjectLookup(project);
+
+        var request = new SaveJiraConnectionRequest(
+            BaseUrl: "https://myorg.atlassian.net",
+            ProjectKey: "PROJ",
+            InTestingStatus: "In Testing",
+            AuthMethod: JiraAuthMethod.ApiToken,
+            Email: "user@example.com",
+            ApiToken: "my-token",
+            Pat: null,
+            PassedTransitionStatus: "Done",
+            FailedTransitionStatus: "Rejected");
+
+        var (result, dto, errors) = await _sut.SaveJiraConnectionAsync("user-1", "proj-1", request);
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.Null(errors);
+        Assert.NotNull(dto);
+        Assert.Equal("Done", dto!.JiraPassedTransitionStatus);
+        Assert.Equal("Rejected", dto.JiraFailedTransitionStatus);
+
+        _projectRepo.Verify(r => r.UpdateAsync(
+            It.Is<Project>(p =>
+                p.JiraPassedTransitionStatus == "Done" &&
+                p.JiraFailedTransitionStatus == "Rejected"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task SaveADOConnectionAsync_ClearsJiraTransitionFields_WhenSwitchingToAdo()
+    {
+        var project = MakeProject();
+        project.PmTool = PMToolType.Jira;
+        project.JiraPassedTransitionStatus = "Done";
+        project.JiraFailedTransitionStatus = "Rejected";
+        SetupProjectLookup(project);
+
+        var request = new SaveADOConnectionRequest(
+            "https://dev.azure.com/myorg", "Project", "Team", "In Testing",
+            ADOAuthMethod.Pat, "pat", null, "Closed", null);
+
+        await _sut.SaveADOConnectionAsync("user-1", "proj-1", request);
+
+        _projectRepo.Verify(r => r.UpdateAsync(
+            It.Is<Project>(p =>
+                p.JiraPassedTransitionStatus == null &&
+                p.JiraFailedTransitionStatus == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetIntegrationStatusAsync_ReturnsTransitionFields_WhenSet()
+    {
+        var project = MakeProject();
+        project.PmTool = PMToolType.Ado;
+        project.AdoPassedTransitionStatus = "Closed";
+        project.AdoFailedTransitionStatus = "Active";
+        project.JiraPassedTransitionStatus = null;
+        project.JiraFailedTransitionStatus = null;
+        SetupProjectLookup(project);
+
+        var (result, dto) = await _sut.GetIntegrationStatusAsync("user-1", "proj-1");
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.NotNull(dto);
+        Assert.Equal("Closed", dto!.AdoPassedTransitionStatus);
+        Assert.Equal("Active", dto.AdoFailedTransitionStatus);
+        Assert.Null(dto.JiraPassedTransitionStatus);
+        Assert.Null(dto.JiraFailedTransitionStatus);
+    }
+
+    [Fact]
+    public async Task RemoveConnectionAsync_ClearsAllTransitionFields()
+    {
+        var project = MakeProject();
+        project.PmTool = PMToolType.Ado;
+        project.IntegrationStatus = IntegrationStatus.Active;
+        project.AdoOrgUrl = "https://dev.azure.com/myorg";
+        project.AdoTokenSecretUri = "projects--proj-1--adoToken";
+        project.WebhookSecretUri = "projects--proj-1--webhookSecret";
+        project.AdoPassedTransitionStatus = "Closed";
+        project.AdoFailedTransitionStatus = "Active";
+        SetupProjectLookup(project);
+
+        _adoClient.Setup(c => c.DeregisterWebhookAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var (result, dto) = await _sut.RemoveConnectionAsync("user-1", "proj-1");
+
+        Assert.Equal(ProjectOperationResult.Success, result);
+        Assert.Null(dto!.AdoPassedTransitionStatus);
+        Assert.Null(dto.AdoFailedTransitionStatus);
+        Assert.Null(dto.JiraPassedTransitionStatus);
+        Assert.Null(dto.JiraFailedTransitionStatus);
+    }
 }
