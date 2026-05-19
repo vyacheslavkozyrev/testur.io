@@ -44,6 +44,14 @@ public class BillingServiceTests
         var stripeOptions = Options.Create(TestStripeOptions);
         var appOptions = Options.Create(new AppOptions { BaseUrl = "https://app.testur.io" });
 
+        // Default stubs so tests that don't care about Stripe live-data calls don't throw.
+        _stripeService
+            .Setup(s => s.GetSubscriptionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription?)null);
+        _stripeService
+            .Setup(s => s.ListInvoicesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<StripeInvoice>());
+
         _sut = new ApiBillingService(
             _stripeService.Object,
             _subscriptionRepository.Object,

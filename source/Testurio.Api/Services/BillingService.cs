@@ -11,32 +11,6 @@ using Testurio.Infrastructure.Stripe;
 
 namespace Testurio.Api.Services;
 
-public interface IBillingService
-{
-    Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(
-        string userId,
-        string userEmail,
-        CreateCheckoutSessionRequest request,
-        CancellationToken cancellationToken = default);
-
-    Task<SubscriptionStatusResponse> GetSubscriptionStatusAsync(
-        string userId,
-        CancellationToken cancellationToken = default);
-
-    Task HandleStripeWebhookAsync(
-        string payload,
-        string stripeSignature,
-        CancellationToken cancellationToken = default);
-
-    Task<PortalSessionResponse> CreatePortalSessionAsync(
-        string userId,
-        CancellationToken cancellationToken = default);
-
-    Task ReactivateSubscriptionAsync(
-        string userId,
-        CancellationToken cancellationToken = default);
-}
-
 /// <summary>
 /// Handles all billing operations: Stripe Checkout session creation,
 /// subscription status queries, portal session creation, reactivation,
@@ -51,8 +25,6 @@ public class BillingService(
 {
     private readonly StripeOptions _stripeOptions = stripeOptions.Value;
     private readonly AppOptions _appOptions = appOptions.Value;
-
-    private readonly InvoiceService _invoiceService = new();
 
     public async Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(
         string userId,
@@ -134,7 +106,7 @@ public class BillingService(
         if (subscription?.StripeCustomerId is null)
             throw new NotFoundException("No active subscription found for the user.");
 
-        var returnUrl = $"{_appOptions.BaseUrl}/settings?tab=billing";
+        var returnUrl = $"{_appOptions.BaseUrl}/account/settings?tab=billing";
         var portalUrl = await stripeService.CreatePortalSessionAsync(
             subscription.StripeCustomerId, returnUrl, cancellationToken);
 
@@ -155,7 +127,10 @@ public class BillingService(
                 $"Subscription cannot be reactivated from status '{subscription.Status}'. " +
                 "Only subscriptions with status 'CancelledPendingExpiry' can be reactivated.");
 
-        await stripeService.ReactivateSubscriptionAsync(subscription.StripeSubscriptionId!, cancellationToken);
+        if (string.IsNullOrEmpty(subscription.StripeSubscriptionId))
+            throw new NotFoundException("Subscription has no associated Stripe subscription ID.");
+
+        await stripeService.ReactivateSubscriptionAsync(subscription.StripeSubscriptionId, cancellationToken);
 
         subscription.Status = SubscriptionStatus.Active;
         subscription.CancelledAt = null;
@@ -377,22 +352,10 @@ public class BillingService(
     {
         try
         {
-            var listOptions = new InvoiceListOptions
-            {
-                Customer = stripeCustomerId,
-                Limit    = 20,
-            };
+            var stripeInvoices = await stripeService.ListInvoicesAsync(stripeCustomerId, 20, cancellationToken);
 
-            var requestOptions = new RequestOptions { ApiKey = _stripeOptions.SecretKey };
-            var invoices = await _invoiceService.ListAsync(listOptions, requestOptions, cancellationToken);
-
-            return invoices.Data
-                .Select(inv => new InvoiceDto(
-                    inv.Created,
-                    inv.AmountPaid / 100m,
-                    inv.Currency,
-                    inv.Status ?? string.Empty,
-                    inv.InvoicePdf))
+            return stripeInvoices
+                .Select(inv => new InvoiceDto(inv.Date, inv.AmountPaid, inv.Currency, inv.Status, inv.PdfUrl))
                 .ToArray();
         }
         catch (StripeException ex)

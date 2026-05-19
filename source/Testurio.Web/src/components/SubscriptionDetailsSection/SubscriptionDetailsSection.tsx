@@ -22,7 +22,7 @@ import type { InvoiceDto } from '@/types/plan.types';
 export default function SubscriptionDetailsSection() {
   const { t } = useTranslation('subscriptionManagement');
   const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   const { data: subscription } = useSubscriptionStatus();
   const createPortalSession = useCreatePortalSession();
@@ -137,7 +137,7 @@ export default function SubscriptionDetailsSection() {
           </TableHead>
           <TableBody>
             {subscription.invoices.map((invoice: InvoiceDto, idx: number) => (
-              <TableRow key={idx}>
+              <TableRow key={`${invoice.date}-${idx}`}>
                 <TableCell>
                   {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(
                     new Date(invoice.date),
@@ -179,44 +179,39 @@ export default function SubscriptionDetailsSection() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={handleErrorClose} severity="error" variant="filled">
-          {t('reactivateDialog.errorMessage')}
+          {t('details.manageBillingError')}
         </Alert>
       </Snackbar>
     </Box>
   );
 }
 
-const getStyles = (theme: Theme) =>
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useMemo(
-    () => ({
-      root: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: theme.spacing(2),
-      },
-      sectionTitle: {
-        color: theme.palette.text.primary,
-      },
-      emptyMessage: {
-        marginBottom: theme.spacing(1),
-      },
-      grid: {
-        display: 'grid',
-        gridTemplateColumns: '180px 1fr',
-        gap: `${theme.spacing(1)} ${theme.spacing(2)}`,
-        alignItems: 'start',
-      },
-      ctaButton: {
-        alignSelf: 'flex-start',
-      },
-      invoicesTitle: {
-        color: theme.palette.text.primary,
-        marginTop: theme.spacing(2),
-      },
-      table: {
-        maxWidth: 600,
-      },
-    }),
-    [theme],
-  );
+const getStyles = (theme: Theme) => ({
+  root: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(2),
+  },
+  sectionTitle: {
+    color: theme.palette.text.primary,
+  },
+  emptyMessage: {
+    marginBottom: theme.spacing(1),
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '180px 1fr',
+    gap: `${theme.spacing(1)} ${theme.spacing(2)}`,
+    alignItems: 'start',
+  },
+  ctaButton: {
+    alignSelf: 'flex-start',
+  },
+  invoicesTitle: {
+    color: theme.palette.text.primary,
+    marginTop: theme.spacing(2),
+  },
+  table: {
+    maxWidth: 600,
+  },
+});

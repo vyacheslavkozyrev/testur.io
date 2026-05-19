@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Testurio.Api.DTOs.Billing;
 using Testurio.Api.Services;
 
-
 namespace Testurio.Api.Endpoints;
 
 public static class BillingEndpoints

@@ -52,7 +52,19 @@ public class StripeServiceTests
                 "user-1",
                 "https://app.testur.io/billing/success?session_id={CHECKOUT_SESSION_ID}",
                 "https://app.testur.io/pricing"));
+    
+    // ─── ListInvoicesAsync ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListInvoicesAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
+    {
+        // Verifies method signature and error propagation; live HTTP covered by integration tests.
+        var sut = new StripeService(Options.Create(ValidOptions));
+
+        await Assert.ThrowsAsync<StripeException>(() =>
+            sut.ListInvoicesAsync("cus_fake", 20));
     }
+}
 
     [Theory]
     [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Monthly, "price_tj_monthly")]
@@ -94,5 +106,17 @@ public class StripeServiceTests
 
         await Assert.ThrowsAsync<StripeException>(() =>
             sut.ReactivateSubscriptionAsync("sub_fake"));
+    }
+
+    // ─── ListInvoicesAsync ────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListInvoicesAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
+    {
+        // Verifies method signature and error propagation; live HTTP covered by integration tests.
+        var sut = new StripeService(Options.Create(ValidOptions));
+
+        await Assert.ThrowsAsync<StripeException>(() =>
+            sut.ListInvoicesAsync("cus_fake", 20));
     }
 }

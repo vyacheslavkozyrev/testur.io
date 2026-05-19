@@ -391,6 +391,14 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
             _subscriptionRepo.Reset();
             _userRepo.Reset();
             _projectRepo.Reset();
+
+            // Default stub — prevents NullReferenceException in tests that don't set up invoice calls.
+            _stripeService
+                .Setup(s => s.ListInvoicesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(Array.Empty<StripeInvoice>());
+            _stripeService
+                .Setup(s => s.GetSubscriptionAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((UserSubscription?)null);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)

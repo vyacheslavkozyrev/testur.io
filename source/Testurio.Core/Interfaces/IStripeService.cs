@@ -41,6 +41,18 @@ public interface IStripeService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Lists the most recent invoices for the given Stripe customer (up to <paramref name="limit"/>).
+    /// Returns an empty list if the customer has no invoices or the Stripe call fails.
+    /// </summary>
+    /// <param name="stripeCustomerId">The Stripe customer ID (<c>cus_*</c>).</param>
+    /// <param name="limit">Maximum number of invoices to return (1–100).</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    Task<IReadOnlyList<StripeInvoice>> ListInvoicesAsync(
+        string stripeCustomerId,
+        int limit,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates a Stripe Customer Portal session for the given customer.
     /// </summary>
     /// <param name="stripeCustomerId">The Stripe customer ID (<c>cus_*</c>).</param>
@@ -61,3 +73,14 @@ public interface IStripeService
         string stripeSubscriptionId,
         CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Lightweight DTO carrying invoice data retrieved from Stripe.
+/// Keeps <c>Stripe.*</c> types out of the domain layer.
+/// </summary>
+public sealed record StripeInvoice(
+    DateTimeOffset Date,
+    decimal AmountPaid,
+    string Currency,
+    string Status,
+    string? PdfUrl);

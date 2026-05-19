@@ -18,6 +18,7 @@ public class StripeService : IStripeService
     private readonly SessionService _sessionService;
     private readonly SubscriptionService _subscriptionService;
     private readonly Stripe.BillingPortal.SessionService _portalSessionService;
+    private readonly InvoiceService _invoiceService;
 
     public StripeService(IOptions<StripeOptions> options)
     {
@@ -28,6 +29,7 @@ public class StripeService : IStripeService
         _sessionService = new SessionService();
         _subscriptionService = new SubscriptionService();
         _portalSessionService = new Stripe.BillingPortal.SessionService();
+        _invoiceService = new InvoiceService();
     }
 
     private RequestOptions ApiRequestOptions => new() { ApiKey = _options.SecretKey };
@@ -96,6 +98,31 @@ public class StripeService : IStripeService
         {
             return null;
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<IReadOnlyList<StripeInvoice>> ListInvoicesAsync(
+        string stripeCustomerId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        var listOptions = new InvoiceListOptions
+        {
+            Customer = stripeCustomerId,
+            Limit    = limit,
+        };
+
+        var invoices = await _invoiceService.ListAsync(listOptions, ApiRequestOptions, cancellationToken);
+
+        return invoices.Data
+            .Select(inv => new StripeInvoice(
+                inv.Created,
+                inv.AmountPaid / 100m,
+                inv.Currency,
+                inv.Status ?? string.Empty,
+                inv.InvoicePdf))
+            .ToList()
+            .AsReadOnly();
     }
 
     /// <inheritdoc/>

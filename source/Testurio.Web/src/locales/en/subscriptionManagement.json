@@ -21,7 +21,8 @@
     "noPlan": "No active subscription",
     "noPlanCta": "View plans",
     "expiredMessage": "Your plan has expired.",
-    "expiredCta": "Renew plan"
+    "expiredCta": "Renew plan",
+    "manageBillingError": "Failed to open billing portal. Please try again."
   },
   "cancellationBanner": {
     "message": "Your subscription is cancelled. Access continues until {{date}}.",
@@ -37,6 +38,7 @@
   },
   "paymentFailedBanner": {
     "message": "Your last payment failed. Please update your payment method to avoid losing access.",
-    "updateCta": "Update payment method"
+    "updateCta": "Update payment method",
+    "errorMessage": "Failed to open billing portal. Please try again."
   }
 }

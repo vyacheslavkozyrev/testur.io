@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-05-18 |       |
 | Plan      | ✅ Complete | 2026-05-18 |       |
 | Implement | ✅ Complete | 2026-05-19 |       |
-| Review    | ⏳ Pending  |            |       |
+| Review    | ✅ Complete | 2026-05-19 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -20,7 +20,25 @@
 
 ## Review
 
-_Populated by `/review [####]`_
+**Date:** 2026-05-19
+
+**Issues found and fixed (7):**
+
+1. **BLOCKER — `IStripeService` abstraction bypassed for invoice fetching.** `BillingService` instantiated `InvoiceService` directly (field `new InvoiceService()`), bypassing `IStripeService`. Added `ListInvoicesAsync(string, int, CancellationToken)` to `IStripeService` and `StripeInvoice` record to `Testurio.Core.Interfaces`; implemented in `StripeService`; updated `BillingService.FetchInvoicesAsync` to delegate through the abstraction. Updated unit and integration test default mocks.
+
+2. **BLOCKER — Cross-partition Cosmos queries missing `EnableCrossPartitionQuery = true`.** `UserSubscriptionRepository.CrossPartitionLookupAsync` did not set `EnableCrossPartitionQuery = true` in `QueryRequestOptions`, causing a Cosmos SDK exception at runtime for cross-partition Stripe ID lookups. Fixed.
+
+3. **BLOCKER — Null-forgiving operator on `StripeSubscriptionId` without prior null check.** `ReactivateSubscriptionAsync` used `subscription.StripeSubscriptionId!` before calling Stripe, which would throw `NullReferenceException` for any subscription lacking a Stripe ID. Added an explicit null guard that throws `NotFoundException`.
+
+4. **WARNING — `IBillingService` embedded in `BillingService.cs` instead of its own file.** Project convention (all other services) is to keep the interface in `IServiceName.cs`. Extracted to `IBillingService.cs`.
+
+5. **WARNING — Wrong i18n key used for manage-billing and payment-failed error Snackbars.** `SubscriptionDetailsSection` and `PaymentFailedBanner` used `reactivateDialog.errorMessage` for portal-session errors. Added dedicated keys `details.manageBillingError` and `paymentFailedBanner.errorMessage` to `subscriptionManagement.json` and updated both components.
+
+6. **WARNING — Rules-of-hooks violation in `getStyles`.** `getStyles` was a module-level function that internally called `useMemo`, an unconditional hook call outside a component. Refactored to a pure style factory function; wrapped with `useMemo` inside the component body.
+
+7. **SUGGESTION — Invoice table rows keyed by array index.** Changed `key={idx}` to `key={\`\${invoice.date}-\${idx}\`}` for a more stable key.
+
+**Also fixed:** return URL in `CreatePortalSessionAsync` corrected from `/settings?tab=billing` to `/account/settings?tab=billing` per AC-012.
 
 ---
 

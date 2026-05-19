@@ -49,7 +49,7 @@ export default function PaymentFailedBanner() {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert onClose={handleErrorClose} severity="error" variant="filled">
-          {t('reactivateDialog.errorMessage')}
+          {t('paymentFailedBanner.errorMessage')}
         </Alert>
       </Snackbar>
     </>
