@@ -13,7 +13,7 @@
 
 ### Backend — Infrastructure
 
-- [ ] T007 [Infra] Add `StripeOptions` configuration class (SecretKey, WebhookSecret, Price ID map keyed by plan+interval) — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
+- [x] T007 [Infra] Add `StripeOptions` configuration class (SecretKey, WebhookSecret, Price ID map keyed by plan+interval) — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
 - [ ] T008 [Infra] Implement `StripeService` (Stripe.net SDK; CreateCheckoutSession with trial_period_days=14, customer_email, correct success_url and cancel_url; GetSubscription reads from Stripe API) — `source/Testurio.Infrastructure/Stripe/StripeService.cs`
 - [ ] T009 [Infra] Implement `UserSubscriptionRepository` (Cosmos DB, partitioned by userId) — `source/Testurio.Infrastructure/Cosmos/UserSubscriptionRepository.cs`
 - [ ] T010 [Infra] Register `StripeOptions`, `StripeService`, and `UserSubscriptionRepository` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
