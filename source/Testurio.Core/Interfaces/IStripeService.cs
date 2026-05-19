@@ -23,7 +23,7 @@ public interface IStripeService
     Task<string> CreateCheckoutSessionAsync(
         SubscriptionPlan plan,
         BillingInterval billingInterval,
-        string customerEmail,
+        string? customerEmail,
         string userId,
         string successUrl,
         string cancelUrl,

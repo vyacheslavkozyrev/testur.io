@@ -6,7 +6,7 @@ public interface IBillingService
 {
     Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(
         string userId,
-        string userEmail,
+        string? userEmail,
         CreateCheckoutSessionRequest request,
         CancellationToken cancellationToken = default);
 

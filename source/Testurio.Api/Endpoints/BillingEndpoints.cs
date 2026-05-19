@@ -38,7 +38,8 @@ public static class BillingEndpoints
         var userId = user.GetUserId();
         var userEmail = user.FindFirstValue("emails")
             ?? user.FindFirstValue("email")
-            ?? string.Empty;
+            ?? user.FindFirstValue(System.Security.Claims.ClaimTypes.Email);
+
 
         var response = await billingService.CreateCheckoutSessionAsync(userId, userEmail, request, cancellationToken);
         return TypedResults.Ok(response);

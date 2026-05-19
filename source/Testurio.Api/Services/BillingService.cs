@@ -28,7 +28,7 @@ public class BillingService(
 
     public async Task<CheckoutSessionResponse> CreateCheckoutSessionAsync(
         string userId,
-        string userEmail,
+        string? userEmail,
         CreateCheckoutSessionRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -36,8 +36,10 @@ public class BillingService(
         var successUrl = $"{baseUrl}/billing/success?session_id={{CHECKOUT_SESSION_ID}}";
         var cancelUrl = $"{baseUrl}/pricing";
 
+        var plan = ParsePlanId(request.Plan);
+
         var checkoutUrl = await stripeService.CreateCheckoutSessionAsync(
-            request.Plan,
+            plan,
             request.BillingInterval,
             userEmail,
             userId,
@@ -181,6 +183,15 @@ public class BillingService(
                 break;
         }
     }
+
+    private static SubscriptionPlan ParsePlanId(string planId) => planId switch
+    {
+        "test-junior" => SubscriptionPlan.TestJunior,
+        "test-pro"    => SubscriptionPlan.TestPro,
+        "team"        => SubscriptionPlan.Team,
+        "centurio"    => SubscriptionPlan.Centurio,
+        _             => throw new ArgumentException($"Unknown plan: '{planId}'.", nameof(planId)),
+    };
 
     private async Task HandleCheckoutSessionCompletedAsync(Event stripeEvent, CancellationToken cancellationToken)
     {
