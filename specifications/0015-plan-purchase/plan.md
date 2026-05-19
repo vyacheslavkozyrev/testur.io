@@ -59,7 +59,7 @@
 
 ### Tests
 
-- [ ] T032 [Test] Unit tests for `BillingService` (CreateCheckoutSession maps each plan+interval to the correct Price ID; GetSubscriptionStatus returns correct DTO; HandleStripeWebhookAsync upserts subscription on checkout.session.completed; updates status on customer.subscription.updated) — `tests/Testurio.UnitTests/Services/BillingServiceTests.cs`
+- [x] T032 [Test] Unit tests for `BillingService` (CreateCheckoutSession maps each plan+interval to the correct Price ID; GetSubscriptionStatus returns correct DTO; HandleStripeWebhookAsync upserts subscription on checkout.session.completed; updates status on customer.subscription.updated) — `tests/Testurio.UnitTests/Services/BillingServiceTests.cs`
 - [ ] T033 [Test] Unit tests for `StripeService` (CheckoutSession created with trial_period_days=14, customer_email, correct cancel_url and success_url) — `tests/Testurio.UnitTests/Infrastructure/StripeServiceTests.cs`
 - [ ] T034 [Test] Integration tests for billing endpoints (POST /v1/billing/checkout returns checkoutUrl; GET /v1/billing/subscription returns correct status; POST /webhooks/stripe with invalid Stripe-Signature returns 400; valid webhook upserts UserSubscription) — `tests/Testurio.IntegrationTests/Controllers/BillingControllerTests.cs`
 - [ ] T035 [Test] Component tests for `CheckoutSuccessPage` (redirects to /pricing when session_id absent; shows loading initially; shows confirmation when status becomes Trialing; shows support message after 30 s) — `source/Testurio.Web/src/views/CheckoutSuccessPage/CheckoutSuccessPage.test.tsx`
