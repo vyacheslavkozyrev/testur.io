@@ -47,7 +47,7 @@ done
 [[ -z "$ENV" || -z "$SUBSCRIPTION_ID" || -z "$APP_REG_OBJECT_ID" || -z "$PUBLISHER_EMAIL" ]] && usage
 [[ "$ENV" != "dev" && "$ENV" != "prod" ]] && { echo "ERROR: --env must be 'dev' or 'prod'"; exit 1; }
 
-RESOURCE_GROUP="${PREFIX}-rg-${ENV}"
+RESOURCE_GROUP="$( [[ "$ENV" == "prod" ]] && echo "${PREFIX}" || echo "${PREFIX}-${ENV}" )"
 BRANCH="$( [[ "$ENV" == "prod" ]] && echo "refs/heads/main" || echo "refs/heads/develop" )"
 BICEP_PARAM_FILE="$( cd "$(dirname "$0")" && pwd )/${ENV}.bicepparam"
 
