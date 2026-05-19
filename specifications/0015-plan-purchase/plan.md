@@ -36,7 +36,7 @@
 ### Frontend — Billing Types and API Layer
 
 - [x] T017 [UI] Extend `plan.types.ts` with `SubscriptionStatus` enum, `CreateCheckoutSessionRequest`, `CheckoutSessionResponse`, and `SubscriptionStatusResponse` types (note: `BillingInterval` and `PlanDefinition` already exist in this file) — `source/Testurio.Web/src/types/plan.types.ts`
-- [ ] T018 [UI] Add `billingService` (createCheckoutSession, getSubscriptionStatus) — `source/Testurio.Web/src/services/billing/billingService.ts`
+- [x] T018 [UI] Add `billingService` (createCheckoutSession, getSubscriptionStatus) — `source/Testurio.Web/src/services/billing/billingService.ts`
 - [ ] T019 [UI] Add React Query hooks `useSubscriptionStatus` (polls GET /v1/billing/subscription; stops on terminal status) and `useCreateCheckoutSession` (useMutation; on success redirects to checkoutUrl) — `source/Testurio.Web/src/hooks/useBilling.ts`
 - [ ] T020 [UI] Add MSW mock handlers for billing endpoints (POST /v1/billing/checkout, GET /v1/billing/subscription) — `source/Testurio.Web/src/mocks/handlers/billing.ts`
 
