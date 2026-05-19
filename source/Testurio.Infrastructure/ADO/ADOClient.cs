@@ -169,15 +169,15 @@ public partial class ADOClient : IADOClient
     /// <inheritdoc />
     public async Task<ADOTransitionResult> TransitionWorkItemStateAsync(
         string orgUrl,
-        string projectName,
         int workItemId,
         string token,
         string targetStateName,
         CancellationToken cancellationToken = default)
     {
-        // ADO work item state is updated via a PATCH with a JSON Merge Patch body.
+        // ADO work item state is updated via a PATCH with a JSON Patch document.
+        // The endpoint is org-scoped — no project name is required.
         var url = $"{orgUrl.TrimEnd('/')}/_apis/wit/workitems/{workItemId}?api-version=7.1";
-        var request = new HttpRequestMessage(new HttpMethod("PATCH"), url);
+        var request = new HttpRequestMessage(HttpMethod.Patch, url);
         // ADO accepts a PAT encoded as Basic auth with an empty username.
         var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($":{token}"));
         request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);

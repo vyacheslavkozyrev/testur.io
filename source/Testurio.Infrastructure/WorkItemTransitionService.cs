@@ -134,7 +134,7 @@ public sealed partial class WorkItemTransitionService : IWorkItemTransitionServi
         }
 
         var result = await _adoClient.TransitionWorkItemStateAsync(
-            project.AdoOrgUrl, project.AdoProjectName, workItemId, token, targetStatusName, ct);
+            project.AdoOrgUrl, workItemId, token, targetStatusName, ct);
 
         if (result.IsSuccess)
         {

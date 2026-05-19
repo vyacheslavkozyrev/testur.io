@@ -66,11 +66,11 @@ public interface IADOClient
     /// <summary>
     /// Transitions an ADO work item to the named state using a PATCH to the
     /// <c>System.State</c> field (<c>/_apis/wit/workitems/{id}?api-version=7.1</c>).
+    /// The endpoint is org-scoped — no project name is required.
     /// Never throws — all errors are captured in the returned result.
     /// </summary>
     Task<ADOTransitionResult> TransitionWorkItemStateAsync(
         string orgUrl,
-        string projectName,
         int workItemId,
         string token,
         string targetStateName,

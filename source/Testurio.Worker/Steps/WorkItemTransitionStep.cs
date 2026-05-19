@@ -60,16 +60,6 @@ public sealed partial class WorkItemTransitionStep
         testRun.StatusTransitionedTo = result.TransitionedTo;
         testRun.StatusTransitionError = result.ErrorDetail;
 
-        // Log the outcome.
-        if (result.Outcome == StatusTransitionOutcome.Succeeded)
-        {
-            LogTransitionSucceeded(_logger, testRun.Id, project.Id, result.TransitionedTo!);
-        }
-        else if (result.Outcome == StatusTransitionOutcome.Failed)
-        {
-            LogTransitionFailed(_logger, testRun.Id, project.Id, targetStatus ?? string.Empty, result.ErrorDetail ?? string.Empty);
-        }
-
         // Persist the outcome — use CancellationToken.None so a cancellation at this point
         // does not leave the TestRun without a transition outcome recorded.
         try
@@ -98,12 +88,6 @@ public sealed partial class WorkItemTransitionStep
             PMToolType.Ado  => project.AdoFailedTransitionStatus,
             _               => null
         };
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Work item transitioned successfully for run {RunId} in project {ProjectId} — moved to '{Status}'")]
-    private static partial void LogTransitionSucceeded(ILogger logger, string runId, string projectId, string status);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Work item transition failed for run {RunId} in project {ProjectId} — target '{TargetStatus}': {Error}")]
-    private static partial void LogTransitionFailed(ILogger logger, string runId, string projectId, string targetStatus, string error);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to persist transition outcome for run {RunId}")]
     private static partial void LogOutcomeUpdateFailed(ILogger logger, string runId, Exception ex);

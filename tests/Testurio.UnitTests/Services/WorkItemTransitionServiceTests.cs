@@ -226,7 +226,7 @@ public class WorkItemTransitionServiceTests
         _secretResolver.Setup(s => s.ResolveAsync("uri:adotoken", It.IsAny<CancellationToken>())).ReturnsAsync("adoTok");
         _adoClient
             .Setup(c => c.TransitionWorkItemStateAsync(
-                "https://dev.azure.com/my-org", "MyProject", 99, "adoTok", "Closed",
+                "https://dev.azure.com/my-org", 99, "adoTok", "Closed",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ADOTransitionResult(true, 200, null));
 
@@ -246,7 +246,7 @@ public class WorkItemTransitionServiceTests
         _secretResolver.Setup(s => s.ResolveAsync("uri:adotoken", It.IsAny<CancellationToken>())).ReturnsAsync("adoTok");
         _adoClient
             .Setup(c => c.TransitionWorkItemStateAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ADOTransitionResult(false, 400, "Invalid state transition"));
 
