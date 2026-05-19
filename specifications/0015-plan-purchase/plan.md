@@ -27,7 +27,7 @@
 
 ### Backend — API
 
-- [ ] T015 [API] Add `BillingEndpoints` with three routes — `source/Testurio.Api/Endpoints/BillingEndpoints.cs`
+- [x] T015 [API] Add `BillingEndpoints` with three routes — `source/Testurio.Api/Endpoints/BillingEndpoints.cs`
   - `POST /v1/billing/checkout` — authenticated (B2C JWT); calls BillingService.CreateCheckoutSessionAsync; returns `CheckoutSessionResponse`
   - `GET /v1/billing/subscription` — authenticated; calls BillingService.GetSubscriptionStatusAsync; returns `SubscriptionStatusResponse`
   - `POST /webhooks/stripe` — unauthenticated; validates Stripe-Signature header using WebhookSecret; dispatches to BillingService.HandleStripeWebhookAsync; returns 400 on invalid signature
