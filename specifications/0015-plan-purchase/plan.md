@@ -53,7 +53,7 @@
 - [x] T026 [UI] Create `TrialStatusBanner` component (shows "X days remaining" banner; amber MUI Alert style when ≤3 days remain; "Trial expired" variant; "Upgrade now" CTA → /pricing; hidden when status is Active or None) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.tsx`
 - [x] T027 [UI] Create `UpgradeModal` component (shown when a gated action is attempted with status None or Expired; links to /pricing?interval=monthly; dismissible) — `source/Testurio.Web/src/components/UpgradeModal/UpgradeModal.tsx`
 - [x] T028 [UI] Integrate `TrialStatusBanner` into `PrivateCabinetLayout` so it renders on every authenticated portal page — `source/Testurio.Web/src/components/PrivateCabinetLayout/PrivateCabinetLayout.tsx`
-- [ ] T029 [UI] Gate "Create project" action with `UpgradeModal` when subscription status is None or Expired — `source/Testurio.Web/src/views/ProjectCreatePage/ProjectCreatePage.tsx`
+- [x] T029 [UI] Gate "Create project" action with `UpgradeModal` when subscription status is None or Expired — `source/Testurio.Web/src/views/ProjectCreatePage/ProjectCreatePage.tsx`
 - [ ] T030 [UI] Gate test-run trigger with `UpgradeModal` when subscription status is None or Expired — `source/Testurio.Web/src/components/ProjectCard/ProjectCard.tsx`
 - [ ] T031 [UI] Add portal billing translation keys (trial banner, upgrade modal strings) — `source/Testurio.Web/src/locales/en/billing.json`
 

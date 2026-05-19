@@ -1,13 +1,15 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ProjectForm from '@/components/ProjectForm/ProjectForm';
+import UpgradeModal from '@/components/UpgradeModal/UpgradeModal';
 import { useCreateProject } from '@/hooks/useProject';
+import { useSubscriptionStatus } from '@/hooks/useBilling';
 import type { CreateProjectRequest } from '@/types/project.types';
 
 export default function ProjectCreatePage() {
@@ -16,25 +18,44 @@ export default function ProjectCreatePage() {
   const theme = useTheme();
   const styles = getStyles(theme);
 
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const createProject = useCreateProject();
+  const { data: subscription } = useSubscriptionStatus();
+
+  const isGated =
+    subscription?.status === 'None' || subscription?.status === 'Expired';
 
   const handleSubmit = useCallback(
     (data: CreateProjectRequest) => {
+      if (isGated) {
+        setUpgradeModalOpen(true);
+        return;
+      }
       createProject.mutate(data, {
         onSuccess: (project) => {
           router.push(`/projects/${project.projectId}/settings`);
         },
       });
     },
-    [createProject, router],
+    [createProject, isGated, router],
   );
+
+  const handleFormInteract = useCallback(() => {
+    if (isGated) setUpgradeModalOpen(true);
+  }, [isGated]);
 
   return (
     <Box sx={styles.root}>
       <Typography variant="h4" sx={styles.pageTitle}>
         {t('create.pageTitle')}
       </Typography>
-      <ProjectForm isSubmitting={createProject.isPending} onSubmit={handleSubmit} />
+      <Box onClick={handleFormInteract}>
+        <ProjectForm isSubmitting={createProject.isPending} onSubmit={handleSubmit} />
+      </Box>
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onClose={useCallback(() => setUpgradeModalOpen(false), [])}
+      />
     </Box>
   );
 }
