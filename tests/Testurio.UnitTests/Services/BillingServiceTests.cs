@@ -5,12 +5,12 @@ using Stripe;
 using Stripe.Checkout;
 using Testurio.Api.DTOs.Billing;
 using Testurio.Api.Options;
-using Testurio.Api.Services;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Stripe;
+using ApiBillingService = Testurio.Api.Services.BillingService;
 
 namespace Testurio.UnitTests.Services;
 
@@ -18,8 +18,8 @@ public class BillingServiceTests
 {
     private readonly Mock<IStripeService> _stripeService = new();
     private readonly Mock<IUserSubscriptionRepository> _subscriptionRepository = new();
-    private readonly Mock<ILogger<BillingService>> _logger = new();
-    private readonly BillingService _sut;
+    private readonly Mock<ILogger<ApiBillingService>> _logger = new();
+    private readonly ApiBillingService _sut;
 
     private static readonly StripeOptions TestStripeOptions = new()
     {
@@ -43,7 +43,7 @@ public class BillingServiceTests
         var stripeOptions = Options.Create(TestStripeOptions);
         var appOptions = Options.Create(new AppOptions { BaseUrl = "https://app.testur.io" });
 
-        _sut = new BillingService(
+        _sut = new ApiBillingService(
             _stripeService.Object,
             _subscriptionRepository.Object,
             stripeOptions,

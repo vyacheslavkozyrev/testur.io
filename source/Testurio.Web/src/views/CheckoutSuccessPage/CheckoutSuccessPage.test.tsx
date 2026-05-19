@@ -49,22 +49,19 @@ i18nInstance.use(initReactI18next).init({
   },
 });
 
+// ─── Component import ─────────────────────────────────────────────────────────
+
+import CheckoutSuccessPage from './CheckoutSuccessPage';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const theme = createTheme();
 
 function renderPage() {
-  const { default: CheckoutSuccessPage } = jest.requireActual(
-    './CheckoutSuccessPage',
-  ) as { default: React.ComponentType };
-
-  // Re-import after mocking
-  const Page = require('./CheckoutSuccessPage').default;
-
   return render(
     <ThemeProvider theme={theme}>
       <I18nextProvider i18n={i18nInstance}>
-        <Page />
+        <CheckoutSuccessPage />
       </I18nextProvider>
     </ThemeProvider>,
   );
@@ -81,7 +78,6 @@ describe('CheckoutSuccessPage', () => {
 
   afterEach(() => {
     jest.useRealTimers();
-    jest.resetModules();
   });
 
   it('redirects to /pricing when session_id param is absent', () => {

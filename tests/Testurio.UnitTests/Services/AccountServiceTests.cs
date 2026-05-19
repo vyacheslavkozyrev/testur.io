@@ -16,8 +16,8 @@ public class AccountServiceTests
         _sut = new AccountService(_repository.Object);
     }
 
-    private static UserDocument MakeUserDocument(string userId = "user-1", string? displayName = "Test User") =>
-        new() { Id = userId, UserId = userId, DisplayName = displayName };
+    private static UserDocument MakeUserDocument(string userId = "user-1", string? firstName = "Test", string? lastName = "User") =>
+        new() { Id = userId, UserId = userId, FirstName = firstName, LastName = lastName };
 
     // ─── GetProfileAsync ──────────────────────────────────────────────────────
 
@@ -31,11 +31,12 @@ public class AccountServiceTests
         var result = await _sut.GetProfileAsync("user-1");
 
         Assert.Equal("user-1", result.UserId);
-        Assert.Equal("Test User", result.DisplayName);
+        Assert.Equal("Test", result.FirstName);
+        Assert.Equal("User", result.LastName);
     }
 
     [Fact]
-    public async Task GetProfileAsync_ReturnsNullDisplayName_WhenUserNotFound()
+    public async Task GetProfileAsync_ReturnsNullNames_WhenUserNotFound()
     {
         _repository.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserDocument?)null);
@@ -43,7 +44,8 @@ public class AccountServiceTests
         var result = await _sut.GetProfileAsync("user-1");
 
         Assert.Equal("user-1", result.UserId);
-        Assert.Null(result.DisplayName);
+        Assert.Null(result.FirstName);
+        Assert.Null(result.LastName);
     }
 
     // ─── UpdateProfileAsync ───────────────────────────────────────────────────
@@ -51,15 +53,15 @@ public class AccountServiceTests
     [Fact]
     public async Task UpdateProfileAsync_UpsertAndReturnsDto_WhenUserExists()
     {
-        var existing = MakeUserDocument(displayName: "Old Name");
+        var existing = MakeUserDocument(firstName: "Old", lastName: "Name");
         _repository.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(existing);
         _repository.Setup(r => r.UpsertAsync(It.IsAny<UserDocument>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserDocument doc, CancellationToken _) => doc);
 
-        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { DisplayName = "  New Name  " });
+        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { FirstName = "  New  ", LastName = "Name" });
 
-        Assert.Equal("New Name", result.DisplayName);
+        Assert.Equal("New", result.FirstName);
     }
 
     [Fact]
@@ -70,25 +72,26 @@ public class AccountServiceTests
         _repository.Setup(r => r.UpsertAsync(It.IsAny<UserDocument>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserDocument doc, CancellationToken _) => doc);
 
-        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { DisplayName = "Brand New" });
+        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { FirstName = "Brand", LastName = "New" });
 
-        Assert.Equal("Brand New", result.DisplayName);
+        Assert.Equal("Brand", result.FirstName);
+        Assert.Equal("New", result.LastName);
         _repository.Verify(r => r.UpsertAsync(
             It.Is<UserDocument>(d => d.Id == "user-1" && d.UserId == "user-1"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task UpdateProfileAsync_TrimsDisplayName_BeforeUpsert()
+    public async Task UpdateProfileAsync_TrimsNames_BeforeUpsert()
     {
         _repository.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserDocument?)null);
         _repository.Setup(r => r.UpsertAsync(It.IsAny<UserDocument>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserDocument doc, CancellationToken _) => doc);
 
-        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { DisplayName = "  trimmed  " });
+        var result = await _sut.UpdateProfileAsync("user-1", new UpdateProfileRequest { FirstName = "  trimmed  " });
 
-        Assert.Equal("trimmed", result.DisplayName);
+        Assert.Equal("trimmed", result.FirstName);
     }
 
     // ─── GetPreferencesAsync ──────────────────────────────────────────────────

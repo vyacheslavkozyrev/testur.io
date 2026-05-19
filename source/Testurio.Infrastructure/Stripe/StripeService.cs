@@ -83,6 +83,7 @@ public class StripeService : IStripeService
         {
             var subscription = await _subscriptionService.GetAsync(
                 stripeSubscriptionId,
+                options: null,
                 ApiRequestOptions,
                 cancellationToken);
 

@@ -18,6 +18,7 @@ namespace Testurio.UnitTests.Pipeline.Executors;
 public class HttpExecutorTests
 {
     private readonly Mock<IProjectAccessCredentialProvider> _credentialProvider = new();
+    private readonly Mock<IApiTestAuthCredentialProvider> _apiAuthProvider = new();
     private static readonly Project DefaultProject = new()
     {
         UserId = "user1",
@@ -31,6 +32,9 @@ public class HttpExecutorTests
         _credentialProvider
             .Setup(p => p.ResolveAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProjectAccessCredentials.IpAllowlist());
+        _apiAuthProvider
+            .Setup(p => p.ResolveAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ApiTestAuthCredentials.None());
     }
 
     private HttpExecutor CreateSut(HttpResponseMessage response)
@@ -42,6 +46,7 @@ public class HttpExecutorTests
 
         return new HttpExecutor(
             _credentialProvider.Object,
+            _apiAuthProvider.Object,
             factory.Object,
             NullLogger<HttpExecutor>.Instance);
     }
@@ -359,6 +364,7 @@ public class HttpExecutorTests
 
         var sut = new HttpExecutor(
             _credentialProvider.Object,
+            _apiAuthProvider.Object,
             factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
@@ -397,6 +403,7 @@ public class HttpExecutorTests
 
         var sut = new HttpExecutor(
             _credentialProvider.Object,
+            _apiAuthProvider.Object,
             factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
@@ -431,6 +438,7 @@ public class HttpExecutorTests
 
         var sut = new HttpExecutor(
             _credentialProvider.Object,
+            _apiAuthProvider.Object,
             factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
@@ -466,6 +474,7 @@ public class HttpExecutorTests
 
         var sut = new HttpExecutor(
             _credentialProvider.Object,
+            _apiAuthProvider.Object,
             factory.Object,
             NullLogger<HttpExecutor>.Instance);
 

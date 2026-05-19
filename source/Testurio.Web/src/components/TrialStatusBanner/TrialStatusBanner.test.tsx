@@ -43,13 +43,15 @@ i18nInstance.use(initReactI18next).init({
   },
 });
 
+// ─── Component import ─────────────────────────────────────────────────────────
+
+import TrialStatusBanner from './TrialStatusBanner';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const theme = createTheme();
 
 function renderBanner() {
-  const TrialStatusBanner =
-    require('./TrialStatusBanner').default as React.ComponentType;
   return render(
     <ThemeProvider theme={theme}>
       <I18nextProvider i18n={i18nInstance}>
@@ -69,7 +71,6 @@ function trialEndsAt(daysFromNow: number): string {
 
 describe('TrialStatusBanner', () => {
   beforeEach(() => {
-    jest.resetModules();
     mockSubscriptionState.data = undefined;
   });
 
