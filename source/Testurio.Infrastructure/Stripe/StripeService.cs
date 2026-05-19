@@ -30,6 +30,7 @@ public class StripeService : IStripeService
         SubscriptionPlan plan,
         BillingInterval billingInterval,
         string customerEmail,
+        string userId,
         string successUrl,
         string cancelUrl,
         CancellationToken cancellationToken = default)
@@ -42,6 +43,7 @@ public class StripeService : IStripeService
         {
             Mode = "subscription",
             CustomerEmail = customerEmail,
+            ClientReferenceId = userId,
             LineItems =
             [
                 new SessionLineItemOptions
@@ -53,6 +55,7 @@ public class StripeService : IStripeService
             SubscriptionData = new SessionSubscriptionDataOptions
             {
                 TrialPeriodDays = 14,
+                Metadata = new Dictionary<string, string> { ["userId"] = userId },
             },
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl,

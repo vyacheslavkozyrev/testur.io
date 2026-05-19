@@ -23,7 +23,7 @@
 - [x] T011 [App] Create `CreateCheckoutSessionRequest` DTO (plan, billingInterval) — `source/Testurio.Api/DTOs/Billing/CreateCheckoutSessionRequest.cs`
 - [x] T012 [App] Create `CheckoutSessionResponse` DTO (checkoutUrl) — `source/Testurio.Api/DTOs/Billing/CheckoutSessionResponse.cs`
 - [x] T013 [App] Create `SubscriptionStatusResponse` DTO (status, plan, billingInterval, trialEndsAt) — `source/Testurio.Api/DTOs/Billing/SubscriptionStatusResponse.cs`
-- [ ] T014 [App] Implement `BillingService` (CreateCheckoutSessionAsync delegates to IStripeService; GetSubscriptionStatusAsync reads from IUserSubscriptionRepository; HandleStripeWebhookAsync upserts UserSubscription on checkout.session.completed and customer.subscription.updated) — `source/Testurio.Api/Services/BillingService.cs`
+- [x] T014 [App] Implement `BillingService` (CreateCheckoutSessionAsync delegates to IStripeService; GetSubscriptionStatusAsync reads from IUserSubscriptionRepository; HandleStripeWebhookAsync upserts UserSubscription on checkout.session.completed and customer.subscription.updated) — `source/Testurio.Api/Services/BillingService.cs`
 
 ### Backend — API
 

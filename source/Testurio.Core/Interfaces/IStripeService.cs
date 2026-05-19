@@ -24,6 +24,7 @@ public interface IStripeService
         SubscriptionPlan plan,
         BillingInterval billingInterval,
         string customerEmail,
+        string userId,
         string successUrl,
         string cancelUrl,
         CancellationToken cancellationToken = default);
