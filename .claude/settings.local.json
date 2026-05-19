@@ -98,7 +98,8 @@
       "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-026\" --reporter=list)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm audit *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(grep -E \"\\\\.test\\\\.tsx?$\")"
     ]
   },
   "enableAllProjectMcpServers": true
