@@ -12,9 +12,19 @@ import historyEn from '@/locales/en/history.json';
 import authEn from '@/locales/en/auth.json';
 import landingEn from '@/locales/en/landing.json';
 import pricingEn from '@/locales/en/pricing.json';
+import settingsEn from '@/locales/en/settings.json';
+import settingsUk from '@/locales/uk/settings.json';
 
 i18n.use(initReactI18next).init({
-  lng: 'en',
+  lng: (() => {
+    try {
+      const stored = localStorage.getItem('testurio.language');
+      if (stored === 'en' || stored === 'uk') return stored;
+    } catch {
+      // localStorage unavailable
+    }
+    return 'en';
+  })(),
   fallbackLng: 'en',
   initImmediate: false,
   interpolation: { escapeValue: false },
@@ -32,6 +42,10 @@ i18n.use(initReactI18next).init({
       auth: authEn,
       landing: landingEn,
       pricing: pricingEn,
+      settings: settingsEn,
+    },
+    uk: {
+      settings: settingsUk,
     },
   },
 });

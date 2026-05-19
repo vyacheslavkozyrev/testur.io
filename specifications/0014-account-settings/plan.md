@@ -2,36 +2,36 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Add `UserDocument` record — `source/Testurio.Core/Entities/UserDocument.cs`
-- [ ] T002 [Domain] Add `IUserRepository` interface — `source/Testurio.Core/Repositories/IUserRepository.cs`
-- [ ] T003 [Infra] Implement `UserRepository` (Cosmos upsert/read by `userId`) — `source/Testurio.Infrastructure/Cosmos/UserRepository.cs`
-- [ ] T004 [Infra] Add `Users` container to `CosmosDbInitializer` — `source/Testurio.Infrastructure/Cosmos/CosmosDbInitializer.cs`
-- [ ] T005 [Infra] Register `IUserRepository` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T006 [App] Create `AccountProfileDto` and `AccountPreferencesDto` — `source/Testurio.Api/DTOs/AccountDtos.cs`
-- [ ] T007 [App] Create `UpdateProfileRequest` and `UpdatePreferencesRequest` with data annotations — `source/Testurio.Api/DTOs/AccountDtos.cs`
-- [ ] T008 [App] Implement `IAccountService` interface — `source/Testurio.Api/Services/IAccountService.cs`
-- [ ] T009 [App] Implement `AccountService` (`GetProfileAsync`, `UpdateProfileAsync`, `GetPreferencesAsync`, `UpdatePreferencesAsync`) — `source/Testurio.Api/Services/AccountService.cs`
-- [ ] T010 [App] Register `AccountService` in DI (scoped) — `source/Testurio.Api/Program.cs`
-- [ ] T011 [API] Create `AccountEndpoints` with four routes: `GET /v1/account/profile`, `PATCH /v1/account/profile`, `GET /v1/account/preferences`, `PATCH /v1/account/preferences`; wire validation filter on PATCH routes — `source/Testurio.Api/Endpoints/AccountEndpoints.cs`
-- [ ] T012 [API] Register `AccountEndpoints` in `Program.cs` — `source/Testurio.Api/Program.cs`
-- [ ] T013 [UI] Add `AccountPreferencesDto`, `UpdateProfileRequest`, `UpdatePreferencesRequest` TypeScript types — `source/Testurio.Web/src/types/account.types.ts`
-- [ ] T014 [UI] Implement `accountService` with `getPreferences`, `updateProfile`, `updatePreferences` methods — `source/Testurio.Web/src/services/account/accountService.ts`
-- [ ] T015 [UI] Add `useAccountPreferences`, `useUpdateProfile`, `useUpdatePreferences` React Query hooks — `source/Testurio.Web/src/hooks/useAccount.ts`
-- [ ] T016 [UI] Add MSW mock handlers for all four account endpoints — `source/Testurio.Web/src/mocks/handlers/account.ts`
-- [ ] T017 [UI] Register mock handlers in the MSW setup — `source/Testurio.Web/src/mocks/handlers/index.ts`
-- [ ] T018 [UI] Create `ThemeContext` provider that reads `localStorage` (`testurio.theme`) at init, applies MUI `palette.mode`, exposes `theme` and `setTheme` — `source/Testurio.Web/src/theme/ThemeContext.tsx`
-- [ ] T019 [UI] Wrap authenticated layout with `ThemeContext.Provider` so the theme applies to all portal pages — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
-- [ ] T020 [UI] Create `PersonalInfoSection` component (display name field + save button with loading/error states) — `source/Testurio.Web/src/components/PersonalInfoSection/PersonalInfoSection.tsx`
-- [ ] T021 [UI] Create `PreferencesSection` component (language `Select` + appearance `ToggleButtonGroup`) — `source/Testurio.Web/src/components/PreferencesSection/PreferencesSection.tsx`
-- [ ] T022 [UI] Create `AccountSettingsPage` view that composes `PersonalInfoSection` and `PreferencesSection`; orchestrates parallel data loading (skeleton states) and shows success snackbar — `source/Testurio.Web/src/views/AccountSettingsPage/AccountSettingsPage.tsx`
-- [ ] T023 [UI] Replace the `/settings` page stub with `AccountSettingsPage` — `source/Testurio.Web/src/app/(authenticated)/settings/page.tsx`
-- [ ] T024 [UI] Add `settings` translation keys (all user-visible strings) — `source/Testurio.Web/src/locales/en/settings.json`
-- [ ] T025 [UI] Add Ukrainian translation file (mirrors `settings.json` structure) — `source/Testurio.Web/src/locales/uk/settings.json`
-- [ ] T026 [Test] Backend unit tests for `AccountService` (profile update, preferences merge, 404 on missing prefs, validation errors) — `tests/Testurio.UnitTests/Services/AccountServiceTests.cs`
-- [ ] T027 [Test] Backend integration tests for `AccountEndpoints` (GET profile, PATCH profile 200/400, GET preferences 200/404, PATCH preferences 200/400) — `tests/Testurio.IntegrationTests/Controllers/AccountControllerTests.cs`
-- [ ] T028 [Test] Frontend component tests for `PersonalInfoSection` (pre-population, required validation, char-limit validation, loading state, success snackbar, error banner) — `source/Testurio.Web/src/components/PersonalInfoSection/PersonalInfoSection.test.tsx`
-- [ ] T029 [Test] Frontend component tests for `PreferencesSection` (language dropdown defaults, immediate theme apply, save calls patch, rollback on error) — `source/Testurio.Web/src/components/PreferencesSection/PreferencesSection.test.tsx`
-- [ ] T030 [Test] Frontend component tests for `AccountSettingsPage` (skeleton while loading, error banner on prefs fetch failure, both sections rendered after load) — `source/Testurio.Web/src/views/AccountSettingsPage/AccountSettingsPage.test.tsx`
+- [x] T001 [Domain] Add `UserDocument` record — `source/Testurio.Core/Entities/UserDocument.cs`
+- [x] T002 [Domain] Add `IUserRepository` interface — `source/Testurio.Core/Repositories/IUserRepository.cs`
+- [x] T003 [Infra] Implement `UserRepository` (Cosmos upsert/read by `userId`) — `source/Testurio.Infrastructure/Cosmos/UserRepository.cs`
+- [x] T004 [Infra] Add `Users` container to `CosmosDbInitializer` — `source/Testurio.Infrastructure/Cosmos/CosmosDbInitializer.cs`
+- [x] T005 [Infra] Register `IUserRepository` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T006 [App] Create `AccountProfileDto` and `AccountPreferencesDto` — `source/Testurio.Api/DTOs/AccountDtos.cs`
+- [x] T007 [App] Create `UpdateProfileRequest` and `UpdatePreferencesRequest` with data annotations — `source/Testurio.Api/DTOs/AccountDtos.cs`
+- [x] T008 [App] Implement `IAccountService` interface — `source/Testurio.Api/Services/IAccountService.cs`
+- [x] T009 [App] Implement `AccountService` (`GetProfileAsync`, `UpdateProfileAsync`, `GetPreferencesAsync`, `UpdatePreferencesAsync`) — `source/Testurio.Api/Services/AccountService.cs`
+- [x] T010 [App] Register `AccountService` in DI (scoped) — `source/Testurio.Api/Program.cs`
+- [x] T011 [API] Create `AccountEndpoints` with four routes: `GET /v1/account/profile`, `PATCH /v1/account/profile`, `GET /v1/account/preferences`, `PATCH /v1/account/preferences`; wire validation filter on PATCH routes — `source/Testurio.Api/Endpoints/AccountEndpoints.cs`
+- [x] T012 [API] Register `AccountEndpoints` in `Program.cs` — `source/Testurio.Api/Program.cs`
+- [x] T013 [UI] Add `AccountPreferencesDto`, `UpdateProfileRequest`, `UpdatePreferencesRequest` TypeScript types — `source/Testurio.Web/src/types/account.types.ts`
+- [x] T014 [UI] Implement `accountService` with `getPreferences`, `updateProfile`, `updatePreferences` methods — `source/Testurio.Web/src/services/account/accountService.ts`
+- [x] T015 [UI] Add `useAccountPreferences`, `useUpdateProfile`, `useUpdatePreferences` React Query hooks — `source/Testurio.Web/src/hooks/useAccount.ts`
+- [x] T016 [UI] Add MSW mock handlers for all four account endpoints — `source/Testurio.Web/src/mocks/handlers/account.ts`
+- [x] T017 [UI] Register mock handlers in the MSW setup — `source/Testurio.Web/src/mocks/handlers/index.ts`
+- [x] T018 [UI] Create `ThemeContext` provider that reads `localStorage` (`testurio.theme`) at init, applies MUI `palette.mode`, exposes `theme` and `setTheme` — `source/Testurio.Web/src/theme/ThemeContext.tsx`
+- [x] T019 [UI] Wrap authenticated layout with `ThemeContext.Provider` so the theme applies to all portal pages — `source/Testurio.Web/src/app/(authenticated)/layout.tsx`
+- [x] T020 [UI] Create `PersonalInfoSection` component (display name field + save button with loading/error states) — `source/Testurio.Web/src/components/PersonalInfoSection/PersonalInfoSection.tsx`
+- [x] T021 [UI] Create `PreferencesSection` component (language `Select` + appearance `ToggleButtonGroup`) — `source/Testurio.Web/src/components/PreferencesSection/PreferencesSection.tsx`
+- [x] T022 [UI] Create `AccountSettingsPage` view that composes `PersonalInfoSection` and `PreferencesSection`; orchestrates parallel data loading (skeleton states) and shows success snackbar — `source/Testurio.Web/src/views/AccountSettingsPage/AccountSettingsPage.tsx`
+- [x] T023 [UI] Replace the `/settings` page stub with `AccountSettingsPage` — `source/Testurio.Web/src/app/(authenticated)/settings/page.tsx`
+- [x] T024 [UI] Add `settings` translation keys (all user-visible strings) — `source/Testurio.Web/src/locales/en/settings.json`
+- [x] T025 [UI] Add Ukrainian translation file (mirrors `settings.json` structure) — `source/Testurio.Web/src/locales/uk/settings.json`
+- [x] T026 [Test] Backend unit tests for `AccountService` (profile update, preferences merge, 404 on missing prefs, validation errors) — `tests/Testurio.UnitTests/Services/AccountServiceTests.cs`
+- [x] T027 [Test] Backend integration tests for `AccountEndpoints` (GET profile, PATCH profile 200/400, GET preferences 200/404, PATCH preferences 200/400) — `tests/Testurio.IntegrationTests/Controllers/AccountControllerTests.cs`
+- [x] T028 [Test] Frontend component tests for `PersonalInfoSection` (pre-population, required validation, char-limit validation, loading state, success snackbar, error banner) — `source/Testurio.Web/src/components/PersonalInfoSection/PersonalInfoSection.test.tsx`
+- [x] T029 [Test] Frontend component tests for `PreferencesSection` (language dropdown defaults, immediate theme apply, save calls patch, rollback on error) — `source/Testurio.Web/src/components/PreferencesSection/PreferencesSection.test.tsx`
+- [x] T030 [Test] Frontend component tests for `AccountSettingsPage` (skeleton while loading, error banner on prefs fetch failure, both sections rendered after load) — `source/Testurio.Web/src/views/AccountSettingsPage/AccountSettingsPage.test.tsx`
 - [ ] T031 [Test] E2E tests: navigate to `/settings`, update display name, header refreshes; change language, portal re-renders in new locale; toggle dark mode, portal switches palette — `source/Testurio.Web/e2e/account-settings.spec.ts`
 
 ## Rationale

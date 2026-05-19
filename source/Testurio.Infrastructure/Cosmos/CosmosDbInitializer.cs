@@ -11,6 +11,7 @@ public sealed class CosmosDbInitializer(CosmosClient cosmosClient, string databa
 {
     private static readonly (string Name, string PartitionKeyPath)[] Containers =
     [
+        ("Users",           "/userId"),
         ("Projects",        "/userId"),
         ("TestRuns",        "/projectId"),
         ("RunQueue",        "/projectId"),

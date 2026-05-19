@@ -93,6 +93,7 @@ builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IProjectApiAuthService, ProjectApiAuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 // Feature 0043: SSE relay — subscribe to run-status-changed Service Bus messages and fan out to SSE channels.
 builder.Services.AddSingleton<DashboardEventRelay>(sp =>
@@ -191,6 +192,7 @@ app.UseAuthorization();
 var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 v1.MapPlanEndpoints();
+v1.MapAccountEndpoints();
 app.MapJiraWebhooks();
 app.MapAdoCommentsWebhook();
 app.MapJiraCommentsWebhook();

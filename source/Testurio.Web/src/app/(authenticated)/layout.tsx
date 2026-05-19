@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getSessionStore } from '@/app/api/auth/session/route';
 import PrivateCabinetLayout from '@/components/PrivateCabinetLayout/PrivateCabinetLayout';
+import { ThemeContextProvider } from '@/theme/ThemeContext';
 import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
@@ -36,5 +37,9 @@ export default async function AuthenticatedLayout({
     redirect(SIGN_IN_ROUTE);
   }
 
-  return <PrivateCabinetLayout>{children}</PrivateCabinetLayout>;
+  return (
+    <ThemeContextProvider>
+      <PrivateCabinetLayout>{children}</PrivateCabinetLayout>
+    </ThemeContextProvider>
+  );
 }
