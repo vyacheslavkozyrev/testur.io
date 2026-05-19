@@ -6,11 +6,8 @@
   "personalInfo": {
     "title": "Асабістая інфармацыя",
     "fields": {
-      "displayName": "Адлюстраванае імя"
-    },
-    "validation": {
-      "displayNameRequired": "Адлюстраванае імя абавязковае.",
-      "displayNameMaxLength": "Імя павінна мець не больш за 100 знакаў."
+      "firstName": "Імя",
+      "lastName": "Прозвішча"
     },
     "actions": {
       "save": "Захаваць",

@@ -33,9 +33,13 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation<AccountProfileDto, ApiError, UpdateProfileRequest>({
     mutationFn: accountService.updateProfile,
-    onSuccess: () => {
-      // Invalidate the auth.me cache so the header display name refreshes automatically (AC-003)
-      queryClient.invalidateQueries({ queryKey: AUTH_KEYS.me });
+    onSuccess: (updated) => {
+      // Update the auth.me cache directly so the header name refreshes immediately.
+      queryClient.setQueryData<AuthUser | null>(AUTH_KEYS.me, (old) =>
+        old
+          ? { ...old, firstName: updated.firstName, lastName: updated.lastName }
+          : old,
+      );
     },
   });
 }

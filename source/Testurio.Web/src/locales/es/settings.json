@@ -6,11 +6,8 @@
   "personalInfo": {
     "title": "Información personal",
     "fields": {
-      "displayName": "Nombre para mostrar"
-    },
-    "validation": {
-      "displayNameRequired": "El nombre para mostrar es obligatorio.",
-      "displayNameMaxLength": "El nombre debe tener 100 caracteres o menos."
+      "firstName": "Nombre",
+      "lastName": "Apellido"
     },
     "actions": {
       "save": "Guardar",

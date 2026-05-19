@@ -6,11 +6,8 @@
   "personalInfo": {
     "title": "Персональна інформація",
     "fields": {
-      "displayName": "Відображуване ім'я"
-    },
-    "validation": {
-      "displayNameRequired": "Відображуване ім'я є обов'язковим.",
-      "displayNameMaxLength": "Відображуване ім'я не може перевищувати 100 символів."
+      "firstName": "Ім'я",
+      "lastName": "Прізвище"
     },
     "actions": {
       "save": "Зберегти",

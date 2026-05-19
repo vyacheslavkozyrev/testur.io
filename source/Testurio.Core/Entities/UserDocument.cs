@@ -13,8 +13,11 @@ public class UserDocument
     /// <summary>Azure AD B2C OID — partition key.</summary>
     public required string UserId { get; init; }
 
-    /// <summary>User-chosen display name shown in the portal header. Nullable until set by the user.</summary>
-    public string? DisplayName { get; set; }
+    /// <summary>User's first name. Nullable until set by the user.</summary>
+    public string? FirstName { get; set; }
+
+    /// <summary>User's last name. Nullable until set by the user.</summary>
+    public string? LastName { get; set; }
 
     /// <summary>Preferred display language (e.g. <c>"en"</c>, <c>"uk"</c>). Nullable until set by the user.</summary>
     public string? Language { get; set; }

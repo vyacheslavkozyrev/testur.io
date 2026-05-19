@@ -1,6 +1,7 @@
 export interface AccountProfileDto {
   userId: string;
-  displayName: string | null;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 export interface AccountPreferencesDto {
@@ -9,7 +10,8 @@ export interface AccountPreferencesDto {
 }
 
 export interface UpdateProfileRequest {
-  displayName: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface UpdatePreferencesRequest {

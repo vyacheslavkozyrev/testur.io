@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Testurio.Api.DTOs;
 
 /// <summary>Response DTO for <c>GET /v1/account/profile</c> and <c>PATCH /v1/account/profile</c>.</summary>
-public record AccountProfileDto(string UserId, string? DisplayName);
+public record AccountProfileDto(string UserId, string? FirstName, string? LastName);
 
 /// <summary>Response DTO for <c>GET /v1/account/preferences</c> and <c>PATCH /v1/account/preferences</c>.</summary>
 public record AccountPreferencesDto(string? Language, string? Theme);
@@ -11,9 +11,11 @@ public record AccountPreferencesDto(string? Language, string? Theme);
 /// <summary>Request body for <c>PATCH /v1/account/profile</c>.</summary>
 public class UpdateProfileRequest
 {
-    [Required(ErrorMessage = "Display name is required.")]
-    [MaxLength(100, ErrorMessage = "Display name must be 100 characters or fewer.")]
-    public required string DisplayName { get; init; }
+    [MaxLength(100, ErrorMessage = "First name must be 100 characters or fewer.")]
+    public string? FirstName { get; init; }
+
+    [MaxLength(100, ErrorMessage = "Last name must be 100 characters or fewer.")]
+    public string? LastName { get; init; }
 }
 
 /// <summary>
