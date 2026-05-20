@@ -8,6 +8,7 @@ using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
+using Testurio.Infrastructure.Quota;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Embedding;
 using Testurio.Infrastructure.Jira;
@@ -277,6 +278,9 @@ public static class DependencyInjection
         services.AddSingleton<IApiTestAuthCredentialProvider>(sp =>
             new KeyVault.ApiTestAuthCredentialProvider(
                 sp.GetRequiredService<ISecretResolver>()));
+
+        // Feature 0021: quota policy — singleton because limits are static configuration.
+        services.AddSingleton<IQuotaPolicy, QuotaPolicy>();
 
         // Feature 0024: work item status transition service.
         services.AddSingleton<IWorkItemTransitionService>(sp =>
