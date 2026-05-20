@@ -28,7 +28,7 @@
 - [x] T024 [Config] Update `.gitignore` — add `infra/k8s/**/*.secret.yaml` exclusion pattern so operator-filled secret files are never accidentally committed; keep template `secret.yaml` files tracked — `.gitignore`
 - [x] T025 [Config] Author `.github/workflows/k8s-pr.yml` — triggers on PR to `develop`/`main`; four sequential jobs (`install` → `lint` → `test` → `build-and-push`); `build-and-push` pushes all three images to GHCR tagged `sha-<SHORT_SHA>` using `GITHUB_TOKEN`; `packages: write` permission scoped to `build-and-push` job only — `.github/workflows/k8s-pr.yml`
 - [x] T026 [Config] Author `.github/workflows/k8s-promote-staging.yml` — triggers on push to `develop`; re-tags `sha-<SHORT_SHA>` → `staging` via `docker buildx imagetools create`; cosign keyless sign via OIDC; syft SBOM generation and cosign attestation; opens GitOps repo PR bumping staging Helm chart `image.tag`; requires `id-token: write` + `packages: write` — `.github/workflows/k8s-promote-staging.yml`
-- [ ] T027 [Config] Author `.github/workflows/k8s-promote-production.yml` — triggers on push to `main`; verifies cosign signature on `sha-<SHORT_SHA>` before proceeding; re-tags → `production`; cosign sign; syft SBOM; opens GitOps repo PR for production Helm chart; requires `id-token: write` + `packages: write` — `.github/workflows/k8s-promote-production.yml`
+- [x] T027 [Config] Author `.github/workflows/k8s-promote-production.yml` — triggers on push to `main`; verifies cosign signature on `sha-<SHORT_SHA>` before proceeding; re-tags → `production`; cosign sign; syft SBOM; opens GitOps repo PR for production Helm chart; requires `id-token: write` + `packages: write` — `.github/workflows/k8s-promote-production.yml`
 
 ## Rationale
 
