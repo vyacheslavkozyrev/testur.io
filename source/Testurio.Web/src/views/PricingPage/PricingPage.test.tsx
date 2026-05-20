@@ -54,6 +54,10 @@ jest.mock('@/hooks/usePlans', () => ({
   usePlans: () => mockUsePlansState,
 }));
 
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => ({ data: undefined, isPending: false, isError: false }),
+}));
+
 // ─── i18n setup ───────────────────────────────────────────────────────────────
 
 const i18nInstance = i18n.createInstance();

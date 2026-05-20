@@ -55,6 +55,9 @@ export interface ScenarioSummary {
   steps: StepSummary[] | null;
 }
 
+/** Outcome of the automatic PM tool work item status transition. */
+export type StatusTransitionOutcome = 'succeeded' | 'failed' | 'notConfigured';
+
 export interface RunDetailResponse {
   id: string;
   runId: string;
@@ -66,4 +69,10 @@ export interface RunDetailResponse {
   createdAt: string;
   scenarioResults: ScenarioSummary[];
   rawCommentMarkdown: string | null;
+  /** Post-run status transition outcome. Null when the transition step has not yet run. */
+  statusTransitionOutcome: StatusTransitionOutcome | null;
+  /** Error detail when statusTransitionOutcome is 'failed'. Null otherwise. */
+  statusTransitionError: string | null;
+  /** The PM tool status name the work item was transitioned to. Null when not configured or failed. */
+  statusTransitionedTo: string | null;
 }

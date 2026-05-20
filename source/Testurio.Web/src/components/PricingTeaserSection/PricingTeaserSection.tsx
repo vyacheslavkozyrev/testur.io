@@ -76,14 +76,12 @@ const getStyles = (theme: Theme) =>
         backgroundColor: theme.palette.background.paper,
       },
       sectionTitle: {
-        ...theme.typography.h4,
         fontWeight: 700,
         textAlign: 'center',
         mb: theme.spacing(2),
         color: theme.palette.text.primary,
       },
       summary: {
-        ...theme.typography.body1,
         color: theme.palette.text.secondary,
         textAlign: 'center',
         mb: theme.spacing(5),
@@ -102,17 +100,14 @@ const getStyles = (theme: Theme) =>
         textAlign: 'center',
       },
       planName: {
-        ...theme.typography.h6,
         fontWeight: 700,
         color: theme.palette.text.primary,
       },
       planPrice: {
-        ...theme.typography.h5,
         fontWeight: 800,
         color: theme.palette.primary.main,
       },
       planFeature: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       ctaWrapper: {

@@ -1,34 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decodeAndValidateIdToken } from '@/services/auth/tokenValidator';
 import type { AuthUser } from '@/types/layout.types';
-
-/**
- * Server-side session store (in-memory, keyed by session ID).
- *
- * Stores verified user identity — the raw ID token is never persisted.
- * Only the opaque session ID travels to the client as an HttpOnly cookie.
- *
- * Survives Next.js HMR in development (anchored to globalThis) but is lost
- * on a clean process restart or across multiple Node.js worker processes.
- * For production, replace with a Redis or Cosmos-backed store.
- */
-interface SessionData {
-  userId: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-  displayName: string | null;
-  avatarUrl?: string;
-  exp: number;
-}
-
-const g = globalThis as { _testurioSessions?: Map<string, SessionData> };
-if (!g._testurioSessions) g._testurioSessions = new Map<string, SessionData>();
-
-/** Returns the session store (exported for use by /api/auth/me and /api/auth/sign-out). */
-export function getSessionStore(): Map<string, SessionData> {
-  return g._testurioSessions!;
-}
+import { getSessionStore } from './store';
 
 /** Evicts all expired sessions from the store. Called lazily on each write. */
 function evictExpired(): void {

@@ -166,7 +166,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       title: {
-        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       maskedAlert: {

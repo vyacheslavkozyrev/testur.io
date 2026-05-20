@@ -25,4 +25,10 @@ public sealed record PMToolConnectionResponse(
     JiraAuthMethod? JiraAuthMethod,
     string? JiraApiTokenSecretUri,
     string? JiraEmailSecretUri,
-    string? JiraPatSecretUri);
+    string? JiraPatSecretUri,
+
+    // Post-run status transition — feature 0024
+    string? JiraPassedTransitionStatus,
+    string? JiraFailedTransitionStatus,
+    string? AdoPassedTransitionStatus,
+    string? AdoFailedTransitionStatus);

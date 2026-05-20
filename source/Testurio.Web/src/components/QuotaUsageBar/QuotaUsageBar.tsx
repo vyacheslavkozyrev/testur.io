@@ -92,12 +92,10 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       label: {
-        ...theme.typography.body2,
         color: theme.palette.text.primary,
         fontWeight: 500,
       },
       resetsAt: {
-        ...theme.typography.caption,
         color: theme.palette.text.secondary,
       },
       bar: {

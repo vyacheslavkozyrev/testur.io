@@ -87,7 +87,7 @@ describe('PlanCard', () => {
   it('renders the plan name', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -97,7 +97,7 @@ describe('PlanCard', () => {
   it('renders monthly price when interval is monthly', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -108,7 +108,7 @@ describe('PlanCard', () => {
   it('renders annual monthly-equivalent price when interval is annual', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -119,7 +119,7 @@ describe('PlanCard', () => {
   it('renders discount badge when interval is annual and discount > 0', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -129,7 +129,7 @@ describe('PlanCard', () => {
   it('does not render discount badge on monthly interval', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -139,7 +139,7 @@ describe('PlanCard', () => {
   it('renders Most popular badge for popular plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -149,7 +149,7 @@ describe('PlanCard', () => {
   it('does not render Most popular badge for non-popular plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} planRank={0} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -159,7 +159,7 @@ describe('PlanCard', () => {
   it('renders all feature items', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -171,7 +171,7 @@ describe('PlanCard', () => {
   it('CTA href contains plan id and interval for unauthenticated guest', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -183,7 +183,7 @@ describe('PlanCard', () => {
   it('renders Upgrade label and billing href for authenticated user', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={true} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={true} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -196,7 +196,7 @@ describe('PlanCard', () => {
   it('renders Free label for zero-price plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} planRank={0} currentPlanRank={null} />
       </Wrapper>,
     );
 

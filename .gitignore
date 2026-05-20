@@ -25,3 +25,7 @@
 
 **/.env
 **/.env.local
+
+# Ignore operator-filled Kubernetes secret files (keep template secret.yaml tracked)
+
+infra/k8s/**/*.secret.yaml

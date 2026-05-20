@@ -85,7 +85,6 @@ const getStyles = (theme: Theme, active: boolean) =>
         minWidth: 36,
       },
       label: {
-        ...theme.typography.body2,
         fontWeight: active ? 600 : 400,
         color: 'inherit',
       },

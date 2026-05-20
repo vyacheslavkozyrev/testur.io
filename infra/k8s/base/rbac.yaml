@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: testurio-deployer
+  namespace: testurio
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: testurio-deployer-role
+  namespace: testurio
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "secrets"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: testurio-deployer-binding
+  namespace: testurio
+subjects:
+  - kind: ServiceAccount
+    name: testurio-deployer
+    namespace: testurio
+roleRef:
+  kind: Role
+  name: testurio-deployer-role
+  apiGroup: rbac.authorization.k8s.io

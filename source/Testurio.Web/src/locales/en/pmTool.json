@@ -36,7 +36,11 @@
       "inTestingStatus": "\"In Testing\" Status Name",
       "authMethod": "Auth Method",
       "pat": "Personal Access Token",
-      "oAuthToken": "OAuth Token"
+      "oAuthToken": "OAuth Token",
+      "passedTransitionStatus": "Passed — Transition To Status",
+      "passedTransitionStatusHelper": "Work item status to set when all tests pass. Leave blank to skip.",
+      "failedTransitionStatus": "Failed — Transition To Status",
+      "failedTransitionStatusHelper": "Work item status to set when any test fails. Leave blank to skip."
     },
     "authMethods": {
       "pat": "Personal Access Token (PAT)",
@@ -62,7 +66,11 @@
       "authMethod": "Auth Method",
       "email": "Email Address",
       "apiToken": "API Token",
-      "pat": "Personal Access Token"
+      "pat": "Personal Access Token",
+      "passedTransitionStatus": "Passed — Transition To Status",
+      "passedTransitionStatusHelper": "Work item status to set when all tests pass. Leave blank to skip.",
+      "failedTransitionStatus": "Failed — Transition To Status",
+      "failedTransitionStatusHelper": "Work item status to set when any test fails. Leave blank to skip."
     },
     "authMethods": {
       "apiToken": "API Token + Email",

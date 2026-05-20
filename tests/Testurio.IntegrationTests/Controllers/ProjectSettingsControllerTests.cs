@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -54,7 +56,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         return client;
     }
 
-    // ─── GET /v1/projects/{projectId}/report-settings ────────────────────────
+    // â”€â”€â”€ GET /v1/projects/{projectId}/report-settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetReportSettings_Returns200_WithCurrentSettings()
@@ -89,7 +91,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ─── DELETE /v1/projects/{projectId}/report-settings/template ────────────
+    // â”€â”€â”€ DELETE /v1/projects/{projectId}/report-settings/template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task RemoveTemplate_Returns204_OnSuccess()
@@ -128,7 +130,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{projectId}/report-settings/template ─────────────
+    // â”€â”€â”€ POST /v1/projects/{projectId}/report-settings/template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task UploadTemplate_Returns200_WithBlobUri_ForValidMdFile()
@@ -197,7 +199,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── PATCH /v1/projects/{projectId}/report-settings ─────────────────────
+    // â”€â”€â”€ PATCH /v1/projects/{projectId}/report-settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task UpdateReportSettings_Returns200_WithUpdatedValues()
@@ -238,7 +240,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── Auth guard ──────────────────────────────────────────────────────────
+    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetReportSettings_Returns401_WithoutAuthToken()
@@ -268,11 +270,11 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
-                    ["Infrastructure:BlobStorageConnectionString"] = "DefaultEndpointsProtocol=https;AccountName=test;AccountKey=dummykey==;EndpointSuffix=core.windows.net",
+                    ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "test-reports",
@@ -294,3 +296,6 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         }
     }
 }
+
+
+

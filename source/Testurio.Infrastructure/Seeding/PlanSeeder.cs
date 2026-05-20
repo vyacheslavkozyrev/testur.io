@@ -3,11 +3,17 @@ using Testurio.Core.Models;
 
 namespace Testurio.Infrastructure.Seeding;
 
+/// <summary>Abstraction for plan seeding; injectable in tests.</summary>
+public interface IPlanSeeder
+{
+    Task SeedAsync(CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Seeds the initial <see cref="PlanDocument"/> records into the <c>Plans</c> Cosmos DB container.
 /// Idempotent — skips documents that already exist so edits made via the Azure portal are preserved.
 /// </summary>
-public sealed class PlanSeeder
+public sealed class PlanSeeder : IPlanSeeder
 {
     private const string PartitionKeyValue = "plan";
 
@@ -18,9 +24,9 @@ public sealed class PlanSeeder
             Id = "test-junior",
             Type = PartitionKeyValue,
             Name = "Test Junior",
-            MonthlyPrice = 0,
-            AnnualPrice = 0,
-            AnnualDiscountPercent = 0,
+            MonthlyPrice = 19,
+            AnnualPrice = 182,
+            AnnualDiscountPercent = 20,
             IsPopular = false,
             SortOrder = 0,
             Features =
@@ -112,18 +118,9 @@ public sealed class PlanSeeder
 
     private async Task SeedPlanAsync(PlanDocument plan, CancellationToken cancellationToken)
     {
-        try
-        {
-            // Attempt to create the document. Skip silently if it already exists so that
-            // concurrent API + Worker startup and manual portal edits are both safe.
-            await _container.CreateItemAsync(
-                plan,
-                new PartitionKey(PartitionKeyValue),
-                cancellationToken: cancellationToken);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            // Document already exists — idempotent, nothing to do.
-        }
+        await _container.UpsertItemAsync(
+            plan,
+            new PartitionKey(PartitionKeyValue),
+            cancellationToken: cancellationToken);
     }
 }

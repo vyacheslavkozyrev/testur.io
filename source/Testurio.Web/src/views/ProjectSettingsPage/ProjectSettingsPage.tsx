@@ -64,6 +64,7 @@ export default function ProjectSettingsPage() {
   const [requestTimeoutSeconds, setRequestTimeoutSeconds] = useState<number>(30);
   const [savedRequestTimeoutSeconds, setSavedRequestTimeoutSeconds] = useState<number>(30);
   const [saveBarState, setSaveBarState] = useState<SaveBarState>('clean');
+  const [accessDirty, setAccessDirty] = useState(false);
   const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false, apiAuth: false });
   const [pendingSections, setPendingSections] = useState<PendingSections>({ projectInfo: true, reportSettings: true });
 
@@ -92,16 +93,17 @@ export default function ProjectSettingsPage() {
   const computeDirty = useCallback((): boolean => {
     const formDirty = projectFormRef.current?.isDirty ?? false;
     const reportDirty = reportSettingsRef.current?.isDirty ?? false;
-    const accessDirty = accessRef.current?.isDirty ?? false;
+    const accessSectionDirty = accessRef.current?.isDirty ?? false;
     const apiAuthDirty = apiAuthRef.current?.isDirty ?? false;
     const promptDirty = customPrompt !== savedCustomPrompt;
     const timeoutDirty = requestTimeoutSeconds !== savedRequestTimeoutSeconds;
-    return formDirty || reportDirty || accessDirty || apiAuthDirty || promptDirty || timeoutDirty;
-  }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds]);
+    return formDirty || reportDirty || accessSectionDirty || apiAuthDirty || promptDirty || timeoutDirty;
+  }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds, accessDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll computeDirty() after every render — form isDirty lives in a ref and
   // cannot be a dep, so no deps array is intentional. Guard prevents setState
   // when nothing changed, which avoids triggering a follow-up render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveBarState === 'saving' || saveBarState === 'saved') return;
     const next = computeDirty() ? 'dirty' : 'clean';
@@ -127,7 +129,7 @@ export default function ProjectSettingsPage() {
 
   const handleSaveAll = useCallback(async () => {
     setSaveBarState('saving');
-    setSectionErrors({ projectInfo: false, reportSettings: false, access: false });
+    setSectionErrors({ projectInfo: false, reportSettings: false, access: false, apiAuth: false });
 
     let projectInfoOk = !pendingSections.projectInfo;
     let reportSettingsOk = !pendingSections.reportSettings;
@@ -201,7 +203,7 @@ export default function ProjectSettingsPage() {
       setPendingSections({ projectInfo: true, reportSettings: true });
       setSaveBarState('saved');
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = window.setTimeout(() => setSaveBarState('clean'), 2000);
+      saveTimerRef.current = setTimeout(() => setSaveBarState('clean'), 2000);
     }
   }, [pendingSections, customPrompt, requestTimeoutSeconds, updateProject, updateReportSettings]);
 
@@ -312,7 +314,7 @@ export default function ProjectSettingsPage() {
               value={requestTimeoutSeconds}
               onChange={setRequestTimeoutSeconds}
             />
-            <AccessModeSelector ref={accessRef} projectId={project.projectId} />
+            <AccessModeSelector ref={accessRef} projectId={project.projectId} onDirtyChange={setAccessDirty} />
           </Paper>
 
           {/* API Authentication card */}
@@ -407,7 +409,6 @@ const getStyles = (theme: Theme) =>
         marginBottom: theme.spacing(-1),
       },
       pageTitle: {
-        ...theme.typography.h5,
         color: theme.palette.text.primary,
         fontWeight: 600,
       },
@@ -442,7 +443,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerTitle: {
-        ...theme.typography.subtitle1,
         color: theme.palette.error.main,
       },
       dangerButton: {

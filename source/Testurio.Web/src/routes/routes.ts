@@ -26,6 +26,12 @@ export const PROJECTS_ROUTE = '/projects';
 
 export const NEW_PROJECT_ROUTE = '/projects/new';
 
+// ─── Billing routes (feature 0015) ───────────────────────────────────────────
+
+export const BILLING_ROUTE = '/billing';
+
+export const BILLING_SUCCESS_ROUTE = '/billing/success';
+
 export const SETTINGS_ROUTE = '/settings';
 
 /**

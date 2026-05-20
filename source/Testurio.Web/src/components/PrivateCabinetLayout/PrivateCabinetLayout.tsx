@@ -5,6 +5,9 @@ import Box from '@mui/material/Box';
 import { useTheme, type Theme } from '@mui/material/styles';
 import AppHeader from '@/components/AppHeader/AppHeader';
 import AppSidebar from '@/components/AppSidebar/AppSidebar';
+import CancellationPendingBanner from '@/components/CancellationPendingBanner/CancellationPendingBanner';
+import PaymentFailedBanner from '@/components/PaymentFailedBanner/PaymentFailedBanner';
+import TrialStatusBanner from '@/components/TrialStatusBanner/TrialStatusBanner';
 import { useAuthUser } from '@/hooks/useAuthUser';
 
 const HEADER_HEIGHT = 64;
@@ -21,6 +24,9 @@ export default function PrivateCabinetLayout({ children }: PrivateCabinetLayoutP
   return (
     <Box sx={styles.root}>
       <AppHeader user={user} />
+      <TrialStatusBanner />
+      <CancellationPendingBanner />
+      <PaymentFailedBanner />
       <Box sx={styles.body}>
         <AppSidebar />
         <Box component="main" sx={styles.main}>

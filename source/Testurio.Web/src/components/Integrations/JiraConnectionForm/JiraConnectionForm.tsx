@@ -30,6 +30,8 @@ interface FormValues {
   email: string;
   apiToken: string;
   pat: string;
+  passedTransitionStatus: string;
+  failedTransitionStatus: string;
 }
 
 export default function JiraConnectionForm({
@@ -55,6 +57,8 @@ export default function JiraConnectionForm({
       email: '',
       apiToken: '',
       pat: '',
+      passedTransitionStatus: '',
+      failedTransitionStatus: '',
     },
   });
 
@@ -70,6 +74,8 @@ export default function JiraConnectionForm({
         ...(data.authMethod === 'apiToken'
           ? { email: data.email, apiToken: data.apiToken }
           : { pat: data.pat }),
+        passedTransitionStatus: data.passedTransitionStatus || undefined,
+        failedTransitionStatus: data.failedTransitionStatus || undefined,
       };
       onSubmit(request);
     },
@@ -212,6 +218,32 @@ export default function JiraConnectionForm({
         />
       )}
 
+      <Controller
+        name="passedTransitionStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label={t('jira.fields.passedTransitionStatus')}
+            helperText={t('jira.fields.passedTransitionStatusHelper')}
+            fullWidth
+          />
+        )}
+      />
+
+      <Controller
+        name="failedTransitionStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label={t('jira.fields.failedTransitionStatus')}
+            helperText={t('jira.fields.failedTransitionStatusHelper')}
+            fullWidth
+          />
+        )}
+      />
+
       <Box sx={styles.actions}>
         {onCancel && (
           <Button variant="outlined" onClick={onCancel} disabled={isSubmitting}>
@@ -243,7 +275,6 @@ const getStyles = (theme: Theme) =>
         width: '100%',
       },
       title: {
-        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       actions: {

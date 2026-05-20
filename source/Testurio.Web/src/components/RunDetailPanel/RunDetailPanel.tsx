@@ -95,6 +95,29 @@ export default function RunDetailPanel({ projectId, runId, onClose }: RunDetailP
           </Stack>
         ) : null}
 
+        {!isPending && run?.statusTransitionOutcome && (
+          <Box sx={styles.transitionRow}>
+            <Typography variant="caption" color="text.secondary" sx={styles.transitionLabel}>
+              {t('panel.statusTransitionLabel')}
+            </Typography>
+            {run.statusTransitionOutcome === 'succeeded' && (
+              <Typography variant="caption" color="success.main">
+                {t('panel.statusTransitionSucceeded', { status: run.statusTransitionedTo })}
+              </Typography>
+            )}
+            {run.statusTransitionOutcome === 'notConfigured' && (
+              <Typography variant="caption" color="text.secondary">
+                {t('panel.statusTransitionNotConfigured')}
+              </Typography>
+            )}
+            {run.statusTransitionOutcome === 'failed' && (
+              <Typography variant="caption" color="warning.main">
+                {t('panel.statusTransitionFailed', { error: run.statusTransitionError })}
+              </Typography>
+            )}
+          </Box>
+        )}
+
         <Stack direction="row" spacing={1} sx={styles.toggleRow}>
           <Button
             size="small"
@@ -172,6 +195,16 @@ const getStyles = (theme: Theme) =>
       toggleRow: {
         mt: theme.spacing(1.5),
       },
+      transitionRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: theme.spacing(1),
+        mt: theme.spacing(0.5),
+      },
+      transitionLabel: {
+        fontWeight: theme.typography.fontWeightMedium,
+        color: theme.palette.text.secondary,
+      },
       body: {
         p: theme.spacing(2),
         flex: 1,
@@ -179,7 +212,7 @@ const getStyles = (theme: Theme) =>
       },
       rawMarkdown: {
         fontFamily: 'monospace',
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.caption.fontSize ?? '0.75rem',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
         color: theme.palette.text.primary,

@@ -59,6 +59,9 @@ const MOCK_RUN_DETAIL: RunDetailResponse = {
   recommendation: 'approve',
   totalDurationMs: 4200,
   createdAt: new Date(Date.now() - 3600_000).toISOString(),
+  statusTransitionOutcome: null,
+  statusTransitionError: null,
+  statusTransitionedTo: null,
   scenarioResults: [
     {
       scenarioId: 'sc-001',
@@ -68,6 +71,7 @@ const MOCK_RUN_DETAIL: RunDetailResponse = {
       errorSummary: null,
       testType: 'api',
       screenshotUris: [],
+      steps: null,
     },
     {
       scenarioId: 'sc-002',
@@ -77,6 +81,7 @@ const MOCK_RUN_DETAIL: RunDetailResponse = {
       errorSummary: null,
       testType: 'api',
       screenshotUris: [],
+      steps: null,
     },
   ],
   rawCommentMarkdown: '## Report\n**Verdict:** PASSED\n\n- `POST /auth returns 200` — PASSED',

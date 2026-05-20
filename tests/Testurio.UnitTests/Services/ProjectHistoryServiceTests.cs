@@ -3,17 +3,19 @@ using Testurio.Api.Services;
 using Testurio.Core.Entities;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 
 namespace Testurio.UnitTests.Services;
 
 public class ProjectHistoryServiceTests
 {
     private readonly Mock<IStatsRepository> _statsRepository = new();
+    private readonly Mock<ITestRunRepository> _testRunRepository = new();
     private readonly ProjectHistoryService _sut;
 
     public ProjectHistoryServiceTests()
     {
-        _sut = new ProjectHistoryService(_statsRepository.Object);
+        _sut = new ProjectHistoryService(_statsRepository.Object, _testRunRepository.Object);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────────

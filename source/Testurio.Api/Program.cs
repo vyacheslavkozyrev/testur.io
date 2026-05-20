@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Testurio.Api.Controllers;
 using Testurio.Api.Endpoints;
 using Testurio.Api.Middleware;
+using Testurio.Api.Options;
 using Testurio.Api.Services;
 using Testurio.Api.Webhooks;
 using Testurio.Core.Interfaces;
@@ -93,6 +94,13 @@ builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
 builder.Services.AddScoped<IProjectApiAuthService, ProjectApiAuthService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IBillingService, BillingService>();
+
+builder.Services.AddOptions<AppOptions>()
+    .BindConfiguration("App")
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 // Feature 0043: SSE relay — subscribe to run-status-changed Service Bus messages and fan out to SSE channels.
 builder.Services.AddSingleton<DashboardEventRelay>(sp =>
@@ -135,7 +143,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var initializer = scope.ServiceProvider.GetRequiredService<CosmosDbInitializer>();
+        var initializer = scope.ServiceProvider.GetRequiredService<ICosmosDbInitializer>();
         await initializer.InitializeAsync();
     }
     catch (Exception ex)
@@ -146,7 +154,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var promptSeeder = scope.ServiceProvider.GetRequiredService<PromptTemplateSeeder>();
+        var promptSeeder = scope.ServiceProvider.GetRequiredService<IPromptTemplateSeeder>();
         await promptSeeder.SeedAsync();
     }
     catch (Exception ex)
@@ -157,7 +165,7 @@ using (var scope = app.Services.CreateScope())
 
     try
     {
-        var planSeeder = scope.ServiceProvider.GetRequiredService<PlanSeeder>();
+        var planSeeder = scope.ServiceProvider.GetRequiredService<IPlanSeeder>();
         await planSeeder.SeedAsync();
     }
     catch (Exception ex)
@@ -191,6 +199,9 @@ app.UseAuthorization();
 var v1 = app.MapGroup("/v1").RequireAuthorization();
 
 v1.MapPlanEndpoints();
+v1.MapAccountEndpoints();
+v1.MapBillingEndpoints();
+app.MapStripeWebhook();
 app.MapJiraWebhooks();
 app.MapAdoCommentsWebhook();
 app.MapJiraCommentsWebhook();

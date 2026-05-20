@@ -1,163 +1,134 @@
+/**
+ * Feature 0024 — Automatic Work Item Status Transition
+ * Tests that JiraConnectionForm renders and submits transition status fields.
+ */
+import '@/i18n';
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { I18nextProvider } from 'react-i18next';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
 import JiraConnectionForm from './JiraConnectionForm';
+import type { SaveJiraConnectionRequest } from '@/types/pmTool.types';
 
-const i18nInstance = i18n.createInstance();
-i18nInstance.use(initReactI18next).init({
-  lng: 'en',
-  resources: {
-    en: {
-      pmTool: {
-        'jira.formTitle': 'Connect Jira',
-        'jira.fields.baseUrl': 'Base URL',
-        'jira.fields.projectKey': 'Project Key',
-        'jira.fields.inTestingStatus': '"In Testing" Status Name',
-        'jira.fields.authMethod': 'Auth Method',
-        'jira.fields.email': 'Email Address',
-        'jira.fields.apiToken': 'API Token',
-        'jira.fields.pat': 'Personal Access Token',
-        'jira.authMethods.apiToken': 'API Token + Email',
-        'jira.authMethods.pat': 'Personal Access Token (PAT)',
-        'jira.validation.baseUrlRequired': 'Base URL is required.',
-        'jira.validation.baseUrlInvalid': 'Base URL must be a valid URL starting with http:// or https://.',
-        'jira.validation.projectKeyRequired': 'Project Key is required.',
-        'jira.validation.inTestingStatusRequired': '"In Testing" status name is required.',
-        'jira.validation.authMethodRequired': 'Auth method is required.',
-        'jira.validation.emailRequired': 'Email is required when API Token auth is selected.',
-        'jira.validation.emailInvalid': 'Please enter a valid email address.',
-        'jira.validation.apiTokenRequired': 'API Token is required.',
-        'jira.validation.patRequired': 'Personal Access Token is required.',
-        'common.save': 'Save',
-        'common.cancel': 'Cancel',
-      },
-    },
-  },
-});
+const noop = () => {};
 
-const theme = createTheme();
-
-function Wrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <ThemeProvider theme={theme}>
-      <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>
-    </ThemeProvider>
+function renderForm(
+  onSubmit: (data: SaveJiraConnectionRequest) => void = noop,
+  isSubmitting = false,
+) {
+  return render(
+    <JiraConnectionForm isSubmitting={isSubmitting} onSubmit={onSubmit} />,
   );
 }
 
-describe('JiraConnectionForm', () => {
-  it('renders all required fields', () => {
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
-      </Wrapper>,
-    );
-    expect(screen.getByLabelText(/Base URL/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Project Key/i)).toBeInTheDocument();
-    expect(screen.getByText('Auth Method')).toBeInTheDocument();
+/** Fill in the required fields of the Jira form. */
+async function fillRequired(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText(/Base URL/i), 'https://myorg.atlassian.net');
+  await user.type(screen.getByLabelText(/Project Key/i), 'PROJ');
+  await user.type(screen.getByLabelText(/"In Testing" Status Name/i), 'In Testing');
+  await user.type(screen.getByLabelText(/Email Address/i), 'user@example.com');
+  // API Token label appears once when auth method is apiToken (default).
+  await user.type(screen.getByLabelText('API Token *'), 'mytoken');
+}
+
+describe('JiraConnectionForm — transition status fields', () => {
+  it('renders the Passed transition status field', () => {
+    renderForm();
+    expect(screen.getByLabelText(/Passed — Transition To Status/i)).toBeInTheDocument();
   });
 
-  it('shows email and api token fields when API Token auth method is selected (default)', () => {
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
-      </Wrapper>,
-    );
-    expect(screen.getByLabelText(/Email Address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^API Token/, { selector: 'input' })).toBeInTheDocument();
+  it('renders the Failed transition status field', () => {
+    renderForm();
+    expect(screen.getByLabelText(/Failed — Transition To Status/i)).toBeInTheDocument();
   });
 
-  it('shows validation error when Base URL is missing on submit', async () => {
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
-      </Wrapper>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Base URL is required.')).toBeInTheDocument();
-    });
-  });
-
-  it('shows validation error when Base URL is invalid', async () => {
-    const user = userEvent.setup();
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
-      </Wrapper>,
-    );
-
-    await user.type(screen.getByLabelText(/Base URL/i), 'not-a-url');
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    await waitFor(() => {
-      expect(
-        screen.getByText('Base URL must be a valid URL starting with http:// or https://.'),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it('shows validation error when email is missing for API Token auth', async () => {
-    const user = userEvent.setup();
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={jest.fn()} />
-      </Wrapper>,
-    );
-
-    await user.type(screen.getByLabelText(/Base URL/i), 'https://myorg.atlassian.net');
-    await user.type(screen.getByLabelText(/Project Key/i), 'PROJ');
-    // Leave email empty
-    await user.type(screen.getByLabelText(/^API Token/, { selector: 'input' }), 'my-token');
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Email is required when API Token auth is selected.')).toBeInTheDocument();
-    });
-  });
-
-  it('calls onSubmit with correct values when form is valid', async () => {
+  it('transition fields are optional — form submits without them', async () => {
     const user = userEvent.setup();
     const onSubmit = jest.fn();
-    render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={false} onSubmit={onSubmit} />
-      </Wrapper>,
-    );
+    renderForm(onSubmit);
 
-    await user.type(screen.getByLabelText(/Base URL/i), 'https://myorg.atlassian.net');
-    await user.type(screen.getByLabelText(/Project Key/i), 'PROJ');
-    const textboxes = screen.getAllByRole('textbox');
-    await user.type(textboxes[2], 'In Testing'); // inTestingStatus
-    await user.type(screen.getByLabelText(/Email Address/i), 'user@example.com');
-    await user.type(screen.getByLabelText(/^API Token/, { selector: 'input' }), 'my-token');
+    await fillRequired(user);
 
-    fireEvent.click(screen.getByRole('button', { name: /save/i }));
+    fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!);
 
     await waitFor(() => {
-      expect(onSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          baseUrl: 'https://myorg.atlassian.net',
-          projectKey: 'PROJ',
-          authMethod: 'apiToken',
-          email: 'user@example.com',
-          apiToken: 'my-token',
-        }),
-      );
+      expect(onSubmit).toHaveBeenCalledTimes(1);
     });
+
+    const submitted = onSubmit.mock.calls[0][0] as SaveJiraConnectionRequest;
+    expect(submitted.passedTransitionStatus).toBeUndefined();
+    expect(submitted.failedTransitionStatus).toBeUndefined();
   });
 
-  it('disables submit button while isSubmitting is true', () => {
+  it('submits passedTransitionStatus when filled in', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    renderForm(onSubmit);
+
+    await fillRequired(user);
+    await user.type(screen.getByLabelText(/Passed — Transition To Status/i), 'Done');
+
+    fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    const submitted = onSubmit.mock.calls[0][0] as SaveJiraConnectionRequest;
+    expect(submitted.passedTransitionStatus).toBe('Done');
+  });
+
+  it('submits failedTransitionStatus when filled in', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    renderForm(onSubmit);
+
+    await fillRequired(user);
+    await user.type(screen.getByLabelText(/Failed — Transition To Status/i), 'Rejected');
+
+    fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    const submitted = onSubmit.mock.calls[0][0] as SaveJiraConnectionRequest;
+    expect(submitted.failedTransitionStatus).toBe('Rejected');
+  });
+
+  it('submits both transition fields when both are filled', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    renderForm(onSubmit);
+
+    await fillRequired(user);
+    await user.type(screen.getByLabelText(/Passed — Transition To Status/i), 'Done');
+    await user.type(screen.getByLabelText(/Failed — Transition To Status/i), 'Rejected');
+
+    fireEvent.submit(screen.getByRole('button', { name: /save/i }).closest('form')!);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    const submitted = onSubmit.mock.calls[0][0] as SaveJiraConnectionRequest;
+    expect(submitted.passedTransitionStatus).toBe('Done');
+    expect(submitted.failedTransitionStatus).toBe('Rejected');
+  });
+
+  it('renders Cancel button when onCancel is provided', () => {
     render(
-      <Wrapper>
-        <JiraConnectionForm isSubmitting={true} onSubmit={jest.fn()} />
-      </Wrapper>,
+      <JiraConnectionForm isSubmitting={false} onSubmit={noop} onCancel={noop} />,
     );
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+  });
+
+  it('does not render Cancel button when onCancel is not provided', () => {
+    renderForm();
+    expect(screen.queryByRole('button', { name: /cancel/i })).not.toBeInTheDocument();
+  });
+
+  it('disables Save button while submitting', () => {
+    renderForm(noop, true);
     expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
   });
 });

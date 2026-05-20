@@ -66,7 +66,6 @@ const getStyles = (theme: Theme) =>
         backgroundColor: theme.palette.background.paper,
       },
       sectionTitle: {
-        ...theme.typography.h4,
         fontWeight: 700,
         textAlign: 'center',
         mb: theme.spacing(6),
@@ -101,12 +100,10 @@ const getStyles = (theme: Theme) =>
         fontSize: 24,
       },
       featureTitle: {
-        ...theme.typography.h6,
         fontWeight: 600,
         color: theme.palette.text.primary,
       },
       featureDesc: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
         lineHeight: 1.6,
       },

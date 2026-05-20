@@ -5,7 +5,6 @@ import { pmToolService } from '@/services/pmTool/pmToolService';
 import {
   useIntegrationStatus,
   useSaveADOConnection,
-  useSaveJiraConnection,
   useTestConnection,
   useRemoveConnection,
   PM_TOOL_KEYS,
@@ -31,6 +30,10 @@ const mockIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 const mockNoIntegration: PMToolConnectionResponse = {
@@ -49,12 +52,18 @@ const mockNoIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(QueryClientProvider, { client: qc }, children);
+  }
+  return Wrapper;
 }
 
 describe('useIntegrationStatus', () => {

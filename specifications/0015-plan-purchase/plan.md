@@ -5,82 +5,71 @@
 ### Backend — Domain
 
 - [x] T001 [Domain] Create `SubscriptionPlan` enum (TestJunior / TestPro / Team / Centurio) — `source/Testurio.Core/Enums/SubscriptionPlan.cs`
-- [ ] T002 [Domain] Create `BillingInterval` enum (Monthly / Annual) — `source/Testurio.Core/Enums/BillingInterval.cs`
-- [ ] T003 [Domain] Create `SubscriptionStatus` enum (None / Trialing / Active / Expired) — `source/Testurio.Core/Enums/SubscriptionStatus.cs`
-- [ ] T004 [Domain] Create `UserSubscription` entity (userId, plan, interval, status, trialEnd, stripeCustomerId, stripeSubscriptionId) — `source/Testurio.Core/Entities/UserSubscription.cs`
-- [ ] T005 [Domain] Add `IUserSubscriptionRepository` interface (GetByUserIdAsync, UpsertAsync) — `source/Testurio.Core/Repositories/IUserSubscriptionRepository.cs`
-- [ ] T006 [Domain] Add `IStripeService` interface (CreateCheckoutSessionAsync, GetSubscriptionStatusAsync) — `source/Testurio.Core/Interfaces/IStripeService.cs`
+- [x] T002 [Domain] Create `BillingInterval` enum (Monthly / Annual) — `source/Testurio.Core/Enums/BillingInterval.cs`
+- [x] T003 [Domain] Create `SubscriptionStatus` enum (None / Trialing / Active / Expired) — `source/Testurio.Core/Enums/SubscriptionStatus.cs`
+- [x] T004 [Domain] Create `UserSubscription` entity (userId, plan, billingInterval, status, trialEndsAt, stripeCustomerId, stripeSubscriptionId) — `source/Testurio.Core/Entities/UserSubscription.cs`
+- [x] T005 [Domain] Add `IUserSubscriptionRepository` interface (GetByUserIdAsync, UpsertAsync) — `source/Testurio.Core/Repositories/IUserSubscriptionRepository.cs`
+- [x] T006 [Domain] Add `IStripeService` interface (CreateCheckoutSessionAsync, GetSubscriptionAsync) — `source/Testurio.Core/Interfaces/IStripeService.cs`
 
 ### Backend — Infrastructure
 
-- [ ] T007 [Infra] Implement `UserSubscriptionRepository` (Cosmos DB, partitioned by userId) — `source/Testurio.Infrastructure/Cosmos/UserSubscriptionRepository.cs`
-- [ ] T008 [Infra] Add `StripeOptions` configuration class (SecretKey, WebhookSecret, Price ID map keyed by plan+interval) — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
-- [ ] T009 [Infra] Implement `StripeService` (Stripe.net SDK; CreateCheckoutSession with trial_period_days=14, customer_email, correct cancel/success URLs; GetSubscriptionStatus from Stripe API) — `source/Testurio.Infrastructure/Stripe/StripeService.cs`
-- [ ] T010 [Infra] Register `UserSubscriptionRepository`, `StripeService`, and `StripeOptions` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T007 [Infra] Add `StripeOptions` configuration class (SecretKey, WebhookSecret, Price ID map keyed by plan+interval) — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
+- [x] T008 [Infra] Implement `StripeService` (Stripe.net SDK; CreateCheckoutSession with trial_period_days=14, customer_email, correct success_url and cancel_url; GetSubscription reads from Stripe API) — `source/Testurio.Infrastructure/Stripe/StripeService.cs`
+- [x] T009 [Infra] Implement `UserSubscriptionRepository` (Cosmos DB, partitioned by userId) — `source/Testurio.Infrastructure/Cosmos/UserSubscriptionRepository.cs`
+- [x] T010 [Infra] Register `StripeOptions`, `StripeService`, and `UserSubscriptionRepository` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
 
 ### Backend — Application
 
-- [ ] T011 [App] Create `CreateCheckoutSessionRequest` DTO (plan, billingInterval) — `source/Testurio.Api/DTOs/Billing/CreateCheckoutSessionRequest.cs`
-- [ ] T012 [App] Create `CheckoutSessionResponse` DTO (checkoutUrl) — `source/Testurio.Api/DTOs/Billing/CheckoutSessionResponse.cs`
-- [ ] T013 [App] Create `SubscriptionStatusResponse` DTO (status, plan, billingInterval, trialEndsAt) — `source/Testurio.Api/DTOs/Billing/SubscriptionStatusResponse.cs`
-- [ ] T014 [App] Implement `BillingService` (CreateCheckoutSessionAsync delegates to IStripeService; GetSubscriptionStatusAsync reads UserSubscription from Cosmos; HandleStripeWebhookAsync upserts UserSubscription on checkout.session.completed and customer.subscription.updated events) — `source/Testurio.Api/Services/BillingService.cs`
+- [x] T011 [App] Create `CreateCheckoutSessionRequest` DTO (plan, billingInterval) — `source/Testurio.Api/DTOs/Billing/CreateCheckoutSessionRequest.cs`
+- [x] T012 [App] Create `CheckoutSessionResponse` DTO (checkoutUrl) — `source/Testurio.Api/DTOs/Billing/CheckoutSessionResponse.cs`
+- [x] T013 [App] Create `SubscriptionStatusResponse` DTO (status, plan, billingInterval, trialEndsAt) — `source/Testurio.Api/DTOs/Billing/SubscriptionStatusResponse.cs`
+- [x] T014 [App] Implement `BillingService` (CreateCheckoutSessionAsync delegates to IStripeService; GetSubscriptionStatusAsync reads from IUserSubscriptionRepository; HandleStripeWebhookAsync upserts UserSubscription on checkout.session.completed and customer.subscription.updated) — `source/Testurio.Api/Services/BillingService.cs`
 
 ### Backend — API
 
-- [ ] T015 [API] Add `/api/billing` endpoint group with three routes — `source/Testurio.Api/Endpoints/BillingEndpoints.cs`
-  - `POST /api/billing/checkout` — authenticated (B2C JWT required); calls BillingService.CreateCheckoutSessionAsync; returns `CheckoutSessionResponse`
-  - `GET /api/billing/subscription` — authenticated; calls BillingService.GetSubscriptionStatusAsync; returns `SubscriptionStatusResponse`
+- [x] T015 [API] Add `BillingEndpoints` with three routes — `source/Testurio.Api/Endpoints/BillingEndpoints.cs`
+  - `POST /v1/billing/checkout` — authenticated (B2C JWT); calls BillingService.CreateCheckoutSessionAsync; returns `CheckoutSessionResponse`
+  - `GET /v1/billing/subscription` — authenticated; calls BillingService.GetSubscriptionStatusAsync; returns `SubscriptionStatusResponse`
   - `POST /webhooks/stripe` — unauthenticated; validates Stripe-Signature header using WebhookSecret; dispatches to BillingService.HandleStripeWebhookAsync; returns 400 on invalid signature
-- [ ] T016 [API] Register BillingEndpoints in `Program.cs` — `source/Testurio.Api/Program.cs`
+- [x] T016 [API] Register `BillingEndpoints` and `IBillingService` → `BillingService` in `Program.cs` — `source/Testurio.Api/Program.cs`
 
-### Frontend — Pricing Page (public)
+### Frontend — Billing Types and API Layer
 
-- [ ] T017 [UI] Add billing API types — `source/Testurio.Web/src/types/billing.types.ts`
-  - `SubscriptionPlan`, `BillingInterval`, `SubscriptionStatus` enums
-  - `PlanDefinition` (id, name, features, monthlyPrice, annualPrice, annualDiscountPercent)
-  - `CreateCheckoutSessionRequest`, `CheckoutSessionResponse`, `SubscriptionStatusResponse`
-- [ ] T018 [UI] Add billing API client — `source/Testurio.Web/src/services/billing/billingService.ts`
-  - `createCheckoutSession(plan, interval): Promise<CheckoutSessionResponse>`
-  - `getSubscriptionStatus(): Promise<SubscriptionStatusResponse>`
-- [ ] T019 [UI] Add React Query hooks — `source/Testurio.Web/src/hooks/useBilling.ts`
-  - `useSubscriptionStatus()` — polls GET /api/billing/subscription; exposes status and trialDaysRemaining; stops polling once terminal status reached
-  - `useCreateCheckoutSession()` — useMutation wrapping billingService.createCheckoutSession; on success redirects browser to checkoutUrl
-- [ ] T020 [UI] Add MSW mock handlers for billing endpoints — `source/Testurio.Web/src/mocks/handlers/billing.ts`
-- [ ] T021 [UI] Create `PlanCard` component (name, feature highlights, monthly/annual price, annual discount badge, "Start free trial" CTA button) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx`
-- [ ] T022 [UI] Create `BillingIntervalToggle` component (Monthly / Annual switch; switches all PlanCard prices simultaneously) — `source/Testurio.Web/src/components/BillingIntervalToggle/BillingIntervalToggle.tsx`
-- [ ] T023 [UI] Create `PricingPage` page (four-plan grid in order: Test Junior, Test Pro, Team, Centurio; interval toggle; trial callout in header; unauthenticated CTA preserves plan+interval as query params for post-auth redirect; authenticated CTA calls useCreateCheckoutSession) — `source/Testurio.Web/src/pages/PricingPage/PricingPage.tsx`
-- [ ] T024 [UI] Add pricing translation keys — `source/Testurio.Web/src/locales/en/pricing.json`
-- [ ] T025 [UI] Register `/pricing` public route — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T017 [UI] Extend `plan.types.ts` with `SubscriptionStatus` enum, `CreateCheckoutSessionRequest`, `CheckoutSessionResponse`, and `SubscriptionStatusResponse` types (note: `BillingInterval` and `PlanDefinition` already exist in this file) — `source/Testurio.Web/src/types/plan.types.ts`
+- [x] T018 [UI] Add `billingService` (createCheckoutSession, getSubscriptionStatus) — `source/Testurio.Web/src/services/billing/billingService.ts`
+- [x] T019 [UI] Add React Query hooks `useSubscriptionStatus` (polls GET /v1/billing/subscription; stops on terminal status) and `useCreateCheckoutSession` (useMutation; on success redirects to checkoutUrl) — `source/Testurio.Web/src/hooks/useBilling.ts`
+- [x] T020 [UI] Add MSW mock handlers for billing endpoints (POST /v1/billing/checkout, GET /v1/billing/subscription) — `source/Testurio.Web/src/mocks/handlers/billing.ts`
 
-### Frontend — Checkout Success Page
+### Frontend — Billing Entry and Checkout Success Pages
 
-- [ ] T026 [UI] Create `CheckoutSuccessPage` page (reads session_id query param; redirects to /pricing if absent; calls useSubscriptionStatus polling every 3 s; shows loading state → confirmation + "Create your first project" CTA on trialing status → support message after 30 s timeout) — `source/Testurio.Web/src/pages/CheckoutSuccessPage/CheckoutSuccessPage.tsx`
-- [ ] T027 [UI] Add checkout success translation keys — `source/Testurio.Web/src/locales/en/checkoutSuccess.json`
-- [ ] T028 [UI] Register `/billing/success` route — `source/Testurio.Web/src/routes/routes.tsx`
+- [x] T021 [UI] Create `BillingPage` view (reads plan+interval from query params; redirects to /pricing if absent; calls useCreateCheckoutSession on mount; shows loading state while redirecting to Stripe Checkout URL) — `source/Testurio.Web/src/views/BillingPage/BillingPage.tsx`
+- [x] T022 [UI] Register `/billing` authenticated route — `source/Testurio.Web/src/app/(authenticated)/billing/page.tsx`
+- [x] T023 [UI] Create `CheckoutSuccessPage` view (reads session_id query param; redirects to /pricing if absent; polls useSubscriptionStatus every 3 s; shows loading state → confirmation + "Create your first project" CTA on Trialing status → support message after 30 s timeout with polling stopped) — `source/Testurio.Web/src/views/CheckoutSuccessPage/CheckoutSuccessPage.tsx`
+- [x] T024 [UI] Add checkout success translation keys — `source/Testurio.Web/src/locales/en/checkoutSuccess.json`
+- [x] T025 [UI] Register `/billing/success` authenticated route — `source/Testurio.Web/src/app/(authenticated)/billing/success/page.tsx`
 
 ### Frontend — Portal Banners and Upgrade Gate
 
-- [ ] T029 [UI] Create `TrialStatusBanner` component (shows "X days remaining" banner on dashboard; amber MUI Alert style when ≤3 days remain; "Upgrade now" CTA links to /pricing; "Trial expired" variant for expired state; hidden when subscription is active) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.tsx`
-- [ ] T030 [UI] Create `UpgradeModal` component (shown when a gated action is attempted with no active plan or expired trial; links to /pricing?interval=monthly) — `source/Testurio.Web/src/components/UpgradeModal/UpgradeModal.tsx`
-- [ ] T031 [UI] Integrate `TrialStatusBanner` into the authenticated portal layout so it appears on every portal page — `source/Testurio.Web/src/components/AppLayout/AppLayout.tsx`
-- [ ] T032 [UI] Gate "Create project" action with `UpgradeModal` when subscription status is None or Expired — project creation component/page
-- [ ] T033 [UI] Gate "Trigger test run" action with `UpgradeModal` when subscription status is None or Expired — test-run trigger component/page
-- [ ] T034 [UI] Add portal billing translation keys — `source/Testurio.Web/src/locales/en/billing.json`
+- [x] T026 [UI] Create `TrialStatusBanner` component (shows "X days remaining" banner; amber MUI Alert style when ≤3 days remain; "Trial expired" variant; "Upgrade now" CTA → /pricing; hidden when status is Active or None) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.tsx`
+- [x] T027 [UI] Create `UpgradeModal` component (shown when a gated action is attempted with status None or Expired; links to /pricing?interval=monthly; dismissible) — `source/Testurio.Web/src/components/UpgradeModal/UpgradeModal.tsx`
+- [x] T028 [UI] Integrate `TrialStatusBanner` into `PrivateCabinetLayout` so it renders on every authenticated portal page — `source/Testurio.Web/src/components/PrivateCabinetLayout/PrivateCabinetLayout.tsx`
+- [x] T029 [UI] Gate "Create project" action with `UpgradeModal` when subscription status is None or Expired — `source/Testurio.Web/src/views/ProjectCreatePage/ProjectCreatePage.tsx`
+- [x] T030 [UI] Gate test-run trigger with `UpgradeModal` when subscription status is None or Expired — `source/Testurio.Web/src/components/ProjectCard/ProjectCard.tsx`
+- [x] T031 [UI] Add portal billing translation keys (trial banner, upgrade modal strings) — `source/Testurio.Web/src/locales/en/billing.json`
 
 ### Tests
 
-- [ ] T035 [Test] Unit tests for `BillingService` (CreateCheckoutSession maps each plan+interval to the correct Price ID; GetSubscriptionStatus returns correct DTO; HandleStripeWebhookAsync upserts subscription on checkout.session.completed; updates status on customer.subscription.updated) — `tests/Testurio.UnitTests/Services/BillingServiceTests.cs`
-- [ ] T036 [Test] Unit tests for `StripeService` (CheckoutSession created with trial_period_days=14, customer_email, correct cancel_url and success_url) — `tests/Testurio.UnitTests/Infrastructure/StripeServiceTests.cs`
-- [ ] T037 [Test] Integration tests for billing endpoints (POST /api/billing/checkout returns checkoutUrl; GET /api/billing/subscription returns correct status; POST /webhooks/stripe with invalid Stripe-Signature returns 400; valid webhook upserts UserSubscription in Cosmos) — `tests/Testurio.IntegrationTests/Controllers/BillingControllerTests.cs`
-- [ ] T038 [Test] Frontend component tests for `PlanCard` (renders plan name, features, price; CTA calls onSelect; annual discount badge visible when interval is Annual; hidden when interval is Monthly) — `source/Testurio.Web/src/components/PlanCard/PlanCard.test.tsx`
-- [ ] T039 [Test] Frontend component tests for `TrialStatusBanner` (shows correct days remaining; applies amber style at ≤3 days; renders expired variant when status is Expired; does not render when status is Active) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.test.tsx`
-- [ ] T040 [Test] Frontend component tests for `CheckoutSuccessPage` (redirects to /pricing when session_id is absent; shows loading spinner initially; shows confirmation and CTA when status becomes trialing; shows timeout support message after 30 s) — `source/Testurio.Web/src/pages/CheckoutSuccessPage/CheckoutSuccessPage.test.tsx`
-- [ ] T041 [Test] E2E tests — `source/Testurio.Web/e2e/plan-purchase.spec.ts`
-  - Visitor clicks "Start free trial", is redirected to sign-in, and is forwarded to Stripe Checkout after auth with plan+interval preserved
-  - Authenticated user selects a plan on /pricing and is taken to Stripe Checkout
-  - /billing/success polls and shows confirmation when subscription status flips to trialing
+- [x] T032 [Test] Unit tests for `BillingService` (CreateCheckoutSession maps each plan+interval to the correct Price ID; GetSubscriptionStatus returns correct DTO; HandleStripeWebhookAsync upserts subscription on checkout.session.completed; updates status on customer.subscription.updated) — `tests/Testurio.UnitTests/Services/BillingServiceTests.cs`
+- [x] T033 [Test] Unit tests for `StripeService` (CheckoutSession created with trial_period_days=14, customer_email, correct cancel_url and success_url) — `tests/Testurio.UnitTests/Infrastructure/StripeServiceTests.cs`
+- [x] T034 [Test] Integration tests for billing endpoints (POST /v1/billing/checkout returns checkoutUrl; GET /v1/billing/subscription returns correct status; POST /webhooks/stripe with invalid Stripe-Signature returns 400; valid webhook upserts UserSubscription) — `tests/Testurio.IntegrationTests/Controllers/BillingControllerTests.cs`
+- [x] T035 [Test] Component tests for `CheckoutSuccessPage` (redirects to /pricing when session_id absent; shows loading initially; shows confirmation when status becomes Trialing; shows support message after 30 s) — `source/Testurio.Web/src/views/CheckoutSuccessPage/CheckoutSuccessPage.test.tsx`
+- [x] T036 [Test] Component tests for `TrialStatusBanner` (correct day count; amber style at ≤3 days; expired variant when Expired; hidden when Active; hidden when None) — `source/Testurio.Web/src/components/TrialStatusBanner/TrialStatusBanner.test.tsx`
+- [ ] T037 [Test] E2E tests — `source/Testurio.Web/e2e/plan-purchase.spec.ts`
+  - Unauthenticated visitor clicks CTA, is redirected to sign-in, forwarded to /billing with plan+interval preserved after auth
+  - Authenticated user selects a plan on /pricing and is taken to Stripe Checkout via /billing
+  - /billing/success polls and shows confirmation when subscription status becomes Trialing
   - /billing/success shows support message after 30 s without status resolution
-  - Trial banner appears on dashboard; turns amber at ≤3 days; disappears after plan is purchased
+  - Trial banner appears on dashboard; turns amber at ≤3 days; hidden when Active
   - Attempting to create a project with no active plan shows UpgradeModal
   - Abandoned Stripe Checkout returns user to /pricing with account state unchanged
 
@@ -88,23 +77,25 @@
 
 ## Rationale
 
-**Domain enums before entity.** `SubscriptionPlan`, `BillingInterval`, and `SubscriptionStatus` (T001–T003) define the shared vocabulary used by `UserSubscription` (T004), `IUserSubscriptionRepository` (T005), and `IStripeService` (T006). Enums must exist before anything that references them.
+**Enums before entity.** `SubscriptionPlan`, `BillingInterval`, and `SubscriptionStatus` (T001–T003) define the vocabulary used by `UserSubscription` (T004), which in turn is referenced by `IUserSubscriptionRepository` (T005) and `IStripeService` (T006).
 
-**`IStripeService` in Core, implementation in Infrastructure.** The interface (T006) belongs in `Testurio.Core` so `BillingService` in `Testurio.Api` can depend on an abstraction. The concrete `StripeService` (T009) lives in `Testurio.Infrastructure` alongside the Jira and Key Vault clients, keeping third-party SDK references isolated from the domain and application layers — consistent with the existing pattern.
+**`IStripeService` in Core, implementation in Infrastructure.** The interface (T006) belongs in `Testurio.Core` so `BillingService` in `Testurio.Api` depends on an abstraction rather than the Stripe SDK. The concrete `StripeService` (T008) lives in `Testurio.Infrastructure`, isolating the third-party SDK reference — consistent with the existing ADO/Jira client pattern.
 
-**`StripeOptions` before `StripeService`.** The options class (T008) defines the configuration shape (Price ID map, SecretKey, WebhookSecret) that `StripeService` reads at startup. Declaring it first allows `ValidateDataAnnotations().ValidateOnStart()` to catch misconfiguration before the first request.
+**`StripeOptions` before `StripeService`.** The options class (T007) defines the Price ID map and secret fields that `StripeService` reads at startup. Declaring it first enables `ValidateDataAnnotations().ValidateOnStart()` to catch misconfiguration before the first request.
 
-**`BillingService` owns all Stripe event dispatch.** Rather than a separate webhook service, `BillingService` (T014) handles the two relevant Stripe event types (`checkout.session.completed`, `customer.subscription.updated`). Both map directly to UserSubscription upsert operations that BillingService already manages, keeping all billing state transitions in one place without an extra indirection layer.
+**`BillingService` owns all Stripe event handling.** Rather than splitting webhook logic into a separate class, `BillingService` (T014) handles `checkout.session.completed` and `customer.subscription.updated` — both are simple upserts on `UserSubscription`, keeping all subscription state transitions in one place.
 
-**Stripe webhook endpoint is unauthenticated by design.** Stripe does not present a B2C JWT; it authenticates via the `Stripe-Signature` HMAC header instead. The webhook route (T015) sits under `/webhooks/stripe` alongside the existing `/webhooks/ado` and `/webhooks/jira` routes, verified against `StripeOptions.WebhookSecret`. The other two billing endpoints (`/api/billing/checkout`, `/api/billing/subscription`) require a valid B2C JWT and scope all Cosmos reads to the authenticated `userId`, consistent with the multi-tenancy model.
+**Stripe webhook endpoint is unauthenticated by design.** Stripe does not present a B2C JWT; it authenticates via the `Stripe-Signature` HMAC header. The route sits under `/webhooks/stripe` alongside the existing `/webhooks/ado` and `/webhooks/jira`, verified against `StripeOptions.WebhookSecret`.
 
-**Plan+interval preserved across the auth redirect.** `PricingPage` (T023) encodes `?plan=<id>&interval=<monthly|annual>` on the sign-in redirect URL. After successful B2C authentication, the redirect lands back on `/pricing` with those params intact, and the CTA immediately calls `POST /api/billing/checkout` — satisfying AC-012 and AC-013 without a server-side session.
+**`BillingPage` view as a redirect gateway.** The `PricingPage` CTA already links authenticated users to `/billing?plan=...&interval=...`. `BillingPage` (T021) reads those params, calls `POST /v1/billing/checkout`, and immediately redirects to the Stripe URL. This avoids rebuilding plan-selection UI and keeps the checkout initiation on an authenticated route, without a server-side session for the plan+interval state.
 
-**`CheckoutSuccessPage` polling strategy.** `useSubscriptionStatus` (T019) is configured with a 3-second `refetchInterval`. `CheckoutSuccessPage` (T026) starts a 30-second timer on mount; if status is not `Trialing` or `Active` by expiry, it renders the support message and disables further polling — no redirect loop (AC-023). Once a terminal status is reached, `refetchInterval` is set to `false` to stop unnecessary requests.
+**`plan.types.ts` extended rather than replaced.** `BillingInterval` and `PlanDefinition` already exist in `plan.types.ts` and are used by `PricingPage`, `PlanCard`, and `usePlans`. Adding the new subscription types to the same file (T017) avoids a redundant file and a re-export layer.
 
-**`UpgradeModal` and `TrialStatusBanner` are standalone components.** `UpgradeModal` (T030) is imported by both the project-creation gate (T032) and the test-run gate (T033) without duplicating logic. `TrialStatusBanner` (T029) is wired once into `AppLayout` (T031) so it appears on every authenticated portal page automatically — covering AC-007, AC-025, AC-027, AC-028, AC-029, AC-033.
+**`CheckoutSuccessPage` polling strategy.** `useSubscriptionStatus` (T019) is configured with a 3-second `refetchInterval`. `CheckoutSuccessPage` (T023) starts a 30-second timer on mount; if status has not reached `Trialing` or `Active` by expiry, it renders the support message and sets `refetchInterval: false` — no redirect loop.
 
-**Tests last.** All test tasks (T035–T041) follow every implementation task, consistent with the `[Test]` layer rule from the QA rules. The E2E suite (T041) is last because it exercises the full stack — live backend endpoints, Stripe mock or sandbox, and all portal UI components — and depends on everything preceding it being complete.
+**`TrialStatusBanner` wired once in `PrivateCabinetLayout`.** Placing the banner in the shared layout (T028) means it appears on every authenticated portal page automatically, covering dashboard, projects, settings, and history without per-page additions.
+
+**Tests last.** All test tasks (T032–T037) follow every implementation task, consistent with the `[Test]` layer rule. The E2E suite (T037) is last because it exercises the full stack.
 
 ---
 
@@ -116,5 +107,5 @@
 | `[Infra]` | Cosmos DB repositories, Stripe client, options, DI registration — `Testurio.Infrastructure` |
 | `[App]` | DTOs, services — `Testurio.Api` |
 | `[API]` | Minimal API endpoint groups, webhook handler, route registration — `Testurio.Api` |
-| `[UI]` | Types, API clients, React Query hooks, MSW handlers, components, pages, i18n keys, route registration — `Testurio.Web` |
+| `[UI]` | Types, API clients, React Query hooks, MSW handlers, components, views, i18n keys, route registration — `Testurio.Web` |
 | `[Test]` | Unit, integration, frontend component, and E2E test files — `tests/` and `source/Testurio.Web/` |

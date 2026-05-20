@@ -81,6 +81,16 @@ public class Project
     /// <summary>Per-request timeout in seconds applied to every HTTP and Playwright step. Defaults to 30.</summary>
     public int RequestTimeoutSeconds { get; set; } = 30;
 
+    // Post-run status transition — feature 0024
+    /// <summary>Jira status name to transition the work item to when a run passes (e.g. "Done"). Null means no transition.</summary>
+    public string? JiraPassedTransitionStatus { get; set; }
+    /// <summary>Jira status name to transition the work item to when a run fails (e.g. "Rejected"). Null means no transition.</summary>
+    public string? JiraFailedTransitionStatus { get; set; }
+    /// <summary>ADO state name to transition the work item to when a run passes (e.g. "Closed"). Null means no transition.</summary>
+    public string? AdoPassedTransitionStatus { get; set; }
+    /// <summary>ADO state name to transition the work item to when a run fails (e.g. "Active"). Null means no transition.</summary>
+    public string? AdoFailedTransitionStatus { get; set; }
+
     // API test authentication — feature 0023
     public ApiAuthMethod ApiAuthMethod { get; set; } = ApiAuthMethod.None;
     /// <summary>Key Vault secret URI for the Bearer token. Never the raw value.</summary>

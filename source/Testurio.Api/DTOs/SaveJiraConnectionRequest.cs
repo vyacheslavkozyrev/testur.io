@@ -26,4 +26,10 @@ public sealed record SaveJiraConnectionRequest(
     // Auth-method-specific credentials — validated conditionally by JiraConnectionValidator
     string? Email,
     string? ApiToken,
-    string? Pat);
+    string? Pat,
+
+    // Post-run status transition — feature 0024
+    [property: MaxLength(200)]
+    string? PassedTransitionStatus,
+    [property: MaxLength(200)]
+    string? FailedTransitionStatus);

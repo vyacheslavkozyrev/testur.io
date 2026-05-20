@@ -22,6 +22,8 @@ export interface PlanCardProps {
   plan: PlanDefinition;
   interval: BillingInterval;
   isAuthenticated: boolean;
+  planRank: number;
+  currentPlanRank: number | null;
 }
 
 function getMonthlyEquivalentPrice(plan: PlanDefinition, interval: BillingInterval): number {
@@ -30,9 +32,14 @@ function getMonthlyEquivalentPrice(plan: PlanDefinition, interval: BillingInterv
   return Math.round(plan.annualPrice / 12);
 }
 
-export default function PlanCard({ plan, interval, isAuthenticated }: PlanCardProps) {
+export default function PlanCard({ plan, interval, isAuthenticated, planRank, currentPlanRank }: PlanCardProps) {
   const { t } = useTranslation('pricing');
   const theme = useTheme();
+
+  const isCurrent = currentPlanRank !== null && planRank === currentPlanRank;
+  const isDowngrade = currentPlanRank !== null && planRank < currentPlanRank;
+  const ctaDisabled = isCurrent || isDowngrade;
+
   const styles = getStyles(theme, plan.isPopular);
 
   const displayPrice = getMonthlyEquivalentPrice(plan, interval);
@@ -41,7 +48,13 @@ export default function PlanCard({ plan, interval, isAuthenticated }: PlanCardPr
     ? `/billing?plan=${plan.id}&interval=${interval}`
     : `${SIGN_UP_ROUTE}?plan=${plan.id}&interval=${interval}`;
 
-  const ctaLabel = isAuthenticated ? t('planCard.upgrade') : t('planCard.getStarted');
+  const ctaLabel = isCurrent
+    ? t('planCard.currentPlan')
+    : isDowngrade
+      ? t('planCard.downgrade')
+      : isAuthenticated
+        ? t('planCard.upgrade')
+        : t('planCard.getStarted');
 
   return (
     <Box sx={styles.root}>
@@ -110,10 +123,11 @@ export default function PlanCard({ plan, interval, isAuthenticated }: PlanCardPr
 
         {/* CTA */}
         <Button
-          component={Link}
-          href={ctaHref}
-          variant={plan.isPopular ? 'contained' : 'outlined'}
+          component={ctaDisabled ? 'button' : Link}
+          href={ctaDisabled ? undefined : ctaHref}
+          variant={plan.isPopular && !ctaDisabled ? 'contained' : 'outlined'}
           fullWidth
+          disabled={ctaDisabled}
           sx={styles.ctaButton}
         >
           {ctaLabel}
@@ -165,7 +179,6 @@ const getStyles = (theme: Theme, isPopular: boolean) =>
         height: '100%',
       },
       planName: {
-        ...theme.typography.h5,
         fontWeight: 700,
         color: theme.palette.text.primary,
       },
@@ -175,17 +188,14 @@ const getStyles = (theme: Theme, isPopular: boolean) =>
         gap: theme.spacing(0.5),
       },
       freePrice: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.text.primary,
       },
       priceAmount: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.primary.main,
       },
       priceUnit: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       discountBadge: {
@@ -205,7 +215,6 @@ const getStyles = (theme: Theme, isPopular: boolean) =>
         minWidth: 28,
       },
       featureText: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       ctaButton: {

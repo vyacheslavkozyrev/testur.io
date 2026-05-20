@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,7 +19,7 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
 
-// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+// JiraCommentResult is defined in Testurio.Core.Interfaces â€” used for mock setup.
 
 namespace Testurio.IntegrationTests.Controllers;
 
@@ -198,7 +200,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -217,8 +219,13 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
             });
         }
     }
 }
+
+
+

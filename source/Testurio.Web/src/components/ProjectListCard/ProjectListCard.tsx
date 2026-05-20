@@ -108,7 +108,6 @@ const getStyles = (theme: Theme) => ({
     minWidth: 0,
   },
   name: {
-    ...theme.typography.h6,
     color: theme.palette.text.primary,
     flex: 1,
     minWidth: 0,
@@ -122,11 +121,9 @@ const getStyles = (theme: Theme) => ({
     },
   },
   url: {
-    ...theme.typography.body2,
     color: theme.palette.text.secondary,
   },
   strategy: {
-    ...theme.typography.body2,
     color: theme.palette.text.primary,
   },
 });

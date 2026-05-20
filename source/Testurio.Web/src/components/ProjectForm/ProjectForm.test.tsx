@@ -49,6 +49,8 @@ const mockProject: ProjectDto = {
   productUrl: 'https://existing.example.com',
   testingStrategy: 'Smoke tests.',
   customPrompt: null,
+  allowedWorkItemTypes: null,
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };

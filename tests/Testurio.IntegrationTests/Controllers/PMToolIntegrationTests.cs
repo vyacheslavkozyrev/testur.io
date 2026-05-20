@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -62,7 +64,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         return client;
     }
 
-    // ─── GET /v1/projects/{id}/integrations ──────────────────────────────────
+    // â”€â”€â”€ GET /v1/projects/{id}/integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetIntegrationStatus_ReturnsNone_WhenNotConfigured()
@@ -107,7 +109,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/integrations/ado ─────────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/integrations/ado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task SaveADOConnection_Returns200_WhenValid()
@@ -126,7 +128,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveADOConnectionRequest(
             "https://dev.azure.com/myorg", "My Project", "My Team",
-            "In Testing", ADOAuthMethod.Pat, "my-pat", null);
+            "In Testing", ADOAuthMethod.Pat, "my-pat", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/ado", request);
 
@@ -142,7 +144,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveADOConnectionRequest(
             "not-a-url", "My Project", "My Team",
-            "In Testing", ADOAuthMethod.Pat, "my-pat", null);
+            "In Testing", ADOAuthMethod.Pat, "my-pat", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/ado", request);
 
@@ -169,7 +171,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/integrations/jira ─────────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/integrations/jira â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task SaveJiraConnection_Returns200_WhenValid()
@@ -188,7 +190,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveJiraConnectionRequest(
             "https://myorg.atlassian.net", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null);
+            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/jira", request);
 
@@ -203,14 +205,14 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var client = CreateAuthenticatedClient();
         var request = new SaveJiraConnectionRequest(
             "not-a-url", "PROJ", "In Testing",
-            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null);
+            JiraAuthMethod.ApiToken, "user@example.com", "my-token", null, null, null);
 
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/jira", request);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── DELETE /v1/projects/{id}/integrations ────────────────────────────────
+    // â”€â”€â”€ DELETE /v1/projects/{id}/integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task RemoveIntegration_Returns200_WithEmptyConfig()
@@ -253,7 +255,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/integrations/test-connection ─────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/integrations/test-connection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task TestConnection_Returns200_WithStructuredResult()
@@ -283,7 +285,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal("ok", body!.Status);
     }
 
-    // ─── GET /v1/projects/{id}/integrations/webhook-setup ────────────────────
+    // â”€â”€â”€ GET /v1/projects/{id}/integrations/webhook-setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task GetWebhookSetup_Returns200_WithWebhookUrl()
@@ -340,7 +342,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -362,7 +364,9 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
                 services.Replace(ServiceDescriptor.Singleton<IADOClient>(_ => _adoClient.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraClient>(_ => _jiraClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 services.AddAuthentication("Test")
                     .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
@@ -371,3 +375,6 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         }
     }
 }
+
+
+

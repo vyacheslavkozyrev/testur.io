@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import type { ProjectHistoryResponse, RunDetailResponse } from '@/types/history.types';
 
-const PROJECT_ID = '00000000-0000-0000-0000-000000000001';
 const RUN_ID_1 = '00000000-0000-0000-0000-000000000011';
 const RUN_ID_2 = '00000000-0000-0000-0000-000000000012';
 
@@ -108,6 +107,9 @@ const mockRunDetailResponse: RunDetailResponse = {
   ],
   rawCommentMarkdown:
     '## Test Report\n\n**Verdict:** PASSED\n\n**Recommendation:** approve\n\nAll 4 scenarios passed in 12.34 s.',
+  statusTransitionOutcome: 'succeeded',
+  statusTransitionError: null,
+  statusTransitionedTo: 'Closed',
 };
 
 export const historyHandlers = [

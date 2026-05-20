@@ -32,6 +32,11 @@ jest.mock('@/hooks/useDashboard', () => ({
   useDashboard: () => mockUseDashboardState,
 }));
 
+// ProjectCard uses useSubscriptionStatus — mock to avoid QueryClient requirement
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => ({ data: undefined, isPending: false, isError: false }),
+}));
+
 // ─── Mock useDashboardStream hook ─────────────────────────────────────────────
 
 import type { UseDashboardStreamOptions } from '@/hooks/useDashboardStream';

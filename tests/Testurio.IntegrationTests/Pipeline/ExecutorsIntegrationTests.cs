@@ -21,6 +21,7 @@ namespace Testurio.IntegrationTests.Pipeline;
 public class ExecutorsIntegrationTests
 {
     private readonly Mock<IProjectAccessCredentialProvider> _credentialProvider = new();
+    private readonly Mock<IApiTestAuthCredentialProvider> _apiAuthProvider = new();
     private readonly Mock<IPlaywrightExecutor> _playwrightExecutor = new();
     private readonly Mock<IScreenshotStorage> _screenshotStorage = new();
 
@@ -48,7 +49,7 @@ public class ExecutorsIntegrationTests
         var httpClient = new HttpClient(handler);
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        return new HttpExecutor(_credentialProvider.Object, factory.Object,
+        return new HttpExecutor(_credentialProvider.Object, _apiAuthProvider.Object, factory.Object,
             NullLogger<HttpExecutor>.Instance);
     }
 
@@ -119,7 +120,7 @@ public class ExecutorsIntegrationTests
         var httpClient = new HttpClient(handler);
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        var httpExecutor = new HttpExecutor(_credentialProvider.Object, factory.Object,
+        var httpExecutor = new HttpExecutor(_credentialProvider.Object, _apiAuthProvider.Object, factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
         _playwrightExecutor
@@ -166,7 +167,7 @@ public class ExecutorsIntegrationTests
         var httpClient = new HttpClient(handler);
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        var httpExecutor = new HttpExecutor(_credentialProvider.Object, factory.Object,
+        var httpExecutor = new HttpExecutor(_credentialProvider.Object, _apiAuthProvider.Object, factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
         var generatorResults = new GeneratorResults
@@ -208,7 +209,7 @@ public class ExecutorsIntegrationTests
         var httpClient = new HttpClient(handler);
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
-        var httpExecutor = new HttpExecutor(_credentialProvider.Object, factory.Object,
+        var httpExecutor = new HttpExecutor(_credentialProvider.Object, _apiAuthProvider.Object, factory.Object,
             NullLogger<HttpExecutor>.Instance);
 
         var scenarios = new List<ApiTestScenario>

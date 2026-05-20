@@ -225,7 +225,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(1.5),
       },
       feedbackTitle: {
-        ...theme.typography.subtitle2,
         fontWeight: 600,
       },
       divider: {
@@ -239,7 +238,6 @@ const getStyles = (theme: Theme) =>
         backgroundColor: theme.palette.action.hover,
       },
       previewTitle: {
-        ...theme.typography.subtitle2,
         fontWeight: 600,
       },
       previewReadOnly: {
@@ -248,7 +246,7 @@ const getStyles = (theme: Theme) =>
       },
       previewContent: {
         fontFamily: 'monospace',
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.caption.fontSize ?? '0.75rem',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
         margin: 0,

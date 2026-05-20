@@ -98,7 +98,14 @@
       "Bash(BASE_URL=http://localhost:3100 npx playwright test e2e/marketing.spec.ts -g \"AC-026\" --reporter=list)",
       "Bash(echo \"EXIT:$?\")",
       "Bash(npm audit *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(grep -E \"\\\\.test\\\\.tsx?$\")",
+      "Bash(2>&1)",
+      "Bash(cmd *)",
+      "Bash(ls \"D:\\\\\\\\projects\\\\\\\\testur.io\\\\\\\\specifications\\\\\\\\\")",
+      "Bash(grep *)",
+      "Bash(kubectl kustomize *)",
+      "Bash(npx @next/codemod@canary next-lint-to-eslint-cli .)"
     ]
   },
   "enableAllProjectMcpServers": true
