@@ -4,6 +4,12 @@
  * across components, navigation links, and redirect logic.
  */
 
+// ─── Public routes (feature 0012) ────────────────────────────────────────────
+
+export const LANDING_ROUTE = '/';
+
+export const PRICING_ROUTE = '/pricing';
+
 // ─── Auth routes (feature 0013) ───────────────────────────────────────────────
 
 export const SIGN_IN_ROUTE = '/sign-in';
@@ -19,6 +25,12 @@ export const DASHBOARD_ROUTE = '/dashboard';
 export const PROJECTS_ROUTE = '/projects';
 
 export const NEW_PROJECT_ROUTE = '/projects/new';
+
+// ─── Billing routes (feature 0015) ───────────────────────────────────────────
+
+export const BILLING_ROUTE = '/billing';
+
+export const BILLING_SUCCESS_ROUTE = '/billing/success';
 
 export const SETTINGS_ROUTE = '/settings';
 

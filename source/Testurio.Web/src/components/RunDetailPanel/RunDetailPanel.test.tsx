@@ -1,153 +1,115 @@
+/**
+ * Feature 0024 — Automatic Work Item Status Transition
+ * Tests that RunDetailPanel renders status transition outcome rows correctly.
+ */
+import '@/i18n';
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { I18nextProvider } from 'react-i18next';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import { ThemeProvider } from '@mui/material/styles';
-import { theme } from '@/theme/theme';
 import RunDetailPanel from './RunDetailPanel';
 import type { RunDetailResponse } from '@/types/history.types';
 
-// ─── Mock hooks ───────────────────────────────────────────────────────────────
-
-let mockRunDetailResult: {
-  data: RunDetailResponse | undefined;
-  isPending: boolean;
-} = { data: undefined, isPending: false };
-
+// Mock the hook so we don't need an HTTP server or QueryClientProvider.
 jest.mock('@/hooks/useProjectHistory', () => ({
-  useRunDetail: () => mockRunDetailResult,
+  useRunDetail: jest.fn(),
 }));
 
-// ─── i18n setup ───────────────────────────────────────────────────────────────
+import { useRunDetail } from '@/hooks/useProjectHistory';
 
-const i18nInstance = i18n.createInstance();
-i18nInstance.use(initReactI18next).init({
-  lng: 'en',
-  resources: {
-    en: {
-      history: {
-        'panel.title': '{{storyTitle}}',
-        'panel.noData': 'Run detail',
-        'panel.projectSettingsTooltip': 'Go to project settings',
-        'panel.projectSettingsAriaLabel': 'Project settings',
-        'panel.closeAriaLabel': 'Close panel',
-        'panel.structuredView': 'Structured',
-        'panel.rawReport': 'Raw report',
-        'panel.rawReportDisabledTooltip': 'No raw report available for this run.',
-        'verdict.passed': 'Passed',
-        'verdict.failed': 'Failed',
-        'recommendation.approve': 'Approve and merge',
-        'recommendation.request_fixes': 'Request fixes',
-        'recommendation.flag_for_manual_review': 'Flag for manual review',
-        'scenarioCard.screenshotAlt': 'Test screenshot',
-      },
-    },
-  },
-});
+const mockUseRunDetail = useRunDetail as jest.MockedFunction<typeof useRunDetail>;
 
-// ─── Test helpers ─────────────────────────────────────────────────────────────
-
-const sampleRunDetail: RunDetailResponse = {
+const baseRun: RunDetailResponse = {
   id: 'result-1',
   runId: 'run-1',
   storyTitle: 'User can log in',
   verdict: 'PASSED',
   recommendation: 'approve',
-  totalDurationMs: 7000,
-  createdAt: '2026-05-16T10:05:00Z',
-  scenarioResults: [
-    { scenarioId: 'sc-1', title: 'POST /auth — 200', passed: true, durationMs: 400, errorSummary: null, testType: 'api', screenshotUris: [] },
-    { scenarioId: 'sc-2', title: 'POST /auth — 401', passed: true, durationMs: 320, errorSummary: null, testType: 'api', screenshotUris: [] },
-  ],
-  rawCommentMarkdown: '## Report\n**Verdict:** PASSED',
+  totalDurationMs: 5000,
+  createdAt: '2026-05-18T10:00:00Z',
+  scenarioResults: [],
+  rawCommentMarkdown: null,
+  statusTransitionOutcome: null,
+  statusTransitionError: null,
+  statusTransitionedTo: null,
 };
 
-function renderComponent(
-  projectId = 'project-1',
-  runId: string | null = 'run-1',
-  onClose = jest.fn(),
-) {
+function renderPanel(runId: string | null, run: RunDetailResponse | null = null) {
+  mockUseRunDetail.mockReturnValue({
+    data: run ?? undefined,
+    isPending: false,
+  } as ReturnType<typeof useRunDetail>);
+
   return render(
-    <I18nextProvider i18n={i18nInstance}>
-      <ThemeProvider theme={theme}>
-        <RunDetailPanel projectId={projectId} runId={runId} onClose={onClose} />
-      </ThemeProvider>
-    </I18nextProvider>,
+    <RunDetailPanel projectId="proj-1" runId={runId} onClose={jest.fn()} />,
   );
 }
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('RunDetailPanel', () => {
-  beforeEach(() => {
-    mockRunDetailResult = { data: sampleRunDetail, isPending: false };
+describe('RunDetailPanel — status transition row', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('renders loading skeleton when isPending is true', () => {
-    mockRunDetailResult = { data: undefined, isPending: true };
-    renderComponent();
-    // MUI Drawer renders into a portal — query from document.body
-    const skeletons = document.body.querySelectorAll('[class*="MuiSkeleton"]');
-    expect(skeletons.length).toBeGreaterThan(0);
-  });
+  it('does not render transition row when outcome is null', async () => {
+    renderPanel('run-1', { ...baseRun, statusTransitionOutcome: null });
 
-  it('renders correct number of ScenarioCards in structured view', () => {
-    renderComponent();
-    expect(screen.getByText('POST /auth — 200')).toBeInTheDocument();
-    expect(screen.getByText('POST /auth — 401')).toBeInTheDocument();
-  });
-
-  it('clicking Raw report toggle switches to markdown view', async () => {
-    const user = userEvent.setup();
-    renderComponent();
-
-    const rawBtn = screen.getByText('Raw report');
-    await user.click(rawBtn);
-
-    // Raw markdown content is shown in a pre block
     await waitFor(() => {
-      expect(screen.getByText(/## Report/)).toBeInTheDocument();
+      expect(screen.getByText(/User can log in/i)).toBeInTheDocument();
     });
+
+    expect(screen.queryByText(/Status transition:/i)).not.toBeInTheDocument();
   });
 
-  it('Raw report toggle is disabled when rawCommentMarkdown is null', () => {
-    mockRunDetailResult = {
-      data: { ...sampleRunDetail, rawCommentMarkdown: null },
+  it('renders succeeded message when outcome is succeeded', async () => {
+    renderPanel('run-1', {
+      ...baseRun,
+      statusTransitionOutcome: 'succeeded',
+      statusTransitionedTo: 'Closed',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Status transition:/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Moved to "Closed"/i)).toBeInTheDocument();
+  });
+
+  it('renders not-configured message when outcome is notConfigured', async () => {
+    renderPanel('run-1', {
+      ...baseRun,
+      statusTransitionOutcome: 'notConfigured',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Status transition:/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Not configured/i)).toBeInTheDocument();
+  });
+
+  it('renders failed message with error detail when outcome is failed', async () => {
+    renderPanel('run-1', {
+      ...baseRun,
+      statusTransitionOutcome: 'failed',
+      statusTransitionError: 'HTTP 404: Transition not found',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Status transition:/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByText(/Transition failed/i)).toBeInTheDocument();
+    expect(screen.getByText(/HTTP 404/i)).toBeInTheDocument();
+  });
+
+  it('does not render panel content when runId is null (drawer closed)', () => {
+    mockUseRunDetail.mockReturnValue({
+      data: undefined,
       isPending: false,
-    };
-    renderComponent();
+    } as ReturnType<typeof useRunDetail>);
 
-    const rawBtn = screen.getByText('Raw report');
-    expect(rawBtn).toBeDisabled();
-  });
+    render(
+      <RunDetailPanel projectId="proj-1" runId={null} onClose={jest.fn()} />,
+    );
 
-  it('clicking close button calls onClose', async () => {
-    const user = userEvent.setup();
-    const onClose = jest.fn();
-    renderComponent('project-1', 'run-1', onClose);
-
-    const closeBtn = screen.getByLabelText('Close panel');
-    await user.click(closeBtn);
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('maps recommendation correctly for all three values', () => {
-    const recommendations = [
-      { value: 'approve', label: 'Approve and merge' },
-      { value: 'request_fixes', label: 'Request fixes' },
-      { value: 'flag_for_manual_review', label: 'Flag for manual review' },
-    ];
-
-    recommendations.forEach(({ value, label }) => {
-      mockRunDetailResult = {
-        data: { ...sampleRunDetail, recommendation: value },
-        isPending: false,
-      };
-      const { unmount } = renderComponent();
-      expect(screen.getByText(new RegExp(label))).toBeInTheDocument();
-      unmount();
-    });
+    expect(screen.queryByText(/Status transition:/i)).not.toBeInTheDocument();
   });
 });

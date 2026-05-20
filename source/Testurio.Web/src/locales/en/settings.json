@@ -1,0 +1,39 @@
+{
+  "page": {
+    "title": "Account Settings",
+    "saveSuccess": "Settings saved"
+  },
+  "personalInfo": {
+    "title": "Personal Information",
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name"
+    },
+    "actions": {
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "errors": {
+      "saveFailed": "Failed to save settings. Please try again."
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "fields": {
+      "language": "Language",
+      "appearance": "Appearance"
+    },
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "actions": {
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "errors": {
+      "saveFailed": "Failed to save settings. Please try again.",
+      "loadFailed": "Failed to load preferences. Please refresh the page."
+    }
+  }
+}

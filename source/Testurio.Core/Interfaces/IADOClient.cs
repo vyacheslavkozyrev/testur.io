@@ -1,6 +1,11 @@
 namespace Testurio.Core.Interfaces;
 
 /// <summary>
+/// Result of an ADO work item state transition attempt (feature 0024).
+/// </summary>
+public sealed record ADOTransitionResult(bool IsSuccess, int StatusCode, string? ErrorDetail);
+
+/// <summary>
 /// Metadata about an Azure DevOps project returned by the test-connection call.
 /// </summary>
 public sealed record ADOProjectInfo(string Id, string Name, string State);
@@ -56,5 +61,18 @@ public interface IADOClient
         string orgUrl,
         string subscriptionId,
         string token,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Transitions an ADO work item to the named state using a PATCH to the
+    /// <c>System.State</c> field (<c>/_apis/wit/workitems/{id}?api-version=7.1</c>).
+    /// The endpoint is org-scoped — no project name is required.
+    /// Never throws — all errors are captured in the returned result.
+    /// </summary>
+    Task<ADOTransitionResult> TransitionWorkItemStateAsync(
+        string orgUrl,
+        int workItemId,
+        string token,
+        string targetStateName,
         CancellationToken cancellationToken = default);
 }

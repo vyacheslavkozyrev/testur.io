@@ -17,6 +17,7 @@ using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Sse;
 using Testurio.Infrastructure.Storage;
+using Testurio.Infrastructure.Stripe;
 
 namespace Testurio.Infrastructure;
 
@@ -26,6 +27,17 @@ public class InfrastructureOptions
     [Required] public required string CosmosDatabaseName { get; init; }
     [Required] public required string ServiceBusConnectionString { get; init; }
     [Required] public required string TestRunJobQueueName { get; init; }
+    /// <summary>
+    /// Service Bus topic name for comment-created webhook events (feature 0031).
+    /// Published by Testurio.Api webhook handlers; consumed by CommentEventJobProcessor in Testurio.Worker.
+    /// Defaults to <c>testurio-comment-events</c> when absent from configuration.
+    /// </summary>
+    public string CommentEventTopicName { get; init; } = "testurio-comment-events";
+    /// <summary>
+    /// Service Bus subscription name on the comment-events topic consumed by Testurio.Worker (feature 0031).
+    /// Defaults to <c>worker</c> when absent from configuration.
+    /// </summary>
+    public string CommentEventSubscriptionName { get; init; } = "worker";
     [Required] public required string BlobStorageConnectionString { get; init; }
     [Required] public required string ExecutionLogsBlobContainerName { get; init; }
     [Required] public required string ReportTemplatesBlobContainerName { get; init; }
@@ -71,6 +83,13 @@ public static class DependencyInjection
             return new ServiceBusClient(opts.ServiceBusConnectionString);
         });
 
+        services.AddSingleton<IUserRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new UserRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
         services.AddSingleton<IProjectRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
@@ -112,6 +131,15 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobSender>>();
             return new TestRunJobSender(client, opts.TestRunJobQueueName, logger);
+        });
+
+        // Feature 0031: sender used by Testurio.Api comment webhook handlers.
+        services.AddSingleton<ICommentEventSender>(sp =>
+        {
+            var client = sp.GetRequiredService<ServiceBusClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CommentEventSender>>();
+            return new CommentEventSender(client, opts.CommentEventTopicName, logger);
         });
 
         services.AddSingleton(sp =>
@@ -181,14 +209,43 @@ public static class DependencyInjection
         });
 
         // Feature 0028: seeder that writes initial PromptTemplate documents to Cosmos at startup.
-        services.AddSingleton<PromptTemplateSeeder>(sp =>
+        services.AddSingleton<IPromptTemplateSeeder, PromptTemplateSeeder>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PromptTemplateSeeder(cosmos, opts.CosmosDatabaseName);
         });
 
-        services.AddSingleton<CosmosDbInitializer>(sp =>
+        services.AddSingleton<IPlanRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        // Feature 0015: subscription repository and Stripe service.
+        services.AddSingleton<IUserSubscriptionRepository>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new UserSubscriptionRepository(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddOptions<StripeOptions>()
+            .BindConfiguration("Stripe")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IStripeService, StripeService>();
+
+        services.AddSingleton<IPlanSeeder, PlanSeeder>(sp =>
+        {
+            var cosmos = sp.GetRequiredService<CosmosClient>();
+            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            return new PlanSeeder(cosmos, opts.CosmosDatabaseName);
+        });
+
+        services.AddSingleton<ICosmosDbInitializer, CosmosDbInitializer>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
@@ -220,6 +277,14 @@ public static class DependencyInjection
         services.AddSingleton<IApiTestAuthCredentialProvider>(sp =>
             new KeyVault.ApiTestAuthCredentialProvider(
                 sp.GetRequiredService<ISecretResolver>()));
+
+        // Feature 0024: work item status transition service.
+        services.AddSingleton<IWorkItemTransitionService>(sp =>
+            new WorkItemTransitionService(
+                sp.GetRequiredService<IJiraClient>(),
+                sp.GetRequiredService<IADOClient>(),
+                sp.GetRequiredService<ISecretResolver>(),
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<WorkItemTransitionService>>()));
 
         return services;
     }

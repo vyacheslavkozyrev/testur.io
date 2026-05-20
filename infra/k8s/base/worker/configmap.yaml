@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+  namespace: testurio
+data:
+  DOTNET_ENVIRONMENT: "Production"
+  Cosmos__Endpoint: "<REPLACE>"
+  ServiceBus__Namespace: "<REPLACE>"
+  AzureAdB2C__TenantId: "<REPLACE>"

@@ -1,3 +1,5 @@
+﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -53,7 +55,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         return client;
     }
 
-    // ─── POST /v1/projects/{id}/prompt-check — success ───────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” success â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PromptCheck_Returns200_WithFeedback_WhenProjectOwnedByUser()
@@ -79,7 +81,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal("Clear and concise.", body.Clarity.Assessment);
     }
 
-    // ─── POST /v1/projects/{id}/prompt-check — 404 ───────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 404 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PromptCheck_Returns404_WhenProjectDoesNotExist()
@@ -95,7 +97,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/prompt-check — 403 ───────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 403 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PromptCheck_Returns403_WhenProjectBelongsToDifferentUser()
@@ -112,7 +114,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/prompt-check — 400 ───────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 400 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PromptCheck_Returns400_WhenCustomPromptIsEmpty()
@@ -134,7 +136,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // ─── POST /v1/projects/{id}/prompt-check — 401 ───────────────────────────
+    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 401 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [Fact]
     public async Task PromptCheck_Returns401_WithoutAuthToken()
@@ -174,7 +176,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=dummykey==",
+                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
                     ["Infrastructure:CosmosDatabaseName"] = "TestDb",
                     ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
                     ["Infrastructure:TestRunJobQueueName"] = "test-runs",
@@ -193,7 +195,9 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
                 services.Replace(ServiceDescriptor.Scoped<IPromptCheckService>(_ => _promptCheckService.Object));
 
                 services.AddAuthentication("Test")
@@ -203,3 +207,6 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         }
     }
 }
+
+
+

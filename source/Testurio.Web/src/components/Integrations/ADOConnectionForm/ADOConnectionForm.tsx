@@ -30,6 +30,8 @@ interface FormValues {
   authMethod: ADOAuthMethod;
   pat: string;
   oAuthToken: string;
+  passedTransitionStatus: string;
+  failedTransitionStatus: string;
 }
 
 export default function ADOConnectionForm({
@@ -55,6 +57,8 @@ export default function ADOConnectionForm({
       authMethod: 'pat',
       pat: '',
       oAuthToken: '',
+      passedTransitionStatus: '',
+      failedTransitionStatus: '',
     },
   });
 
@@ -69,6 +73,8 @@ export default function ADOConnectionForm({
         inTestingStatus: data.inTestingStatus,
         authMethod: data.authMethod,
         ...(data.authMethod === 'pat' ? { pat: data.pat } : { oAuthToken: data.oAuthToken }),
+        passedTransitionStatus: data.passedTransitionStatus || undefined,
+        failedTransitionStatus: data.failedTransitionStatus || undefined,
       };
       onSubmit(request);
     },
@@ -204,6 +210,32 @@ export default function ADOConnectionForm({
           )}
         />
       )}
+
+      <Controller
+        name="passedTransitionStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label={t('ado.fields.passedTransitionStatus')}
+            helperText={t('ado.fields.passedTransitionStatusHelper')}
+            fullWidth
+          />
+        )}
+      />
+
+      <Controller
+        name="failedTransitionStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            label={t('ado.fields.failedTransitionStatus')}
+            helperText={t('ado.fields.failedTransitionStatusHelper')}
+            fullWidth
+          />
+        )}
+      />
 
       <Box sx={styles.actions}>
         {onCancel && (

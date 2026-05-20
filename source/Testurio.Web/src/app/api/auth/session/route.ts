@@ -5,44 +5,85 @@ import type { AuthUser } from '@/types/layout.types';
 /**
  * Server-side session store (in-memory, keyed by session ID).
  *
- * Stores `{userId, email, displayName, exp}` — the raw ID token is never
- * persisted in the cookie. Only the opaque session ID travels to the client.
+ * Stores verified user identity — the raw ID token is never persisted.
+ * Only the opaque session ID travels to the client as an HttpOnly cookie.
  *
- * Note: In-memory store is cleared on process restart. For production, replace
- * with a Redis or Cosmos-backed store.
+ * Survives Next.js HMR in development (anchored to globalThis) but is lost
+ * on a clean process restart or across multiple Node.js worker processes.
+ * For production, replace with a Redis or Cosmos-backed store.
  */
 interface SessionData {
   userId: string;
+  firstName: string | null;
+  lastName: string | null;
   email: string;
   displayName: string | null;
   avatarUrl?: string;
   exp: number;
 }
 
-const sessionStore = new Map<string, SessionData>();
+const g = globalThis as { _testurioSessions?: Map<string, SessionData> };
+if (!g._testurioSessions) g._testurioSessions = new Map<string, SessionData>();
 
 /** Returns the session store (exported for use by /api/auth/me and /api/auth/sign-out). */
 export function getSessionStore(): Map<string, SessionData> {
-  return sessionStore;
+  return g._testurioSessions!;
+}
+
+/** Evicts all expired sessions from the store. Called lazily on each write. */
+function evictExpired(): void {
+  const store = getSessionStore();
+  const nowSec = Math.floor(Date.now() / 1000);
+  for (const [id, session] of store) {
+    if (session.exp < nowSec) store.delete(id);
+  }
+}
+
+function createSessionResponse(user: AuthUser, exp: number): NextResponse {
+  evictExpired();
+
+  const sessionId = crypto.randomUUID();
+  const nowSec = Math.floor(Date.now() / 1000);
+
+  getSessionStore().set(sessionId, {
+    userId: user.id,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    email: user.email,
+    displayName: user.displayName ?? null,
+    avatarUrl: user.avatarUrl,
+    exp,
+  });
+
+  const response = NextResponse.json(user);
+  response.cookies.set('testurio_session', sessionId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: Math.max(0, exp - nowSec),
+  });
+  return response;
 }
 
 /**
  * POST /api/auth/session
  *
- * Receives a raw B2C ID token from the client (obtained via MSAL after sign-in or sign-up),
- * validates it, stores session data server-side, and sets a `testurio_session` HttpOnly cookie
- * containing only a randomly-generated session ID.
+ * Receives a raw B2C ID token (obtained via MSAL native auth after sign-in or sign-up),
+ * validates its RS256 signature and claims, stores session data server-side, and sets
+ * a `testurio_session` HttpOnly cookie containing only a randomly-generated session ID.
  *
- * Returns the `AuthUser` payload so the client can update its local state immediately
- * without a follow-up `GET /api/auth/me` call.
+ * Optionally accepts `firstName` and `lastName` as supplementary display data alongside
+ * the token — these are not used for identity (oid and email always come from the
+ * verified JWT) but fill in name fields when CIAM does not include them as token claims.
  *
  * Returns 401 if the token is missing or fails validation.
  * Returns 400 if the request body is malformed.
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  let body: { idToken?: string };
+  let body: { idToken?: string; firstName?: string | null; lastName?: string | null };
   try {
-    body = await request.json() as { idToken?: string };
+    body = await request.json() as { idToken?: string; firstName?: string | null; lastName?: string | null };
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
@@ -52,50 +93,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'idToken is required' }, { status: 400 });
   }
 
-  const user = await decodeAndValidateIdToken(idToken);
-  if (!user) {
+  const tokenUser = await decodeAndValidateIdToken(idToken);
+  if (!tokenUser) {
     return NextResponse.json({ error: 'Invalid or expired ID token' }, { status: 401 });
   }
 
-  // Decode exp from the token payload for cookie maxAge
+  // Prefer client-supplied names when the token does not include them as claims
+  // (CIAM omits given_name/family_name unless they are configured as ID token claims).
+  // These are display-only fields — identity always comes from the verified JWT.
+  const firstName = body.firstName ?? tokenUser.firstName ?? null;
+  const lastName = body.lastName ?? tokenUser.lastName ?? null;
+  const displayName = tokenUser.displayName
+    ?? ([firstName, lastName].filter(Boolean).join(' ') || null);
+
+  const user: AuthUser = {
+    id: tokenUser.id,
+    firstName,
+    lastName,
+    displayName,
+    email: tokenUser.email,
+    avatarUrl: tokenUser.avatarUrl,
+  };
+
   const tokenParts = idToken.split('.');
-  let exp: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24; // default 24h
+  let exp: number = Math.floor(Date.now() / 1000) + 60 * 60 * 24;
   if (tokenParts.length === 3) {
     try {
       const payload = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
       const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
       const decoded = JSON.parse(Buffer.from(padded, 'base64').toString('utf-8')) as { exp?: number };
-      if (typeof decoded.exp === 'number') {
-        exp = decoded.exp;
-      }
-    } catch {
-      // use default exp
-    }
+      if (typeof decoded.exp === 'number') exp = decoded.exp;
+    } catch { /* use default */ }
   }
 
-  // Generate an opaque session ID — only this is stored in the cookie
-  const sessionId = crypto.randomUUID();
-
-  sessionStore.set(sessionId, {
-    userId: user.id,
-    email: user.email,
-    displayName: user.displayName ?? null,
-    avatarUrl: user.avatarUrl,
-    exp,
-  });
-
-  const nowSec = Math.floor(Date.now() / 1000);
-  const maxAge = Math.max(0, exp - nowSec);
-
-  const response = NextResponse.json(user);
-
-  response.cookies.set('testurio_session', sessionId, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/',
-    maxAge,
-  });
-
-  return response;
+  return createSessionResponse(user, exp);
 }

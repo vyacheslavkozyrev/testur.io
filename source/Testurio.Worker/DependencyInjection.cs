@@ -12,6 +12,7 @@ using Testurio.Pipeline.AgentRouter;
 using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
+using Testurio.Pipeline.FeedbackLoop;
 using Testurio.Pipeline.ReportWriter;
 using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
@@ -90,6 +91,9 @@ public static class DependencyInjection
         // ITestResultRepository — all registered above by AddWorkerServices/AddInfrastructure.
         services.AddReportWriter();
 
+        // Feature 0024: work item status transition step (Singleton — dependencies are all Singleton).
+        services.AddSingleton<WorkItemTransitionStep>();
+
         // Singleton: all dependencies are also Singleton.
         services.AddSingleton<RunQueueManager>();
 
@@ -143,14 +147,38 @@ public static class DependencyInjection
             var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
             var executorRouter = sp.GetRequiredService<IExecutorRouter>();
             var reportWriter = sp.GetRequiredService<IReportWriter>();
+            var workItemTransitionStep = sp.GetRequiredService<WorkItemTransitionStep>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
             return new TestRunJobProcessor(
                 sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
                 queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
-                promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter, logger);
+                promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter,
+                workItemTransitionStep, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();
+
+        // Feature 0031: FeedbackLoop pipeline stage + CommentEventJobProcessor background service.
+        // Prerequisites already satisfied by AddWorkerServices above:
+        //   ITestRunRepository, IProjectRepository, IEmbeddingService (via AddAzureOpenAI),
+        //   ITestMemoryRepository (via AddAzureOpenAI), IJiraApiClient, IADOClient, ISecretResolver.
+        services.AddFeedbackLoop();
+
+        services.AddSingleton<CommentEventJobProcessor>(sp =>
+        {
+            var infraOpts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var sbClient = sp.GetRequiredService<ServiceBusClient>();
+            var feedbackLoop = sp.GetRequiredService<IFeedbackLoop>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<CommentEventJobProcessor>>();
+            return new CommentEventJobProcessor(
+                sbClient,
+                infraOpts.CommentEventTopicName,
+                infraOpts.CommentEventSubscriptionName,
+                feedbackLoop,
+                logger);
+        });
+
+        services.AddHostedService<CommentEventBackgroundService>();
 
         return services;
     }
