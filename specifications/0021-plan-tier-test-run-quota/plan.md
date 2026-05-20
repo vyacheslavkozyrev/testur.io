@@ -23,7 +23,7 @@
 
 ### Infrastructure — Test Run Count Implementation
 
-- [ ] T008 [Infra] Implement `CountTodayAsync` in `TestRunRepository`: query Cosmos `TestRuns` container cross-partition by `userId` and `createdAt` range (windowStart inclusive, windowEnd exclusive); include all statuses including `Skipped` — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+- [x] T008 [Infra] Implement `CountTodayAsync` in `TestRunRepository`: query Cosmos `TestRuns` container cross-partition by `userId` and `createdAt` range (windowStart inclusive, windowEnd exclusive); include all statuses including `Skipped` — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
 
 ### Application — Dashboard Quota Fix
 

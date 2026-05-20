@@ -118,4 +118,32 @@ public class TestRunRepository : ITestRunRepository
 
         return null;
     }
+
+    /// <inheritdoc/>
+    public async Task<int> CountTodayAsync(
+        string userId,
+        DateTimeOffset windowStart,
+        DateTimeOffset windowEnd,
+        CancellationToken cancellationToken = default)
+    {
+        // Cross-partition fan-out query — acceptable on the quota-check path (once per webhook delivery).
+        // All statuses including Skipped are counted per AC-005.
+        var query = new QueryDefinition(
+            "SELECT VALUE COUNT(1) FROM c " +
+            "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
+            .WithParameter("@userId", userId)
+            .WithParameter("@start", windowStart.ToString("o"))
+            .WithParameter("@end", windowEnd.ToString("o"));
+
+        var total = 0;
+        using var iterator = _container.GetItemQueryIterator<int>(query);
+        while (iterator.HasMoreResults)
+        {
+            var page = await iterator.ReadNextAsync(cancellationToken);
+            foreach (var count in page)
+                total += count;
+        }
+
+        return total;
+    }
 }
