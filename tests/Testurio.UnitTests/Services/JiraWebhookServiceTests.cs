@@ -158,7 +158,11 @@ public class JiraWebhookServiceTests
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
+            ProjectId = "proj1",
+            UserId = "user1",
+            JiraIssueKey = "PROJ-0",
+            JiraIssueId = "10000",
+            Status = TestRunStatus.Active
         });
         _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(false);
         _runQueueRepo.Setup(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default))
@@ -179,7 +183,11 @@ public class JiraWebhookServiceTests
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
+            ProjectId = "proj1",
+            UserId = "user1",
+            JiraIssueKey = "PROJ-0",
+            JiraIssueId = "10000",
+            Status = TestRunStatus.Active
         });
         _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(true);
 

@@ -242,9 +242,9 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         var filteredTestTypes = routerResult.ResolvedTestTypes
             .Where(t => t switch
             {
-                TestType.Api    => planFeatures?.ApiTesting ?? true,
-                TestType.UiE2e  => planFeatures?.UiE2eTesting ?? true,
-                _               => true,
+                TestType.Api => planFeatures?.ApiTesting ?? true,
+                TestType.UiE2e => planFeatures?.UiE2eTesting ?? true,
+                _ => true,
             })
             .ToArray();
 
@@ -451,7 +451,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
             executionResult = new ExecutionResult
             {
-                ApiResults   = [],
+                ApiResults = [],
                 UiE2eResults = []
             };
         }

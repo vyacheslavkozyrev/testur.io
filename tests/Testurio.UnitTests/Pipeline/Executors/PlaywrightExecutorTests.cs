@@ -159,7 +159,7 @@ public class PlaywrightExecutorTests
     public async Task ScreenshotStorage_UploadAsync_InterfaceContract_ReturnsUri()
     {
         var userId = Guid.NewGuid();
-        var runId  = Guid.NewGuid();
+        var runId = Guid.NewGuid();
         const string scenarioId = "sc1";
         const int stepIndex = 2;
         var pngBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47 };

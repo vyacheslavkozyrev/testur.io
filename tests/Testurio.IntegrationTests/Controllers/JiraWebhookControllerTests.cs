@@ -68,25 +68,25 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         string transitionTo = "In Testing",
         string? description = "A description",
         string? ac = "Given/when/then") => new()
-    {
-        WebhookEvent = "jira:issue_updated",
-        Issue = new JiraIssue
         {
-            Id = "10001",
-            Key = "PROJ-1",
-            Fields = new JiraIssueFields
+            WebhookEvent = "jira:issue_updated",
+            Issue = new JiraIssue
             {
-                IssueType = new JiraIssueType { Name = issueType },
-                Status = new JiraStatus { Name = transitionTo },
-                Description = description,
-                AcceptanceCriteria = ToJsonElement(ac)
+                Id = "10001",
+                Key = "PROJ-1",
+                Fields = new JiraIssueFields
+                {
+                    IssueType = new JiraIssueType { Name = issueType },
+                    Status = new JiraStatus { Name = transitionTo },
+                    Description = description,
+                    AcceptanceCriteria = ToJsonElement(ac)
+                }
+            },
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
             }
-        },
-        Changelog = new JiraChangelog
-        {
-            Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
-        }
-    };
+        };
 
     private HttpClient CreateClient() => _factory.CreateClient();
 
@@ -265,7 +265,8 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
                 services.Replace(ServiceDescriptor.Singleton<IPlanEnforcementService>(_ => _planEnforcement.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
             });

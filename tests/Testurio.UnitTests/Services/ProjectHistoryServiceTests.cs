@@ -77,12 +77,12 @@ public class ProjectHistoryServiceTests
     public async Task GetHistoryAsync_WhenDataReturned_MapsRunsAndTrendPoints()
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var runs = (IReadOnlyList<RunHistoryItem>) new[]
+        var runs = (IReadOnlyList<RunHistoryItem>)new[]
         {
             MakeRun(id: "r2", createdAt: DateTimeOffset.UtcNow.AddHours(-1)),
             MakeRun(id: "r1", createdAt: DateTimeOffset.UtcNow.AddHours(-2)),
         };
-        var trendPoints = (IReadOnlyList<TrendPoint>) new[] { MakeTrendPoint(today, passed: 2) };
+        var trendPoints = (IReadOnlyList<TrendPoint>)new[] { MakeTrendPoint(today, passed: 2) };
 
         _statsRepository
             .Setup(r => r.GetProjectHistoryAsync("user-1", "project-1", It.IsAny<CancellationToken>()))
@@ -103,7 +103,7 @@ public class ProjectHistoryServiceTests
     public async Task GetHistoryAsync_TrendPoints_ZeroFilledForDaysWithNoRuns()
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var trendPoints = (IReadOnlyList<TrendPoint>) new[]
+        var trendPoints = (IReadOnlyList<TrendPoint>)new[]
         {
             MakeTrendPoint(today.AddDays(-2), passed: 0, failed: 0),
             MakeTrendPoint(today.AddDays(-1), passed: 1, failed: 0),
@@ -131,7 +131,7 @@ public class ProjectHistoryServiceTests
     {
         _statsRepository
             .Setup(r => r.GetRunDetailAsync("user-1", "project-1", "run-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResult?) null);
+            .ReturnsAsync((TestResult?)null);
 
         var result = await _sut.GetRunDetailAsync("user-1", "project-1", "run-1");
 
@@ -144,7 +144,7 @@ public class ProjectHistoryServiceTests
         // Repository already handles the mismatch check and returns null.
         _statsRepository
             .Setup(r => r.GetRunDetailAsync("user-1", "wrong-project", "run-1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResult?) null);
+            .ReturnsAsync((TestResult?)null);
 
         var result = await _sut.GetRunDetailAsync("user-1", "wrong-project", "run-1");
 

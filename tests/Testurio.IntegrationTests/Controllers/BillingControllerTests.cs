@@ -69,7 +69,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
             .ReturnsAsync("https://checkout.stripe.com/c/pay/session_mock");
 
         var client = CreateAuthenticatedClient();
-        var payload = new { plan = "TestPro", billingInterval = "Monthly" };
+        var payload = new { plan = "test-pro", billingInterval = "Monthly" };
         var response = await client.PostAsJsonAsync("/v1/billing/checkout", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -296,7 +296,8 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
 
         var existing = new UserSubscription
         {
-            Id = "user-deleted", UserId = "user-deleted",
+            Id = "user-deleted",
+            UserId = "user-deleted",
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -350,7 +351,8 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
 
         var existing = new UserSubscription
         {
-            Id = "user-pf", UserId = "user-pf",
+            Id = "user-pf",
+            UserId = "user-pf",
             Status = SubscriptionStatus.Active,
             StripeCustomerId = customerId,
         };

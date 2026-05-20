@@ -79,7 +79,10 @@ public class WorkItemTransitionServiceTests
     {
         var project = new Project
         {
-            UserId = "user1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = null,
         };
         var sut = CreateSut();
@@ -155,7 +158,10 @@ public class WorkItemTransitionServiceTests
         // Reflection is impractical because the property has a setter — create directly instead:
         var projectNoUrl = new Project
         {
-            UserId = "user1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = PMToolType.Jira,
             JiraBaseUrl = null,
             JiraAuthMethod = JiraAuthMethod.ApiToken,
@@ -189,7 +195,10 @@ public class WorkItemTransitionServiceTests
     {
         var project = new Project
         {
-            UserId = "user1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = PMToolType.Jira,
             JiraBaseUrl = "https://myorg.atlassian.net",
             JiraAuthMethod = JiraAuthMethod.ApiToken,
@@ -284,7 +293,10 @@ public class WorkItemTransitionServiceTests
     {
         var project = new Project
         {
-            UserId = "user1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = PMToolType.Ado,
             AdoOrgUrl = null,
             AdoProjectName = "MyProject",

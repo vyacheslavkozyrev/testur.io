@@ -25,33 +25,43 @@ public class ExecutorRouterTests
         TestingStrategy = "both"
     };
 
-    private static readonly Guid UserId  = Guid.NewGuid();
-    private static readonly Guid RunId   = Guid.NewGuid();
+    private static readonly Guid UserId = Guid.NewGuid();
+    private static readonly Guid RunId = Guid.NewGuid();
 
     private ExecutorRouter CreateSut() =>
         new(_httpExecutor.Object, _playwrightExecutor.Object);
 
     private static ApiTestScenario MakeApiScenario(string id = "api-sc1") => new()
     {
-        Id = id, Title = "API scenario", Method = "GET", Path = "/items",
+        Id = id,
+        Title = "API scenario",
+        Method = "GET",
+        Path = "/items",
         Assertions = [new StatusCodeAssertion { Expected = 200 }]
     };
 
     private static UiE2eTestScenario MakeUiScenario(string id = "ui-sc1") => new()
     {
-        Id = id, Title = "UI scenario",
+        Id = id,
+        Title = "UI scenario",
         Steps = [new NavigateStep { Url = "https://staging.example.com" }]
     };
 
     private static ApiScenarioResult MakeApiResult(string id = "api-sc1") => new()
     {
-        ScenarioId = id, Title = "API scenario", Passed = true, DurationMs = 100,
+        ScenarioId = id,
+        Title = "API scenario",
+        Passed = true,
+        DurationMs = 100,
         AssertionResults = []
     };
 
     private static UiE2eScenarioResult MakeUiResult(string id = "ui-sc1") => new()
     {
-        ScenarioId = id, Title = "UI scenario", Passed = true, DurationMs = 500,
+        ScenarioId = id,
+        Title = "UI scenario",
+        Passed = true,
+        DurationMs = 500,
         StepResults = []
     };
 
@@ -61,7 +71,7 @@ public class ExecutorRouterTests
     public async Task BothListsNonEmpty_InvokesHttpAndPlaywrightExecutors()
     {
         var apiResults = new List<ApiScenarioResult> { MakeApiResult() };
-        var uiResults  = new List<UiE2eScenarioResult> { MakeUiResult() };
+        var uiResults = new List<UiE2eScenarioResult> { MakeUiResult() };
 
         _httpExecutor
             .Setup(e => e.ExecuteAsync(It.IsAny<IReadOnlyList<ApiTestScenario>>(),
@@ -75,8 +85,8 @@ public class ExecutorRouterTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [MakeApiScenario()],
-            UiE2eScenarios  = [MakeUiScenario()]
+            ApiScenarios = [MakeApiScenario()],
+            UiE2eScenarios = [MakeUiScenario()]
         };
 
         var sut = CreateSut();
@@ -108,8 +118,8 @@ public class ExecutorRouterTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [MakeApiScenario()],
-            UiE2eScenarios  = []
+            ApiScenarios = [MakeApiScenario()],
+            UiE2eScenarios = []
         };
 
         var sut = CreateSut();
@@ -142,8 +152,8 @@ public class ExecutorRouterTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [],
-            UiE2eScenarios  = [MakeUiScenario()]
+            ApiScenarios = [],
+            UiE2eScenarios = [MakeUiScenario()]
         };
 
         var sut = CreateSut();
@@ -168,8 +178,8 @@ public class ExecutorRouterTests
     {
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [],
-            UiE2eScenarios  = []
+            ApiScenarios = [],
+            UiE2eScenarios = []
         };
 
         var sut = CreateSut();
@@ -211,8 +221,8 @@ public class ExecutorRouterTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [MakeApiScenario()],
-            UiE2eScenarios  = [MakeUiScenario()]
+            ApiScenarios = [MakeApiScenario()],
+            UiE2eScenarios = [MakeUiScenario()]
         };
 
         var sut = CreateSut();
@@ -234,7 +244,7 @@ public class ExecutorRouterTests
     {
         var apiRes1 = MakeApiResult("api-1");
         var apiRes2 = MakeApiResult("api-2");
-        var uiRes1  = MakeUiResult("ui-1");
+        var uiRes1 = MakeUiResult("ui-1");
 
         _httpExecutor
             .Setup(e => e.ExecuteAsync(It.IsAny<IReadOnlyList<ApiTestScenario>>(),
@@ -248,8 +258,8 @@ public class ExecutorRouterTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios    = [MakeApiScenario("api-1"), MakeApiScenario("api-2")],
-            UiE2eScenarios  = [MakeUiScenario("ui-1")]
+            ApiScenarios = [MakeApiScenario("api-1"), MakeApiScenario("api-2")],
+            UiE2eScenarios = [MakeUiScenario("ui-1")]
         };
 
         var sut = CreateSut();
@@ -259,6 +269,6 @@ public class ExecutorRouterTests
         Assert.Single(result.UiE2eResults);
         Assert.Equal("api-1", result.ApiResults[0].ScenarioId);
         Assert.Equal("api-2", result.ApiResults[1].ScenarioId);
-        Assert.Equal("ui-1",  result.UiE2eResults[0].ScenarioId);
+        Assert.Equal("ui-1", result.UiE2eResults[0].ScenarioId);
     }
 }

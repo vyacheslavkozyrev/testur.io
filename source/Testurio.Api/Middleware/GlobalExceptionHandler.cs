@@ -34,8 +34,8 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService pds) : IExce
         var (status, title) = ex switch
         {
             ValidationException v => (StatusCodes.Status400BadRequest, v.Message),
-            NotFoundException n   => (StatusCodes.Status404NotFound, n.Message),
-            ConflictException c   => (StatusCodes.Status409Conflict, c.Message),
+            NotFoundException n => (StatusCodes.Status404NotFound, n.Message),
+            ConflictException c => (StatusCodes.Status409Conflict, c.Message),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Unauthorized"),
             BadHttpRequestException bhr => (bhr.StatusCode, "Invalid request"),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred")

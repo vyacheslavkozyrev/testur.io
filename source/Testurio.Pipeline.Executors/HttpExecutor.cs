@@ -160,9 +160,9 @@ public sealed partial class HttpExecutor : IHttpExecutor
         return assertion switch
         {
             StatusCodeAssertion sc => EvaluateStatusCode(sc, response),
-            JsonPathAssertion jp   => EvaluateJsonPath(jp, responseBody),
-            HeaderAssertion ha     => EvaluateHeader(ha, response),
-            _                      => throw new InvalidOperationException($"Unknown assertion type: {assertion.Type}")
+            JsonPathAssertion jp => EvaluateJsonPath(jp, responseBody),
+            HeaderAssertion ha => EvaluateHeader(ha, response),
+            _ => throw new InvalidOperationException($"Unknown assertion type: {assertion.Type}")
         };
     }
 
@@ -264,9 +264,9 @@ public sealed partial class HttpExecutor : IHttpExecutor
     private static string GetExpected(Assertion assertion) => assertion switch
     {
         StatusCodeAssertion sc => sc.Expected.ToString(),
-        JsonPathAssertion jp   => jp.Expected,
-        HeaderAssertion ha     => ha.Expected,
-        _                      => string.Empty
+        JsonPathAssertion jp => jp.Expected,
+        HeaderAssertion ha => ha.Expected,
+        _ => string.Empty
     };
 
     /// <summary>
@@ -404,7 +404,7 @@ public sealed partial class HttpExecutor : IHttpExecutor
         ILogger? logger = null)
     {
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-        using var linkedCts  = CancellationTokenSource.CreateLinkedTokenSource(runToken, timeoutCts.Token);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(runToken, timeoutCts.Token);
 
         var sw = Stopwatch.StartNew();
         try

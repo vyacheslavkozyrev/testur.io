@@ -16,9 +16,9 @@ public sealed class PlanRepository : IPlanRepository
         new Dictionary<SubscriptionPlan, string>
         {
             [SubscriptionPlan.TestJunior] = "test-junior",
-            [SubscriptionPlan.TestPro]    = "test-pro",
-            [SubscriptionPlan.Team]       = "team",
-            [SubscriptionPlan.Centurio]   = "centurio",
+            [SubscriptionPlan.TestPro] = "test-pro",
+            [SubscriptionPlan.Team] = "team",
+            [SubscriptionPlan.Centurio] = "centurio",
         };
 
     private readonly Container _container;

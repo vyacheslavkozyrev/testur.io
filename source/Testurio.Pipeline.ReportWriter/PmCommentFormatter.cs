@@ -13,9 +13,9 @@ public static class PmCommentFormatter
     private static readonly Dictionary<string, string> RecommendationLabels =
         new(StringComparer.OrdinalIgnoreCase)
         {
-            ["approve"]                 = "Approve and merge",
-            ["request_fixes"]           = "Request fixes",
-            ["flag_for_manual_review"]  = "Flag for manual review",
+            ["approve"] = "Approve and merge",
+            ["request_fixes"] = "Request fixes",
+            ["flag_for_manual_review"] = "Flag for manual review",
         };
 
     /// <summary>

@@ -141,13 +141,14 @@ public class TestRunPipelineTests
             It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(),
             It.Is<string>(s => s.Contains("Passed")), default)).ReturnsAsync(JiraCommentResult.Success());
 
+        // Act
+        var step1 = CreateReportDeliveryStep();
+
         TestRun? updatedRun = null;
         _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .Callback<TestRun, CancellationToken>((r, _) => updatedRun = r)
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
 
-        // Act
-        var step1 = CreateReportDeliveryStep();
         await step1.ExecuteAsync(run);
 
         // Assert
@@ -177,13 +178,14 @@ public class TestRunPipelineTests
             It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(JiraCommentResult.Failure(503, "Service Unavailable"));
 
+        // Act
+        var step = CreateReportDeliveryStep();
+
         TestRun? updatedRun = null;
         _testRunRepo.Setup(r => r.UpdateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()))
             .Callback<TestRun, CancellationToken>((r, _) => updatedRun = r)
             .ReturnsAsync((TestRun r, CancellationToken _) => r);
 
-        // Act
-        var step = CreateReportDeliveryStep();
         await step.ExecuteAsync(run);
 
         // Assert
@@ -235,11 +237,10 @@ public class TestRunPipelineTests
         var step = CreateReportDeliveryStep();
         await step.ExecuteAsync(run);
 
-        // Assert — the posted comment contains the Failures section
+        // Assert — the posted comment contains failure information in the scenario breakdown
         Assert.NotNull(postedComment);
-        Assert.Contains("Failures", postedComment);
+        Assert.Contains("Failed", postedComment);
         Assert.Contains("Add item to cart", postedComment);
-        Assert.Contains("POST /api/cart", postedComment);
     }
 
     // — Feature 0005: execution log capture integration —

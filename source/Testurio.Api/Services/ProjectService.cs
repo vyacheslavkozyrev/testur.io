@@ -206,8 +206,8 @@ public partial class ProjectService : IProjectService
         {
             ApiAuthMethod.Bearer => "bearer",
             ApiAuthMethod.ApiKey => "api_key",
-            ApiAuthMethod.Basic  => "basic",
-            _                    => "none",
+            ApiAuthMethod.Basic => "basic",
+            _ => "none",
         },
         CreatedAt: project.CreatedAt,
         UpdatedAt: project.UpdatedAt);

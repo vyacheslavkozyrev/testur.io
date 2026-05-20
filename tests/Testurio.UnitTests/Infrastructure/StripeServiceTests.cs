@@ -17,18 +17,18 @@ public class StripeServiceTests
 {
     private static readonly StripeOptions ValidOptions = new()
     {
-        SecretKey     = "sk_test_fake",
+        SecretKey = "sk_test_fake",
         WebhookSecret = "whsec_fake",
         PriceIds = new Dictionary<string, string>
         {
             ["TestJunior_Monthly"] = "price_tj_monthly",
-            ["TestJunior_Annual"]  = "price_tj_annual",
-            ["TestPro_Monthly"]    = "price_tp_monthly",
-            ["TestPro_Annual"]     = "price_tp_annual",
-            ["Team_Monthly"]       = "price_team_monthly",
-            ["Team_Annual"]        = "price_team_annual",
-            ["Centurio_Monthly"]   = "price_cent_monthly",
-            ["Centurio_Annual"]    = "price_cent_annual",
+            ["TestJunior_Annual"] = "price_tj_annual",
+            ["TestPro_Monthly"] = "price_tp_monthly",
+            ["TestPro_Annual"] = "price_tp_annual",
+            ["Team_Monthly"] = "price_team_monthly",
+            ["Team_Annual"] = "price_team_annual",
+            ["Centurio_Monthly"] = "price_cent_monthly",
+            ["Centurio_Annual"] = "price_cent_annual",
         },
     };
 
@@ -38,9 +38,9 @@ public class StripeServiceTests
         // StripeOptions with empty price map — simulates a misconfigured deployment.
         var options = Options.Create(new StripeOptions
         {
-            SecretKey     = "sk_test_fake",
+            SecretKey = "sk_test_fake",
             WebhookSecret = "whsec_fake",
-            PriceIds      = [],
+            PriceIds = [],
         });
         var sut = new StripeService(options);
 
@@ -56,13 +56,13 @@ public class StripeServiceTests
 
     [Theory]
     [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Monthly, "price_tj_monthly")]
-    [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Annual,  "price_tj_annual")]
-    [InlineData(SubscriptionPlan.TestPro,    BillingInterval.Monthly, "price_tp_monthly")]
-    [InlineData(SubscriptionPlan.TestPro,    BillingInterval.Annual,  "price_tp_annual")]
-    [InlineData(SubscriptionPlan.Team,       BillingInterval.Monthly, "price_team_monthly")]
-    [InlineData(SubscriptionPlan.Team,       BillingInterval.Annual,  "price_team_annual")]
-    [InlineData(SubscriptionPlan.Centurio,   BillingInterval.Monthly, "price_cent_monthly")]
-    [InlineData(SubscriptionPlan.Centurio,   BillingInterval.Annual,  "price_cent_annual")]
+    [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Annual, "price_tj_annual")]
+    [InlineData(SubscriptionPlan.TestPro, BillingInterval.Monthly, "price_tp_monthly")]
+    [InlineData(SubscriptionPlan.TestPro, BillingInterval.Annual, "price_tp_annual")]
+    [InlineData(SubscriptionPlan.Team, BillingInterval.Monthly, "price_team_monthly")]
+    [InlineData(SubscriptionPlan.Team, BillingInterval.Annual, "price_team_annual")]
+    [InlineData(SubscriptionPlan.Centurio, BillingInterval.Monthly, "price_cent_monthly")]
+    [InlineData(SubscriptionPlan.Centurio, BillingInterval.Annual, "price_cent_annual")]
     public void PriceKey_MapsToCorrectPriceId(SubscriptionPlan plan, BillingInterval interval, string expectedPriceId)
     {
         var key = $"{plan}_{interval}";

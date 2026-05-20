@@ -34,13 +34,7 @@ public static class DefaultReportTemplate
 
         {{ai_scenario_source}}
 
-        ---
-
-        ## Execution Logs
-
-        {{logs}}
-
-        ---
+        {{log_section}}
 
         ## Screenshots
 

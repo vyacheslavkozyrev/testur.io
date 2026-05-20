@@ -63,7 +63,7 @@ i18nInstance.use(initReactI18next).init({
         },
         quota: {
           usage: '{{used}} / {{limit}} runs used today',
-          resetsAt: 'Resets at {{time}}',
+          resetsOn: 'Resets on {{date}}',
           noActivePlan: 'No active plan',
         },
         card: {
@@ -102,8 +102,8 @@ const mockPush = jest.fn();
 const mockUseRouter = useRouter as jest.Mock;
 
 const DEFAULT_QUOTA = {
-  usedToday: 3,
-  dailyLimit: 50,
+  usedThisMonth: 3,
+  monthlyLimit: 50,
   resetsAt: '2026-05-17T00:00:00Z',
 };
 

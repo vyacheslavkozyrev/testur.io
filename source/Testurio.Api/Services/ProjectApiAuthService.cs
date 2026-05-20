@@ -60,8 +60,8 @@ public partial class ProjectApiAuthService : IProjectApiAuthService
 
         // Capture old secret URIs before mutations — new KV writes happen first;
         // if they throw, Cosmos is never touched and old config remains intact.
-        var oldBearerUri   = project.ApiAuthBearerTokenSecretUri;
-        var oldApiKeyUri   = project.ApiAuthApiKeyValueSecretUri;
+        var oldBearerUri = project.ApiAuthBearerTokenSecretUri;
+        var oldApiKeyUri = project.ApiAuthApiKeyValueSecretUri;
         var oldBasicPassUri = project.ApiAuthBasicPasswordSecretUri;
 
         var newMethod = ParseMethod(request.ApiAuthMethod);
@@ -117,9 +117,9 @@ public partial class ProjectApiAuthService : IProjectApiAuthService
         try
         {
             await ClearSecretsAsync(
-                newMethod != ApiAuthMethod.Bearer   ? oldBearerUri    : null,
-                newMethod != ApiAuthMethod.ApiKey   ? oldApiKeyUri    : null,
-                newMethod != ApiAuthMethod.Basic    ? oldBasicPassUri : null,
+                newMethod != ApiAuthMethod.Bearer ? oldBearerUri : null,
+                newMethod != ApiAuthMethod.ApiKey ? oldApiKeyUri : null,
+                newMethod != ApiAuthMethod.Basic ? oldBasicPassUri : null,
                 cancellationToken);
         }
         catch (Exception ex)
@@ -132,38 +132,38 @@ public partial class ProjectApiAuthService : IProjectApiAuthService
 
     private static ApiAuthMethod ParseMethod(string method) => method switch
     {
-        "bearer"  => ApiAuthMethod.Bearer,
+        "bearer" => ApiAuthMethod.Bearer,
         "api_key" => ApiAuthMethod.ApiKey,
-        "basic"   => ApiAuthMethod.Basic,
-        _         => ApiAuthMethod.None,
+        "basic" => ApiAuthMethod.Basic,
+        _ => ApiAuthMethod.None,
     };
 
     private static ProjectApiAuthDto BuildDto(Project project)
     {
         var method = project.ApiAuthMethod;
         return new ProjectApiAuthDto(
-            ProjectId:                     project.Id,
-            ApiAuthMethod:                 MethodToString(method),
-            ApiAuthBearerTokenConfigured:  method == ApiAuthMethod.Bearer  ? !string.IsNullOrWhiteSpace(project.ApiAuthBearerTokenSecretUri)  : null,
-            ApiAuthApiKeyName:             method == ApiAuthMethod.ApiKey  ? project.ApiAuthApiKeyName        : null,
-            ApiAuthApiKeyPlacement:        method == ApiAuthMethod.ApiKey  ? PlacementToString(project.ApiAuthApiKeyPlacement) : null,
-            ApiAuthApiKeyValueConfigured:  method == ApiAuthMethod.ApiKey  ? !string.IsNullOrWhiteSpace(project.ApiAuthApiKeyValueSecretUri)   : null,
-            ApiAuthBasicUsername:          method == ApiAuthMethod.Basic   ? project.ApiAuthBasicUsername     : null,
-            ApiAuthBasicPasswordConfigured: method == ApiAuthMethod.Basic  ? !string.IsNullOrWhiteSpace(project.ApiAuthBasicPasswordSecretUri) : null);
+            ProjectId: project.Id,
+            ApiAuthMethod: MethodToString(method),
+            ApiAuthBearerTokenConfigured: method == ApiAuthMethod.Bearer ? !string.IsNullOrWhiteSpace(project.ApiAuthBearerTokenSecretUri) : null,
+            ApiAuthApiKeyName: method == ApiAuthMethod.ApiKey ? project.ApiAuthApiKeyName : null,
+            ApiAuthApiKeyPlacement: method == ApiAuthMethod.ApiKey ? PlacementToString(project.ApiAuthApiKeyPlacement) : null,
+            ApiAuthApiKeyValueConfigured: method == ApiAuthMethod.ApiKey ? !string.IsNullOrWhiteSpace(project.ApiAuthApiKeyValueSecretUri) : null,
+            ApiAuthBasicUsername: method == ApiAuthMethod.Basic ? project.ApiAuthBasicUsername : null,
+            ApiAuthBasicPasswordConfigured: method == ApiAuthMethod.Basic ? !string.IsNullOrWhiteSpace(project.ApiAuthBasicPasswordSecretUri) : null);
     }
 
     private static string MethodToString(ApiAuthMethod method) => method switch
     {
-        ApiAuthMethod.Bearer  => "bearer",
-        ApiAuthMethod.ApiKey  => "api_key",
-        ApiAuthMethod.Basic   => "basic",
-        _                     => "none",
+        ApiAuthMethod.Bearer => "bearer",
+        ApiAuthMethod.ApiKey => "api_key",
+        ApiAuthMethod.Basic => "basic",
+        _ => "none",
     };
 
     private static string PlacementToString(ApiAuthApiKeyPlacement placement) => placement switch
     {
         ApiAuthApiKeyPlacement.Query => "query",
-        _                           => "header",
+        _ => "header",
     };
 
     private async Task ClearSecretsAsync(

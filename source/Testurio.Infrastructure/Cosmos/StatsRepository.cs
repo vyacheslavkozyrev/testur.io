@@ -281,14 +281,14 @@ public class StatsRepository : IStatsRepository
 
     private static RunStatus MapStatus(TestRunStatus status) => status switch
     {
-        TestRunStatus.Pending                => RunStatus.Queued,
-        TestRunStatus.Active                 => RunStatus.Running,
-        TestRunStatus.Completed              => RunStatus.Passed,
-        TestRunStatus.Failed                 => RunStatus.Failed,
-        TestRunStatus.ReportDeliveryFailed   => RunStatus.Failed,
-        TestRunStatus.ReportFailed           => RunStatus.Failed,
-        TestRunStatus.Skipped                => RunStatus.Cancelled,
-        _                                    => RunStatus.Failed,
+        TestRunStatus.Pending => RunStatus.Queued,
+        TestRunStatus.Active => RunStatus.Running,
+        TestRunStatus.Completed => RunStatus.Passed,
+        TestRunStatus.Failed => RunStatus.Failed,
+        TestRunStatus.ReportDeliveryFailed => RunStatus.Failed,
+        TestRunStatus.ReportFailed => RunStatus.Failed,
+        TestRunStatus.Skipped => RunStatus.Cancelled,
+        _ => RunStatus.Failed,
     };
 
     /// <summary>Minimal projection for the latest-run query — avoids deserialising full TestRun documents.</summary>
