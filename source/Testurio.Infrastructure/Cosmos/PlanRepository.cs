@@ -1,4 +1,5 @@
 using Microsoft.Azure.Cosmos;
+using Testurio.Core.Enums;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 
@@ -7,6 +8,18 @@ namespace Testurio.Infrastructure.Cosmos;
 public sealed class PlanRepository : IPlanRepository
 {
     private const string PartitionKeyValue = "plan";
+
+    /// <summary>
+    /// Maps each <see cref="SubscriptionPlan"/> enum value to the Cosmos document <c>id</c> (slug).
+    /// </summary>
+    private static readonly IReadOnlyDictionary<SubscriptionPlan, string> PlanSlugs =
+        new Dictionary<SubscriptionPlan, string>
+        {
+            [SubscriptionPlan.TestJunior] = "test-junior",
+            [SubscriptionPlan.TestPro]    = "test-pro",
+            [SubscriptionPlan.Team]       = "team",
+            [SubscriptionPlan.Centurio]   = "centurio",
+        };
 
     private readonly Container _container;
 
@@ -33,5 +46,25 @@ public sealed class PlanRepository : IPlanRepository
         }
 
         return results;
+    }
+
+    /// <inheritdoc />
+    public async Task<PlanDocument?> GetByPlanAsync(SubscriptionPlan plan, CancellationToken cancellationToken = default)
+    {
+        if (!PlanSlugs.TryGetValue(plan, out var slug))
+            return null;
+
+        try
+        {
+            var response = await _container.ReadItemAsync<PlanDocument>(
+                slug,
+                new PartitionKey(PartitionKeyValue),
+                cancellationToken: cancellationToken);
+            return response.Resource;
+        }
+        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 }

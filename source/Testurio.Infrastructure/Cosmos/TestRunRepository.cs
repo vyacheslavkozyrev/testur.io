@@ -118,4 +118,32 @@ public class TestRunRepository : ITestRunRepository
 
         return null;
     }
+
+    /// <inheritdoc />
+    public async Task<int> CountByUserForMonthAsync(
+        string userId,
+        DateTimeOffset monthStart,
+        DateTimeOffset nextMonthStart,
+        CancellationToken cancellationToken = default)
+    {
+        // Cross-partition query — partition key is projectId, so we must fan-out.
+        // This is acceptable because enforcement fires at low-frequency webhook / trigger paths.
+        var countQuery = new QueryDefinition(
+            "SELECT VALUE COUNT(1) FROM c " +
+            "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
+            .WithParameter("@userId", userId)
+            .WithParameter("@start", monthStart.ToString("o"))
+            .WithParameter("@end", nextMonthStart.ToString("o"));
+
+        var total = 0;
+        using var iterator = _container.GetItemQueryIterator<int>(countQuery);
+        while (iterator.HasMoreResults)
+        {
+            var page = await iterator.ReadNextAsync(cancellationToken);
+            foreach (var count in page)
+                total += count;
+        }
+
+        return total;
+    }
 }
