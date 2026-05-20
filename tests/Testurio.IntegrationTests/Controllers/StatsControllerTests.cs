@@ -102,7 +102,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Single(body.Projects);
         Assert.Equal("proj-001", body.Projects[0].ProjectId);
         Assert.NotNull(body.QuotaUsage);
-        Assert.Equal(3, body.QuotaUsage.UsedToday);
+        Assert.Equal(3, body.QuotaUsage.UsedThisMonth);
     }
 
     [Fact]

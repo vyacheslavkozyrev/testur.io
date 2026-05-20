@@ -1,3 +1,15 @@
+export interface PlanLimits {
+  maxProjects: number;
+  maxTestRunsPerMonth: number;
+}
+
+export interface PlanFeatures {
+  apiTesting: boolean;
+  uiE2eTesting: boolean;
+  aiMemory: boolean;
+  pmReportPostBack: boolean;
+}
+
 export interface PlanDefinition {
   id: string;
   name: string;
@@ -5,7 +17,9 @@ export interface PlanDefinition {
   annualPrice: number;
   annualDiscountPercent: number;
   isPopular: boolean;
-  features: string[];
+  displayFeatures: string[];
+  limits: PlanLimits;
+  features: PlanFeatures;
 }
 
 export type BillingInterval = 'monthly' | 'annual';

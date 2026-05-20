@@ -108,7 +108,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
 
         {/* Feature checklist */}
         <List dense disablePadding sx={styles.featureList}>
-          {plan.features.map((feature) => (
+          {plan.displayFeatures.map((feature) => (
             <ListItem key={feature} disablePadding sx={styles.featureItem}>
               <ListItemIcon sx={styles.featureIcon}>
                 <CheckCircleOutlineIcon sx={{ fontSize: 18, color: theme.palette.success.main }} />

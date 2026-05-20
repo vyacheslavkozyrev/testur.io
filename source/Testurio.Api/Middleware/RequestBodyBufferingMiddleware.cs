@@ -4,7 +4,8 @@ public sealed class RequestBodyBufferingMiddleware : IMiddleware
 {
     public Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        if (context.Request.Path.StartsWithSegments(WebhookRouteConstants.BufferingPathPrefix))
+        if (context.Request.Path.StartsWithSegments(WebhookRouteConstants.BufferingPathPrefix) ||
+            context.Request.Path.StartsWithSegments(WebhookRouteConstants.V1BufferingPathPrefix))
             context.Request.EnableBuffering();
         return next(context);
     }

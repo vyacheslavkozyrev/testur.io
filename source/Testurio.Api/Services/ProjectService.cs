@@ -3,6 +3,7 @@ using Testurio.Api.DTOs;
 using Testurio.Core.Constants;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.KeyVault;
 
@@ -53,11 +54,16 @@ public interface IProjectService
 public partial class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projectRepository;
+    private readonly IPlanEnforcementService _planEnforcementService;
     private readonly ILogger<ProjectService> _logger;
 
-    public ProjectService(IProjectRepository projectRepository, ILogger<ProjectService> logger)
+    public ProjectService(
+        IProjectRepository projectRepository,
+        IPlanEnforcementService planEnforcementService,
+        ILogger<ProjectService> logger)
     {
         _projectRepository = projectRepository;
+        _planEnforcementService = planEnforcementService;
         _logger = logger;
     }
 
@@ -75,6 +81,9 @@ public partial class ProjectService : IProjectService
 
     public async Task<ProjectDto> CreateAsync(string userId, CreateProjectRequest request, CancellationToken cancellationToken = default)
     {
+        // AC-008/AC-009: check project limit before writing — throws PlanLimitExceededException when exceeded.
+        await _planEnforcementService.CheckProjectLimitAsync(userId, cancellationToken);
+
         var project = new Project
         {
             UserId = userId,
