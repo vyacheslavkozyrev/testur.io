@@ -43,13 +43,13 @@
 
 ### Frontend
 
-- [ ] T025 [UI] Update `plan.types.ts`: add `PlanLimits` and `PlanFeatures` interfaces; add `limits: PlanLimits` and `features: PlanFeatures` to `PlanDefinition`; rename `features: string[]` to `displayFeatures: string[]` — `source/Testurio.Web/src/types/plan.types.ts`
-- [ ] T026 [UI] Update `dashboard.types.ts`: rename `usedToday → usedThisMonth` and `dailyLimit → monthlyLimit` on the `QuotaUsage` interface; update `resetsAt` JSDoc to reflect monthly reset — `source/Testurio.Web/src/types/dashboard.types.ts`
-- [ ] T027 [UI] Update `QuotaUsageBar` component: replace "runs used today" copy with "runs used this month"; replace "Resets at midnight UTC" with "Resets on {formatted date}"; update amber/red threshold logic to use `monthlyLimit`; render "Unlimited" (neutral style) when `monthlyLimit === -1` — `source/Testurio.Web/src/components/QuotaUsageBar/QuotaUsageBar.tsx`
-- [ ] T028 [UI] Update MSW mock handler for `GET /v1/plans`: add `limits` and `features` fields to mock plan objects; rename `features` → `displayFeatures` — `source/Testurio.Web/src/mocks/handlers/plan.ts`
-- [ ] T029 [UI] Update MSW mock handler for `GET /v1/stats/dashboard`: update `quotaUsage` mock shape from `usedToday`/`dailyLimit` to `usedThisMonth`/`monthlyLimit` — `source/Testurio.Web/src/mocks/handlers/dashboard.ts`
-- [ ] T030 [UI] Update `dashboard.json` i18n keys: replace `"runsUsedToday"` / `"resetsAtMidnight"` strings with `"runsUsedThisMonth"` / `"resetsOn"` equivalents; add `"unlimited"` label — `source/Testurio.Web/src/locales/en/dashboard.json`
-- [ ] T031 [UI] Update pricing page plan card component to read `displayFeatures` instead of `features` (rename only — no visual change) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx` _(or equivalent)_
+- [x] T025 [UI] Update `plan.types.ts`: add `PlanLimits` and `PlanFeatures` interfaces; add `limits: PlanLimits` and `features: PlanFeatures` to `PlanDefinition`; rename `features: string[]` to `displayFeatures: string[]` — `source/Testurio.Web/src/types/plan.types.ts`
+- [x] T026 [UI] Update `dashboard.types.ts`: rename `usedToday → usedThisMonth` and `dailyLimit → monthlyLimit` on the `QuotaUsage` interface; update `resetsAt` JSDoc to reflect monthly reset — `source/Testurio.Web/src/types/dashboard.types.ts`
+- [x] T027 [UI] Update `QuotaUsageBar` component: replace "runs used today" copy with "runs used this month"; replace "Resets at midnight UTC" with "Resets on {formatted date}"; update amber/red threshold logic to use `monthlyLimit`; render "Unlimited" (neutral style) when `monthlyLimit === -1` — `source/Testurio.Web/src/components/QuotaUsageBar/QuotaUsageBar.tsx`
+- [x] T028 [UI] Update MSW mock handler for `GET /v1/plans`: add `limits` and `features` fields to mock plan objects; rename `features` → `displayFeatures` — `source/Testurio.Web/src/mocks/handlers/plan.ts`
+- [x] T029 [UI] Update MSW mock handler for `GET /v1/stats/dashboard`: update `quotaUsage` mock shape from `usedToday`/`dailyLimit` to `usedThisMonth`/`monthlyLimit` — `source/Testurio.Web/src/mocks/handlers/dashboard.ts`
+- [x] T030 [UI] Update `dashboard.json` i18n keys: replace `"runsUsedToday"` / `"resetsAtMidnight"` strings with `"runsUsedThisMonth"` / `"resetsOn"` equivalents; add `"unlimited"` label — `source/Testurio.Web/src/locales/en/dashboard.json`
+- [x] T031 [UI] Update pricing page plan card component to read `displayFeatures` instead of `features` (rename only — no visual change) — `source/Testurio.Web/src/components/PlanCard/PlanCard.tsx` _(or equivalent)_
 
 ### Tests
 

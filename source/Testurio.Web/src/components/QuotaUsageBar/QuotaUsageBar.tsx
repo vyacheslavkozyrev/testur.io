@@ -17,24 +17,28 @@ export default function QuotaUsageBar({ quotaUsage }: QuotaUsageBarProps) {
   const theme = useTheme();
   const styles = getStyles(theme);
 
-  const { usedToday, dailyLimit, resetsAt } = quotaUsage;
-  const hasNoPlan = dailyLimit === 0;
-  const isOver = !hasNoPlan && usedToday > dailyLimit;
-  const isAtLimit = !hasNoPlan && usedToday === dailyLimit;
+  const { usedThisMonth, monthlyLimit, resetsAt } = quotaUsage;
+  const hasNoPlan = monthlyLimit === 0;
+  const isUnlimited = monthlyLimit === -1;
+  const showBar = !hasNoPlan && !isUnlimited;
+
+  // AC-041: red when at or over limit; AC-042: amber when >= 80% of limit.
+  const isAtOrOverLimit = showBar && usedThisMonth >= monthlyLimit;
+  const isNearLimit = showBar && !isAtOrOverLimit && usedThisMonth >= monthlyLimit * 0.8;
 
   const progressValue = useMemo(() => {
-    if (hasNoPlan || dailyLimit === 0) return 0;
-    return Math.min((usedToday / dailyLimit) * 100, 100);
-  }, [hasNoPlan, usedToday, dailyLimit]);
+    if (!showBar || monthlyLimit === 0) return 0;
+    return Math.min((usedThisMonth / monthlyLimit) * 100, 100);
+  }, [showBar, usedThisMonth, monthlyLimit]);
 
-  const progressColor = isOver ? 'error' : isAtLimit ? 'warning' : 'primary';
+  const progressColor = isAtOrOverLimit ? 'error' : isNearLimit ? 'warning' : 'primary';
 
   const resetsAtFormatted = useMemo(() => {
     try {
-      return new Date(resetsAt).toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZoneName: 'short',
+      return new Date(resetsAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
       });
     } catch {
       return resetsAt;
@@ -48,18 +52,22 @@ export default function QuotaUsageBar({ quotaUsage }: QuotaUsageBarProps) {
           <Typography variant="body2" sx={styles.label}>
             {t('quota.noActivePlan')}
           </Typography>
+        ) : isUnlimited ? (
+          <Typography variant="body2" sx={styles.label}>
+            {t('quota.usageUnlimited', { used: usedThisMonth })}
+          </Typography>
         ) : (
           <Typography variant="body2" sx={styles.label}>
-            {t('quota.usage', { used: usedToday, limit: dailyLimit })}
+            {t('quota.usage', { used: usedThisMonth, limit: monthlyLimit })}
           </Typography>
         )}
         {!hasNoPlan && (
           <Typography variant="caption" sx={styles.resetsAt}>
-            {t('quota.resetsAt', { time: resetsAtFormatted })}
+            {t('quota.resetsOn', { date: resetsAtFormatted })}
           </Typography>
         )}
       </Box>
-      {!hasNoPlan && (
+      {showBar && (
         <LinearProgress
           variant="determinate"
           value={progressValue}

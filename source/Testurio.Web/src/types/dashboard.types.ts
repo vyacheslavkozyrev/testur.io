@@ -29,9 +29,11 @@ export interface DashboardProjectSummary {
 }
 
 export interface QuotaUsage {
-  usedToday: number;
-  dailyLimit: number;
-  resetsAt: string; // ISO 8601 — next midnight UTC
+  usedThisMonth: number;
+  /** Monthly run limit; -1 means unlimited; 0 means no active plan */
+  monthlyLimit: number;
+  /** ISO 8601 UTC — first day of the next calendar month */
+  resetsAt: string;
 }
 
 export interface DashboardResponse {
