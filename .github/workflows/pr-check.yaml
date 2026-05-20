@@ -1,12 +1,20 @@
-name: PR Checks
+name: UI PR Validation
 
 on:
   pull_request:
     branches:
       - main
       - develop
-    types: [opened, synchronize, reopened]
+    paths:
+      - "source/Testurio.Web/**"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+  
 env:
   WORKING_DIR: source/Testurio.Web
 
