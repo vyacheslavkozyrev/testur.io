@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-05-19 |       |
 | Plan      | ✅ Complete | 2026-05-19 |       |
 | Implement | ✅ Complete | 2026-05-19 |       |
-| Review    | ⏳ Pending  |            |       |
+| Review    | ✅ Complete | 2026-05-19 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -18,9 +18,12 @@ All 27 tasks completed on 2026-05-19. Created Dockerfiles for Api and Web servic
 
 ---
 
-## Review
+## Review — 2026-05-19
 
-_Populated by `/review 0045`_
+### Blockers fixed
+- `source/Testurio.Api/Dockerfile`:1,16 — Base images were `sdk:9.0`/`aspnet:9.0`; AC-007 and AC-012 require `sdk:10.0`/`aspnet:10.0`. Updated both FROM lines to .NET 10.
+
+### Status: Complete
 
 ---
 
