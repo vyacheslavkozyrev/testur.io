@@ -61,6 +61,7 @@ const mockProject: ProjectDto = {
   testingStrategy: 'smoke',
   customPrompt: null,
   allowedWorkItemTypes: ['Story', 'Bug'],
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-15T00:00:00Z',
   updatedAt: '2026-05-15T00:00:00Z',
 };
@@ -81,6 +82,10 @@ const configuredIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: 'secret-ref',
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 const noIntegration: PMToolConnectionResponse = {
@@ -99,6 +104,10 @@ const noIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 describe('IntegrationPage — WorkItemTypeFilter visibility', () => {

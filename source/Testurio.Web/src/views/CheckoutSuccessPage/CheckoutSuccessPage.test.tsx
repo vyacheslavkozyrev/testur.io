@@ -99,6 +99,12 @@ describe('CheckoutSuccessPage', () => {
       plan: null,
       billingInterval: null,
       trialEndsAt: null,
+      currentPeriodEnd: '',
+      cancelledAt: null,
+      paymentMethodLast4: null,
+      paymentMethodExpMonth: null,
+      paymentMethodExpYear: null,
+      invoices: [],
     };
 
     renderPage();
@@ -115,6 +121,12 @@ describe('CheckoutSuccessPage', () => {
       plan: 'TestPro',
       billingInterval: 'monthly',
       trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      currentPeriodEnd: '',
+      cancelledAt: null,
+      paymentMethodLast4: null,
+      paymentMethodExpMonth: null,
+      paymentMethodExpYear: null,
+      invoices: [],
     };
 
     renderPage();
@@ -134,6 +146,12 @@ describe('CheckoutSuccessPage', () => {
       plan: null,
       billingInterval: null,
       trialEndsAt: null,
+      currentPeriodEnd: '',
+      cancelledAt: null,
+      paymentMethodLast4: null,
+      paymentMethodExpMonth: null,
+      paymentMethodExpYear: null,
+      invoices: [],
     };
 
     renderPage();

@@ -127,7 +127,7 @@ export default function ProjectSettingsPage() {
 
   const handleSaveAll = useCallback(async () => {
     setSaveBarState('saving');
-    setSectionErrors({ projectInfo: false, reportSettings: false, access: false });
+    setSectionErrors({ projectInfo: false, reportSettings: false, access: false, apiAuth: false });
 
     let projectInfoOk = !pendingSections.projectInfo;
     let reportSettingsOk = !pendingSections.reportSettings;
@@ -201,7 +201,7 @@ export default function ProjectSettingsPage() {
       setPendingSections({ projectInfo: true, reportSettings: true });
       setSaveBarState('saved');
       if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = window.setTimeout(() => setSaveBarState('clean'), 2000);
+      saveTimerRef.current = setTimeout(() => setSaveBarState('clean'), 2000);
     }
   }, [pendingSections, customPrompt, requestTimeoutSeconds, updateProject, updateReportSettings]);
 
@@ -407,7 +407,6 @@ const getStyles = (theme: Theme) =>
         marginBottom: theme.spacing(-1),
       },
       pageTitle: {
-        ...theme.typography.h5,
         color: theme.palette.text.primary,
         fontWeight: 600,
       },
@@ -442,7 +441,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerTitle: {
-        ...theme.typography.subtitle1,
         color: theme.palette.error.main,
       },
       dangerButton: {

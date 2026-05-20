@@ -79,8 +79,8 @@ describe('PersonalInfoSection', () => {
   });
 
   it('disables input and button while request is in flight', async () => {
-    let resolveUpdate: (value: { userId: string; displayName: string | null }) => void;
-    const pending = new Promise<{ userId: string; displayName: string | null }>((res) => {
+    let resolveUpdate: (value: { userId: string; firstName: string | null; lastName: string | null }) => void;
+    const pending = new Promise<{ userId: string; firstName: string | null; lastName: string | null }>((res) => {
       resolveUpdate = res;
     });
     mockAccountService.updateProfile.mockReturnValue(pending);
@@ -96,11 +96,11 @@ describe('PersonalInfoSection', () => {
       expect(screen.getByRole('button')).toBeDisabled();
     });
 
-    resolveUpdate!({ userId: 'user-1', displayName: 'Test User' });
+    resolveUpdate!({ userId: 'user-1', firstName: 'Test', lastName: 'User' });
   });
 
   it('calls onSaveSuccess after a successful save', async () => {
-    mockAccountService.updateProfile.mockResolvedValue({ userId: 'user-1', displayName: 'Test User' });
+    mockAccountService.updateProfile.mockResolvedValue({ userId: 'user-1', firstName: 'Test', lastName: 'User' });
     const onSaveSuccess = jest.fn();
 
     render(<PersonalInfoSection user={mockUser} onSaveSuccess={onSaveSuccess} />, {

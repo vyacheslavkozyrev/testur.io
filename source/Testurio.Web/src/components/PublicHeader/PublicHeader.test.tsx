@@ -104,6 +104,8 @@ describe('PublicHeader', () => {
   it('renders Go to Dashboard for authenticated users', () => {
     mockAuthUser = {
       id: 'user-1',
+      firstName: null,
+      lastName: null,
       email: 'user@example.com',
       displayName: 'Test User',
     };

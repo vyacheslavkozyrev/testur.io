@@ -179,7 +179,6 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         height: '100%',
       },
       planName: {
-        ...theme.typography.h5,
         fontWeight: 700,
         color: theme.palette.text.primary,
       },
@@ -189,17 +188,14 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         gap: theme.spacing(0.5),
       },
       freePrice: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.text.primary,
       },
       priceAmount: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.primary.main,
       },
       priceUnit: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       discountBadge: {
@@ -219,7 +215,6 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         minWidth: 28,
       },
       featureText: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       ctaButton: {

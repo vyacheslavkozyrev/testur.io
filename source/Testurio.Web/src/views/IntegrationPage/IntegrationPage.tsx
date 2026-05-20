@@ -327,7 +327,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       pageTitle: {
-        ...theme.typography.h5,
         color: theme.palette.text.primary,
         fontWeight: 600,
       },
@@ -371,7 +370,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       dangerTitle: {
-        ...theme.typography.subtitle1,
         color: theme.palette.error.main,
       },
       dangerButton: {

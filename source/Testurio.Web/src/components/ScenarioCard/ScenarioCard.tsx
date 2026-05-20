@@ -145,7 +145,7 @@ const getStyles = (theme: Theme) =>
         backgroundColor: theme.palette.grey[100],
         borderRadius: theme.shape.borderRadius,
         fontFamily: 'monospace',
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.caption.fontSize ?? '0.75rem',
         color: theme.palette.error.dark,
         overflowX: 'auto' as const,
         whiteSpace: 'pre-wrap' as const,

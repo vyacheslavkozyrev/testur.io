@@ -101,7 +101,6 @@ const getStyles = (theme: Theme) =>
         color: 'inherit',
       },
       logoText: {
-        ...theme.typography.h6,
         fontWeight: 700,
         color: '#ffffff',
       },
@@ -111,7 +110,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(1),
       },
       displayName: {
-        ...theme.typography.body2,
         color: CHROME_MUTED,
         maxWidth: 180,
         overflow: 'hidden',

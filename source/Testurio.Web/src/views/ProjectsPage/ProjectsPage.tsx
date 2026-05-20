@@ -128,7 +128,6 @@ const getStyles = (theme: Theme) => ({
     gap: theme.spacing(3),
   },
   pageTitle: {
-    ...theme.typography.h5,
     fontWeight: 600,
     color: theme.palette.text.primary,
   },
@@ -150,11 +149,9 @@ const getStyles = (theme: Theme) => ({
     color: theme.palette.text.disabled,
   },
   emptyHeading: {
-    ...theme.typography.h6,
     color: theme.palette.text.primary,
   },
   emptyDescription: {
-    ...theme.typography.body2,
     color: theme.palette.text.secondary,
     maxWidth: 400,
   },

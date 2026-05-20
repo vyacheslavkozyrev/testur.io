@@ -61,7 +61,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(3),
       },
       message: {
-        ...theme.typography.body1,
         color: theme.palette.text.secondary,
       },
     }),

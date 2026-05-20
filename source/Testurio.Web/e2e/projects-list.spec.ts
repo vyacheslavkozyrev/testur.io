@@ -7,6 +7,8 @@ const PROJECT_A: ProjectDto = {
   productUrl: 'https://project-a.example.com',
   testingStrategy: 'API and UI testing for Project A',
   customPrompt: null,
+  allowedWorkItemTypes: null,
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };
@@ -17,6 +19,8 @@ const PROJECT_B: ProjectDto = {
   productUrl: 'https://project-b.example.com',
   testingStrategy: 'UI testing for Project B',
   customPrompt: null,
+  allowedWorkItemTypes: null,
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-01T00:00:00Z',
   updatedAt: '2026-05-01T00:00:00Z',
 };

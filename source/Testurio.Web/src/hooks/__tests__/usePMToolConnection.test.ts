@@ -31,6 +31,10 @@ const mockIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 const mockNoIntegration: PMToolConnectionResponse = {
@@ -49,6 +53,10 @@ const mockNoIntegration: PMToolConnectionResponse = {
   jiraApiTokenSecretUri: null,
   jiraEmailSecretUri: null,
   jiraPatSecretUri: null,
+  jiraPassedTransitionStatus: null,
+  jiraFailedTransitionStatus: null,
+  adoPassedTransitionStatus: null,
+  adoFailedTransitionStatus: null,
 };
 
 function createWrapper() {

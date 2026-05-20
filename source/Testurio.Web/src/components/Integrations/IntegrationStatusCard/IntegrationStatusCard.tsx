@@ -139,7 +139,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       label: {
-        ...theme.typography.body1,
         color: theme.palette.text.secondary,
         minWidth: 120,
       },

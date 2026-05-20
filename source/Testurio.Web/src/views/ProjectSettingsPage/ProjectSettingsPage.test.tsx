@@ -207,6 +207,8 @@ const mockProject: ProjectDto = {
   productUrl: 'https://example.com',
   testingStrategy: 'API contracts.',
   customPrompt: null,
+  allowedWorkItemTypes: null,
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };

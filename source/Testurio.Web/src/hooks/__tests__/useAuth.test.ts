@@ -4,7 +4,11 @@ import { createElement } from 'react';
 import { authService } from '@/services/auth/authService';
 import { useSignIn, useSignUp, useForgotPassword, useSignOut } from '../useAuth';
 import type { AuthUser } from '@/types/layout.types';
-import type { AuthError } from '@/types/auth.types';
+import type { AuthError, ResetPasswordCodeHandle } from '@/types/auth.types';
+
+const mockResetCodeHandle: ResetPasswordCodeHandle = {
+  _msalState: { async submitCode() { return undefined as unknown; } },
+};
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +24,8 @@ jest.mock('next/navigation', () => ({
 
 const mockAuthUser: AuthUser = {
   id: 'user-001',
+  firstName: null,
+  lastName: null,
   displayName: 'Test User',
   email: 'test@example.com',
   avatarUrl: undefined,
@@ -120,11 +126,11 @@ describe('useSignUp', () => {
     const { result } = renderHook(() => useSignUp(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.mutate({ email: 'new@example.com', password: 'Password1' });
+      result.current.mutate({ email: 'new@example.com', password: 'Password1', firstName: 'Test', lastName: 'User' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockAuthService.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'Password1' });
+    expect(mockAuthService.signUp).toHaveBeenCalledWith({ email: 'new@example.com', password: 'Password1', firstName: 'Test', lastName: 'User' });
     expect(mockRouterReplace).toHaveBeenCalledWith('/dashboard');
   });
 
@@ -135,7 +141,7 @@ describe('useSignUp', () => {
     const { result } = renderHook(() => useSignUp(), { wrapper: createWrapper() });
 
     act(() => {
-      result.current.mutate({ email: 'existing@example.com', password: 'Password1' });
+      result.current.mutate({ email: 'existing@example.com', password: 'Password1', firstName: 'Existing', lastName: 'User' });
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -149,7 +155,7 @@ describe('useForgotPassword', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('calls authService.forgotPassword and resolves successfully', async () => {
-    mockAuthService.forgotPassword.mockResolvedValue(undefined);
+    mockAuthService.forgotPassword.mockResolvedValue(mockResetCodeHandle);
 
     const { result } = renderHook(() => useForgotPassword(), { wrapper: createWrapper() });
 
@@ -163,7 +169,7 @@ describe('useForgotPassword', () => {
 
   it('resolves even when authService.forgotPassword throws (no account enumeration)', async () => {
     // forgotPassword in authService swallows "not found" errors — so the hook should always resolve
-    mockAuthService.forgotPassword.mockResolvedValue(undefined);
+    mockAuthService.forgotPassword.mockResolvedValue(mockResetCodeHandle);
 
     const { result } = renderHook(() => useForgotPassword(), { wrapper: createWrapper() });
 

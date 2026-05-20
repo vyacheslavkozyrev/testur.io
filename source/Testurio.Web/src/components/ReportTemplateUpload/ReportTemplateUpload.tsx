@@ -210,7 +210,6 @@ const getStyles = (theme: Theme) =>
     () => ({
       root: { display: 'flex', flexDirection: 'column' as const, gap: theme.spacing(1.5) },
       title: {
-        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       existingTemplate: {

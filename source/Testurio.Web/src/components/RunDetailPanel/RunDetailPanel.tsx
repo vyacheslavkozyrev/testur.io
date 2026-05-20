@@ -212,7 +212,7 @@ const getStyles = (theme: Theme) =>
       },
       rawMarkdown: {
         fontFamily: 'monospace',
-        fontSize: theme.typography.caption.fontSize,
+        fontSize: theme.typography.caption.fontSize ?? '0.75rem',
         whiteSpace: 'pre-wrap',
         wordBreak: 'break-word',
         color: theme.palette.text.primary,

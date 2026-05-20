@@ -138,21 +138,17 @@ const getStyles = (theme: Theme) =>
         minWidth: 0,
       },
       name: {
-        ...theme.typography.h6,
         color: theme.palette.text.primary,
         flex: 1,
         minWidth: 0,
       },
       url: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       timestamp: {
-        ...theme.typography.caption,
         color: theme.palette.text.secondary,
       },
       timestampMuted: {
-        ...theme.typography.caption,
         color: theme.palette.text.disabled,
       },
       runButton: {

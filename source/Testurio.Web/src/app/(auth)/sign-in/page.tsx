@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import SignInPage from '@/views/SignInPage/SignInPage';
-import { getSessionStore } from '@/app/api/auth/session/route';
+import { getSessionStore } from '@/app/api/auth/session/store';
 import { DASHBOARD_ROUTE } from '@/routes/routes';
 
 export default async function Page() {

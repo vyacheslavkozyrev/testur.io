@@ -268,13 +268,11 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       title: {
-        ...theme.typography.h5,
         fontWeight: 700,
         color: theme.palette.text.primary,
         textAlign: 'center',
       },
       subtitle: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
         textAlign: 'center',
         mb: theme.spacing(1),
@@ -288,7 +286,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       link: {
-        ...theme.typography.body2,
         color: theme.palette.primary.main,
         textDecoration: 'none',
         '&:hover': { textDecoration: 'underline' },
@@ -299,7 +296,6 @@ const getStyles = (theme: Theme) =>
         py: theme.spacing(1.25),
       },
       backLink: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
         textAlign: 'center',
       },

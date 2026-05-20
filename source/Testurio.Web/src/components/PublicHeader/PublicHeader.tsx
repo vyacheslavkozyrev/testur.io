@@ -171,7 +171,6 @@ const getStyles = (theme: Theme) =>
         color: 'inherit',
       },
       logoText: {
-        ...theme.typography.h6,
         fontWeight: 700,
         color: theme.palette.primary.main,
       },
@@ -181,7 +180,6 @@ const getStyles = (theme: Theme) =>
         ml: theme.spacing(4),
       },
       navLink: {
-        ...theme.typography.body2,
         textDecoration: 'none',
         color: theme.palette.text.secondary,
         fontWeight: 500,
@@ -189,7 +187,6 @@ const getStyles = (theme: Theme) =>
         transition: 'color 0.15s',
       },
       navLinkActive: {
-        ...theme.typography.body2,
         textDecoration: 'none',
         color: theme.palette.primary.main,
         fontWeight: 600,
@@ -202,7 +199,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       signInLink: {
-        ...theme.typography.body2,
         textDecoration: 'none',
         color: theme.palette.text.secondary,
         fontWeight: 500,

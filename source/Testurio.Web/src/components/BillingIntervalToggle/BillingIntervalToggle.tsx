@@ -99,7 +99,6 @@ const getStyles = (theme: Theme) =>
         alignItems: 'center',
       },
       label: {
-        ...theme.typography.body2,
         fontWeight: 600,
       },
       badge: {

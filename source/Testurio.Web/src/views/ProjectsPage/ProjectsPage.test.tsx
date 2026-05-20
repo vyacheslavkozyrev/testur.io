@@ -76,6 +76,8 @@ const makeProject = (overrides: Partial<ProjectDto> = {}): ProjectDto => ({
   productUrl: 'https://alpha.example.com',
   testingStrategy: 'API contracts only.',
   customPrompt: null,
+  allowedWorkItemTypes: null,
+  requestTimeoutSeconds: 30,
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
   ...overrides,

@@ -93,7 +93,7 @@ function renderComponent(ref?: React.Ref<ApiAuthMethodSelectorHandle>) {
 // Calls save() inside act() and returns the thrown error (or undefined on success).
 // Using this pattern instead of expect(act(...)).rejects.toThrow() guarantees
 // React state updates are flushed before subsequent assertions run.
-async function trySave(ref: React.RefObject<ApiAuthMethodSelectorHandle>): Promise<Error | undefined> {
+async function trySave(ref: React.RefObject<ApiAuthMethodSelectorHandle | null>): Promise<Error | undefined> {
   let caught: Error | undefined;
   await act(async () => {
     try {
