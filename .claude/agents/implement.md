@@ -42,7 +42,11 @@ Execute each task from `plan.md` in order, top to bottom. For each task:
 - If any file under `source/Testurio.Web/` was created or modified by this task, run the following checks from the `source/Testurio.Web/` directory before committing:
   1. `npm run lint` — fix any errors reported before continuing; warnings are acceptable.
   2. `npm run build` — fix any type or build errors before continuing.
-  If either check fails, fix the issues first, then re-run the check until it passes.
+     If either check fails, fix the issues first, then re-run the check until it passes.
+- If any file under `source/*` except `source/Testurio.Web/` was created or modified by this task, run the following checks from the root directory before committing:
+  1. `dotnet format --check` — fix any formatting issues before continuing.
+  2. `dotnet build` — fix any build errors before continuing.
+     If either check fails, fix the issues first, then re-run the check until it passes.
 - Mark the task as complete (`[x]`) in `plan.md` immediately after finishing it.
 - Commit the completed task immediately with a descriptive message in the format: `feat(<feature-number>): <task description>` (e.g. `feat(0001): add UserProfile domain entity`).
 - Do not proceed to the next task until the current one is committed.
