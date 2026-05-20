@@ -9,12 +9,13 @@
 | Implement | ✅ Complete | 2026-05-20 |       |
 | Review    | ✅ Complete | 2026-05-20 |       |
 | Test      | ✅ Complete | 2026-05-20 |       |
+| Pull Request | ✅ Complete | 2026-05-20 | [#50](https://github.com/vyacheslavkozyrev/testur.io/pull/50) |
 
 ---
 
 ## Implementation Notes
 
-_Populated by `/implement 0046`_
+8 commits on `feature/0046-structured-plan-limits` — domain layer, infra, API application layer, worker pipeline, Cosmos seed, frontend, backend unit tests, and integration tests. PR #50 merged to `develop`.
 
 ---
 
