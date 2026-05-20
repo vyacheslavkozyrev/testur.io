@@ -8,7 +8,7 @@
 
 ### Infrastructure — Quota Policy Implementation
 
-- [ ] T002 [Infra] Implement `QuotaPolicy` class: maps `SubscriptionPlan` to daily limits (TestJunior=10, TestPro=30, Team=100, Centurio=500); returns `0` for `null` — `source/Testurio.Infrastructure/Quota/QuotaPolicy.cs`
+- [x] T002 [Infra] Implement `QuotaPolicy` class: maps `SubscriptionPlan` to daily limits (TestJunior=10, TestPro=30, Team=100, Centurio=500); returns `0` for `null` — `source/Testurio.Infrastructure/Quota/QuotaPolicy.cs`
 - [ ] T003 [Infra] Register `QuotaPolicy` as singleton `IQuotaPolicy` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
 
 ### Application — Webhook Services Enforcement
