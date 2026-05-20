@@ -114,6 +114,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      SHORT_SHA: ${{ steps.sha.outputs.SHORT_SHA }}
     steps:
       - uses: actions/checkout@v4
 
