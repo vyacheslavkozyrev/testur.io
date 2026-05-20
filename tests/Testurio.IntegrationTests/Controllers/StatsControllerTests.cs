@@ -23,6 +23,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Events;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -400,10 +401,15 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IStatsRepository> _statsRepo = new();
+        private readonly Mock<ITestRunRepository> _testRunRepo = new();
 
         public Mock<IStatsRepository> StatsRepoMock => _statsRepo;
 
-        public void ResetMocks() => _statsRepo.Reset();
+        public void ResetMocks()
+        {
+            _statsRepo.Reset();
+            _testRunRepo.Reset();
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -427,6 +433,10 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             builder.ConfigureTestServices(services =>
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<ITestRunRepository>(_ => _testRunRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 // Feature 0043: remove the DashboardEventRelay singleton and its companion
                 // IHostedService registration so the test host does not attempt a real Service

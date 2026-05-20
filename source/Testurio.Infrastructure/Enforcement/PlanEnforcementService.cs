@@ -21,9 +21,9 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
         new Dictionary<SubscriptionPlan, string>
         {
             [SubscriptionPlan.TestJunior] = "Test Pro",
-            [SubscriptionPlan.TestPro]    = "Team",
-            [SubscriptionPlan.Team]       = "Centurio",
-            [SubscriptionPlan.Centurio]   = "Centurio", // already at highest tier
+            [SubscriptionPlan.TestPro] = "Team",
+            [SubscriptionPlan.Team] = "Centurio",
+            [SubscriptionPlan.Centurio] = "Centurio", // already at highest tier
         };
 
     private readonly IUserSubscriptionRepository _subscriptionRepository;
@@ -134,10 +134,10 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
         switch (planId)
         {
             case "test-junior": plan = SubscriptionPlan.TestJunior; return true;
-            case "test-pro":    plan = SubscriptionPlan.TestPro;    return true;
-            case "team":        plan = SubscriptionPlan.Team;       return true;
-            case "centurio":    plan = SubscriptionPlan.Centurio;   return true;
-            default:            plan = default;                     return false;
+            case "test-pro": plan = SubscriptionPlan.TestPro; return true;
+            case "team": plan = SubscriptionPlan.Team; return true;
+            case "centurio": plan = SubscriptionPlan.Centurio; return true;
+            default: plan = default; return false;
         }
     }
 }

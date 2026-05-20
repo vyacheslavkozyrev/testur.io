@@ -64,9 +64,9 @@ public class BillingServiceTests
 
     [Theory]
     [InlineData(SubscriptionPlan.TestJunior, "test-junior", BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.TestPro,    "test-pro",    BillingInterval.Annual)]
-    [InlineData(SubscriptionPlan.Team,       "team",        BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.Centurio,   "centurio",    BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.TestPro, "test-pro", BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.Team, "team", BillingInterval.Monthly)]
+    [InlineData(SubscriptionPlan.Centurio, "centurio", BillingInterval.Annual)]
     public async Task CreateCheckoutSessionAsync_DelegatesToStripeService_WithCorrectParameters(
         SubscriptionPlan plan, string planSlug, BillingInterval interval)
     {

@@ -187,13 +187,25 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
     }
 
     [Fact]
-    public async Task PatchProjectAccess_Returns400_WhenBasicAuthPassMissing()
+    public async Task PatchProjectAccess_Returns200_WhenBasicAuthPassOmitted()
     {
+        var project = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
         var client = CreateAuthenticatedClient();
         var payload = new { accessMode = "basicAuth", basicAuthUser = "admin" };
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/access", payload);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        // BasicAuthPass is optional on re-save — omitting it preserves the existing Key Vault secret.
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     // â”€â”€â”€ PATCH â€” HeaderToken â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -236,13 +248,25 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
     }
 
     [Fact]
-    public async Task PatchProjectAccess_Returns400_WhenHeaderTokenValueMissing()
+    public async Task PatchProjectAccess_Returns200_WhenHeaderTokenValueOmitted()
     {
+        var project = MakeProject();
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), "proj-001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(project);
+        _factory.ProjectRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
         var client = CreateAuthenticatedClient();
         var payload = new { accessMode = "headerToken", headerTokenName = "X-Testurio-Token" };
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/access", payload);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        // HeaderTokenValue is optional on re-save — omitting it preserves the existing Key Vault secret.
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]

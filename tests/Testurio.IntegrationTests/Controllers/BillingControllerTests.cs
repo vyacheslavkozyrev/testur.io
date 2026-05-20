@@ -69,7 +69,7 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
             .ReturnsAsync("https://checkout.stripe.com/c/pay/session_mock");
 
         var client = CreateAuthenticatedClient();
-        var payload = new { plan = "TestPro", billingInterval = "Monthly" };
+        var payload = new { plan = "test-pro", billingInterval = "Monthly" };
         var response = await client.PostAsJsonAsync("/v1/billing/checkout", payload);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);

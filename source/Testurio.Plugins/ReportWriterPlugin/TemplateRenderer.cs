@@ -45,6 +45,7 @@ public static class TemplateRenderer
             ["{{overall_result}}"] = FormatOverallResult(context.Run),
             ["{{scenarios}}"] = BuildScenariosTable(context.Scenarios, context.StepResults),
             ["{{logs}}"] = context.LogSection,
+            ["{{log_section}}"] = BuildOptionalLogSection(context.LogSection),
             ["{{screenshots}}"] = context.IncludeScreenshots ? BuildScreenshotsSection(context.Run) : string.Empty,
             ["{{ai_scenario_source}}"] = context.AiScenarioSource ?? string.Empty,
             ["{{timing_summary}}"] = BuildTimingSummary(context.Run, context.Scenarios, context.StepResults),
@@ -117,6 +118,11 @@ public static class TemplateRenderer
 
         return sb.ToString().TrimEnd();
     }
+
+    private static string BuildOptionalLogSection(string logSection) =>
+        string.IsNullOrEmpty(logSection)
+            ? string.Empty
+            : $"---\n\n## Execution Logs\n\n{logSection}\n\n---";
 
     /// <summary>
     /// Placeholder for screenshot content.

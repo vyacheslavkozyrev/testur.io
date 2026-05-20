@@ -288,6 +288,9 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
                 services.Replace(ServiceDescriptor.Singleton<IProjectRepository>(_ => _projectRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITemplateRepository>(_ => _templateRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new Infrastructure.PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 services.AddAuthentication("Test")
                     .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
