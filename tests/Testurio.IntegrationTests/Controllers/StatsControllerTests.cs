@@ -23,6 +23,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Events;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -90,7 +91,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             .Setup(r => r.GetDashboardSummariesAsync("test-user-oid", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { MakeProject(latestRun: MakeRun()) });
         _factory.StatsRepoMock
-            .Setup(r => r.GetQuotaUsageAsync("test-user-oid", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync("test-user-oid", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(DefaultQuota());
 
         var client = CreateAuthenticatedClient();
@@ -112,7 +113,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<DashboardProjectSummary>());
         _factory.StatsRepoMock
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(DefaultQuota());
 
         var client = CreateAuthenticatedClient();
@@ -133,7 +134,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             .Setup(r => r.GetDashboardSummariesAsync("test-user-oid", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new[] { MakeProject() });
         _factory.StatsRepoMock
-            .Setup(r => r.GetQuotaUsageAsync("test-user-oid", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync("test-user-oid", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(DefaultQuota());
 
         var client = CreateAuthenticatedClient();
@@ -300,7 +301,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(projects);
         _factory.StatsRepoMock
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(DefaultQuota());
 
         var client = CreateAuthenticatedClient();
@@ -400,10 +401,19 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IStatsRepository> _statsRepo = new();
+        private readonly Mock<IUserSubscriptionRepository> _subscriptionRepo = new();
 
         public Mock<IStatsRepository> StatsRepoMock => _statsRepo;
 
-        public void ResetMocks() => _statsRepo.Reset();
+        public void ResetMocks()
+        {
+            _statsRepo.Reset();
+            // Default: no active subscription so dailyLimit = 0
+            _subscriptionRepo.Reset();
+            _subscriptionRepo
+                .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((UserSubscription?)null);
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -427,6 +437,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             builder.ConfigureTestServices(services =>
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<IUserSubscriptionRepository>(_ => _subscriptionRepo.Object));
 
                 // Feature 0043: remove the DashboardEventRelay singleton and its companion
                 // IHostedService registration so the test host does not attempt a real Service

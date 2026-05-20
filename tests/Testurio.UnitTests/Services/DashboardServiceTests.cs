@@ -1,20 +1,32 @@
 using Moq;
 using Testurio.Api.DTOs;
 using Testurio.Api.Services;
+using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 
 namespace Testurio.UnitTests.Services;
 
 public class DashboardServiceTests
 {
     private readonly Mock<IStatsRepository> _statsRepository = new();
+    private readonly Mock<IQuotaPolicy> _quotaPolicy = new();
+    private readonly Mock<IUserSubscriptionRepository> _subscriptionRepository = new();
     private readonly DashboardService _sut;
 
     public DashboardServiceTests()
     {
-        _sut = new DashboardService(_statsRepository.Object);
+        // Default: no subscription
+        _subscriptionRepository
+            .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserSubscription?)null);
+
+        _sut = new DashboardService(
+            _statsRepository.Object,
+            _quotaPolicy.Object,
+            _subscriptionRepository.Object);
     }
 
     private static LatestRunSummary MakeRun(
@@ -44,7 +56,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(projects);
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync("user-1", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync("user-1", It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(quota);
 
         var result = await _sut.GetDashboardAsync("user-1");
@@ -74,7 +86,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(projectsFromRepo);
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeQuota());
 
         var result = await _sut.GetDashboardAsync("user-1");
@@ -99,7 +111,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(noRunProjects);
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeQuota());
 
         var result = await _sut.GetDashboardAsync("user-1");
@@ -116,7 +128,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<DashboardProjectSummary>());
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeQuota());
 
         var result = await _sut.GetDashboardAsync("user-1");
@@ -131,7 +143,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<DashboardProjectSummary>());
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeQuota(used: 50, limit: 50));
 
         var result = await _sut.GetDashboardAsync("user-1");
@@ -147,7 +159,7 @@ public class DashboardServiceTests
             .Setup(r => r.GetDashboardSummariesAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<DashboardProjectSummary>());
         _statsRepository
-            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetQuotaUsageAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MakeQuota(used: 0, limit: 0));
 
         var result = await _sut.GetDashboardAsync("user-1");

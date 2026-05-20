@@ -19,6 +19,8 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+
 // JiraCommentResult is defined in Testurio.Core.Interfaces â€” used for mock setup.
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -178,12 +180,14 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
         private readonly Mock<ITestRunJobSender> _jobSender = new();
         private readonly Mock<IJiraApiClient> _jiraApiClient = new();
+        private readonly Mock<IUserSubscriptionRepository> _subscriptionRepo = new();
 
         public Mock<IProjectRepository> ProjectRepoMock => _projectRepo;
         public Mock<ITestRunRepository> TestRunRepoMock => _testRunRepo;
         public Mock<IRunQueueRepository> RunQueueRepoMock => _runQueueRepo;
         public Mock<ITestRunJobSender> JobSenderMock => _jobSender;
         public Mock<IJiraApiClient> JiraApiClientMock => _jiraApiClient;
+        public Mock<IUserSubscriptionRepository> SubscriptionRepoMock => _subscriptionRepo;
 
         public void ResetMocks()
         {
@@ -192,6 +196,20 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             _runQueueRepo.Reset();
             _jobSender.Reset();
             _jiraApiClient.Reset();
+            // Default: active Centurio subscription with ample quota so existing tests are unaffected.
+            _subscriptionRepo.Reset();
+            _subscriptionRepo
+                .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserSubscription
+                {
+                    Id = "user1",
+                    UserId = "user1",
+                    Plan = SubscriptionPlan.Centurio,
+                    Status = SubscriptionStatus.Active
+                });
+            _testRunRepo
+                .Setup(r => r.CountTodayAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -219,7 +237,9 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IUserSubscriptionRepository>(_ => _subscriptionRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
             });
