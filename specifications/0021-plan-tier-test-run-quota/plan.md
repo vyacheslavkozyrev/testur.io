@@ -19,7 +19,7 @@
 
 ### Domain — Test Run Count Query
 
-- [ ] T007 [Domain] Add `CountTodayAsync(string userId, DateTimeOffset windowStart, DateTimeOffset windowEnd): Task<int>` to `ITestRunRepository` — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
+- [x] T007 [Domain] Add `CountTodayAsync(string userId, DateTimeOffset windowStart, DateTimeOffset windowEnd): Task<int>` to `ITestRunRepository` — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
 
 ### Infrastructure — Test Run Count Implementation
 
