@@ -18,6 +18,8 @@ public partial class ADOWebhookService : IADOWebhookService
     private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
     private readonly IWorkItemTypeFilterService _filterService;
+    private readonly IQuotaPolicy _quotaPolicy;
+    private readonly IUserSubscriptionRepository _subscriptionRepository;
     private readonly ILogger<ADOWebhookService> _logger;
 
     public ADOWebhookService(
@@ -25,12 +27,16 @@ public partial class ADOWebhookService : IADOWebhookService
         IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
         IWorkItemTypeFilterService filterService,
+        IQuotaPolicy quotaPolicy,
+        IUserSubscriptionRepository subscriptionRepository,
         ILogger<ADOWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
         _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
         _filterService = filterService;
+        _quotaPolicy = quotaPolicy;
+        _subscriptionRepository = subscriptionRepository;
         _logger = logger;
     }
 
@@ -58,6 +64,29 @@ public partial class ADOWebhookService : IADOWebhookService
         }
 
         var workItemId = payload.Resource.WorkItemId.ToString();
+
+        // Quota check — AC-021: same logic as JiraWebhookService; no PM tool comment for ADO (AC-022).
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(project.UserId, cancellationToken);
+        var isActiveSubscription = subscription is not null &&
+            subscription.Status is SubscriptionStatus.Trialing or SubscriptionStatus.Active;
+        var dailyLimit = isActiveSubscription ? _quotaPolicy.GetDailyLimit(subscription!.Plan) : 0;
+
+        if (!isActiveSubscription || dailyLimit == 0)
+        {
+            LogQuotaRejectedNoSubscription(_logger, workItemId, project.Id);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var windowStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        var windowEnd = windowStart.AddDays(1);
+        var usedToday = await _testRunRepository.CountTodayAsync(project.UserId, windowStart, windowEnd, cancellationToken);
+        if (usedToday >= dailyLimit)
+        {
+            LogQuotaExceeded(_logger, workItemId, project.Id, usedToday, dailyLimit);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
         var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
         if (activeRun is not null)
         {
@@ -119,4 +148,12 @@ public partial class ADOWebhookService : IADOWebhookService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Enqueued test run {TestRunId} for ADO work item {WorkItemId} in project {ProjectId}")]
     private static partial void LogEnqueued(ILogger logger, string workItemId, string projectId, string testRunId);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Quota exceeded for ADO work item {WorkItemId} in project {ProjectId}: {UsedToday}/{DailyLimit} runs used today")]
+    private static partial void LogQuotaExceeded(ILogger logger, string workItemId, string projectId, int usedToday, int dailyLimit);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Quota rejected (no active subscription) for ADO work item {WorkItemId} in project {ProjectId}")]
+    private static partial void LogQuotaRejectedNoSubscription(ILogger logger, string workItemId, string projectId);
 }

@@ -15,7 +15,7 @@
 
 - [x] T004 [App] Add `QuotaExceeded` value to `WebhookProcessResult` enum — `source/Testurio.Api/Services/WebhookProcessResult.cs`
 - [x] T005 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `JiraWebhookService`; add quota check in `ProcessAsync` after work-item-type filtering: resolve subscription, compute `dailyLimit`, count today's runs via `ITestRunRepository.CountTodayAsync`, reject with `QuotaExceeded` when `usedToday >= dailyLimit`; post a plan-specific comment to the Jira issue (quota-exhausted message or no-subscription message) — `source/Testurio.Api/Services/JiraWebhookService.cs`
-- [ ] T006 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `ADOWebhookService`; add the same quota check in `ProcessAsync` after work-item-type filtering; return `QuotaExceeded` silently (no PM tool comment posted for ADO in v1); log the rejection — `source/Testurio.Api/Services/ADOWebhookService.cs`
+- [x] T006 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `ADOWebhookService`; add the same quota check in `ProcessAsync` after work-item-type filtering; return `QuotaExceeded` silently (no PM tool comment posted for ADO in v1); log the rejection — `source/Testurio.Api/Services/ADOWebhookService.cs`
 
 ### Domain — Test Run Count Query
 
