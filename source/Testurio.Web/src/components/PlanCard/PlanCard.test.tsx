@@ -58,13 +58,15 @@ const mockPlan: PlanDefinition = {
   annualPrice: 470,
   annualDiscountPercent: 20,
   isPopular: true,
-  features: [
+  displayFeatures: [
     'Unlimited test runs',
     'API & UI end-to-end testing',
     'AI memory layer',
     'ADO & Jira post-back',
     'Email support',
   ],
+  limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+  features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
 };
 
 const freePlan: PlanDefinition = {
@@ -74,13 +76,15 @@ const freePlan: PlanDefinition = {
   annualPrice: 0,
   annualDiscountPercent: 0,
   isPopular: false,
-  features: [
+  displayFeatures: [
     'Up to 3 projects',
     '50 automated test runs / day',
     'API test execution',
     'Basic test reports',
     'Community support',
   ],
+  limits: { maxProjects: 3, maxTestRunsPerMonth: 50 },
+  features: { apiTesting: true, uiE2eTesting: false, aiMemory: false, pmReportPostBack: false },
 };
 
 describe('PlanCard', () => {
@@ -163,7 +167,7 @@ describe('PlanCard', () => {
       </Wrapper>,
     );
 
-    for (const feature of mockPlan.features) {
+    for (const feature of mockPlan.displayFeatures) {
       expect(screen.getByText(feature)).toBeInTheDocument();
     }
   });
