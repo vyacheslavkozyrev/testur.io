@@ -53,8 +53,8 @@
 
 ### Tests
 
-- [ ] T032 [Test] Backend unit tests for `PlanEnforcementService`: `GetEffectivePlanAsync` returns null for no subscription, `CheckProjectLimitAsync` throws at limit, passes below limit, skips when -1, `CheckMonthlyRunQuotaAsync` throws at limit, passes below limit, skips when -1 — `tests/Testurio.UnitTests/Services/PlanEnforcementServiceTests.cs`
-- [ ] T033 [Test] Backend unit tests for `ProjectService.CreateAsync`: throws `PlanLimitExceededException` when limit reached (mock enforcement service), proceeds when limit not reached — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
+- [x] T032 [Test] Backend unit tests for `PlanEnforcementService`: `GetEffectivePlanAsync` returns null for no subscription, `CheckProjectLimitAsync` throws at limit, passes below limit, skips when -1, `CheckMonthlyRunQuotaAsync` throws at limit, passes below limit, skips when -1 — `tests/Testurio.UnitTests/Services/PlanEnforcementServiceTests.cs`
+- [x] T033 [Test] Backend unit tests for `ProjectService.CreateAsync`: throws `PlanLimitExceededException` when limit reached (mock enforcement service), proceeds when limit not reached — `tests/Testurio.UnitTests/Services/ProjectServiceTests.cs`
 - [ ] T034 [Test] Backend integration tests for project creation enforcement: `POST /v1/projects` returns `403` with correct `ProblemDetails` when project limit is reached — `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs`
 - [ ] T035 [Test] Backend integration tests for webhook quota enforcement: Jira / ADO webhook endpoint returns `403` with correct `ProblemDetails` when monthly run quota is exhausted — `tests/Testurio.IntegrationTests/Controllers/WebhookControllerTests.cs`
 - [ ] T036 [Test] Backend unit tests for `StatsRepository.GetQuotaUsageAsync`: monthly count computed correctly, `resetsAt` is first day of next month UTC, `MonthlyLimit` reads from plan — `tests/Testurio.UnitTests/Services/DashboardServiceTests.cs` _(extend existing test class)_

@@ -4,6 +4,7 @@ using Testurio.Api.DTOs;
 using Testurio.Api.Services;
 using Testurio.Core.Constants;
 using Testurio.Core.Entities;
+using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 
 namespace Testurio.UnitTests.Services;
@@ -11,11 +12,17 @@ namespace Testurio.UnitTests.Services;
 public class ProjectServiceTests
 {
     private readonly Mock<IProjectRepository> _repository = new();
+    private readonly Mock<IPlanEnforcementService> _planEnforcement = new();
     private readonly ProjectService _sut;
 
     public ProjectServiceTests()
     {
-        _sut = new ProjectService(_repository.Object, NullLogger<ProjectService>.Instance);
+        // Default: no limit exceeded — CreateAsync proceeds normally in non-enforcement tests.
+        _planEnforcement
+            .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _sut = new ProjectService(_repository.Object, _planEnforcement.Object, NullLogger<ProjectService>.Instance);
     }
 
     private static Project MakeProject(string userId = "user-1", string projectId = "proj-1") => new()
