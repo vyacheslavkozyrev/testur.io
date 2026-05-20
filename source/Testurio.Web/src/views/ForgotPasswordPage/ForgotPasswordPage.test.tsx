@@ -24,6 +24,8 @@ const mockForgotPasswordState = {
 
 jest.mock('@/hooks/useAuth', () => ({
   useForgotPassword: () => mockForgotPasswordState,
+  useSubmitResetCode: () => ({ mutateAsync: jest.fn() }),
+  useSubmitNewPassword: () => ({ mutateAsync: jest.fn(), isPending: false, isError: false }),
 }));
 
 // ─── i18n setup ───────────────────────────────────────────────────────────────
@@ -91,7 +93,7 @@ describe('ForgotPasswordPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Send reset link/i }));
 
     await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({ email: 'user@example.com' });
+      expect(mockMutate).toHaveBeenCalledWith({ email: 'user@example.com' }, expect.any(Object));
     });
   });
 
@@ -101,27 +103,27 @@ describe('ForgotPasswordPage', () => {
     expect(screen.getByRole('button', { name: /Sending/i })).toBeDisabled();
   });
 
-  it('shows confirmation message after successful submission', () => {
-    mockForgotPasswordState.isSuccess = true;
+  it('transitions to code step after successful email submission', async () => {
+    mockForgotPasswordState.mutate = jest.fn().mockImplementation((_vars: unknown, opts: { onSuccess?: (h: unknown) => void }) => {
+      opts?.onSuccess?.({});
+    });
     renderForgotPasswordPage();
-    expect(
-      screen.getByText('If an account exists for that email, a reset link has been sent.'),
-    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'user@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: /Send reset link/i }));
+    await waitFor(() => {
+      expect(screen.queryByLabelText(/Email/i)).not.toBeInTheDocument();
+    });
   });
 
-  it('shows Back to sign in button in confirmation state', () => {
-    mockForgotPasswordState.isSuccess = true;
+  it('shows Back to sign in link on the email step', () => {
     renderForgotPasswordPage();
-    // The confirmation state shows "Back to sign in" as a Button element
     expect(screen.getByRole('link', { name: 'Back to sign in' })).toBeInTheDocument();
   });
 
-  it('hides the form and shows only the confirmation after submit', () => {
-    mockForgotPasswordState.isSuccess = true;
+  it('email form is shown on the initial email step', () => {
     renderForgotPasswordPage();
-    // Form fields should not be visible in confirmation state
-    expect(screen.queryByLabelText(/Email/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Send reset link/i })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/Email/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Send reset link/i })).toBeInTheDocument();
   });
 
   it('shows a generic error alert when isError is true', () => {

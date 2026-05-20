@@ -64,6 +64,7 @@ export default function ProjectSettingsPage() {
   const [requestTimeoutSeconds, setRequestTimeoutSeconds] = useState<number>(30);
   const [savedRequestTimeoutSeconds, setSavedRequestTimeoutSeconds] = useState<number>(30);
   const [saveBarState, setSaveBarState] = useState<SaveBarState>('clean');
+  const [accessDirty, setAccessDirty] = useState(false);
   const [sectionErrors, setSectionErrors] = useState<SectionErrors>({ projectInfo: false, reportSettings: false, access: false, apiAuth: false });
   const [pendingSections, setPendingSections] = useState<PendingSections>({ projectInfo: true, reportSettings: true });
 
@@ -92,12 +93,12 @@ export default function ProjectSettingsPage() {
   const computeDirty = useCallback((): boolean => {
     const formDirty = projectFormRef.current?.isDirty ?? false;
     const reportDirty = reportSettingsRef.current?.isDirty ?? false;
-    const accessDirty = accessRef.current?.isDirty ?? false;
+    const accessSectionDirty = accessRef.current?.isDirty ?? false;
     const apiAuthDirty = apiAuthRef.current?.isDirty ?? false;
     const promptDirty = customPrompt !== savedCustomPrompt;
     const timeoutDirty = requestTimeoutSeconds !== savedRequestTimeoutSeconds;
-    return formDirty || reportDirty || accessDirty || apiAuthDirty || promptDirty || timeoutDirty;
-  }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds]);
+    return formDirty || reportDirty || accessSectionDirty || apiAuthDirty || promptDirty || timeoutDirty;
+  }, [customPrompt, savedCustomPrompt, requestTimeoutSeconds, savedRequestTimeoutSeconds, accessDirty]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll computeDirty() after every render — form isDirty lives in a ref and
   // cannot be a dep, so no deps array is intentional. Guard prevents setState
@@ -313,7 +314,7 @@ export default function ProjectSettingsPage() {
               value={requestTimeoutSeconds}
               onChange={setRequestTimeoutSeconds}
             />
-            <AccessModeSelector ref={accessRef} projectId={project.projectId} />
+            <AccessModeSelector ref={accessRef} projectId={project.projectId} onDirtyChange={setAccessDirty} />
           </Paper>
 
           {/* API Authentication card */}

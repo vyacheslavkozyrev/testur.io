@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -7,6 +7,13 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 // Mock usePathname from next/navigation
 jest.mock('next/navigation', () => ({
   usePathname: jest.fn(),
+}));
+
+// useSignOut calls useQueryClient internally — mock the whole hook
+const mockSignOutMutate = jest.fn();
+let mockSignOutIsPending = false;
+jest.mock('@/hooks/useAuth', () => ({
+  useSignOut: () => ({ mutate: mockSignOutMutate, isPending: mockSignOutIsPending }),
 }));
 
 import { usePathname } from 'next/navigation';
@@ -47,6 +54,8 @@ describe('AppSidebar', () => {
   beforeEach(() => {
     localStorage.clear();
     mockUsePathname.mockReturnValue('/dashboard');
+    mockSignOutIsPending = false;
+    mockSignOutMutate.mockClear();
   });
 
   it('renders Dashboard, Projects, and Settings links', () => {
@@ -131,22 +140,13 @@ describe('AppSidebar', () => {
     expect(localStorage.getItem('testurio.sidebarCollapsed')).toBe('true');
   });
 
-  it('disables Sign Out button after clicking it', () => {
-    // Mock window.location.href assignment
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, href: '' },
-    });
-
+  it('calls sign out mutate when Sign Out button is clicked', () => {
     render(
       <Wrapper>
         <AppSidebar />
       </Wrapper>,
     );
-    const signOutBtn = screen.getByRole('button', { name: /sign out/i });
-    fireEvent.click(signOutBtn);
-    // MUI ListItemButton renders as div[role="button"], not a native <button>,
-    // so toBeDisabled() does not apply. Check aria-disabled instead.
-    expect(signOutBtn).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /sign out/i }));
+    expect(mockSignOutMutate).toHaveBeenCalledTimes(1);
   });
 });

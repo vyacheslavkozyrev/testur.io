@@ -85,6 +85,11 @@ jest.mock('@/hooks/useProjectAccess', () => ({
   }),
 }));
 
+jest.mock('@/hooks/useProjectApiAuth', () => ({
+  useProjectApiAuth: () => ({ data: undefined, isPending: false, isError: false }),
+  useUpdateProjectApiAuth: () => ({ mutateAsync: jest.fn().mockResolvedValue({}), isPending: false }),
+}));
+
 jest.mock('@/hooks/usePMToolConnection', () => ({
   useIntegrationStatus: () => ({ data: undefined, isPending: true, isError: false }),
   useSaveADOConnection: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
@@ -184,6 +189,26 @@ i18nInstance.use(initReactI18next).init({
         'remove.button': 'Remove Integration',
         'status.connected': 'Connected',
         'status.notConnected': 'Not connected',
+      },
+      projectAccess: {
+        modeLabel: 'Environment access method',
+        loadError: 'Failed to load access configuration.',
+        'modes.ipAllowlist.label': 'IP Allowlisting (Recommended)',
+        'modes.ipAllowlist.description': 'Add the Testurio static egress IPs to your firewall.',
+        'modes.basicAuth.label': 'HTTP Basic Auth',
+        'modes.basicAuth.usernameLabel': 'Username',
+        'modes.basicAuth.passwordLabel': 'Password',
+        'modes.basicAuth.passwordStoredHint': 'A password is stored.',
+        'modes.headerToken.label': 'Custom Header Token',
+        'modes.headerToken.headerNameLabel': 'Header Name',
+        'modes.headerToken.headerNameHint': 'Alphanumeric and hyphens only',
+        'modes.headerToken.headerValueLabel': 'Header Value',
+        'modes.headerToken.valueStoredHint': 'A value is stored.',
+        'validation.usernameRequired': 'Username is required.',
+        'validation.passwordRequired': 'Password is required.',
+        'validation.headerNameRequired': 'Header name is required.',
+        'validation.headerNameInvalid': 'Header name must contain only alphanumeric characters and hyphens.',
+        'validation.headerValueRequired': 'Header value is required.',
       },
     },
   },

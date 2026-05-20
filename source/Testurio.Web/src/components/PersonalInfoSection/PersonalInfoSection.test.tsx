@@ -26,8 +26,8 @@ const mockUser: AuthUser = {
   id: 'user-1',
   displayName: 'Test User',
   email: 'test@example.com',
-  firstName: null,
-  lastName: null,
+  firstName: 'Test',
+  lastName: 'User',
 };
 
 function createWrapper() {
@@ -51,36 +51,26 @@ function createWrapper() {
 describe('PersonalInfoSection', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('pre-populates the display name field from the user prop', () => {
+  it('pre-populates first name and last name fields from the user prop', () => {
     render(<PersonalInfoSection user={mockUser} onSaveSuccess={jest.fn()} />, {
       wrapper: createWrapper(),
     });
-    const input = screen.getByRole('textbox');
-    expect(input).toHaveValue('Test User');
+    const firstNameInput = screen.getByRole('textbox', { name: /first name/i }) as HTMLInputElement;
+    const lastNameInput = screen.getByRole('textbox', { name: /last name/i }) as HTMLInputElement;
+    expect(firstNameInput.value).toBe('Test');
+    expect(lastNameInput.value).toBe('User');
   });
 
-  it('shows required validation error when display name is empty', async () => {
-    render(<PersonalInfoSection user={{ ...mockUser, displayName: null }} onSaveSuccess={jest.fn()} />, {
-      wrapper: createWrapper(),
-    });
-    const saveBtn = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveBtn);
-    expect(await screen.findByText(/display name is required/i)).toBeInTheDocument();
+  it('pre-populates empty strings when user has null names', () => {
+    render(
+      <PersonalInfoSection user={{ ...mockUser, firstName: null, lastName: null }} onSaveSuccess={jest.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    const firstNameInput = screen.getByRole('textbox', { name: /first name/i }) as HTMLInputElement;
+    expect(firstNameInput.value).toBe('');
   });
 
-  it('shows max-length validation error when display name exceeds 100 characters', async () => {
-    render(<PersonalInfoSection user={mockUser} onSaveSuccess={jest.fn()} />, {
-      wrapper: createWrapper(),
-    });
-    const input = screen.getByRole('textbox');
-    await userEvent.clear(input);
-    await userEvent.type(input, 'a'.repeat(101));
-    const saveBtn = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveBtn);
-    expect(await screen.findByText(/100 characters or fewer/i)).toBeInTheDocument();
-  });
-
-  it('disables input and button while request is in flight', async () => {
+  it('disables inputs and button while request is in flight', async () => {
     let resolveUpdate: (value: { userId: string; firstName: string | null; lastName: string | null }) => void;
     const pending = new Promise<{ userId: string; firstName: string | null; lastName: string | null }>((res) => {
       resolveUpdate = res;
@@ -94,7 +84,8 @@ describe('PersonalInfoSection', () => {
     await userEvent.click(saveBtn);
 
     await waitFor(() => {
-      expect(screen.getByRole('textbox')).toBeDisabled();
+      const inputs = screen.getAllByRole('textbox');
+      inputs.forEach((input) => expect(input).toBeDisabled());
       expect(screen.getByRole('button')).toBeDisabled();
     });
 
@@ -108,8 +99,7 @@ describe('PersonalInfoSection', () => {
     render(<PersonalInfoSection user={mockUser} onSaveSuccess={onSaveSuccess} />, {
       wrapper: createWrapper(),
     });
-    const saveBtn = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveBtn);
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
 
     await waitFor(() => expect(onSaveSuccess).toHaveBeenCalledTimes(1));
   });
@@ -120,11 +110,9 @@ describe('PersonalInfoSection', () => {
     render(<PersonalInfoSection user={mockUser} onSaveSuccess={jest.fn()} />, {
       wrapper: createWrapper(),
     });
-    const saveBtn = screen.getByRole('button', { name: /save/i });
-    await userEvent.click(saveBtn);
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
 
     expect(await screen.findByText(/failed to save settings/i)).toBeInTheDocument();
-    // Button should be re-enabled
     await waitFor(() => expect(screen.getByRole('button', { name: /save/i })).not.toBeDisabled());
   });
 });
