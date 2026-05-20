@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: testurio
+data:
+  Cosmos__Endpoint: "<REPLACE_PRODUCTION_COSMOS_ENDPOINT>"
