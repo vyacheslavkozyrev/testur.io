@@ -4,13 +4,13 @@
 
 ### Domain layer
 
-- [ ] T001 [Domain] Add `PlanLimits` value object (`MaxProjects: int`, `MaxTestRunsPerMonth: int`; `-1` = unlimited) — `source/Testurio.Core/Models/PlanLimits.cs`
-- [ ] T002 [Domain] Add `PlanFeatures` value object (`ApiTesting: bool`, `UiE2eTesting: bool`, `AiMemory: bool`, `PmReportPostBack: bool`) — `source/Testurio.Core/Models/PlanFeatures.cs`
-- [ ] T003 [Domain] Extend `PlanDocument` record: add `Limits: PlanLimits` and `Features: PlanFeatures`; rename existing `Features` string list to `DisplayFeatures: IReadOnlyList<string>` — `source/Testurio.Core/Models/PlanDocument.cs`
-- [ ] T004 [Domain] Add `PlanLimitExceededException` carrying `LimitName: string` and `RequiredPlan: string` — `source/Testurio.Core/Exceptions/PlanLimitExceededException.cs`
-- [ ] T005 [Domain] Define `IPlanEnforcementService` interface with three methods: `CheckProjectLimitAsync(userId, ct)`, `CheckMonthlyRunQuotaAsync(userId, ct)`, and `GetEffectivePlanAsync(userId, ct) → PlanDocument?` — `source/Testurio.Core/Interfaces/IPlanEnforcementService.cs`
-- [ ] T006 [Domain] Extend `IPlanRepository`: add `GetByPlanAsync(SubscriptionPlan plan, CancellationToken ct) → Task<PlanDocument?>` alongside existing `ListAllAsync` — `source/Testurio.Core/Repositories/IPlanRepository.cs`
-- [ ] T007 [Domain] Migrate `QuotaUsage` model from daily to monthly: replace `UsedToday`/`DailyLimit` fields with `UsedThisMonth`/`MonthlyLimit`; change `ResetsAt` semantics to first day of next UTC month (comment update only — no runtime logic in the model) — `source/Testurio.Core/Models/QuotaUsage.cs`
+- [x] T001 [Domain] Add `PlanLimits` value object (`MaxProjects: int`, `MaxTestRunsPerMonth: int`; `-1` = unlimited) — `source/Testurio.Core/Models/PlanLimits.cs`
+- [x] T002 [Domain] Add `PlanFeatures` value object (`ApiTesting: bool`, `UiE2eTesting: bool`, `AiMemory: bool`, `PmReportPostBack: bool`) — `source/Testurio.Core/Models/PlanFeatures.cs`
+- [x] T003 [Domain] Extend `PlanDocument` record: add `Limits: PlanLimits` and `Features: PlanFeatures`; rename existing `Features` string list to `DisplayFeatures: IReadOnlyList<string>` — `source/Testurio.Core/Models/PlanDocument.cs`
+- [x] T004 [Domain] Add `PlanLimitExceededException` carrying `LimitName: string` and `RequiredPlan: string` — `source/Testurio.Core/Exceptions/PlanLimitExceededException.cs`
+- [x] T005 [Domain] Define `IPlanEnforcementService` interface with three methods: `CheckProjectLimitAsync(userId, ct)`, `CheckMonthlyRunQuotaAsync(userId, ct)`, and `GetEffectivePlanAsync(userId, ct) → PlanDocument?` — `source/Testurio.Core/Interfaces/IPlanEnforcementService.cs`
+- [x] T006 [Domain] Extend `IPlanRepository`: add `GetByPlanAsync(SubscriptionPlan plan, CancellationToken ct) → Task<PlanDocument?>` alongside existing `ListAllAsync` — `source/Testurio.Core/Repositories/IPlanRepository.cs`
+- [x] T007 [Domain] Migrate `QuotaUsage` model from daily to monthly: replace `UsedToday`/`DailyLimit` fields with `UsedThisMonth`/`MonthlyLimit`; change `ResetsAt` semantics to first day of next UTC month (comment update only — no runtime logic in the model) — `source/Testurio.Core/Models/QuotaUsage.cs`
 
 ### Infrastructure layer
 
