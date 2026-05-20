@@ -241,8 +241,10 @@ public static class DependencyInjection
 
         services.AddSingleton<IStripeService, StripeService>();
 
-        // Feature 0046: plan enforcement service — scoped because project/run counts are per-request.
-        services.AddScoped<IPlanEnforcementService>(sp =>
+        // Feature 0046: plan enforcement service.
+        // Registered as Singleton — all dependencies (repositories) are also Singleton.
+        // The service is stateless; per-call state lives entirely in local variables.
+        services.AddSingleton<IPlanEnforcementService>(sp =>
             new PlanEnforcementService(
                 sp.GetRequiredService<IUserSubscriptionRepository>(),
                 sp.GetRequiredService<IPlanRepository>(),

@@ -12,6 +12,7 @@ using Testurio.Pipeline.StoryParser;
 using Testurio.Worker.Services;
 using Testurio.Worker.Steps;
 
+
 namespace Testurio.Worker.Processors;
 
 public partial class TestRunJobProcessor : IAsyncDisposable
@@ -30,6 +31,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ITestGeneratorFactory _testGeneratorFactory;
     private readonly IExecutorRouter _executorRouter;
     private readonly IReportWriter _reportWriter;
+    private readonly IMemoryWriterService _memoryWriterService;
+    private readonly IPlanEnforcementService _planEnforcementService;
     private readonly WorkItemTransitionStep _workItemTransitionStep;
     private readonly ILogger<TestRunJobProcessor> _logger;
 
@@ -47,6 +50,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ITestGeneratorFactory testGeneratorFactory,
         IExecutorRouter executorRouter,
         IReportWriter reportWriter,
+        IMemoryWriterService memoryWriterService,
+        IPlanEnforcementService planEnforcementService,
         WorkItemTransitionStep workItemTransitionStep,
         ILogger<TestRunJobProcessor> logger)
     {
@@ -66,6 +71,8 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _testGeneratorFactory = testGeneratorFactory;
         _executorRouter = executorRouter;
         _reportWriter = reportWriter;
+        _memoryWriterService = memoryWriterService;
+        _planEnforcementService = planEnforcementService;
         _workItemTransitionStep = workItemTransitionStep;
         _logger = logger;
 
@@ -216,17 +223,65 @@ public partial class TestRunJobProcessor : IAsyncDisposable
             return;
         }
 
-        // Stage 3: MemoryRetrieval (feature 0027) — embed the story and retrieve the top-3
-        // semantically similar past scenarios scoped to this project. Any infrastructure failure
-        // is caught by MemoryRetrievalService and returns an empty result; the pipeline continues.
-        var memoryResult = await _memoryRetrievalService.RetrieveAsync(parsedStory, project, testRun.Id, cancellationToken);
-        LogMemoryRetrieved(_logger, testRun.Id, memoryResult.Scenarios.Count);
+        // Feature 0046: resolve the user's effective plan once, after AgentRouter completes.
+        // Fail-open: if plan resolution fails or returns null, treat all feature flags as true
+        // so a billing infrastructure blip does not silently drop a test run (AC-026).
+        PlanFeatures? planFeatures = null;
+        try
+        {
+            var plan = await _planEnforcementService.GetEffectivePlanAsync(testRun.UserId, cancellationToken);
+            planFeatures = plan?.Features;
+        }
+        catch (Exception ex)
+        {
+            LogPlanResolutionFailed(_logger, testRun.Id, ex);
+            // Fail-open: continue with planFeatures = null (all flags treated as true below).
+        }
+
+        // AC-034–AC-037: filter resolved test types by plan feature flags.
+        var filteredTestTypes = routerResult.ResolvedTestTypes
+            .Where(t => t switch
+            {
+                TestType.Api    => planFeatures?.ApiTesting ?? true,
+                TestType.UiE2e  => planFeatures?.UiE2eTesting ?? true,
+                _               => true,
+            })
+            .ToArray();
+
+        if (filteredTestTypes.Length == 0)
+        {
+            // AC-035/AC-037: all resolved types disabled by plan flags — mark Skipped.
+            const string skipReason = "Skipped — plan does not include any enabled test type for this run";
+            testRun.Status = TestRunStatus.Skipped;
+            testRun.SkipReason = skipReason;
+            await _testRunRepository.UpdateAsync(testRun, cancellationToken);
+            LogSkippedByPlan(_logger, testRun.Id);
+            return;
+        }
+
+        // AC-023/AC-024: gate Stage 3 (MemoryRetrieval) on aiMemory flag.
+        var aiMemoryEnabled = planFeatures?.AiMemory ?? true;
+
+        MemoryRetrievalResult memoryResult;
+        if (aiMemoryEnabled)
+        {
+            // Stage 3: MemoryRetrieval (feature 0027) — embed the story and retrieve the top-3
+            // semantically similar past scenarios scoped to this project.
+            memoryResult = await _memoryRetrievalService.RetrieveAsync(parsedStory, project, testRun.Id, cancellationToken);
+            LogMemoryRetrieved(_logger, testRun.Id, memoryResult.Scenarios.Count);
+        }
+        else
+        {
+            // AC-024: aiMemory disabled — skip Stage 3 and pass empty result to generators.
+            LogMemorySkipped(_logger, testRun.Id, planFeatures is not null ? "plan" : "unknown");
+            memoryResult = new MemoryRetrievalResult { Scenarios = [] };
+        }
 
         // Stage 4: Generate test scenarios (feature 0028).
         // Load prompt templates for all resolved test types. If any template is missing the run
         // fails immediately (AC-005) — no agent is invoked and no partial work is done.
         var generatorResults = await RunGeneratorStageAsync(
-            testRun, project, parsedStory, memoryResult, routerResult.ResolvedTestTypes, cancellationToken);
+            testRun, project, parsedStory, memoryResult, filteredTestTypes, cancellationToken);
 
         // Stage 5 (feature 0029): Route generated scenarios to the appropriate executor(s).
         // ExecutorRouter throws ExecutorRouterException when both scenario lists are empty;
@@ -236,7 +291,32 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
         // Stage 6: Generate verdict report, post PM tool comment, persist TestResult (feature 0030).
         // Stage 7: Transition PM tool work item status after report delivery (feature 0024).
-        await RunReportWriterStageAsync(testRun, project, parsedStory, executionResult, cancellationToken);
+        var pmReportPostBackEnabled = planFeatures?.PmReportPostBack ?? true;
+        await RunReportWriterStageAsync(testRun, project, parsedStory, executionResult, pmReportPostBackEnabled, cancellationToken);
+
+        // Stage 8 (feature 0046): MemoryWriter — upsert effective scenarios to TestMemory when all passed.
+        // AC-025: skip when aiMemory flag is false.
+        if (aiMemoryEnabled)
+        {
+            var allPassed = executionResult.ApiResults.All(r => r.Passed)
+                            && executionResult.UiE2eResults.All(r => r.Passed);
+            if (allPassed)
+            {
+                try
+                {
+                    await _memoryWriterService.UpsertScenarioAsync(parsedStory, generatorResults, testRun, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    // Non-fatal — MemoryWriter failure does not affect the run outcome.
+                    LogMemoryWriteFailed(_logger, testRun.Id, ex);
+                }
+            }
+        }
+        else
+        {
+            LogMemoryWriteSkipped(_logger, testRun.Id, planFeatures is not null ? "plan" : "unknown");
+        }
     }
 
     /// <summary>
@@ -389,6 +469,10 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     /// Then invokes stage 7 (<see cref="WorkItemTransitionStep"/>) to transition the originating
     /// PM tool work item status (feature 0024).
     /// </summary>
+    /// <param name="pmReportPostBackEnabled">
+    /// When <c>false</c>, the PM tool comment post is skipped inside <see cref="IReportWriter.WriteAsync"/>;
+    /// the <see cref="TestResult"/> record is still persisted (AC-029–AC-032).
+    /// </param>
     /// <remarks>
     /// On <see cref="ReportWriterException"/> (AC-023): sets <c>TestRun.Status</c> to
     /// <c>ReportFailed</c>, persists the status, and re-throws so <see cref="OnMessageAsync"/>
@@ -402,11 +486,12 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         Core.Entities.Project project,
         ParsedStory parsedStory,
         ExecutionResult executionResult,
+        bool pmReportPostBackEnabled,
         CancellationToken cancellationToken)
     {
         try
         {
-            await _reportWriter.WriteAsync(parsedStory, executionResult, project, testRun, cancellationToken);
+            await _reportWriter.WriteAsync(parsedStory, executionResult, project, testRun, pmReportPostBackEnabled, cancellationToken);
             LogReportWritten(_logger, testRun.Id);
         }
         catch (ReportWriterException)
@@ -513,4 +598,19 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Information, Message = "ReportWriter stage completed for test run {TestRunId}")]
     private static partial void LogReportWritten(ILogger logger, string testRunId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Plan resolution failed for test run {TestRunId} — proceeding fail-open")]
+    private static partial void LogPlanResolutionFailed(ILogger logger, string testRunId, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Test run {TestRunId} skipped — all resolved test types are disabled by the plan")]
+    private static partial void LogSkippedByPlan(ILogger logger, string testRunId);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "MemoryRetrieval skipped for test run {TestRunId} — aiMemory disabled by {Reason}")]
+    private static partial void LogMemorySkipped(ILogger logger, string testRunId, string reason);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "MemoryWriter skipped for test run {TestRunId} — aiMemory disabled by {Reason}")]
+    private static partial void LogMemoryWriteSkipped(ILogger logger, string testRunId, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "MemoryWriter stage failed (non-fatal) for test run {TestRunId}")]
+    private static partial void LogMemoryWriteFailed(ILogger logger, string testRunId, Exception ex);
 }

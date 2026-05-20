@@ -30,12 +30,12 @@
 
 ### Worker pipeline
 
-- [ ] T018 [App] Add `IMemoryWriterService` interface (Stage 8): `UpsertScenarioAsync(ParsedStory, GeneratorResults, TestRun, CancellationToken)` — `source/Testurio.Core/Interfaces/IMemoryWriterService.cs`
-- [ ] T019 [App] Update `TestRunJobProcessor.ExecutePipelineAsync`: inject `IPlanEnforcementService` and `IMemoryWriterService`; after Stage 2 (AgentRouter), call `GetEffectivePlanAsync` once and store the result; (a) filter `resolvedTestTypes` by `features.apiTesting` / `features.uiE2eTesting` flags (AC-034–AC-037); (b) pass `features.aiMemory` to guard Stage 3 (`MemoryRetrieval`) and Stage 8 (`MemoryWriter`); (c) pass `features.pmReportPostBack` to `RunReportWriterStageAsync` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T020 [App] Update `RunReportWriterStageAsync` signature to accept `bool pmReportPostBackEnabled`; pass the flag into `IReportWriter.WriteAsync` so the concrete implementation can skip the PM tool comment post when `false` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
-- [ ] T021 [App] Extend `IReportWriter.WriteAsync` signature (or add an overload) to accept `bool postBackEnabled`; in `ReportWriterService`, skip the `ICommentEventSender` call when `postBackEnabled == false` while still persisting the `TestResult` record — `source/Testurio.Core/Interfaces/IReportWriter.cs` + `source/Testurio.Pipeline.ReportWriter/ReportWriterService.cs`
-- [ ] T022 [App] Implement `MemoryWriterService` (stub / real): implement `IMemoryWriterService`; for all-pass runs, embed `ParsedStory.Text` via `IEmbeddingService` and upsert to `TestMemory` Cosmos container — `source/Testurio.Pipeline.MemoryWriter/MemoryWriterService.cs`
-- [ ] T023 [Infra] Register `MemoryWriterService` as `IMemoryWriterService` (transient) in Worker DI — `source/Testurio.Worker/DependencyInjection.cs`
+- [x] T018 [App] Add `IMemoryWriterService` interface (Stage 8): `UpsertScenarioAsync(ParsedStory, GeneratorResults, TestRun, CancellationToken)` — `source/Testurio.Core/Interfaces/IMemoryWriterService.cs`
+- [x] T019 [App] Update `TestRunJobProcessor.ExecutePipelineAsync`: inject `IPlanEnforcementService` and `IMemoryWriterService`; after Stage 2 (AgentRouter), call `GetEffectivePlanAsync` once and store the result; (a) filter `resolvedTestTypes` by `features.apiTesting` / `features.uiE2eTesting` flags (AC-034–AC-037); (b) pass `features.aiMemory` to guard Stage 3 (`MemoryRetrieval`) and Stage 8 (`MemoryWriter`); (c) pass `features.pmReportPostBack` to `RunReportWriterStageAsync` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T020 [App] Update `RunReportWriterStageAsync` signature to accept `bool pmReportPostBackEnabled`; pass the flag into `IReportWriter.WriteAsync` so the concrete implementation can skip the PM tool comment post when `false` — `source/Testurio.Worker/Processors/TestRunJobProcessor.cs`
+- [x] T021 [App] Extend `IReportWriter.WriteAsync` signature (or add an overload) to accept `bool postBackEnabled`; in `ReportWriterService`, skip the `ICommentEventSender` call when `postBackEnabled == false` while still persisting the `TestResult` record — `source/Testurio.Core/Interfaces/IReportWriter.cs` + `source/Testurio.Pipeline.ReportWriter/ReportWriterService.cs`
+- [x] T022 [App] Implement `MemoryWriterService` (stub / real): implement `IMemoryWriterService`; for all-pass runs, embed `ParsedStory.Text` via `IEmbeddingService` and upsert to `TestMemory` Cosmos container — `source/Testurio.Pipeline.MemoryWriter/MemoryWriterService.cs`
+- [x] T023 [Infra] Register `MemoryWriterService` as `IMemoryWriterService` (transient) in Worker DI — `source/Testurio.Worker/DependencyInjection.cs`
 
 ### Cosmos seed data
 
