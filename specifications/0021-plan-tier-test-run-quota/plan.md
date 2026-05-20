@@ -27,7 +27,7 @@
 
 ### Application — Dashboard Quota Fix
 
-- [ ] T009 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `DashboardService`; resolve subscription and pass `dailyLimit` from `IQuotaPolicy` to a refactored `GetQuotaUsageAsync` call — `source/Testurio.Api/Services/DashboardService.cs`
+- [x] T009 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `DashboardService`; resolve subscription and pass `dailyLimit` from `IQuotaPolicy` to a refactored `GetQuotaUsageAsync` call — `source/Testurio.Api/Services/DashboardService.cs`
 
 ### Infrastructure — Stats Repository Quota Signature Update
 
