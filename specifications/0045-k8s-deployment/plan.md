@@ -2,7 +2,7 @@
 
 ## Tasks
 
-- [ ] T001 [Config] Author `source/Testurio.Worker/Dockerfile` — verify the existing multi-stage Dockerfile (from feature 0044) is present and correct; no changes needed if AC-046–AC-050 of feature 0044 are satisfied — `source/Testurio.Worker/Dockerfile`
+- [x] T001 [Config] Author `source/Testurio.Worker/Dockerfile` — verify the existing multi-stage Dockerfile (from feature 0044) is present and correct; no changes needed if AC-046–AC-050 of feature 0044 are satisfied — `source/Testurio.Worker/Dockerfile`
 - [ ] T002 [Config] Author `source/Testurio.Api/Dockerfile` — multi-stage build (`sdk:10.0` → `aspnet:10.0`), `dotnet publish -c Release`, non-root user, exposes port `8080`, sets `DOTNET_ENVIRONMENT=Production` and `ASPNETCORE_URLS=http://+:8080` — `source/Testurio.Api/Dockerfile`
 - [ ] T003 [Config] Author `source/Testurio.Web/Dockerfile` — multi-stage build (`node:20-alpine` build stage, `gcr.io/distroless/nodejs20-debian12` runtime), `npm ci --ignore-scripts` + `npm run build`, copies only `.next/standalone`, `.next/static`, `public/`, exposes port `3000`, sets `NODE_ENV=production` and `HOSTNAME=0.0.0.0` — `source/Testurio.Web/Dockerfile`
 - [ ] T004 [Infra] Author `infra/k8s/base/namespace.yaml` — `Namespace` named `testurio` — `infra/k8s/base/namespace.yaml`
