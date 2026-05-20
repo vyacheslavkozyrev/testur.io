@@ -39,7 +39,7 @@
 - [x] T012 [Test] Unit tests for `QuotaPolicy`: each `SubscriptionPlan` value returns the correct limit; `null` plan returns `0` — `tests/Testurio.UnitTests/Services/QuotaPolicyTests.cs`
 - [x] T013 [Test] Unit tests for `JiraWebhookService` quota path: trigger rejected when `usedToday >= dailyLimit`; quota-exhausted comment posted to Jira; no-subscription comment posted when subscription is `None`; trigger proceeds normally when `usedToday < dailyLimit`; `Trialing` status uses plan-tier limit — `tests/Testurio.UnitTests/Services/JiraWebhookServiceQuotaTests.cs`
 - [x] T014 [Test] Unit tests for `ADOWebhookService` quota path: trigger rejected when quota exhausted; `QuotaExceeded` result returned; no PM tool comment posted — `tests/Testurio.UnitTests/Services/ADOWebhookServiceQuotaTests.cs`
-- [ ] T015 [Test] Unit tests for `DashboardService` with quota: `dailyLimit` matches plan-tier value for `Active` user; `dailyLimit` is `0` for `None`/`Expired` user — `tests/Testurio.UnitTests/Services/DashboardServiceQuotaTests.cs`
+- [x] T015 [Test] Unit tests for `DashboardService` with quota: `dailyLimit` matches plan-tier value for `Active` user; `dailyLimit` is `0` for `None`/`Expired` user — `tests/Testurio.UnitTests/Services/DashboardServiceQuotaTests.cs`
 - [ ] T016 [Test] Integration tests for quota enforcement: Jira webhook returns `200 OK` when quota is exhausted (no retry storm); ADO webhook returns `200 OK` on quota exhaustion; `GET /v1/stats/dashboard` returns correct `dailyLimit` for each `SubscriptionPlan` — `tests/Testurio.IntegrationTests/Controllers/QuotaIntegrationTests.cs`
 
 ---
