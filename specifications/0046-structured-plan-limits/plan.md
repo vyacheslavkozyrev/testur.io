@@ -21,12 +21,12 @@
 
 ### Application layer — API
 
-- [ ] T012 [App] Update `ProjectService.CreateAsync`: inject `IPlanEnforcementService`; call `CheckProjectLimitAsync` before writing the new project document to Cosmos — `source/Testurio.Api/Services/ProjectService.cs`
-- [ ] T013 [App] Update `JiraWebhookService` (and `ADOWebhookService` if present): inject `IPlanEnforcementService`; call `CheckMonthlyRunQuotaAsync` before creating the `TestRun` document and publishing to Service Bus — `source/Testurio.Api/Services/JiraWebhookService.cs`
-- [ ] T014 [App] Register `PlanLimitExceededException` in `GlobalExceptionHandler`: map to `403 Forbidden` with `ProblemDetails` body; set `Title = "Plan limit reached"`; populate `extensions` with `limitName` and `requiredPlan`; format `Detail` for `maxProjects` and `maxTestRunsPerMonth` cases — `source/Testurio.Api/Middleware/GlobalExceptionHandler.cs`
-- [ ] T015 [App] Update `DashboardService.GetDashboardAsync`: no logic change required — `StatsRepository.GetQuotaUsageAsync` now returns monthly data (T009); the service just passes the result through — `source/Testurio.Api/Services/DashboardService.cs` _(verify only — may require no code change)_
-- [ ] T016 [App] Update `PlanDefinitionDto` record: add `Limits: PlanLimitsDto` and `Features: PlanFeaturesDto`; rename existing `Features` to `DisplayFeatures`; add `PlanLimitsDto` and `PlanFeaturesDto` nested types in the same file — `source/Testurio.Api/DTOs/Plans/PlanDefinitionDto.cs`
-- [ ] T017 [App] Update `PlanEndpoints` mapper: map `PlanDocument.Limits` → `PlanLimitsDto` and `PlanDocument.Features` → `PlanFeaturesDto`; map `DisplayFeatures` for the renamed field — `source/Testurio.Api/Endpoints/PlanEndpoints.cs`
+- [x] T012 [App] Update `ProjectService.CreateAsync`: inject `IPlanEnforcementService`; call `CheckProjectLimitAsync` before writing the new project document to Cosmos — `source/Testurio.Api/Services/ProjectService.cs`
+- [x] T013 [App] Update `JiraWebhookService` (and `ADOWebhookService` if present): inject `IPlanEnforcementService`; call `CheckMonthlyRunQuotaAsync` before creating the `TestRun` document and publishing to Service Bus — `source/Testurio.Api/Services/JiraWebhookService.cs`
+- [x] T014 [App] Register `PlanLimitExceededException` in `GlobalExceptionHandler`: map to `403 Forbidden` with `ProblemDetails` body; set `Title = "Plan limit reached"`; populate `extensions` with `limitName` and `requiredPlan`; format `Detail` for `maxProjects` and `maxTestRunsPerMonth` cases — `source/Testurio.Api/Middleware/GlobalExceptionHandler.cs`
+- [x] T015 [App] Update `DashboardService.GetDashboardAsync`: no logic change required — `StatsRepository.GetQuotaUsageAsync` now returns monthly data (T009); the service just passes the result through — `source/Testurio.Api/Services/DashboardService.cs` _(verify only — may require no code change)_
+- [x] T016 [App] Update `PlanDefinitionDto` record: add `Limits: PlanLimitsDto` and `Features: PlanFeaturesDto`; rename existing `Features` to `DisplayFeatures`; add `PlanLimitsDto` and `PlanFeaturesDto` nested types in the same file — `source/Testurio.Api/DTOs/Plans/PlanDefinitionDto.cs`
+- [x] T017 [App] Update `PlanEndpoints` mapper: map `PlanDocument.Limits` → `PlanLimitsDto` and `PlanDocument.Features` → `PlanFeaturesDto`; map `DisplayFeatures` for the renamed field — `source/Testurio.Api/Endpoints/PlanEndpoints.cs`
 
 ### Worker pipeline
 
