@@ -106,7 +106,6 @@ export default function DashboardPage() {
       return (
         <Box sx={styles.grid}>
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            // eslint-disable-next-line react/no-array-index-key
             <Skeleton key={i} variant="rectangular" sx={styles.skeleton} />
           ))}
         </Box>

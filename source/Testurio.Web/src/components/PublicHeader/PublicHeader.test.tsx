@@ -122,7 +122,7 @@ describe('PublicHeader', () => {
   });
 
   it('shows active link styling for the current route', () => {
-    const { usePathname } = require('next/navigation') as { usePathname: jest.Mock };
+    const { usePathname } = jest.requireMock('next/navigation') as { usePathname: jest.Mock };
     usePathname.mockReturnValue('/');
     mockAuthUser = null;
 

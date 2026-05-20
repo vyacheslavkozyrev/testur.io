@@ -5,7 +5,6 @@ import { pmToolService } from '@/services/pmTool/pmToolService';
 import {
   useIntegrationStatus,
   useSaveADOConnection,
-  useSaveJiraConnection,
   useTestConnection,
   useRemoveConnection,
   PM_TOOL_KEYS,
@@ -61,8 +60,10 @@ const mockNoIntegration: PMToolConnectionResponse = {
 
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(QueryClientProvider, { client: qc }, children);
+  }
+  return Wrapper;
 }
 
 describe('useIntegrationStatus', () => {

@@ -82,7 +82,7 @@ describe('CheckoutSuccessPage', () => {
 
   it('redirects to /pricing when session_id param is absent', () => {
     (useSearchParams as jest.Mock).mockReturnValue({
-      get: (_: string) => null,
+      get: () => null,
     });
 
     renderPage();

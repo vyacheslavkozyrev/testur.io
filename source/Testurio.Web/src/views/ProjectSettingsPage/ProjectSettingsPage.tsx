@@ -102,6 +102,7 @@ export default function ProjectSettingsPage() {
   // Poll computeDirty() after every render — form isDirty lives in a ref and
   // cannot be a dep, so no deps array is intentional. Guard prevents setState
   // when nothing changed, which avoids triggering a follow-up render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (saveBarState === 'saving' || saveBarState === 'saved') return;
     const next = computeDirty() ? 'dirty' : 'clean';

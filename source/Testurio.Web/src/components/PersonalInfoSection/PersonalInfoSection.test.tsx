@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nextProvider } from 'react-i18next';
@@ -34,8 +34,8 @@ function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(
       QueryClientProvider,
       { client: qc },
       createElement(
@@ -44,6 +44,8 @@ function createWrapper() {
         createElement(ThemeProvider, { theme }, children),
       ),
     );
+  }
+  return Wrapper;
 }
 
 describe('PersonalInfoSection', () => {
