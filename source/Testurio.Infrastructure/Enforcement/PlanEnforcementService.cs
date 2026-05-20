@@ -78,7 +78,9 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
 
         if (activeCount >= maxProjects)
         {
-            var requiredPlan = NextTierNames.TryGetValue(GetPlanEnum(plan.Id), out var next) ? next : plan.Name;
+            var requiredPlan = TryGetPlanEnum(plan.Id, out var planEnum) && NextTierNames.TryGetValue(planEnum, out var next)
+                ? next
+                : plan.Name;
             throw new PlanLimitExceededException(
                 $"Your plan allows a maximum of {maxProjects} projects. Upgrade to {requiredPlan} to create more.",
                 limitName: "maxProjects",
@@ -107,14 +109,17 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
 
         // Count TestRun documents created this calendar month for this user.
         // Cross-partition query is acceptable here — enforcement fires only on webhook/trigger path.
-        var monthStart = new DateTimeOffset(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var nowEnforcement = DateTimeOffset.UtcNow;
+        var monthStart = new DateTimeOffset(nowEnforcement.Year, nowEnforcement.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var nextMonthStart = monthStart.AddMonths(1);
 
         var usedThisMonth = await _testRunRepository.CountByUserForMonthAsync(userId, monthStart, nextMonthStart, ct);
 
         if (usedThisMonth >= maxRuns)
         {
-            var requiredPlan = NextTierNames.TryGetValue(GetPlanEnum(plan.Id), out var next) ? next : plan.Name;
+            var requiredPlan = TryGetPlanEnum(plan.Id, out var planEnum) && NextTierNames.TryGetValue(planEnum, out var next)
+                ? next
+                : plan.Name;
             throw new PlanLimitExceededException(
                 $"Your plan allows {maxRuns} test runs per month. Your quota resets on {nextMonthStart:yyyy-MM-dd}. Upgrade to {requiredPlan} to run more tests.",
                 limitName: "maxTestRunsPerMonth",
@@ -124,12 +129,15 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
-    private static SubscriptionPlan GetPlanEnum(string planId) => planId switch
+    private static bool TryGetPlanEnum(string planId, out SubscriptionPlan plan)
     {
-        "test-junior" => SubscriptionPlan.TestJunior,
-        "test-pro"    => SubscriptionPlan.TestPro,
-        "team"        => SubscriptionPlan.Team,
-        "centurio"    => SubscriptionPlan.Centurio,
-        _             => SubscriptionPlan.TestJunior,
-    };
+        switch (planId)
+        {
+            case "test-junior": plan = SubscriptionPlan.TestJunior; return true;
+            case "test-pro":    plan = SubscriptionPlan.TestPro;    return true;
+            case "team":        plan = SubscriptionPlan.Team;       return true;
+            case "centurio":    plan = SubscriptionPlan.Centurio;   return true;
+            default:            plan = default;                     return false;
+        }
+    }
 }

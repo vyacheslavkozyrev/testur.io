@@ -273,7 +273,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         else
         {
             // AC-024: aiMemory disabled — skip Stage 3 and pass empty result to generators.
-            LogMemorySkipped(_logger, testRun.Id, planFeatures is not null ? "plan" : "unknown");
+            LogMemorySkipped(_logger, testRun.Id, "plan");
             memoryResult = new MemoryRetrievalResult { Scenarios = [] };
         }
 
@@ -315,7 +315,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         }
         else
         {
-            LogMemoryWriteSkipped(_logger, testRun.Id, planFeatures is not null ? "plan" : "unknown");
+            LogMemoryWriteSkipped(_logger, testRun.Id, "plan");
         }
     }
 

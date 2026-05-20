@@ -61,7 +61,7 @@ export default function QuotaUsageBar({ quotaUsage }: QuotaUsageBarProps) {
             {t('quota.usage', { used: usedThisMonth, limit: monthlyLimit })}
           </Typography>
         )}
-        {!hasNoPlan && (
+        {showBar && (
           <Typography variant="caption" sx={styles.resetsAt}>
             {t('quota.resetsOn', { date: resetsAtFormatted })}
           </Typography>
