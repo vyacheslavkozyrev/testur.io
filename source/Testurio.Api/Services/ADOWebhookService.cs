@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -18,6 +19,7 @@ public partial class ADOWebhookService : IADOWebhookService
     private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
     private readonly IWorkItemTypeFilterService _filterService;
+    private readonly IPlanEnforcementService _planEnforcementService;
     private readonly ILogger<ADOWebhookService> _logger;
 
     public ADOWebhookService(
@@ -25,12 +27,14 @@ public partial class ADOWebhookService : IADOWebhookService
         IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
         IWorkItemTypeFilterService filterService,
+        IPlanEnforcementService planEnforcementService,
         ILogger<ADOWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
         _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
         _filterService = filterService;
+        _planEnforcementService = planEnforcementService;
         _logger = logger;
     }
 
@@ -58,6 +62,12 @@ public partial class ADOWebhookService : IADOWebhookService
         }
 
         var workItemId = payload.Resource.WorkItemId.ToString();
+
+        // AC-015/AC-016: check monthly run quota before creating TestRun or Service Bus message.
+        // Throws PlanLimitExceededException when quota is exhausted — propagates to the endpoint
+        // which returns 403 via GlobalExceptionHandler.
+        await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+
         var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
         if (activeRun is not null)
         {

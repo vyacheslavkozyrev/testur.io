@@ -4,9 +4,11 @@
     "createButton": "Create Project"
   },
   "quota": {
-    "usage": "{{used}} / {{limit}} runs used today",
-    "resetsAt": "Resets at {{time}}",
-    "noActivePlan": "No active plan"
+    "usage": "{{used}} / {{limit}} runs used this month",
+    "usageUnlimited": "{{used}} runs used this month",
+    "resetsOn": "Resets on {{date}}",
+    "noActivePlan": "No active plan",
+    "unlimited": "Unlimited"
   },
   "card": {
     "lastRun": "Last run: {{time}}",

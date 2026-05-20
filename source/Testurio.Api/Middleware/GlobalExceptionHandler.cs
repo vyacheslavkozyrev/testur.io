@@ -11,6 +11,26 @@ internal sealed class GlobalExceptionHandler(IProblemDetailsService pds) : IExce
         Exception ex,
         CancellationToken ct)
     {
+        if (ex is PlanLimitExceededException planLimit)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return await pds.TryWriteAsync(new()
+            {
+                HttpContext = ctx,
+                ProblemDetails =
+                {
+                    Status = StatusCodes.Status403Forbidden,
+                    Title  = "Plan limit reached",
+                    Detail = planLimit.Message,
+                    Extensions =
+                    {
+                        ["limitName"]    = planLimit.LimitName,
+                        ["requiredPlan"] = planLimit.RequiredPlan,
+                    }
+                }
+            });
+        }
+
         var (status, title) = ex switch
         {
             ValidationException v => (StatusCodes.Status400BadRequest, v.Message),

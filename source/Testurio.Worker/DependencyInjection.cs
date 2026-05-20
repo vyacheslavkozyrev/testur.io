@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
+using Testurio.Core.Models;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Testurio.Infrastructure.Anthropic;
@@ -13,6 +14,7 @@ using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
 using Testurio.Pipeline.MemoryRetrieval;
 using Testurio.Pipeline.FeedbackLoop;
+using Testurio.Pipeline.MemoryWriter;
 using Testurio.Pipeline.ReportWriter;
 using Testurio.Pipeline.StoryParser;
 using Testurio.Plugins.ReportWriterPlugin;
@@ -91,6 +93,9 @@ public static class DependencyInjection
         // ITestResultRepository — all registered above by AddWorkerServices/AddInfrastructure.
         services.AddReportWriter();
 
+        // MemoryWriter pipeline stage (feature 0046 stub / full implementation in feature 0032).
+        services.AddMemoryWriter();
+
         // Feature 0024: work item status transition step (Singleton — dependencies are all Singleton).
         services.AddSingleton<WorkItemTransitionStep>();
 
@@ -147,13 +152,17 @@ public static class DependencyInjection
             var testGeneratorFactory = sp.GetRequiredService<ITestGeneratorFactory>();
             var executorRouter = sp.GetRequiredService<IExecutorRouter>();
             var reportWriter = sp.GetRequiredService<IReportWriter>();
+            var memoryWriterService = sp.GetRequiredService<IMemoryWriterService>();
+            // Feature 0046: IPlanEnforcementService is registered as Singleton — all its
+            // dependencies (repositories) are also Singleton — so this resolve is safe here.
+            var planEnforcementService = sp.GetRequiredService<IPlanEnforcementService>();
             var workItemTransitionStep = sp.GetRequiredService<WorkItemTransitionStep>();
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<TestRunJobProcessor>>();
             return new TestRunJobProcessor(
                 sbClient, opts.TestRunJobQueueName, testRunRepo, projectRepo, sp,
                 queueManager, reportDeliveryStep, agentRouter, memoryRetrievalService,
                 promptTemplateRepository, testGeneratorFactory, executorRouter, reportWriter,
-                workItemTransitionStep, logger);
+                memoryWriterService, planEnforcementService, workItemTransitionStep, logger);
         });
 
         services.AddHostedService<WorkerBackgroundService>();

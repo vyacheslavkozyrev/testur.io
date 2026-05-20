@@ -31,6 +31,11 @@ public interface IReportWriter
     /// The active <see cref="TestRun"/> record. <c>PmCommentId</c> and <c>Status</c>
     /// are updated in-memory by this method before returning.
     /// </param>
+    /// <param name="postBackEnabled">
+    /// When <c>true</c>, the formatted report is posted as a comment to the originating ADO/Jira ticket.
+    /// When <c>false</c>, the PM tool comment step is skipped; the <see cref="TestResult"/> record
+    /// is still persisted to Cosmos regardless of this flag (AC-029–AC-032).
+    /// </param>
     /// <param name="ct">Cancellation token forwarded to all I/O calls.</param>
     /// <returns>A <see cref="Task"/> that completes when the stage is finished.</returns>
     /// <exception cref="ReportWriterException">
@@ -42,5 +47,6 @@ public interface IReportWriter
         ExecutionResult execution,
         Project projectConfig,
         TestRun run,
+        bool postBackEnabled,
         CancellationToken ct = default);
 }
