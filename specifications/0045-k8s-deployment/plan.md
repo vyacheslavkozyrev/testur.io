@@ -8,7 +8,7 @@
 - [x] T004 [Infra] Author `infra/k8s/base/namespace.yaml` — `Namespace` named `testurio` — `infra/k8s/base/namespace.yaml`
 - [x] T005 [Infra] Author `infra/k8s/base/rbac.yaml` — `ServiceAccount` `testurio-deployer`, `Role` with least-privilege verbs on deployments/services/configmaps/secrets/replicasets, `RoleBinding` — `infra/k8s/base/rbac.yaml`
 - [x] T006 [Infra] Author `infra/k8s/base/web/configmap.yaml` — `ConfigMap` with `NEXT_PUBLIC_API_URL` and `NODE_ENV=production` placeholders — `infra/k8s/base/web/configmap.yaml`
-- [ ] T007 [Infra] Author `infra/k8s/base/web/secret.yaml` — Secret template with `NEXTAUTH_SECRET` and `NEXTAUTH_URL` set to `<REPLACE>`, with comment block warning against committing real values — `infra/k8s/base/web/secret.yaml`
+- [x] T007 [Infra] Author `infra/k8s/base/web/secret.yaml` — Secret template with `NEXTAUTH_SECRET` and `NEXTAUTH_URL` set to `<REPLACE>`, with comment block warning against committing real values — `infra/k8s/base/web/secret.yaml`
 - [ ] T008 [Infra] Author `infra/k8s/base/web/deployment.yaml` — `Deployment` for web, `replicas: 2`, image placeholder, probes on port `3000`, resource requests/limits, `envFrom` ConfigMap + Secret, `imagePullSecrets: regcred`, `RollingUpdate maxUnavailable: 0 maxSurge: 1` — `infra/k8s/base/web/deployment.yaml`
 - [ ] T009 [Infra] Author `infra/k8s/base/web/service.yaml` — `ClusterIP` Service exposing port `3000` — `infra/k8s/base/web/service.yaml`
 - [ ] T010 [Infra] Author `infra/k8s/base/api/configmap.yaml` — `ConfigMap` with `DOTNET_ENVIRONMENT`, `ASPNETCORE_URLS`, `Cosmos__Endpoint`, `ServiceBus__Namespace`, `AzureAdB2C__Domain`, `AzureAdB2C__ClientId`, `AzureAdB2C__TenantId` placeholders — `infra/k8s/base/api/configmap.yaml`
