@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+patches:
+  - path: configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: web-config
+  - path: configmap-patch.yaml
+    target:
+      kind: ConfigMap
+      name: api-config
+  - path: worker-patch.yaml
+    target:
+      kind: Deployment
+      name: worker
+
+images:
+  - name: ghcr.io/vyacheslavkozyrev/testurio-web
+    newTag: latest
+  - name: ghcr.io/vyacheslavkozyrev/testurio-api
+    newTag: latest
+  - name: ghcr.io/vyacheslavkozyrev/testurio-worker
+    newTag: latest
