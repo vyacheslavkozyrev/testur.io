@@ -40,7 +40,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
   const isDowngrade = currentPlanRank !== null && planRank < currentPlanRank;
   const ctaDisabled = isCurrent || isDowngrade;
 
-  const styles = getStyles(theme, plan.isPopular, ctaDisabled);
+  const styles = getStyles(theme, plan.isPopular);
 
   const displayPrice = getMonthlyEquivalentPrice(plan, interval);
 
@@ -138,7 +138,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
+const getStyles = (theme: Theme, isPopular: boolean) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
@@ -223,5 +223,5 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         mt: 'auto',
       },
     }),
-    [theme, isPopular, ctaDisabled],
+    [theme, isPopular],
   );

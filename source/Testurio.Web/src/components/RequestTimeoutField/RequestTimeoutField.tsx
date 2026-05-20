@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import TextField from '@mui/material/TextField';
-import { useTheme, type Theme } from '@mui/material/styles';
 
 // Mirror of ProjectConstants.RequestTimeoutMinSeconds / MaxSeconds (Testurio.Core).
 // Update both locations if the range changes.
@@ -18,8 +17,7 @@ export interface RequestTimeoutFieldProps {
 
 export default function RequestTimeoutField({ value, onChange, error }: RequestTimeoutFieldProps) {
   const { t } = useTranslation('project');
-  const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = getStyles();
 
   const validationError = useMemo(() => {
     if (error) return error;
@@ -57,7 +55,7 @@ export default function RequestTimeoutField({ value, onChange, error }: RequestT
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme) =>
+const getStyles = () =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
@@ -68,5 +66,5 @@ const getStyles = (theme: Theme) =>
         },
       },
     }),
-    [theme],
+    [],
   );

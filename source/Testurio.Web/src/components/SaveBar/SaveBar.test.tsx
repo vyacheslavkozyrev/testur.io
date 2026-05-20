@@ -90,8 +90,7 @@ describe('SaveBar', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call onClick when clicked in clean state', async () => {
-    const user = userEvent.setup();
+  it('does not call onClick when clicked in clean state', () => {
     const onClick = jest.fn();
     render(
       <Wrapper>

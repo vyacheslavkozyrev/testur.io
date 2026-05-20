@@ -248,7 +248,11 @@ describe('AccessModeSelector — imperative handle: save()', () => {
     const ref = React.createRef<AccessModeSelectorHandle>();
     renderComponent(ref);
     await userEvent.click(screen.getByLabelText('HTTP Basic Auth'));
-    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    let saveError: Error | null = null;
+    await act(async () => {
+      try { await ref.current?.save(); } catch (e) { saveError = e as Error; }
+    });
+    expect(saveError).not.toBeNull();
     expect(mockMutateAsync).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(screen.getByText('Username is required.')).toBeInTheDocument();
@@ -261,7 +265,11 @@ describe('AccessModeSelector — imperative handle: save()', () => {
     await userEvent.click(screen.getByLabelText('Custom Header Token'));
     await userEvent.type(screen.getByLabelText(/Header Name/i), 'X Testurio Token');
     await userEvent.type(screen.getAllByLabelText(/Header Value/i)[0], 'tok-abc');
-    await expect(act(async () => { await ref.current?.save(); })).rejects.toThrow();
+    let saveError: Error | null = null;
+    await act(async () => {
+      try { await ref.current?.save(); } catch (e) { saveError = e as Error; }
+    });
+    expect(saveError).not.toBeNull();
     expect(mockMutateAsync).not.toHaveBeenCalled();
     await waitFor(() => {
       expect(

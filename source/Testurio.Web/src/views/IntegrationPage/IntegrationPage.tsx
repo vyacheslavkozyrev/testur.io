@@ -26,10 +26,9 @@ import {
   useRemoveConnection,
   useWebhookSetup,
   useRegenerateWebhookSecret,
-  useUpdateToken,
 } from '@/hooks/usePMToolConnection';
 import { useProject, useUpdateWorkItemTypeFilter } from '@/hooks/useProject';
-import type { PMToolType, SaveADOConnectionRequest, SaveJiraConnectionRequest, UpdateTokenRequest } from '@/types/pmTool.types';
+import type { PMToolType, SaveADOConnectionRequest, SaveJiraConnectionRequest } from '@/types/pmTool.types';
 
 type FormMode = 'none' | 'add-ado' | 'add-jira' | 'update-token';
 
@@ -47,8 +46,6 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   const [formMode, setFormMode] = useState<FormMode>('none');
   const [selectedTool, setSelectedTool] = useState<PMToolType | null>(null);
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
-  const [updateTokenValue, setUpdateTokenValue] = useState('');
-  const [updateEmailValue, setUpdateEmailValue] = useState('');
   const [pendingWorkItemTypes, setPendingWorkItemTypes] = useState<string[] | null>(null);
 
   const { data: integration, isPending, isError } = useIntegrationStatus(projectId ?? '');
@@ -91,7 +88,6 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
   const testConnection = useTestConnection(projectId ?? '');
   const removeConnection = useRemoveConnection(projectId ?? '');
   const regenerateWebhook = useRegenerateWebhookSecret(projectId ?? '');
-  const updateToken = useUpdateToken(projectId ?? '');
 
   const handleAddADO = useCallback(() => { setSelectedTool('ado'); setFormMode('add-ado'); }, []);
   const handleAddJira = useCallback(() => { setSelectedTool('jira'); setFormMode('add-jira'); }, []);
@@ -124,16 +120,6 @@ export default function IntegrationPage({ embedded = false }: IntegrationPagePro
     setFormMode(selectedTool === 'jira' ? 'add-jira' : 'add-ado');
   }, [selectedTool]);
   const handleOpenRemoveDialog = useCallback(() => setRemoveDialogOpen(true), []);
-
-  const handleUpdateToken = useCallback(() => {
-    const request: UpdateTokenRequest = {
-      token: updateTokenValue,
-      email: updateEmailValue || undefined,
-    };
-    updateToken.mutate(request, {
-      onSuccess: () => { setFormMode('none'); setUpdateTokenValue(''); setUpdateEmailValue(''); },
-    });
-  }, [updateToken, updateTokenValue, updateEmailValue]);
 
   if (isPending) {
     return embedded ? (

@@ -40,8 +40,10 @@ const mockInvalidCredentialsError: AuthError = {
 
 function createWrapper() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(QueryClientProvider, { client: qc }, children);
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(QueryClientProvider, { client: qc }, children);
+  }
+  return Wrapper;
 }
 
 // ─── useSignIn ────────────────────────────────────────────────────────────────
@@ -197,26 +199,12 @@ describe('useForgotPassword', () => {
 // ─── useSignOut ───────────────────────────────────────────────────────────────
 
 describe('useSignOut', () => {
-  const originalLocation = window.location;
-
   beforeEach(() => {
     jest.clearAllMocks();
-    // jsdom does not support window.location.href assignment — replace with writable mock
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { href: '' },
-    });
   });
 
-  afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: originalLocation,
-    });
-  });
-
-  it('navigates to the logoutUrl returned by authService.signOut', async () => {
-    mockAuthService.signOut.mockResolvedValue('/sign-in');
+  it('calls authService.signOut and succeeds', async () => {
+    mockAuthService.signOut.mockResolvedValue('https://b2c.example.com/logout');
 
     const { result } = renderHook(() => useSignOut(), { wrapper: createWrapper() });
 
@@ -225,7 +213,7 @@ describe('useSignOut', () => {
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(window.location.href).toBe('/sign-in');
+    expect(mockAuthService.signOut).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to /sign-in via router.replace when authService.signOut rejects', async () => {

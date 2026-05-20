@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import Chip from '@mui/material/Chip';
-import { useTheme, type Theme } from '@mui/material/styles';
 import type { RunStatus } from '@/types/dashboard.types';
 
 export interface RunStatusBadgeProps {
@@ -27,8 +26,7 @@ const STATUS_CONFIG: Record<RunStatus, StatusConfig> = {
 };
 
 export default function RunStatusBadge({ status }: RunStatusBadgeProps) {
-  const theme = useTheme();
-  const styles = getStyles(theme);
+  const styles = getStyles();
   const config = STATUS_CONFIG[status];
 
   return (
@@ -42,7 +40,7 @@ export default function RunStatusBadge({ status }: RunStatusBadgeProps) {
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme) =>
+const getStyles = () =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
@@ -55,7 +53,5 @@ const getStyles = (theme: Theme) =>
         animation: 'pulse 1.4s ease-in-out infinite',
       },
     }),
-    // theme intentionally omitted — pulse animation uses no theme tokens
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );

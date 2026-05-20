@@ -4,6 +4,17 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
+// Mock billing hooks used by banner components
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => ({ data: undefined, isPending: false, isError: false }),
+  useCreatePortalSession: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
+// Mock useSignOut used by AppSidebar (calls useQueryClient internally)
+jest.mock('@/hooks/useAuth', () => ({
+  useSignOut: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
 // Mock child hooks so we don't need a real auth session or browser APIs
 jest.mock('@/hooks/useAuthUser', () => ({
   useAuthUser: () => ({

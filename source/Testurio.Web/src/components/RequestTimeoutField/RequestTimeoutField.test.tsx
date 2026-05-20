@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
@@ -114,14 +115,18 @@ describe('RequestTimeoutField', () => {
   it('calls onChange with parsed number when user types a valid value', async () => {
     const user = userEvent.setup();
     const onChange = jest.fn();
-    render(
-      <Wrapper>
-        <RequestTimeoutField value={30} onChange={onChange} />
-      </Wrapper>,
-    );
+
+    function StatefulWrapper() {
+      const [val, setVal] = React.useState(0);
+      return (
+        <Wrapper>
+          <RequestTimeoutField value={val} onChange={(v) => { setVal(v); onChange(v); }} />
+        </Wrapper>
+      );
+    }
+    render(<StatefulWrapper />);
 
     const input = screen.getByLabelText(/request timeout/i);
-    await user.clear(input);
     await user.type(input, '60');
 
     // Last call should be with 60

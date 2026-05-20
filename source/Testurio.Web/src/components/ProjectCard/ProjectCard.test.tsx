@@ -8,6 +8,10 @@ jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
 
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => ({ data: undefined, isPending: false, isError: false }),
+}));
+
 import ProjectCard from './ProjectCard';
 import type { DashboardProjectSummary } from '@/types/dashboard.types';
 
