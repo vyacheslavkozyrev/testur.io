@@ -17,6 +17,8 @@ public partial class JiraWebhookService : IJiraWebhookService
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
     private readonly IWorkItemTypeFilterService _filterService;
+    private readonly IQuotaPolicy _quotaPolicy;
+    private readonly IUserSubscriptionRepository _subscriptionRepository;
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
@@ -26,6 +28,8 @@ public partial class JiraWebhookService : IJiraWebhookService
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
         IWorkItemTypeFilterService filterService,
+        IQuotaPolicy quotaPolicy,
+        IUserSubscriptionRepository subscriptionRepository,
         ILogger<JiraWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
@@ -34,6 +38,8 @@ public partial class JiraWebhookService : IJiraWebhookService
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
         _filterService = filterService;
+        _quotaPolicy = quotaPolicy;
+        _subscriptionRepository = subscriptionRepository;
         _logger = logger;
     }
 
@@ -63,6 +69,10 @@ public partial class JiraWebhookService : IJiraWebhookService
         if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
 
+        var quotaResult = await CheckQuotaAsync(project, issue, cancellationToken);
+        if (quotaResult is not null)
+            return quotaResult.Value;
+
         var missingParts = GetMissingParts(fields);
         if (missingParts is not null)
         {
@@ -71,6 +81,80 @@ public partial class JiraWebhookService : IJiraWebhookService
         }
 
         return await EnqueueOrQueueRunAsync(project, issue, cancellationToken);
+    }
+
+    private async Task<WebhookProcessResult?> CheckQuotaAsync(
+        Project project,
+        JiraIssue issue,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(project.UserId, cancellationToken);
+
+        var isActiveSubscription = subscription is not null &&
+            subscription.Status is SubscriptionStatus.Trialing or SubscriptionStatus.Active;
+
+        var dailyLimit = isActiveSubscription
+            ? _quotaPolicy.GetDailyLimit(subscription!.Plan)
+            : 0;
+
+        // Users with no subscription always get limit 0 regardless of quota policy.
+        if (!isActiveSubscription || dailyLimit == 0)
+        {
+            await PostQuotaCommentAsync(project, issue, noSubscription: true, usedToday: 0, dailyLimit: 0, cancellationToken);
+            LogQuotaRejectedNoSubscription(_logger, issue.Key, project.Id);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var windowStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        var windowEnd = windowStart.AddDays(1);
+
+        var usedToday = await _testRunRepository.CountTodayAsync(project.UserId, windowStart, windowEnd, cancellationToken);
+        if (usedToday >= dailyLimit)
+        {
+            await PostQuotaCommentAsync(project, issue, noSubscription: false, usedToday, dailyLimit, cancellationToken);
+            LogQuotaExceeded(_logger, issue.Key, project.Id, usedToday, dailyLimit);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
+        return null;
+    }
+
+    private async Task PostQuotaCommentAsync(
+        Project project,
+        JiraIssue issue,
+        bool noSubscription,
+        int usedToday,
+        int dailyLimit,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(project.JiraApiTokenSecretRef) ||
+            string.IsNullOrEmpty(project.JiraBaseUrl) ||
+            string.IsNullOrEmpty(project.JiraEmail))
+        {
+            return;
+        }
+
+        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
+
+        string comment;
+        if (noSubscription)
+        {
+            comment = "Testurio could not start a test run because this project does not have an active subscription. " +
+                      "Please purchase or renew a plan at https://testur.io to enable automated testing.";
+        }
+        else
+        {
+            var resetsAt = DateTimeOffset.UtcNow.Date.AddDays(1);
+            comment = $"Testurio could not start a test run because the daily quota has been reached " +
+                      $"({usedToday}/{dailyLimit} runs used today). " +
+                      $"The quota resets at {resetsAt:HH:mm} UTC.";
+        }
+
+        var posted = await _jiraApiClient.PostCommentAsync(
+            project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, comment, cancellationToken);
+        if (!posted.IsSuccess)
+            LogQuotaCommentPostFailed(_logger, issue.Key, project.Id);
     }
 
     private static string? GetMissingParts(JiraIssueFields? fields)
@@ -180,4 +264,16 @@ public partial class JiraWebhookService : IJiraWebhookService
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Webhook filtered: issue type '{IssueType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
     private static partial void LogFiltered(ILogger logger, string issueType, string projectId, string eventType, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Quota exceeded for Jira issue {IssueKey} in project {ProjectId}: {UsedToday}/{DailyLimit} runs used today")]
+    private static partial void LogQuotaExceeded(ILogger logger, string issueKey, string projectId, int usedToday, int dailyLimit);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Quota rejected (no active subscription) for Jira issue {IssueKey} in project {ProjectId}")]
+    private static partial void LogQuotaRejectedNoSubscription(ILogger logger, string issueKey, string projectId);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Failed to post quota comment on Jira issue {IssueKey} in project {ProjectId}")]
+    private static partial void LogQuotaCommentPostFailed(ILogger logger, string issueKey, string projectId);
 }
