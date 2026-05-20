@@ -6,8 +6,8 @@
 | --------- | ----------- | ---------- | ----- |
 | Specify   | ✅ Complete | 2026-05-20 |       |
 | Plan      | ✅ Complete | 2026-05-20 |       |
-| Implement | ⏳ Pending  |            |       |
-| Review    | ⏳ Pending  |            |       |
+| Implement | ✅ Complete | 2026-05-20 |       |
+| Review    | ✅ Complete | 2026-05-20 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -18,9 +18,17 @@ _Populated by `/implement 0046`_
 
 ---
 
-## Review
+## Review — 2026-05-20
 
-_Populated by `/review 0046`_
+### Warnings fixed
+- `source/Testurio.Infrastructure/Enforcement/PlanEnforcementService.cs:110` — `DateTime.UtcNow` used twice for month boundary; replaced with a single captured `DateTimeOffset.UtcNow` to avoid TOCTOU at month rollover
+- `source/Testurio.Infrastructure/Enforcement/PlanEnforcementService.cs:133` — `GetPlanEnum` default arm silently returned `TestJunior` for unknown plan slugs, causing `NextTierNames` lookup to return wrong upgrade tier; replaced with `TryGetPlanEnum` that returns `false` for unknowns, allowing the existing `plan.Name` fallback to activate correctly
+- `source/Testurio.Web/src/components/QuotaUsageBar/QuotaUsageBar.tsx:64` — "Resets on {date}" caption rendered for unlimited plans (`!hasNoPlan` was true when `monthlyLimit === -1`), which is semantically misleading; changed guard to `showBar` so caption is hidden for both no-plan and unlimited states (AC-040)
+
+### Suggestions fixed
+- `source/Testurio.Worker/Processors/TestRunJobProcessor.cs:276` — dead-code `planFeatures is not null ? "plan" : "unknown"` branches in `LogMemorySkipped` / `LogMemoryWriteSkipped`; simplified to literal `"plan"` since the `else` branch is only reachable when `planFeatures != null`
+
+### Status: Complete
 
 ---
 
