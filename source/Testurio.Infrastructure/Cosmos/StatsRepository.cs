@@ -99,6 +99,7 @@ public class StatsRepository : IStatsRepository
     /// <inheritdoc/>
     public async Task<QuotaUsage> GetQuotaUsageAsync(
         string userId,
+        int dailyLimit,
         CancellationToken cancellationToken = default)
     {
         // Compute "today" window in UTC (midnight-to-midnight).
@@ -106,12 +107,13 @@ public class StatsRepository : IStatsRepository
         var todayStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
         var todayEnd = todayStart.AddDays(1); // = resetsAt (next midnight UTC)
 
-        // Count completed runs started today across all projects for this user.
+        // Count all runs created today across all projects for this user (AC-005, AC-012).
         // TestRuns container partition key is projectId, so this requires cross-partition fan-out.
         // Acceptable here: stats query, not on the hot write path.
+        // Uses createdAt (consistent with AC-005: createdAt when startedAt is null).
         var countQuery = new QueryDefinition(
             "SELECT VALUE COUNT(1) FROM c " +
-            "WHERE c.userId = @userId AND c.startedAt >= @start AND c.startedAt < @end")
+            "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
             .WithParameter("@userId", userId)
             .WithParameter("@start", todayStart.ToString("o"))
             .WithParameter("@end", todayEnd.ToString("o"));
@@ -124,10 +126,6 @@ public class StatsRepository : IStatsRepository
             foreach (var count in page)
                 usedToday += count;
         }
-
-        // DailyLimit is 0 for users without a subscription plan (feature 0021 will enforce limits).
-        // For now the repository always returns 0 daily limit as quota enforcement is not yet implemented.
-        const int dailyLimit = 0;
 
         return new QuotaUsage(usedToday, dailyLimit, todayEnd);
     }

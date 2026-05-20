@@ -31,7 +31,7 @@
 
 ### Infrastructure — Stats Repository Quota Signature Update
 
-- [ ] T010 [Infra] Update `StatsRepository.GetQuotaUsageAsync` to accept `int dailyLimit` as a parameter instead of hard-coding `0`; remove the `const int dailyLimit = 0` placeholder — `source/Testurio.Infrastructure/Cosmos/StatsRepository.cs`
+- [x] T010 [Infra] Update `StatsRepository.GetQuotaUsageAsync` to accept `int dailyLimit` as a parameter instead of hard-coding `0`; remove the `const int dailyLimit = 0` placeholder — `source/Testurio.Infrastructure/Cosmos/StatsRepository.cs`
 - [x] T011 [Domain] Update `IStatsRepository.GetQuotaUsageAsync` signature to accept `int dailyLimit` parameter — `source/Testurio.Core/Interfaces/IStatsRepository.cs`
 
 ### Tests
