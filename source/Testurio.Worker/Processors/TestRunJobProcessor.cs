@@ -371,7 +371,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
 
             executionResult = new ExecutionResult
             {
-                ApiResults   = [],
+                ApiResults = [],
                 UiE2eResults = []
             };
         }

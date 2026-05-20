@@ -36,18 +36,18 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         string? templateUri = null,
         bool includeLogs = true,
         bool includeScreenshots = true) => new()
-    {
-        Id = "proj-001",
-        UserId = userId,
-        Name = "Test Project",
-        ProductUrl = "https://app.example.com",
-        TestingStrategy = "API smoke tests.",
-        ReportTemplateUri = templateUri,
-        ReportIncludeLogs = includeLogs,
-        ReportIncludeScreenshots = includeScreenshots,
-        CreatedAt = DateTimeOffset.UtcNow,
-        UpdatedAt = DateTimeOffset.UtcNow,
-    };
+        {
+            Id = "proj-001",
+            UserId = userId,
+            Name = "Test Project",
+            ProductUrl = "https://app.example.com",
+            TestingStrategy = "API smoke tests.",
+            ReportTemplateUri = templateUri,
+            ReportIncludeLogs = includeLogs,
+            ReportIncludeScreenshots = includeScreenshots,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
 
     private HttpClient CreateAuthenticatedClient()
     {

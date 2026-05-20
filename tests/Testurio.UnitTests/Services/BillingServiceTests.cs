@@ -29,13 +29,13 @@ public class BillingServiceTests
         PriceIds = new Dictionary<string, string>
         {
             ["TestJunior_Monthly"] = "price_tj_monthly",
-            ["TestJunior_Annual"]  = "price_tj_annual",
-            ["TestPro_Monthly"]    = "price_tp_monthly",
-            ["TestPro_Annual"]     = "price_tp_annual",
-            ["Team_Monthly"]       = "price_team_monthly",
-            ["Team_Annual"]        = "price_team_annual",
-            ["Centurio_Monthly"]   = "price_cent_monthly",
-            ["Centurio_Annual"]    = "price_cent_annual",
+            ["TestJunior_Annual"] = "price_tj_annual",
+            ["TestPro_Monthly"] = "price_tp_monthly",
+            ["TestPro_Annual"] = "price_tp_annual",
+            ["Team_Monthly"] = "price_team_monthly",
+            ["Team_Annual"] = "price_team_annual",
+            ["Centurio_Monthly"] = "price_cent_monthly",
+            ["Centurio_Annual"] = "price_cent_annual",
         },
     };
 
@@ -64,9 +64,9 @@ public class BillingServiceTests
 
     [Theory]
     [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.TestPro,    BillingInterval.Annual)]
-    [InlineData(SubscriptionPlan.Team,       BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.Centurio,   BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.TestPro, BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.Team, BillingInterval.Monthly)]
+    [InlineData(SubscriptionPlan.Centurio, BillingInterval.Annual)]
     public async Task CreateCheckoutSessionAsync_DelegatesToStripeService_WithCorrectParameters(
         SubscriptionPlan plan, BillingInterval interval)
     {
@@ -331,7 +331,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = userId, UserId = userId,
+            Id = userId,
+            UserId = userId,
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -377,7 +378,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = "user-deleted", UserId = "user-deleted",
+            Id = "user-deleted",
+            UserId = "user-deleted",
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -423,7 +425,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = "user-pf", UserId = "user-pf",
+            Id = "user-pf",
+            UserId = "user-pf",
             Status = SubscriptionStatus.Active,
             StripeCustomerId = customerId,
         };

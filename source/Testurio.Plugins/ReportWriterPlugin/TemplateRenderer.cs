@@ -39,15 +39,15 @@ public static class TemplateRenderer
     {
         var dict = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["{{story_title}}"]       = context.StoryTitle ?? string.Empty,
-            ["{{story_url}}"]         = context.StoryUrl ?? string.Empty,
-            ["{{run_date}}"]          = FormatRunDate(context.Run),
-            ["{{overall_result}}"]    = FormatOverallResult(context.Run),
-            ["{{scenarios}}"]         = BuildScenariosTable(context.Scenarios, context.StepResults),
-            ["{{logs}}"]              = context.LogSection,
-            ["{{screenshots}}"]       = context.IncludeScreenshots ? BuildScreenshotsSection(context.Run) : string.Empty,
+            ["{{story_title}}"] = context.StoryTitle ?? string.Empty,
+            ["{{story_url}}"] = context.StoryUrl ?? string.Empty,
+            ["{{run_date}}"] = FormatRunDate(context.Run),
+            ["{{overall_result}}"] = FormatOverallResult(context.Run),
+            ["{{scenarios}}"] = BuildScenariosTable(context.Scenarios, context.StepResults),
+            ["{{logs}}"] = context.LogSection,
+            ["{{screenshots}}"] = context.IncludeScreenshots ? BuildScreenshotsSection(context.Run) : string.Empty,
             ["{{ai_scenario_source}}"] = context.AiScenarioSource ?? string.Empty,
-            ["{{timing_summary}}"]    = BuildTimingSummary(context.Run, context.Scenarios, context.StepResults),
+            ["{{timing_summary}}"] = BuildTimingSummary(context.Run, context.Scenarios, context.StepResults),
         };
 
         return TokenPattern.Replace(template, m => dict.TryGetValue(m.Value, out var v) ? v : m.Value);

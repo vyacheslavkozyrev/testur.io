@@ -177,7 +177,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         var projectId = Guid.NewGuid().ToString();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var runs = (IReadOnlyList<RunHistoryItem>) new[]
+        var runs = (IReadOnlyList<RunHistoryItem>)new[]
         {
             new RunHistoryItem("r1", "run-1", "Story A", "PASSED", "approve", 2, 2, 0, 0, 3000, DateTimeOffset.UtcNow),
         };
@@ -205,8 +205,8 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     {
         // Repository-level filtering is verified via the repository mock returning only active records.
         var projectId = Guid.NewGuid().ToString();
-        var runs = (IReadOnlyList<RunHistoryItem>) Array.Empty<RunHistoryItem>();
-        var trendPoints = (IReadOnlyList<TrendPoint>) Array.Empty<TrendPoint>();
+        var runs = (IReadOnlyList<RunHistoryItem>)Array.Empty<RunHistoryItem>();
+        var trendPoints = (IReadOnlyList<TrendPoint>)Array.Empty<TrendPoint>();
 
         _factory.StatsRepoMock
             .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
@@ -236,7 +236,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         _factory.StatsRepoMock
             .Setup(r => r.GetRunDetailAsync("test-user-oid", projectId, runId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResult?) null);
+            .ReturnsAsync((TestResult?)null);
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync($"/v1/stats/projects/{projectId}/runs/{runId}");

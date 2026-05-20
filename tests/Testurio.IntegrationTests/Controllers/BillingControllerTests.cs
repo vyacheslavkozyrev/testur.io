@@ -296,7 +296,8 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
 
         var existing = new UserSubscription
         {
-            Id = "user-deleted", UserId = "user-deleted",
+            Id = "user-deleted",
+            UserId = "user-deleted",
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -350,7 +351,8 @@ public class BillingControllerTests : IClassFixture<BillingControllerTests.ApiFa
 
         var existing = new UserSubscription
         {
-            Id = "user-pf", UserId = "user-pf",
+            Id = "user-pf",
+            UserId = "user-pf",
             Status = SubscriptionStatus.Active,
             StripeCustomerId = customerId,
         };

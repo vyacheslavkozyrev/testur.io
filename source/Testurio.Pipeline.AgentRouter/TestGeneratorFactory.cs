@@ -33,9 +33,9 @@ public sealed class TestGeneratorFactory : ITestGeneratorFactory
     {
         var key = testType switch
         {
-            TestType.Api   => ApiKey,
+            TestType.Api => ApiKey,
             TestType.UiE2e => UiE2eKey,
-            _              => throw new ArgumentOutOfRangeException(
+            _ => throw new ArgumentOutOfRangeException(
                                   nameof(testType),
                                   testType,
                                   $"Unrecognised test type '{testType}'. Valid values are: {TestType.Api}, {TestType.UiE2e}.")

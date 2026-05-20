@@ -93,22 +93,22 @@ public class ReportWriterPluginTests
         string? templateUri = null,
         bool includeLogs = false,
         bool includeScreenshots = false) => new()
-    {
-        Id = "proj1",
-        UserId = "user1",
-        Name = "Test Project",
-        ProductUrl = "https://app.example.com",
-        TestingStrategy = "API tests",
-        JiraBaseUrl = "https://example.atlassian.net",
-        JiraProjectKey = "PROJ",
-        JiraEmail = "qa@example.com",
-        JiraApiTokenSecretRef = "secret-ref",
-        JiraWebhookSecretRef = "webhook-secret",
-        InTestingStatusLabel = "In Testing",
-        ReportTemplateUri = templateUri,
-        ReportIncludeLogs = includeLogs,
-        ReportIncludeScreenshots = includeScreenshots,
-    };
+        {
+            Id = "proj1",
+            UserId = "user1",
+            Name = "Test Project",
+            ProductUrl = "https://app.example.com",
+            TestingStrategy = "API tests",
+            JiraBaseUrl = "https://example.atlassian.net",
+            JiraProjectKey = "PROJ",
+            JiraEmail = "qa@example.com",
+            JiraApiTokenSecretRef = "secret-ref",
+            JiraWebhookSecretRef = "webhook-secret",
+            InTestingStatusLabel = "In Testing",
+            ReportTemplateUri = templateUri,
+            ReportIncludeLogs = includeLogs,
+            ReportIncludeScreenshots = includeScreenshots,
+        };
 
     private static TestScenario MakeScenario(string id = "s1", string title = "Login flow") => new()
     {
@@ -124,17 +124,17 @@ public class ReportWriterPluginTests
         string scenarioId = "s1",
         StepStatus status = StepStatus.Passed,
         int durationMs = 150) => new()
-    {
-        TestRunId = "run1",
-        ScenarioId = scenarioId,
-        ProjectId = "proj1",
-        UserId = "user1",
-        StepTitle = "POST /api/login",
-        Status = status,
-        ExpectedStatusCode = 200,
-        ActualStatusCode = 200,
-        DurationMs = durationMs,
-    };
+        {
+            TestRunId = "run1",
+            ScenarioId = scenarioId,
+            ProjectId = "proj1",
+            UserId = "user1",
+            StepTitle = "POST /api/login",
+            Status = status,
+            ExpectedStatusCode = 200,
+            ActualStatusCode = 200,
+            DurationMs = durationMs,
+        };
 
     // ─── AC-028: custom template is used when project.ReportTemplateUri is set ─
 

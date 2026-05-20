@@ -27,7 +27,10 @@ public class WorkItemTransitionStepTests
         string? failedStatus = "Active") =>
         new()
         {
-            UserId = "user-1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user-1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = PMToolType.Ado,
             AdoPassedTransitionStatus = passedStatus,
             AdoFailedTransitionStatus = failedStatus,
@@ -38,7 +41,10 @@ public class WorkItemTransitionStepTests
         string? failedStatus = "Rejected") =>
         new()
         {
-            UserId = "user-1", Name = "T", ProductUrl = "https://x.com", TestingStrategy = "BDD",
+            UserId = "user-1",
+            Name = "T",
+            ProductUrl = "https://x.com",
+            TestingStrategy = "BDD",
             PmTool = PMToolType.Jira,
             JiraPassedTransitionStatus = passedStatus,
             JiraFailedTransitionStatus = failedStatus,

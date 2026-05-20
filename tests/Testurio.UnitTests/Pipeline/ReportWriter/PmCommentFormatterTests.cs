@@ -124,8 +124,8 @@ public class PmCommentFormatterTests
     // ─── AC-012: recommendation line ──────────────────────────────────────────
 
     [Theory]
-    [InlineData("approve",                "Approve and merge")]
-    [InlineData("request_fixes",          "Request fixes")]
+    [InlineData("approve", "Approve and merge")]
+    [InlineData("request_fixes", "Request fixes")]
     [InlineData("flag_for_manual_review", "Flag for manual review")]
     public void Format_RecommendationLabels_AreRenderedCorrectly(
         string recommendation, string expectedLabel)

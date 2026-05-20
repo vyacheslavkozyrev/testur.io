@@ -50,7 +50,7 @@ public partial class ProjectAccessService : IProjectAccessService
 
         // AC-040: Capture old URIs before any mutations. New Key Vault writes happen first;
         // if they throw, Cosmos is never touched and the old config remains intact.
-        var oldPassUri  = project.BasicAuthPassSecretUri;
+        var oldPassUri = project.BasicAuthPassSecretUri;
         var oldTokenUri = project.HeaderTokenSecretUri;
 
         project.AccessMode = request.AccessMode;

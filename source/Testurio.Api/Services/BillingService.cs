@@ -192,10 +192,10 @@ public class BillingService(
     private static SubscriptionPlan ParsePlanId(string planId) => planId switch
     {
         "test-junior" => SubscriptionPlan.TestJunior,
-        "test-pro"    => SubscriptionPlan.TestPro,
-        "team"        => SubscriptionPlan.Team,
-        "centurio"    => SubscriptionPlan.Centurio,
-        _             => throw new ArgumentException($"Unknown plan: '{planId}'.", nameof(planId)),
+        "test-pro" => SubscriptionPlan.TestPro,
+        "team" => SubscriptionPlan.Team,
+        "centurio" => SubscriptionPlan.Centurio,
+        _ => throw new ArgumentException($"Unknown plan: '{planId}'.", nameof(planId)),
     };
 
     private async Task HandleCheckoutSessionCompletedAsync(Event stripeEvent, CancellationToken cancellationToken)
@@ -278,8 +278,8 @@ public class BillingService(
             newStatus = stripeSubscription.Status switch
             {
                 "trialing" => SubscriptionStatus.Trialing,
-                "active"   => SubscriptionStatus.Active,
-                _          => SubscriptionStatus.Expired,
+                "active" => SubscriptionStatus.Active,
+                _ => SubscriptionStatus.Expired,
             };
         }
 

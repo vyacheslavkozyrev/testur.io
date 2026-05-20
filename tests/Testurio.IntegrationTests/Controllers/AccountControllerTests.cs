@@ -267,7 +267,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
             {
                 services.Replace(ServiceDescriptor.Singleton<IUserRepository>(_ => _userRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<IProjectRepository>(_ => _projectRepo.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver())); services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
