@@ -39,7 +39,7 @@
 
 ### Cosmos seed data
 
-- [ ] T024 [Config] Update Cosmos seed / initializer: add `limits` and `features` values to all four plan documents in `CosmosDbInitializer` (or the equivalent seed JSON); rename the `features` array key to `displayFeatures`; do not change pricing values — `source/Testurio.Infrastructure/Cosmos/CosmosDbInitializer.cs`
+- [x] T024 [Config] Update Cosmos seed / initializer: add `limits` and `features` values to all four plan documents in `CosmosDbInitializer` (or the equivalent seed JSON); rename the `features` array key to `displayFeatures`; do not change pricing values — `source/Testurio.Infrastructure/Cosmos/CosmosDbInitializer.cs`
 
 ### Frontend
 
