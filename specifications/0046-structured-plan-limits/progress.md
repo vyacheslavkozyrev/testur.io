@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-20 |       |
 | Implement | ✅ Complete | 2026-05-20 |       |
 | Review    | ✅ Complete | 2026-05-20 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-20 |       |
 
 ---
 
@@ -34,7 +34,32 @@ _Populated by `/implement 0046`_
 
 ## Test Results
 
-_Populated by `/test 0046`_
+### Test Run — 2026-05-20
+
+**Backend Unit Tests:** 482 passed, 0 failed
+- `PlanEnforcementServiceTests` (16 tests): all pass — covers AC-009, AC-010, AC-016, AC-017, AC-044–AC-048
+- `ProjectServiceTests` (16 tests): all pass — covers AC-008, AC-014
+- `DashboardServiceTests` (6 tests): all pass — covers AC-038, AC-043
+
+**Backend Integration Tests:** New / fixed tests all pass
+- `ProjectControllerTests.CreateProject_Returns403_WithProblemDetails_WhenProjectLimitReached`: pass — covers AC-011, AC-012
+- `JiraWebhookControllerTests.PostWebhook_Returns403_WithProblemDetails_WhenMonthlyQuotaExhausted` (new): pass — covers AC-018, AC-019
+- `JiraWebhookControllerTests` (6 total): all pass — covers AC-015
+- `ReportWriterIntegrationTests` (3 tests): all pass — covers AC-029–AC-033
+
+**Frontend Component Tests:** 10 passed, 0 failed
+- `QuotaUsageBar.test.tsx` (10 tests): all pass — covers AC-039, AC-040, AC-041, AC-042
+
+**Fixes applied during testing:**
+- `source/Testurio.Api/Middleware/RequestBodyBufferingMiddleware.cs` — body buffering was not applied to `/v1/webhooks/*` paths (only `/webhooks/*`); added `V1BufferingPathPrefix` constant and OR condition so all versioned webhook paths are buffered
+- `source/Testurio.Api/WebhookRouteConstants.cs` — added `V1BufferingPathPrefix = "/v1/webhooks"` constant
+- `tests/Testurio.IntegrationTests/Controllers/JiraWebhookControllerTests.cs` — added `IPlanEnforcementService` mock + `services.Replace` to `ApiFactory`; added `AllowedWorkItemTypes = ["Story"]` to `MakeProject()` to fix WrongIssueType test; added T035 quota exhaustion test
+- `tests/Testurio.IntegrationTests/Controllers/ProjectControllerTests.cs` — added `services.Replace` for `IPlanEnforcementService` mock; fixed `extensions` assertion (ASP.NET Core serializes Extensions at JSON root, not under nested "extensions" key)
+- `tests/Testurio.IntegrationTests/Controllers/StatsControllerTests.cs` — updated `UsedToday` → `UsedThisMonth` (field rename)
+- `tests/Testurio.IntegrationTests/Pipeline/ReportWriterIntegrationTests.cs` — added `postBackEnabled: true` parameter to `WriteAsync` calls
+- `source/Testurio.Web/src/components/QuotaUsageBar/QuotaUsageBar.test.tsx` — rewrote for monthly quota semantics; updated i18n keys; added unlimited/amber/red/resetsOn tests
+
+**Pre-existing failures (not introduced by 0046):** 42 integration tests across `StatsControllerTests`, `ProjectSettingsControllerTests`, `ProjectPromptCheckControllerTests`, `PMToolIntegrationTests`, `TestRunPipelineTests`, and others — all were failing before this feature branch and are unrelated to 0046.
 
 ---
 

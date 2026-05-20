@@ -509,9 +509,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(jsonOptions);
         Assert.Equal("Plan limit reached", body.GetProperty("title").GetString());
-        Assert.True(body.TryGetProperty("extensions", out var extensions));
-        Assert.Equal("maxProjects", extensions.GetProperty("limitName").GetString());
-        Assert.Equal("Test Pro", extensions.GetProperty("requiredPlan").GetString());
+        // ASP.NET Core serializes ProblemDetails.Extensions at the root level of the JSON response.
+        Assert.Equal("maxProjects", body.GetProperty("limitName").GetString());
+        Assert.Equal("Test Pro", body.GetProperty("requiredPlan").GetString());
     }
 
     [Fact]
@@ -585,6 +585,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
+                services.Replace(ServiceDescriptor.Singleton<IPlanEnforcementService>(_ => _planEnforcement.Object));
                 services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
