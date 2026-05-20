@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.7.0
+version: 1.8.0
 status: draft
-updated: 2026-05-16
+updated: 2026-05-20
 tags: [features, business, product]
 ---
 
@@ -232,6 +232,12 @@ User can select and purchase a subscription plan directly within the product. Th
 **[0016]: Subscription Management** `MVP`
 _Business Outcome: Gives users full control over their subscription without contacting support._
 User can view their active plan, update their payment method, and upgrade or cancel their subscription at any time. Changes take effect according to the plan's billing cycle.
+
+---
+
+**[0044]: Structured Plan Limits & Feature Enforcement** `MVP`
+_Business Outcome: Enforces subscription boundaries at runtime and makes plan capabilities machine-readable, enabling a clear upgrade path and preventing overuse without manual intervention._
+The plan document is restructured to carry two typed enforcement sections alongside the existing display strings. `limits` holds numeric ceilings for countable resources (`maxProjects`, `maxTestRunsPerMonth`; `-1` means unlimited). `features` holds boolean capability flags (`apiTesting`, `uiE2eTesting`, `aiMemory`, `pmReportPostBack`). `displayFeatures` retains the current marketing copy for the pricing page and is decoupled from enforcement. The API enforces `limits` before every mutating operation — project creation is rejected when `maxProjects` is reached, and a test run trigger is rejected when the monthly quota is exhausted; both return a `403` with a `ProblemDetails` body identifying the exceeded limit and the plan required to lift it. The Worker pipeline checks `features` flags before invoking each stage — if `aiMemory` is `false`, `MemoryRetrieval` and `MemoryWriter` are skipped entirely. The portal surfaces the current usage versus plan limits in the dashboard quota bar (feature 0010). Existing feature 0021 (daily run quota) is superseded by this feature's `maxTestRunsPerMonth` limit; the enforcement logic migrates here.
 
 ---
 
