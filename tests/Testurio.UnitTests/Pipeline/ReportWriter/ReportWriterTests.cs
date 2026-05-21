@@ -131,7 +131,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, PassedApiExecution, project, run);
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, project, run, postBackEnabled: true);
 
         // Assert
         Assert.Equal("comment-42", run.PmCommentId);
@@ -169,7 +169,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run);
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run, postBackEnabled: true);
 
         // Assert — Claude was called exactly twice.
         _llmClient.Verify(c => c.CompleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
@@ -190,7 +190,7 @@ public class ReportWriterTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ReportWriterException>(() =>
-            sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun));
+            sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, postBackEnabled: true));
     }
 
     // ─── AC-016: PM tool post failure → warning logged, Cosmos still written ──
@@ -217,7 +217,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act — must not throw (AC-016).
-        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run);
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run, postBackEnabled: true);
 
         // Assert
         Assert.Null(run.PmCommentId);
@@ -248,7 +248,7 @@ public class ReportWriterTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ReportWriterException>(() =>
-            sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run));
+            sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, run, postBackEnabled: true));
 
         Assert.Equal(TestRunStatus.ReportFailed, run.Status);
     }
@@ -266,7 +266,7 @@ public class ReportWriterTests
 
         // Act & Assert — execution has a failure, so verdict PASSED is wrong.
         await Assert.ThrowsAsync<ReportWriterException>(() =>
-            sut.WriteAsync(DefaultStory, FailedApiExecution, DefaultProject, DefaultRun));
+            sut.WriteAsync(DefaultStory, FailedApiExecution, DefaultProject, DefaultRun, postBackEnabled: true));
     }
 
     // ─── AC-007: cancellation token forwarded ─────────────────────────────────
@@ -292,7 +292,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, cts.Token);
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, postBackEnabled: true, cts.Token);
 
         // Assert — token is forwarded on first call.
         Assert.Equal(cts.Token, capturedToken);
@@ -326,7 +326,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, cts.Token);
+        await sut.WriteAsync(DefaultStory, PassedApiExecution, DefaultProject, DefaultRun, postBackEnabled: true, cts.Token);
 
         // Assert — token is forwarded on both the first attempt and the retry (AC-007).
         Assert.Equal(2, capturedTokens.Count);
@@ -356,7 +356,7 @@ public class ReportWriterTests
             .Callback<TestResult, CancellationToken>((r, _) => saved = r)
             .Returns(Task.CompletedTask);
 
-        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun, postBackEnabled: true);
 
         Assert.NotNull(saved);
         var apiSummary = saved.ScenarioResults.Single(s => s.TestType == "api");
@@ -409,7 +409,7 @@ public class ReportWriterTests
             .Callback<TestResult, CancellationToken>((r, _) => saved = r)
             .Returns(Task.CompletedTask);
 
-        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun, postBackEnabled: true);
 
         Assert.NotNull(saved);
         var uiSummary = saved.ScenarioResults.Single(s => s.TestType == "ui_e2e");
@@ -484,7 +484,7 @@ public class ReportWriterTests
             .Callback<TestResult, CancellationToken>((r, _) => saved = r)
             .Returns(Task.CompletedTask);
 
-        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun, postBackEnabled: true);
 
         Assert.NotNull(saved);
         var apiSummary = saved.ScenarioResults.Single(s => s.TestType == "api");
@@ -549,7 +549,7 @@ public class ReportWriterTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun);
+        await sut.WriteAsync(DefaultStory, execution, DefaultProject, DefaultRun, postBackEnabled: true);
 
         // Assert
         Assert.NotNull(saved);

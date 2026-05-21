@@ -8,13 +8,14 @@ const mockPreferences: AccountPreferencesDto = {
 
 const mockProfile: AccountProfileDto = {
   userId: 'mock-user-id',
-  displayName: 'Test User',
+  firstName: 'Test',
+  lastName: 'User',
 };
 
 export const accountHandlers = [
   http.patch('/v1/account/profile', async ({ request }) => {
-    const body = (await request.json()) as { displayName?: string };
-    return HttpResponse.json({ ...mockProfile, displayName: body.displayName ?? mockProfile.displayName });
+    const body = (await request.json()) as Partial<AccountProfileDto>;
+    return HttpResponse.json({ ...mockProfile, ...body });
   }),
 
   http.get('/v1/account/preferences', () => HttpResponse.json(mockPreferences)),

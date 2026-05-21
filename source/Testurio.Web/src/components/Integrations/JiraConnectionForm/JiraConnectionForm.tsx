@@ -275,7 +275,6 @@ const getStyles = (theme: Theme) =>
         width: '100%',
       },
       title: {
-        ...theme.typography.subtitle1,
         color: theme.palette.text.primary,
       },
       actions: {

@@ -40,7 +40,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
   const isDowngrade = currentPlanRank !== null && planRank < currentPlanRank;
   const ctaDisabled = isCurrent || isDowngrade;
 
-  const styles = getStyles(theme, plan.isPopular, ctaDisabled);
+  const styles = getStyles(theme, plan.isPopular);
 
   const displayPrice = getMonthlyEquivalentPrice(plan, interval);
 
@@ -108,7 +108,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
 
         {/* Feature checklist */}
         <List dense disablePadding sx={styles.featureList}>
-          {plan.features.map((feature) => (
+          {plan.displayFeatures.map((feature) => (
             <ListItem key={feature} disablePadding sx={styles.featureItem}>
               <ListItemIcon sx={styles.featureIcon}>
                 <CheckCircleOutlineIcon sx={{ fontSize: 18, color: theme.palette.success.main }} />
@@ -138,7 +138,7 @@ export default function PlanCard({ plan, interval, isAuthenticated, planRank, cu
 }
 
 // co-located at the bottom of the file
-const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
+const getStyles = (theme: Theme, isPopular: boolean) =>
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useMemo(
     () => ({
@@ -179,7 +179,6 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         height: '100%',
       },
       planName: {
-        ...theme.typography.h5,
         fontWeight: 700,
         color: theme.palette.text.primary,
       },
@@ -189,17 +188,14 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         gap: theme.spacing(0.5),
       },
       freePrice: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.text.primary,
       },
       priceAmount: {
-        ...theme.typography.h4,
         fontWeight: 800,
         color: theme.palette.primary.main,
       },
       priceUnit: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       discountBadge: {
@@ -219,7 +215,6 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         minWidth: 28,
       },
       featureText: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       ctaButton: {
@@ -228,5 +223,5 @@ const getStyles = (theme: Theme, isPopular: boolean, ctaDisabled: boolean) =>
         mt: 'auto',
       },
     }),
-    [theme, isPopular, ctaDisabled],
+    [theme, isPopular],
   );

@@ -550,31 +550,31 @@ public partial class PMToolConnectionService : IPMToolConnectionService
     private string BuildWebhookUrl(PMToolType? pmTool) =>
         pmTool switch
         {
-            PMToolType.Ado  => $"{_options.ApiBaseUrl.TrimEnd('/')}/webhooks/ado",
+            PMToolType.Ado => $"{_options.ApiBaseUrl.TrimEnd('/')}/webhooks/ado",
             PMToolType.Jira => $"{_options.ApiBaseUrl.TrimEnd('/')}/webhooks/jira",
-            _               => $"{_options.ApiBaseUrl.TrimEnd('/')}/webhooks",
+            _ => $"{_options.ApiBaseUrl.TrimEnd('/')}/webhooks",
         };
 
     private static PMToolConnectionResponse ToDto(Project project) => new(
-        PmTool:                     project.PmTool,
-        IntegrationStatus:          project.IntegrationStatus,
-        AdoOrgUrl:                  project.AdoOrgUrl,
-        AdoProjectName:             project.AdoProjectName,
-        AdoTeam:                    project.AdoTeam,
-        AdoInTestingStatus:         project.AdoInTestingStatus,
-        AdoAuthMethod:              project.AdoAuthMethod,
-        AdoTokenSecretUri:          project.AdoTokenSecretUri,
-        JiraBaseUrl:                project.JiraBaseUrl,
-        JiraProjectKey:             project.JiraProjectKey,
-        JiraInTestingStatus:        project.JiraInTestingStatus,
-        JiraAuthMethod:             project.JiraAuthMethod,
-        JiraApiTokenSecretUri:      project.JiraApiTokenSecretUri,
-        JiraEmailSecretUri:         project.JiraEmailSecretUri,
-        JiraPatSecretUri:           project.JiraPatSecretUri,
+        PmTool: project.PmTool,
+        IntegrationStatus: project.IntegrationStatus,
+        AdoOrgUrl: project.AdoOrgUrl,
+        AdoProjectName: project.AdoProjectName,
+        AdoTeam: project.AdoTeam,
+        AdoInTestingStatus: project.AdoInTestingStatus,
+        AdoAuthMethod: project.AdoAuthMethod,
+        AdoTokenSecretUri: project.AdoTokenSecretUri,
+        JiraBaseUrl: project.JiraBaseUrl,
+        JiraProjectKey: project.JiraProjectKey,
+        JiraInTestingStatus: project.JiraInTestingStatus,
+        JiraAuthMethod: project.JiraAuthMethod,
+        JiraApiTokenSecretUri: project.JiraApiTokenSecretUri,
+        JiraEmailSecretUri: project.JiraEmailSecretUri,
+        JiraPatSecretUri: project.JiraPatSecretUri,
         JiraPassedTransitionStatus: project.JiraPassedTransitionStatus,
         JiraFailedTransitionStatus: project.JiraFailedTransitionStatus,
-        AdoPassedTransitionStatus:  project.AdoPassedTransitionStatus,
-        AdoFailedTransitionStatus:  project.AdoFailedTransitionStatus);
+        AdoPassedTransitionStatus: project.AdoPassedTransitionStatus,
+        AdoFailedTransitionStatus: project.AdoFailedTransitionStatus);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "ADO connection saved for project {ProjectId} by user {UserId}")]
     private static partial void LogADOConnectionSaved(ILogger logger, string projectId, string userId);

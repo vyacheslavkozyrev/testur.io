@@ -3,6 +3,7 @@ using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 
 namespace Testurio.Infrastructure.Cosmos;
 
@@ -16,12 +17,20 @@ public class StatsRepository : IStatsRepository
     private readonly Container _projectsContainer;
     private readonly Container _testRunsContainer;
     private readonly Container _testResultsContainer;
+    private readonly IUserSubscriptionRepository _subscriptionRepository;
+    private readonly IPlanRepository _planRepository;
 
-    public StatsRepository(CosmosClient cosmosClient, string databaseName)
+    public StatsRepository(
+        CosmosClient cosmosClient,
+        string databaseName,
+        IUserSubscriptionRepository subscriptionRepository,
+        IPlanRepository planRepository)
     {
         _projectsContainer = cosmosClient.GetContainer(databaseName, "Projects");
         _testRunsContainer = cosmosClient.GetContainer(databaseName, "TestRuns");
         _testResultsContainer = cosmosClient.GetContainer(databaseName, "TestResults");
+        _subscriptionRepository = subscriptionRepository;
+        _planRepository = planRepository;
     }
 
     /// <inheritdoc/>
@@ -102,32 +111,45 @@ public class StatsRepository : IStatsRepository
         int dailyLimit,
         CancellationToken cancellationToken = default)
     {
-        // Compute "today" window in UTC (midnight-to-midnight).
+        // Compute the current calendar month window in UTC.
         var now = DateTimeOffset.UtcNow;
-        var todayStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
-        var todayEnd = todayStart.AddDays(1); // = resetsAt (next midnight UTC)
+        var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        // resetsAt = first day of the next calendar month (midnight UTC).
+        var nextMonthStart = monthStart.AddMonths(1);
 
-        // Count all runs created today across all projects for this user (AC-005, AC-012).
-        // TestRuns container partition key is projectId, so this requires cross-partition fan-out.
+        // Count test runs created this calendar month for this user across all projects.
+        // TestRuns container partition key is projectId, so this is a cross-partition query.
         // Acceptable here: stats query, not on the hot write path.
         // Uses createdAt (consistent with AC-005: createdAt when startedAt is null).
         var countQuery = new QueryDefinition(
             "SELECT VALUE COUNT(1) FROM c " +
             "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
             .WithParameter("@userId", userId)
-            .WithParameter("@start", todayStart.ToString("o"))
-            .WithParameter("@end", todayEnd.ToString("o"));
+            .WithParameter("@start", monthStart.ToString("o"))
+            .WithParameter("@end", nextMonthStart.ToString("o"));
 
-        var usedToday = 0;
+        var usedThisMonth = 0;
         using var countIterator = _testRunsContainer.GetItemQueryIterator<int>(countQuery);
         while (countIterator.HasMoreResults)
         {
             var page = await countIterator.ReadNextAsync(cancellationToken);
             foreach (var count in page)
-                usedToday += count;
+                usedThisMonth += count;
         }
 
-        return new QuotaUsage(usedToday, dailyLimit, todayEnd);
+        // Resolve the monthly limit from the user's active subscription plan.
+        // 0 = no active plan (renders "No active plan" in the UI).
+        // -1 = unlimited (renders "Unlimited" in the UI).
+        var monthlyLimit = 0;
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (subscription is { Status: SubscriptionStatus.Active or SubscriptionStatus.Trialing or SubscriptionStatus.CancelledPendingExpiry })
+        {
+            var planDoc = await _planRepository.GetByPlanAsync(subscription.Plan, cancellationToken);
+            if (planDoc is not null)
+                monthlyLimit = planDoc.Limits.MaxTestRunsPerMonth;
+        }
+
+        return new QuotaUsage(usedThisMonth, monthlyLimit, nextMonthStart);
     }
 
     /// <inheritdoc/>
@@ -261,14 +283,14 @@ public class StatsRepository : IStatsRepository
 
     private static RunStatus MapStatus(TestRunStatus status) => status switch
     {
-        TestRunStatus.Pending                => RunStatus.Queued,
-        TestRunStatus.Active                 => RunStatus.Running,
-        TestRunStatus.Completed              => RunStatus.Passed,
-        TestRunStatus.Failed                 => RunStatus.Failed,
-        TestRunStatus.ReportDeliveryFailed   => RunStatus.Failed,
-        TestRunStatus.ReportFailed           => RunStatus.Failed,
-        TestRunStatus.Skipped                => RunStatus.Cancelled,
-        _                                    => RunStatus.Failed,
+        TestRunStatus.Pending => RunStatus.Queued,
+        TestRunStatus.Active => RunStatus.Running,
+        TestRunStatus.Completed => RunStatus.Passed,
+        TestRunStatus.Failed => RunStatus.Failed,
+        TestRunStatus.ReportDeliveryFailed => RunStatus.Failed,
+        TestRunStatus.ReportFailed => RunStatus.Failed,
+        TestRunStatus.Skipped => RunStatus.Cancelled,
+        _ => RunStatus.Failed,
     };
 
     /// <summary>Minimal projection for the latest-run query — avoids deserialising full TestRun documents.</summary>

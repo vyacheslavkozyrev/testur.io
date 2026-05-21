@@ -11,6 +11,7 @@ using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Quota;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Embedding;
+using Testurio.Infrastructure.Enforcement;
 using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.ServiceBus;
@@ -190,7 +191,9 @@ public static class DependencyInjection
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
-            return new StatsRepository(cosmos, opts.CosmosDatabaseName);
+            var subscriptionRepo = sp.GetRequiredService<IUserSubscriptionRepository>();
+            var planRepo = sp.GetRequiredService<IPlanRepository>();
+            return new StatsRepository(cosmos, opts.CosmosDatabaseName, subscriptionRepo, planRepo);
         });
 
         // Feature 0028: prompt template repository for generator agents (stage 4).
@@ -238,6 +241,16 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<IStripeService, StripeService>();
+
+        // Feature 0046: plan enforcement service.
+        // Registered as Singleton — all dependencies (repositories) are also Singleton.
+        // The service is stateless; per-call state lives entirely in local variables.
+        services.AddSingleton<IPlanEnforcementService>(sp =>
+            new PlanEnforcementService(
+                sp.GetRequiredService<IUserSubscriptionRepository>(),
+                sp.GetRequiredService<IPlanRepository>(),
+                sp.GetRequiredService<IProjectRepository>(),
+                sp.GetRequiredService<ITestRunRepository>()));
 
         services.AddSingleton<IPlanSeeder, PlanSeeder>(sp =>
         {

@@ -104,7 +104,8 @@
       "Bash(cmd *)",
       "Bash(ls \"D:\\\\\\\\projects\\\\\\\\testur.io\\\\\\\\specifications\\\\\\\\\")",
       "Bash(grep *)",
-      "Bash(kubectl kustomize *)"
+      "Bash(kubectl kustomize *)",
+      "Bash(npx @next/codemod@canary next-lint-to-eslint-cli .)"
     ]
   },
   "enableAllProjectMcpServers": true

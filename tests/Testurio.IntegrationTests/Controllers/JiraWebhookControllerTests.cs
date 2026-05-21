@@ -1,6 +1,7 @@
 ﻿using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -56,7 +58,8 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         JiraEmail = "qa@example.com",
         JiraApiTokenSecretRef = "token",
         JiraWebhookSecretRef = WebhookSecret,
-        InTestingStatusLabel = "In Testing"
+        InTestingStatusLabel = "In Testing",
+        AllowedWorkItemTypes = ["Story"]
     };
 
     private static JsonElement? ToJsonElement(string? value) =>
@@ -67,25 +70,25 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         string transitionTo = "In Testing",
         string? description = "A description",
         string? ac = "Given/when/then") => new()
-    {
-        WebhookEvent = "jira:issue_updated",
-        Issue = new JiraIssue
         {
-            Id = "10001",
-            Key = "PROJ-1",
-            Fields = new JiraIssueFields
+            WebhookEvent = "jira:issue_updated",
+            Issue = new JiraIssue
             {
-                IssueType = new JiraIssueType { Name = issueType },
-                Status = new JiraStatus { Name = transitionTo },
-                Description = description,
-                AcceptanceCriteria = ToJsonElement(ac)
+                Id = "10001",
+                Key = "PROJ-1",
+                Fields = new JiraIssueFields
+                {
+                    IssueType = new JiraIssueType { Name = issueType },
+                    Status = new JiraStatus { Name = transitionTo },
+                    Description = description,
+                    AcceptanceCriteria = ToJsonElement(ac)
+                }
+            },
+            Changelog = new JiraChangelog
+            {
+                Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
             }
-        },
-        Changelog = new JiraChangelog
-        {
-            Items = [new JiraChangelogItem { Field = "status", ToString = transitionTo }]
-        }
-    };
+        };
 
     private HttpClient CreateClient() => _factory.CreateClient();
 
@@ -173,6 +176,40 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    // ─── Plan quota enforcement (feature 0046 / T035) ─────────────────────────
+
+    [Fact]
+    public async Task PostWebhook_Returns403_WithProblemDetails_WhenMonthlyQuotaExhausted()
+    {
+        _factory.ProjectRepoMock
+            .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakeProject());
+
+        _factory.PlanEnforcementMock
+            .Setup(e => e.CheckMonthlyRunQuotaAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows 50 test runs per month. Upgrade to Test Pro to run more tests.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Pro"));
+
+        var client = CreateClient();
+        var response = await PostWebhookAsync(client, MakePayload());
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(jsonOptions);
+        Assert.Equal("Plan limit reached", body.GetProperty("title").GetString());
+        // ASP.NET Core serializes ProblemDetails.Extensions at the root level.
+        Assert.Equal("maxTestRunsPerMonth", body.GetProperty("limitName").GetString());
+        Assert.Equal("Test Pro", body.GetProperty("requiredPlan").GetString());
+
+        // No TestRun document should be created when quota is exhausted.
+        _factory.TestRunRepoMock.Verify(
+            r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IProjectRepository> _projectRepo = new();
@@ -180,14 +217,14 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
         private readonly Mock<ITestRunJobSender> _jobSender = new();
         private readonly Mock<IJiraApiClient> _jiraApiClient = new();
-        private readonly Mock<IUserSubscriptionRepository> _subscriptionRepo = new();
+        private readonly Mock<IPlanEnforcementService> _planEnforcement = new();
 
         public Mock<IProjectRepository> ProjectRepoMock => _projectRepo;
         public Mock<ITestRunRepository> TestRunRepoMock => _testRunRepo;
         public Mock<IRunQueueRepository> RunQueueRepoMock => _runQueueRepo;
         public Mock<ITestRunJobSender> JobSenderMock => _jobSender;
         public Mock<IJiraApiClient> JiraApiClientMock => _jiraApiClient;
-        public Mock<IUserSubscriptionRepository> SubscriptionRepoMock => _subscriptionRepo;
+        public Mock<IPlanEnforcementService> PlanEnforcementMock => _planEnforcement;
 
         public void ResetMocks()
         {
@@ -196,20 +233,12 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             _runQueueRepo.Reset();
             _jobSender.Reset();
             _jiraApiClient.Reset();
-            // Default: active Centurio subscription with ample quota so existing tests are unaffected.
-            _subscriptionRepo.Reset();
-            _subscriptionRepo
-                .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new UserSubscription
-                {
-                    Id = "user1",
-                    UserId = "user1",
-                    Plan = SubscriptionPlan.Centurio,
-                    Status = SubscriptionStatus.Active
-                });
-            _testRunRepo
-                .Setup(r => r.CountTodayAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(0);
+            _planEnforcement.Reset();
+
+            // Default: quota not exceeded — existing tests pass without touching enforcement.
+            _planEnforcement
+                .Setup(e => e.CheckMonthlyRunQuotaAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -237,7 +266,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<IUserSubscriptionRepository>(_ => _subscriptionRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<IPlanEnforcementService>(_ => _planEnforcement.Object));
                 services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
                 services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));

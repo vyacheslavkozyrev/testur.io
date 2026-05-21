@@ -130,14 +130,12 @@ const getStyles = (theme: Theme) =>
         py: { xs: theme.spacing(6), md: theme.spacing(10) },
       },
       title: {
-        ...theme.typography.h3,
         fontWeight: 800,
         textAlign: 'center',
         mb: theme.spacing(2),
         color: theme.palette.text.primary,
       },
       subtitle: {
-        ...theme.typography.body1,
         color: theme.palette.text.secondary,
         textAlign: 'center',
         mb: theme.spacing(5),

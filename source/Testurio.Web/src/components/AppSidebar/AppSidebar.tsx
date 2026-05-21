@@ -285,7 +285,6 @@ const getStyles = (theme: Theme, collapsed: boolean) =>
           minWidth: 36,
         },
         navLabel: {
-          ...theme.typography.body2,
           color: 'inherit',
         },
         divider: {

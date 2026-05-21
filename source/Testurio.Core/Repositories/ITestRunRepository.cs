@@ -19,11 +19,14 @@ public interface ITestRunRepository
     Task<TestRun?> GetMostRecentByWorkItemAsync(string projectId, string workItemId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Counts all <see cref="TestRun"/> documents for <paramref name="userId"/> whose
-    /// <c>createdAt</c> timestamp falls within <c>[<paramref name="windowStart"/>, <paramref name="windowEnd"/>)</c>.
-    /// All statuses, including <c>Skipped</c>, are included.
-    /// This is a cross-partition fan-out query; it is only called on the webhook processing path,
-    /// not on the hot read path.
+    /// Returns the count of <see cref="TestRun"/> documents for <paramref name="userId"/>
+    /// whose <c>createdAt</c> falls within [<paramref name="periodStart"/>, <paramref name="periodEnd"/>).
+    /// Used by plan enforcement for both calendar-month quota (paid plans) and 14-day trial-period
+    /// quota (trialing users). Cross-partition fan-out — only called on the webhook/trigger path.
     /// </summary>
-    Task<int> CountTodayAsync(string userId, DateTimeOffset windowStart, DateTimeOffset windowEnd, CancellationToken cancellationToken = default);
+    Task<int> CountByUserForMonthAsync(
+        string userId,
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd,
+        CancellationToken cancellationToken = default);
 }

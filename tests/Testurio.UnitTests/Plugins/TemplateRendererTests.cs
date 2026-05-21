@@ -31,17 +31,17 @@ public class TemplateRendererTests
         string scenarioId,
         StepStatus status,
         long durationMs = 100) => new()
-    {
-        ScenarioId = scenarioId,
-        TestRunId = "run1",
-        ProjectId = "proj1",
-        UserId = "user1",
-        StepTitle = "Step",
-        ExpectedStatusCode = 200,
-        ActualStatusCode = 200,
-        DurationMs = durationMs,
-        Status = status,
-    };
+        {
+            ScenarioId = scenarioId,
+            TestRunId = "run1",
+            ProjectId = "proj1",
+            UserId = "user1",
+            StepTitle = "Step",
+            ExpectedStatusCode = 200,
+            ActualStatusCode = 200,
+            DurationMs = durationMs,
+            Status = status,
+        };
 
     private static TemplateRenderContext MakeContext(
         TestRun? run = null,

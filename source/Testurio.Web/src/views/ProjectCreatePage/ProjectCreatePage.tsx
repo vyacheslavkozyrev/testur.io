@@ -75,7 +75,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(4),
       },
       pageTitle: {
-        ...theme.typography.h4,
         color: theme.palette.text.primary,
       },
     }),

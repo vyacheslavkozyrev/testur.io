@@ -22,14 +22,14 @@ public class PromptAssemblyServiceTests
         string[]? entities = null,
         string[]? actions = null,
         string[]? edgeCases = null) => new()
-    {
-        Title = "Create order",
-        Description = "User creates a new order.",
-        AcceptanceCriteria = ["POST /orders returns 201", "Order stored in DB"],
-        Entities = entities ?? [],
-        Actions = actions ?? [],
-        EdgeCases = edgeCases ?? []
-    };
+        {
+            Title = "Create order",
+            Description = "User creates a new order.",
+            AcceptanceCriteria = ["POST /orders returns 201", "Order stored in DB"],
+            Entities = entities ?? [],
+            Actions = actions ?? [],
+            EdgeCases = edgeCases ?? []
+        };
 
     private static MemoryRetrievalResult EmptyMemory() => new()
     {
@@ -64,13 +64,13 @@ public class PromptAssemblyServiceTests
         MemoryRetrievalResult? memory = null,
         string? customPrompt = null,
         int maxScenarios = 10) => new()
-    {
-        ParsedStory = MakeStory(),
-        MemoryRetrievalResult = memory ?? EmptyMemory(),
-        ProjectConfig = MakeProject(customPrompt),
-        PromptTemplate = MakeTemplate(maxScenarios),
-        TestRunId = Guid.NewGuid()
-    };
+        {
+            ParsedStory = MakeStory(),
+            MemoryRetrievalResult = memory ?? EmptyMemory(),
+            ProjectConfig = MakeProject(customPrompt),
+            PromptTemplate = MakeTemplate(maxScenarios),
+            TestRunId = Guid.NewGuid()
+        };
 
     [Fact]
     public void Assemble_ReturnsSystemPromptAsOutParameter()

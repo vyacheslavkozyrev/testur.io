@@ -32,12 +32,16 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 
 const mockUser: AuthUser = {
   id: 'user-1',
+  firstName: null,
+  lastName: null,
   displayName: 'Jane Smith',
   email: 'jane.smith@example.com',
 };
 
 const mockUserWithAvatar: AuthUser = {
   id: 'user-2',
+  firstName: null,
+  lastName: null,
   displayName: 'John Doe',
   email: 'john.doe@example.com',
   avatarUrl: 'https://example.com/avatar.png',
@@ -86,6 +90,8 @@ describe('AppHeader', () => {
   it('truncates display name exceeding 24 characters with ellipsis', () => {
     const longNameUser: AuthUser = {
       id: 'user-3',
+      firstName: null,
+      lastName: null,
       displayName: 'Alexandrina Konstantinova',
       email: 'ak@example.com',
     };
@@ -101,6 +107,8 @@ describe('AppHeader', () => {
   it('falls back to email prefix when displayName is empty', () => {
     const noNameUser: AuthUser = {
       id: 'user-4',
+      firstName: null,
+      lastName: null,
       displayName: '',
       email: 'no.name@example.com',
     };

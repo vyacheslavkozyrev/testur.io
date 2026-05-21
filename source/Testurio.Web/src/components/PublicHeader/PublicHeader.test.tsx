@@ -104,6 +104,8 @@ describe('PublicHeader', () => {
   it('renders Go to Dashboard for authenticated users', () => {
     mockAuthUser = {
       id: 'user-1',
+      firstName: null,
+      lastName: null,
       email: 'user@example.com',
       displayName: 'Test User',
     };
@@ -120,7 +122,7 @@ describe('PublicHeader', () => {
   });
 
   it('shows active link styling for the current route', () => {
-    const { usePathname } = require('next/navigation') as { usePathname: jest.Mock };
+    const { usePathname } = jest.requireMock('next/navigation') as { usePathname: jest.Mock };
     usePathname.mockReturnValue('/');
     mockAuthUser = null;
 

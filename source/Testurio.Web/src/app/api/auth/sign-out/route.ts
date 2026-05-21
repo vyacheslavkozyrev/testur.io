@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSessionStore } from '@/app/api/auth/session/route';
+import { getSessionStore } from '@/app/api/auth/session/store';
 import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**

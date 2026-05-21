@@ -55,11 +55,6 @@ function renderToggles(
 describe('ReportAttachmentToggles', () => {
   // ─── Rendering ───────────────────────────────────────────────────────────────
 
-  it('renders section title', () => {
-    renderToggles();
-    expect(screen.getByText('Report Attachments')).toBeInTheDocument();
-  });
-
   it('renders Include step-by-step logs toggle', () => {
     renderToggles();
     expect(

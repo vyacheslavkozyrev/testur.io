@@ -58,6 +58,29 @@ function extractIdToken(resultData: Record<string, unknown> | undefined): string
   return getter.getIdToken?.() ?? null;
 }
 
+/** Duck-typed wrapper for MSAL native-auth result objects (MSAL 4.x does not export result types publicly). */
+interface MsalResult {
+  isFailed(): boolean;
+  isCompleted(): boolean;
+  isPasswordRequired(): boolean;
+  isCodeRequired(): boolean;
+  error?: {
+    message?: string;
+    isUserNotFound(): boolean;
+    isInvalidUsername(): boolean;
+    isInvalidPassword(): boolean;
+    isUserAlreadyExists(): boolean;
+    isInvalidCode(): boolean;
+  };
+  state: MsalContinuationState;
+}
+
+interface MsalContinuationState {
+  signIn(inputs?: { scopes?: string[] }): Promise<MsalResult>;
+  submitPassword(pw: string): Promise<MsalResult>;
+  submitCode(code: string): Promise<MsalResult>;
+}
+
 interface MsalAccount {
   localAccountId?: string;
   username?: string;
@@ -82,10 +105,10 @@ interface MsalAccount {
  * firstName/lastName are supplementary display data sent alongside the token.
  */
 async function signInFromContinuation(
-  continuationState: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult> },
+  continuationState: MsalContinuationState,
   overrides?: { firstName?: string | null; lastName?: string | null },
 ): Promise<AuthUser> {
-  let signInResult: Awaited<ReturnType<typeof continuationState.signIn>>;
+  let signInResult: MsalResult;
   try {
     signInResult = await continuationState.signIn({ scopes: loginScopes });
   } catch (err) {
@@ -127,9 +150,9 @@ export const authService = {
   async signIn({ email, password }: SignInRequest): Promise<AuthUser> {
     const client = await getMsalClient();
 
-    let signInResult: Awaited<ReturnType<typeof client.signIn>>;
+    let signInResult: MsalResult;
     try {
-      signInResult = await client.signIn({ username: email, scopes: loginScopes });
+      signInResult = await client.signIn({ username: email, scopes: loginScopes }) as unknown as MsalResult;
     } catch (err) {
       throw makeAuthError('UNKNOWN', err instanceof Error ? err.message : 'Sign-in failed.');
     }
@@ -204,7 +227,7 @@ export const authService = {
       username: email,
       password,
       attributes: { givenName: firstName, surname: lastName },
-    });
+    }) as unknown as MsalResult;
 
     if (signUpResult.isFailed()) {
       const error = signUpResult.error;
@@ -261,7 +284,7 @@ export const authService = {
         isCompleted(): boolean;
         isPasswordRequired(): boolean;
         error?: { message?: string; isInvalidCode?(): boolean };
-        state: { signIn(inputs?: { scopes?: string[] }): Promise<import('@azure/msal-browser').SignInResult>; submitPassword?(pw: string): Promise<unknown> };
+        state: MsalContinuationState;
       }>;
     }).submitCode(code);
 

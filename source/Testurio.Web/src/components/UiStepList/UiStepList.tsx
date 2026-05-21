@@ -116,11 +116,11 @@ const getStyles = (theme: Theme) =>
         lineHeight: 1.6,
       },
       icon: {
-        fontSize: theme.typography.body2.fontSize,
+        fontSize: theme.typography.body2.fontSize ?? '0.875rem',
         mt: '2px',
       },
       skippedIcon: {
-        fontSize: theme.typography.body2.fontSize,
+        fontSize: theme.typography.body2.fontSize ?? '0.875rem',
         mt: '2px',
         color: theme.palette.text.disabled,
       },

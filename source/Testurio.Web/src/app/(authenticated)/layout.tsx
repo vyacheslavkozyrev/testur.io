@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getSessionStore } from '@/app/api/auth/session/route';
+import { getSessionStore } from '@/app/api/auth/session/store';
 import PrivateCabinetLayout from '@/components/PrivateCabinetLayout/PrivateCabinetLayout';
 import { ThemeContextProvider } from '@/theme/ThemeContext';
 

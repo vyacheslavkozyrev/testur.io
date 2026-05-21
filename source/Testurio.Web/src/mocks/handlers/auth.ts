@@ -3,7 +3,9 @@ import type { AuthUser } from '@/types/layout.types';
 
 export const mockAuthUser: AuthUser = {
   id: '00000000-0000-0000-0000-000000000099',
-  displayName: 'Jane Smith',
+  firstName: 'Jane',
+  lastName: 'Smith',
+  displayName: null,
   email: 'jane.smith@example.com',
   avatarUrl: undefined,
 };

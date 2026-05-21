@@ -56,8 +56,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -80,8 +80,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -104,8 +104,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -123,8 +123,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -142,8 +142,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(response!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(response!),
         };
     }
 
@@ -161,8 +161,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(response!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(response!),
         };
     }
 
@@ -180,8 +180,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(response!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(response!),
         };
     }
 
@@ -204,8 +204,8 @@ public static class IntegrationEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 }

@@ -83,7 +83,6 @@ const getStyles = (theme: Theme) =>
         display: 'flex',
         alignItems: 'center',
         gap: theme.spacing(1),
-        ...theme.typography.h6,
         fontWeight: 700,
       },
       lockIcon: {
@@ -100,7 +99,6 @@ const getStyles = (theme: Theme) =>
         pt: `${theme.spacing(2)} !important`,
       },
       body: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
       },
       cta: {

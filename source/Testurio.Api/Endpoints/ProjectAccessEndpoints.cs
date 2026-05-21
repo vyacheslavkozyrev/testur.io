@@ -30,8 +30,8 @@ public static class ProjectAccessEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -47,8 +47,8 @@ public static class ProjectAccessEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 }

@@ -58,13 +58,15 @@ const mockPlan: PlanDefinition = {
   annualPrice: 470,
   annualDiscountPercent: 20,
   isPopular: true,
-  features: [
+  displayFeatures: [
     'Unlimited test runs',
     'API & UI end-to-end testing',
     'AI memory layer',
     'ADO & Jira post-back',
     'Email support',
   ],
+  limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+  features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
 };
 
 const freePlan: PlanDefinition = {
@@ -74,20 +76,22 @@ const freePlan: PlanDefinition = {
   annualPrice: 0,
   annualDiscountPercent: 0,
   isPopular: false,
-  features: [
+  displayFeatures: [
     'Up to 3 projects',
     '50 automated test runs / day',
     'API test execution',
     'Basic test reports',
     'Community support',
   ],
+  limits: { maxProjects: 3, maxTestRunsPerMonth: 50 },
+  features: { apiTesting: true, uiE2eTesting: false, aiMemory: false, pmReportPostBack: false },
 };
 
 describe('PlanCard', () => {
   it('renders the plan name', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -97,7 +101,7 @@ describe('PlanCard', () => {
   it('renders monthly price when interval is monthly', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -108,7 +112,7 @@ describe('PlanCard', () => {
   it('renders annual monthly-equivalent price when interval is annual', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -119,7 +123,7 @@ describe('PlanCard', () => {
   it('renders discount badge when interval is annual and discount > 0', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -129,7 +133,7 @@ describe('PlanCard', () => {
   it('does not render discount badge on monthly interval', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -139,7 +143,7 @@ describe('PlanCard', () => {
   it('renders Most popular badge for popular plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -149,7 +153,7 @@ describe('PlanCard', () => {
   it('does not render Most popular badge for non-popular plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} planRank={0} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -159,11 +163,11 @@ describe('PlanCard', () => {
   it('renders all feature items', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
-    for (const feature of mockPlan.features) {
+    for (const feature of mockPlan.displayFeatures) {
       expect(screen.getByText(feature)).toBeInTheDocument();
     }
   });
@@ -171,7 +175,7 @@ describe('PlanCard', () => {
   it('CTA href contains plan id and interval for unauthenticated guest', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={mockPlan} interval="monthly" isAuthenticated={false} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -183,7 +187,7 @@ describe('PlanCard', () => {
   it('renders Upgrade label and billing href for authenticated user', () => {
     render(
       <Wrapper>
-        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={true} />
+        <PlanCard plan={mockPlan} interval="annual" isAuthenticated={true} planRank={1} currentPlanRank={null} />
       </Wrapper>,
     );
 
@@ -196,7 +200,7 @@ describe('PlanCard', () => {
   it('renders Free label for zero-price plan', () => {
     render(
       <Wrapper>
-        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} />
+        <PlanCard plan={freePlan} interval="monthly" isAuthenticated={false} planRank={0} currentPlanRank={null} />
       </Wrapper>,
     );
 

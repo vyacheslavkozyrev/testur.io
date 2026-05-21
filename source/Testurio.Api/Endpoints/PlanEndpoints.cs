@@ -36,5 +36,7 @@ public static class PlanEndpoints
         doc.AnnualPrice,
         doc.AnnualDiscountPercent,
         doc.IsPopular,
-        doc.Features);
+        doc.DisplayFeatures,
+        new PlanLimitsDto(doc.Limits.MaxProjects, doc.Limits.MaxTestRunsPerMonth),
+        new PlanFeaturesDto(doc.Features.ApiTesting, doc.Features.UiE2eTesting, doc.Features.AiMemory, doc.Features.PmReportPostBack));
 }

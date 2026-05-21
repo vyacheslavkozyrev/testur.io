@@ -58,7 +58,6 @@ const getStyles = (theme: Theme) =>
         backgroundColor: theme.palette.background.default,
       },
       sectionTitle: {
-        ...theme.typography.h4,
         fontWeight: 700,
         textAlign: 'center',
         mb: theme.spacing(6),
@@ -93,7 +92,6 @@ const getStyles = (theme: Theme) =>
         flexShrink: 0,
       },
       stepNumberText: {
-        ...theme.typography.body1,
         fontWeight: 700,
         color: '#ffffff',
       },
@@ -111,12 +109,10 @@ const getStyles = (theme: Theme) =>
         pb: theme.spacing(4),
       },
       stepTitle: {
-        ...theme.typography.h6,
         fontWeight: 600,
         color: theme.palette.text.primary,
       },
       stepDesc: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
         lineHeight: 1.6,
       },

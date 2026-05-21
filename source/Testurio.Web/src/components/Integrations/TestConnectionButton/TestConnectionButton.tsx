@@ -64,11 +64,9 @@ const getStyles = (theme: Theme) =>
       },
       successText: {
         color: theme.palette.success.main,
-        ...theme.typography.body2,
       },
       errorText: {
         color: theme.palette.error.main,
-        ...theme.typography.body2,
       },
     }),
     [theme],

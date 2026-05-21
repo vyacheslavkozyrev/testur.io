@@ -121,12 +121,10 @@ const getStyles = (theme: Theme) =>
         color: theme.palette.success.main,
       },
       heading: {
-        ...theme.typography.h4,
         fontWeight: 700,
         color: theme.palette.text.primary,
       },
       body: {
-        ...theme.typography.body1,
         color: theme.palette.text.secondary,
         maxWidth: 480,
       },

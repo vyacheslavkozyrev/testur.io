@@ -119,24 +119,25 @@ public class TestRunRepository : ITestRunRepository
         return null;
     }
 
-    /// <inheritdoc/>
-    public async Task<int> CountTodayAsync(
+    /// <inheritdoc />
+    public async Task<int> CountByUserForMonthAsync(
         string userId,
-        DateTimeOffset windowStart,
-        DateTimeOffset windowEnd,
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd,
         CancellationToken cancellationToken = default)
     {
-        // Cross-partition fan-out query — acceptable on the quota-check path (once per webhook delivery).
-        // All statuses including Skipped are counted per AC-005.
-        var query = new QueryDefinition(
+        // Cross-partition query — partition key is projectId, so we must fan-out.
+        // Acceptable: only called on the webhook/trigger path (low frequency).
+        // Serves both calendar-month (paid plans) and 14-day trial-period enforcement.
+        var countQuery = new QueryDefinition(
             "SELECT VALUE COUNT(1) FROM c " +
             "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
             .WithParameter("@userId", userId)
-            .WithParameter("@start", windowStart.ToString("o"))
-            .WithParameter("@end", windowEnd.ToString("o"));
+            .WithParameter("@start", periodStart.ToString("o"))
+            .WithParameter("@end", periodEnd.ToString("o"));
 
         var total = 0;
-        using var iterator = _container.GetItemQueryIterator<int>(query);
+        using var iterator = _container.GetItemQueryIterator<int>(countQuery);
         while (iterator.HasMoreResults)
         {
             var page = await iterator.ReadNextAsync(cancellationToken);

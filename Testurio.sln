@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testurio.UnitTests", "tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testurio.IntegrationTests", "tests\Testurio.IntegrationTests\Testurio.IntegrationTests.csproj", "{E97D85B3-EF73-4A00-859C-EB231D0A3D49}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Testurio.Pipeline.MemoryWriter", "source\Testurio.Pipeline.MemoryWriter\Testurio.Pipeline.MemoryWriter.csproj", "{0CADBABA-A49E-45AD-8525-B849343CBC63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,18 @@ Global
 		{E97D85B3-EF73-4A00-859C-EB231D0A3D49}.Release|x64.Build.0 = Release|Any CPU
 		{E97D85B3-EF73-4A00-859C-EB231D0A3D49}.Release|x86.ActiveCfg = Release|Any CPU
 		{E97D85B3-EF73-4A00-859C-EB231D0A3D49}.Release|x86.Build.0 = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|x64.Build.0 = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Debug|x86.Build.0 = Debug|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|x64.ActiveCfg = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|x64.Build.0 = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|x86.ActiveCfg = Release|Any CPU
+		{0CADBABA-A49E-45AD-8525-B849343CBC63}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,5 +154,6 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{0EAEC3EA-F53A-4AB8-8261-692A472297D6} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 		{E97D85B3-EF73-4A00-859C-EB231D0A3D49} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
+		{0CADBABA-A49E-45AD-8525-B849343CBC63} = {B8EFCA5F-814F-285C-A8CB-F00F14650265}
 	EndGlobalSection
 EndGlobal

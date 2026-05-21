@@ -37,18 +37,18 @@ public class ReportBuilderServiceTests
         int? actualStatus = 200,
         long durationMs = 150,
         string? errorDescription = null) => new()
-    {
-        TestRunId = "run1",
-        ScenarioId = scenarioId,
-        ProjectId = "proj1",
-        UserId = "user1",
-        StepTitle = title,
-        Status = status,
-        ExpectedStatusCode = expectedStatus,
-        ActualStatusCode = actualStatus,
-        DurationMs = durationMs,
-        ErrorDescription = errorDescription
-    };
+        {
+            TestRunId = "run1",
+            ScenarioId = scenarioId,
+            ProjectId = "proj1",
+            UserId = "user1",
+            StepTitle = title,
+            Status = status,
+            ExpectedStatusCode = expectedStatus,
+            ActualStatusCode = actualStatus,
+            DurationMs = durationMs,
+            ErrorDescription = errorDescription
+        };
 
     [Fact]
     public void Build_PassedRun_ContainsSummaryHeader()

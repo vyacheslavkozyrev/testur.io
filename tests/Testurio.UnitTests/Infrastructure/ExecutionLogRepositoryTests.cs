@@ -22,19 +22,19 @@ public class ExecutionLogRepositoryTests
         int stepIndex = 0,
         string? responseBodyInline = "{\"id\":1}",
         string? responseBlobUrl = null) => new()
-    {
-        TestRunId = testRunId,
-        ProjectId = "proj1",
-        UserId = "user1",
-        ScenarioId = scenarioId,
-        StepIndex = stepIndex,
-        StepTitle = "GET /api/items",
-        HttpMethod = "GET",
-        RequestUrl = "https://app.example.com/api/items",
-        DurationMs = 100,
-        ResponseBodyInline = responseBodyInline,
-        ResponseBodyBlobUrl = responseBlobUrl
-    };
+        {
+            TestRunId = testRunId,
+            ProjectId = "proj1",
+            UserId = "user1",
+            ScenarioId = scenarioId,
+            StepIndex = stepIndex,
+            StepTitle = "GET /api/items",
+            HttpMethod = "GET",
+            RequestUrl = "https://app.example.com/api/items",
+            DurationMs = 100,
+            ResponseBodyInline = responseBodyInline,
+            ResponseBodyBlobUrl = responseBlobUrl
+        };
 
     // — Persist —
 

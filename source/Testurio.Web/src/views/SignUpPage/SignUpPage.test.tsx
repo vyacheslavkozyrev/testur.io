@@ -24,6 +24,7 @@ const mockSignUpState = {
 
 jest.mock('@/hooks/useAuth', () => ({
   useSignUp: () => mockSignUpState,
+  useSubmitSignUpCode: () => ({ mutate: jest.fn(), isPending: false, isError: false }),
 }));
 
 // ─── i18n setup ───────────────────────────────────────────────────────────────
@@ -37,6 +38,10 @@ i18nInstance.use(initReactI18next).init({
         signUp: {
           title: 'Create your account',
           subtitle: 'Start automating your tests in minutes',
+          firstNameLabel: 'First Name',
+          firstNameRequired: 'First name is required',
+          lastNameLabel: 'Last Name',
+          lastNameRequired: 'Last name is required',
           emailLabel: 'Email',
           emailRequired: 'Email is required',
           passwordLabel: 'Password',
@@ -98,16 +103,21 @@ describe('SignUpPage', () => {
     expect(screen.getByText('Sign in')).toBeInTheDocument();
   });
 
-  it('calls mutate with email and password on valid submission', async () => {
+  it('calls mutate with all fields on valid submission', async () => {
     renderSignUpPage();
 
+    fireEvent.change(screen.getByLabelText(/First Name/i), { target: { value: 'Jane' } });
+    fireEvent.change(screen.getByLabelText(/Last Name/i), { target: { value: 'Doe' } });
     fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: 'new@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password/i), { target: { value: 'Password1' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password1' } });
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
 
     await waitFor(() => {
-      expect(mockMutate).toHaveBeenCalledWith({ email: 'new@example.com', password: 'Password1' });
+      expect(mockMutate).toHaveBeenCalledWith(
+        { firstName: 'Jane', lastName: 'Doe', email: 'new@example.com', password: 'Password1' },
+        expect.any(Object),
+      );
     });
   });
 

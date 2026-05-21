@@ -22,10 +22,11 @@ export interface AccessModeSelectorHandle {
 
 interface AccessModeSelectorProps {
   projectId: string;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const AccessModeSelector = forwardRef<AccessModeSelectorHandle, AccessModeSelectorProps>(
-  function AccessModeSelector({ projectId }, ref) {
+  function AccessModeSelector({ projectId, onDirtyChange }, ref) {
     const { t } = useTranslation('projectAccess');
     const theme = useTheme();
     const styles = getStyles(theme);
@@ -90,6 +91,8 @@ const AccessModeSelector = forwardRef<AccessModeSelectorHandle, AccessModeSelect
       }
       return false;
     }, [access, selectedMode, basicAuthUser, basicAuthPass, headerTokenName, headerTokenValue]);
+
+    useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
     useImperativeHandle(ref, () => ({
       get isDirty() { return isDirty; },

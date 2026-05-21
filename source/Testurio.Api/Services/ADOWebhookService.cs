@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -18,8 +19,9 @@ public partial class ADOWebhookService : IADOWebhookService
     private readonly IRunQueueRepository _runQueueRepository;
     private readonly ITestRunJobSender _jobSender;
     private readonly IWorkItemTypeFilterService _filterService;
-    private readonly IQuotaPolicy _quotaPolicy;
-    private readonly IUserSubscriptionRepository _subscriptionRepository;
+    private readonly IPlanEnforcementService _planEnforcementService;
+    private readonly IADOClient _adoClient;
+    private readonly ISecretResolver _secretResolver;
     private readonly ILogger<ADOWebhookService> _logger;
 
     public ADOWebhookService(
@@ -27,16 +29,18 @@ public partial class ADOWebhookService : IADOWebhookService
         IRunQueueRepository runQueueRepository,
         ITestRunJobSender jobSender,
         IWorkItemTypeFilterService filterService,
-        IQuotaPolicy quotaPolicy,
-        IUserSubscriptionRepository subscriptionRepository,
+        IPlanEnforcementService planEnforcementService,
+        IADOClient adoClient,
+        ISecretResolver secretResolver,
         ILogger<ADOWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
         _runQueueRepository = runQueueRepository;
         _jobSender = jobSender;
         _filterService = filterService;
-        _quotaPolicy = quotaPolicy;
-        _subscriptionRepository = subscriptionRepository;
+        _planEnforcementService = planEnforcementService;
+        _adoClient = adoClient;
+        _secretResolver = secretResolver;
         _logger = logger;
     }
 
@@ -65,7 +69,6 @@ public partial class ADOWebhookService : IADOWebhookService
 
         var workItemId = payload.Resource.WorkItemId.ToString();
 
-        // Quota check — AC-021: same logic as JiraWebhookService; no PM tool comment for ADO (AC-022).
         var quotaResult = await CheckQuotaAsync(project, workItemId, cancellationToken);
         if (quotaResult is not null)
             return quotaResult.Value;
@@ -119,39 +122,43 @@ public partial class ADOWebhookService : IADOWebhookService
         return WebhookProcessResult.Enqueued;
     }
 
-    /// <summary>
-    /// Checks the daily quota for the given project's user.
-    /// Returns <see cref="WebhookProcessResult.QuotaExceeded"/> when the quota is exhausted or
-    /// no active subscription exists, or <c>null</c> when the quota allows the trigger to proceed.
-    /// No PM tool comment is posted for ADO (AC-022) — rejection is silent and logged only.
-    /// </summary>
     private async Task<WebhookProcessResult?> CheckQuotaAsync(
         Project project,
         string workItemId,
         CancellationToken cancellationToken)
     {
-        var subscription = await _subscriptionRepository.GetByUserIdAsync(project.UserId, cancellationToken);
-        var isActiveSubscription = subscription is not null &&
-            subscription.Status is SubscriptionStatus.Trialing or SubscriptionStatus.Active;
-        var dailyLimit = isActiveSubscription ? _quotaPolicy.GetDailyLimit(subscription!.Plan) : 0;
-
-        if (!isActiveSubscription || dailyLimit == 0)
+        try
         {
-            LogQuotaRejectedNoSubscription(_logger, workItemId, project.Id);
+            await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+            return null;
+        }
+        catch (PlanLimitExceededException ex)
+        {
+            await PostQuotaCommentAsync(project, workItemId, ex.Message, cancellationToken);
+            LogQuotaExceeded(_logger, workItemId, project.Id, ex.LimitName);
             return WebhookProcessResult.QuotaExceeded;
         }
+    }
 
-        var now = DateTimeOffset.UtcNow;
-        var windowStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
-        var windowEnd = windowStart.AddDays(1);
-        var usedToday = await _testRunRepository.CountTodayAsync(project.UserId, windowStart, windowEnd, cancellationToken);
-        if (usedToday >= dailyLimit)
-        {
-            LogQuotaExceeded(_logger, workItemId, project.Id, usedToday, dailyLimit);
-            return WebhookProcessResult.QuotaExceeded;
-        }
+    private async Task PostQuotaCommentAsync(
+        Project project,
+        string workItemId,
+        string message,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(project.AdoOrgUrl) ||
+            string.IsNullOrEmpty(project.AdoProjectName) ||
+            string.IsNullOrEmpty(project.AdoTokenSecretRef))
+            return;
 
-        return null;
+        if (!int.TryParse(workItemId, out var workItemIdInt))
+            return;
+
+        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretRef, cancellationToken);
+        var result = await _adoClient.PostCommentAsync(
+            project.AdoOrgUrl, project.AdoProjectName, workItemIdInt, token, message, cancellationToken);
+        if (result is null)
+            LogQuotaCommentPostFailed(_logger, workItemId, project.Id);
     }
 
     [LoggerMessage(Level = LogLevel.Information,
@@ -168,10 +175,10 @@ public partial class ADOWebhookService : IADOWebhookService
     private static partial void LogEnqueued(ILogger logger, string workItemId, string projectId, string testRunId);
 
     [LoggerMessage(Level = LogLevel.Warning,
-        Message = "Quota exceeded for ADO work item {WorkItemId} in project {ProjectId}: {UsedToday}/{DailyLimit} runs used today")]
-    private static partial void LogQuotaExceeded(ILogger logger, string workItemId, string projectId, int usedToday, int dailyLimit);
+        Message = "Plan limit exceeded for ADO work item {WorkItemId} in project {ProjectId}: limit '{LimitName}'")]
+    private static partial void LogQuotaExceeded(ILogger logger, string workItemId, string projectId, string limitName);
 
     [LoggerMessage(Level = LogLevel.Warning,
-        Message = "Quota rejected (no active subscription) for ADO work item {WorkItemId} in project {ProjectId}")]
-    private static partial void LogQuotaRejectedNoSubscription(ILogger logger, string workItemId, string projectId);
+        Message = "Failed to post quota comment on ADO work item {WorkItemId} in project {ProjectId}")]
+    private static partial void LogQuotaCommentPostFailed(ILogger logger, string workItemId, string projectId);
 }

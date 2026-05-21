@@ -53,8 +53,8 @@ function createWrapper() {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(
+  function Wrapper({ children }: { children: React.ReactNode }) {
+    return createElement(
       QueryClientProvider,
       { client: qc },
       createElement(
@@ -67,6 +67,8 @@ function createWrapper() {
         ),
       ),
     );
+  }
+  return Wrapper;
 }
 
 describe('AccountSettingsPage', () => {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSessionStore } from '@/app/api/auth/session/route';
+import { getSessionStore } from '@/app/api/auth/session/store';
 
 /**
  * GET /api/auth/me

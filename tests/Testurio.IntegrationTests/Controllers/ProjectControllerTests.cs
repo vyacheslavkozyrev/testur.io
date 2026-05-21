@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Testurio.Api.DTOs;
 using Testurio.Core.Entities;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
@@ -485,6 +486,52 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    // ─── Plan limit enforcement (feature 0046) ────────────────────────────────
+
+    [Fact]
+    public async Task CreateProject_Returns403_WithProblemDetails_WhenProjectLimitReached()
+    {
+        // Arrange — enforcement throws PlanLimitExceededException.
+        _factory.PlanEnforcementMock
+            .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows a maximum of 3 projects. Upgrade to Test Pro to create more.",
+                limitName: "maxProjects",
+                requiredPlan: "Test Pro"));
+
+        var client = CreateAuthenticatedClient();
+        var request = new CreateProjectRequest("Blocked Project", "https://blocked.example.com", "Smoke tests.");
+        var response = await client.PostAsJsonAsync("/v1/projects", request);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(jsonOptions);
+        Assert.Equal("Plan limit reached", body.GetProperty("title").GetString());
+        // ASP.NET Core serializes ProblemDetails.Extensions at the root level of the JSON response.
+        Assert.Equal("maxProjects", body.GetProperty("limitName").GetString());
+        Assert.Equal("Test Pro", body.GetProperty("requiredPlan").GetString());
+    }
+
+    [Fact]
+    public async Task CreateProject_Returns201_WhenPlanEnforcementPasses()
+    {
+        // Arrange — enforcement allows the request.
+        _factory.PlanEnforcementMock
+            .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _factory.ProjectRepoMock
+            .Setup(r => r.CreateAsync(It.IsAny<Project>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Project p, CancellationToken _) => p);
+
+        var client = CreateAuthenticatedClient();
+        var request = new CreateProjectRequest("Allowed Project", "https://allowed.example.com", "API tests.");
+        var response = await client.PostAsJsonAsync("/v1/projects", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IProjectRepository> _projectRepo = new();
@@ -492,8 +539,10 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         private readonly Mock<IRunQueueRepository> _runQueueRepo = new();
         private readonly Mock<ITestRunJobSender> _jobSender = new();
         private readonly Mock<IJiraApiClient> _jiraApiClient = new();
+        private readonly Mock<IPlanEnforcementService> _planEnforcement = new();
 
         public Mock<IProjectRepository> ProjectRepoMock => _projectRepo;
+        public Mock<IPlanEnforcementService> PlanEnforcementMock => _planEnforcement;
 
         public void ResetMocks()
         {
@@ -502,6 +551,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
             _runQueueRepo.Reset();
             _jobSender.Reset();
             _jiraApiClient.Reset();
+            _planEnforcement.Reset();
+
+            // Default: no limit exceeded — existing tests pass without touching enforcement.
+            _planEnforcement
+                .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -530,7 +585,9 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => _runQueueRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => _jobSender.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanEnforcementService>(_ => _planEnforcement.Object));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 

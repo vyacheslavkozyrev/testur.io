@@ -106,7 +106,6 @@ export default function DashboardPage() {
       return (
         <Box sx={styles.grid}>
           {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-            // eslint-disable-next-line react/no-array-index-key
             <Skeleton key={i} variant="rectangular" sx={styles.skeleton} />
           ))}
         </Box>
@@ -211,7 +210,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       pageTitle: {
-        ...theme.typography.h5,
         fontWeight: 600,
         color: theme.palette.text.primary,
       },
@@ -238,11 +236,9 @@ const getStyles = (theme: Theme) =>
         color: theme.palette.text.disabled,
       },
       emptyHeading: {
-        ...theme.typography.h6,
         color: theme.palette.text.primary,
       },
       emptyDescription: {
-        ...theme.typography.body2,
         color: theme.palette.text.secondary,
         maxWidth: 400,
       },

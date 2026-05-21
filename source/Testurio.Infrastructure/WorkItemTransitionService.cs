@@ -44,7 +44,7 @@ public sealed partial class WorkItemTransitionService : IWorkItemTransitionServi
             return project.PmTool switch
             {
                 PMToolType.Jira => await TransitionJiraAsync(project, testRun, targetStatusName, cancellationToken),
-                PMToolType.Ado  => await TransitionAdoAsync(project, testRun, targetStatusName, cancellationToken),
+                PMToolType.Ado => await TransitionAdoAsync(project, testRun, targetStatusName, cancellationToken),
                 _ => new WorkItemTransitionResult(StatusTransitionOutcome.NotConfigured, null, null)
             };
         }

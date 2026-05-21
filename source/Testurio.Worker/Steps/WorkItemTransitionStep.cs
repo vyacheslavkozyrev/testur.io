@@ -77,16 +77,16 @@ public sealed partial class WorkItemTransitionStep
         project.PmTool switch
         {
             PMToolType.Jira => project.JiraPassedTransitionStatus,
-            PMToolType.Ado  => project.AdoPassedTransitionStatus,
-            _               => null
+            PMToolType.Ado => project.AdoPassedTransitionStatus,
+            _ => null
         };
 
     private static string? SelectFailedStatus(Project project) =>
         project.PmTool switch
         {
             PMToolType.Jira => project.JiraFailedTransitionStatus,
-            PMToolType.Ado  => project.AdoFailedTransitionStatus,
-            _               => null
+            PMToolType.Ado => project.AdoFailedTransitionStatus,
+            _ => null
         };
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to persist transition outcome for run {RunId}")]

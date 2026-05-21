@@ -80,7 +80,6 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(3),
       },
       headline: {
-        ...theme.typography.h2,
         fontWeight: 800,
         color: theme.palette.text.primary,
         maxWidth: 800,
@@ -89,7 +88,6 @@ const getStyles = (theme: Theme) =>
         },
       },
       subheadline: {
-        ...theme.typography.h6,
         color: theme.palette.text.secondary,
         maxWidth: 600,
         fontWeight: 400,

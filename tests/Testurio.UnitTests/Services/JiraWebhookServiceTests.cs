@@ -22,8 +22,7 @@ public class JiraWebhookServiceTests
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<IWorkItemTypeFilterService> _filterService = new();
-    private readonly Mock<IQuotaPolicy> _quotaPolicy = new();
-    private readonly Mock<IUserSubscriptionRepository> _subscriptionRepository = new();
+    private readonly Mock<IPlanEnforcementService> _planEnforcement = new();
     private readonly Mock<ILogger<JiraWebhookService>> _logger = new();
 
     public JiraWebhookServiceTests()
@@ -35,20 +34,10 @@ public class JiraWebhookServiceTests
         _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), "Story")).Returns(true);
         _filterService.Setup(f => f.IsAllowed(It.IsAny<Project>(), It.Is<string>(s => s != "Story"))).Returns(false);
 
-        // Default: active Centurio subscription with ample quota so existing tests are unaffected.
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = SubscriptionPlan.Centurio,
-                Status = SubscriptionStatus.Active
-            });
-        _quotaPolicy.Setup(p => p.GetDailyLimit(It.IsAny<SubscriptionPlan?>())).Returns(500);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync(It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+        // Default: no limit exceeded.
+        _planEnforcement
+            .Setup(e => e.CheckMonthlyRunQuotaAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // [LoggerMessage] checks IsEnabled before calling Log — enable all levels so log calls fire.
         _logger.Setup(l => l.IsEnabled(It.IsAny<LogLevel>())).Returns(true);
@@ -61,8 +50,7 @@ public class JiraWebhookServiceTests
         _jiraApiClient.Object,
         _secretResolver.Object,
         _filterService.Object,
-        _quotaPolicy.Object,
-        _subscriptionRepository.Object,
+        _planEnforcement.Object,
         _logger.Object);
 
     private static Project MakeProject(string inTestingLabel = "In Testing") => new()
@@ -170,7 +158,11 @@ public class JiraWebhookServiceTests
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
+            ProjectId = "proj1",
+            UserId = "user1",
+            JiraIssueKey = "PROJ-0",
+            JiraIssueId = "10000",
+            Status = TestRunStatus.Active
         });
         _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(false);
         _runQueueRepo.Setup(r => r.EnqueueAsync(It.IsAny<QueuedRun>(), default))
@@ -191,7 +183,11 @@ public class JiraWebhookServiceTests
     {
         _testRunRepo.Setup(r => r.GetActiveRunAsync("proj1", default)).ReturnsAsync(new TestRun
         {
-            ProjectId = "proj1", UserId = "user1", JiraIssueKey = "PROJ-0", JiraIssueId = "10000", Status = TestRunStatus.Active
+            ProjectId = "proj1",
+            UserId = "user1",
+            JiraIssueKey = "PROJ-0",
+            JiraIssueId = "10000",
+            Status = TestRunStatus.Active
         });
         _runQueueRepo.Setup(r => r.ExistsAsync("proj1", "10001", default)).ReturnsAsync(true);
 

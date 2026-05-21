@@ -36,9 +36,9 @@ const mockDashboardResponse: DashboardResponse = {
     },
   ],
   quotaUsage: {
-    usedToday: 3,
-    dailyLimit: 50,
-    resetsAt: '2026-05-17T00:00:00Z',
+    usedThisMonth: 3,
+    monthlyLimit: 50,
+    resetsAt: '2026-06-01T00:00:00Z',
   },
 };
 

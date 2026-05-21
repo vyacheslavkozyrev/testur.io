@@ -54,6 +54,10 @@ jest.mock('@/hooks/usePlans', () => ({
   usePlans: () => mockUsePlansState,
 }));
 
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => ({ data: undefined, isPending: false, isError: false }),
+}));
+
 // ─── i18n setup ───────────────────────────────────────────────────────────────
 
 const i18nInstance = i18n.createInstance();
@@ -124,7 +128,9 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 0,
     annualDiscountPercent: 0,
     isPopular: false,
-    features: ['Up to 3 projects', '50 test runs / day', 'API testing', 'Basic reports', 'Community support'],
+    displayFeatures: ['Up to 3 projects', '50 test runs / day', 'API testing', 'Basic reports', 'Community support'],
+    limits: { maxProjects: 3, maxTestRunsPerMonth: 50 },
+    features: { apiTesting: true, uiE2eTesting: false, aiMemory: false, pmReportPostBack: false },
   },
   {
     id: 'test-pro',
@@ -133,7 +139,9 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 470,
     annualDiscountPercent: 20,
     isPopular: true,
-    features: ['Unlimited projects', 'Unlimited runs', 'API & UI testing', 'AI memory', 'Email support'],
+    displayFeatures: ['Unlimited projects', 'Unlimited runs', 'API & UI testing', 'AI memory', 'Email support'],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'team',
@@ -142,7 +150,9 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 1430,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: ['Unlimited projects', 'Unlimited runs', 'API & UI testing', 'Cross-project memory', 'Priority support'],
+    displayFeatures: ['Unlimited projects', 'Unlimited runs', 'API & UI testing', 'Cross-project memory', 'Priority support'],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'centurio',
@@ -151,7 +161,9 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 3830,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: ['All projects', 'All runs', 'All test types', 'Global memory', 'SLA guarantee'],
+    displayFeatures: ['All projects', 'All runs', 'All test types', 'Global memory', 'SLA guarantee'],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
 ];
 

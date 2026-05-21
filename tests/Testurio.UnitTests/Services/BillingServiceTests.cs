@@ -29,13 +29,13 @@ public class BillingServiceTests
         PriceIds = new Dictionary<string, string>
         {
             ["TestJunior_Monthly"] = "price_tj_monthly",
-            ["TestJunior_Annual"]  = "price_tj_annual",
-            ["TestPro_Monthly"]    = "price_tp_monthly",
-            ["TestPro_Annual"]     = "price_tp_annual",
-            ["Team_Monthly"]       = "price_team_monthly",
-            ["Team_Annual"]        = "price_team_annual",
-            ["Centurio_Monthly"]   = "price_cent_monthly",
-            ["Centurio_Annual"]    = "price_cent_annual",
+            ["TestJunior_Annual"] = "price_tj_annual",
+            ["TestPro_Monthly"] = "price_tp_monthly",
+            ["TestPro_Annual"] = "price_tp_annual",
+            ["Team_Monthly"] = "price_team_monthly",
+            ["Team_Annual"] = "price_team_annual",
+            ["Centurio_Monthly"] = "price_cent_monthly",
+            ["Centurio_Annual"] = "price_cent_annual",
         },
     };
 
@@ -63,19 +63,19 @@ public class BillingServiceTests
     // ─── CreateCheckoutSessionAsync ───────────────────────────────────────────
 
     [Theory]
-    [InlineData("test-junior", SubscriptionPlan.TestJunior, BillingInterval.Monthly)]
-    [InlineData("test-pro",    SubscriptionPlan.TestPro,    BillingInterval.Annual)]
-    [InlineData("team",        SubscriptionPlan.Team,       BillingInterval.Monthly)]
-    [InlineData("centurio",    SubscriptionPlan.Centurio,   BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.TestJunior, "test-junior", BillingInterval.Monthly)]
+    [InlineData(SubscriptionPlan.TestPro, "test-pro", BillingInterval.Annual)]
+    [InlineData(SubscriptionPlan.Team, "team", BillingInterval.Monthly)]
+    [InlineData(SubscriptionPlan.Centurio, "centurio", BillingInterval.Annual)]
     public async Task CreateCheckoutSessionAsync_DelegatesToStripeService_WithCorrectParameters(
-        string planId, SubscriptionPlan plan, BillingInterval interval)
+        SubscriptionPlan plan, string planSlug, BillingInterval interval)
     {
         _stripeService.Setup(s => s.CreateCheckoutSessionAsync(
                 plan, interval, It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://checkout.stripe.com/c/pay/test");
 
-        var request = new CreateCheckoutSessionRequest(planId, interval);
+        var request = new CreateCheckoutSessionRequest(planSlug, interval);
         var result = await _sut.CreateCheckoutSessionAsync("user-1", "user@example.com", request);
 
         Assert.Equal("https://checkout.stripe.com/c/pay/test", result.CheckoutUrl);
@@ -331,7 +331,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = userId, UserId = userId,
+            Id = userId,
+            UserId = userId,
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -377,7 +378,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = "user-deleted", UserId = "user-deleted",
+            Id = "user-deleted",
+            UserId = "user-deleted",
             Status = SubscriptionStatus.Active,
             StripeSubscriptionId = subscriptionId,
         };
@@ -423,7 +425,8 @@ public class BillingServiceTests
 
         var existing = new UserSubscription
         {
-            Id = "user-pf", UserId = "user-pf",
+            Id = "user-pf",
+            UserId = "user-pf",
             Status = SubscriptionStatus.Active,
             StripeCustomerId = customerId,
         };

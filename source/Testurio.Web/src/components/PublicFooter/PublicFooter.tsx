@@ -87,7 +87,6 @@ const getStyles = (theme: Theme) =>
         },
       },
       logoText: {
-        ...theme.typography.h6,
         fontWeight: 700,
         color: theme.palette.primary.main,
       },
@@ -102,7 +101,6 @@ const getStyles = (theme: Theme) =>
         flexWrap: 'wrap',
       },
       navLink: {
-        ...theme.typography.body2,
         textDecoration: 'none',
         color: theme.palette.text.secondary,
         minHeight: 44,
@@ -112,7 +110,6 @@ const getStyles = (theme: Theme) =>
         transition: 'color 0.15s',
       },
       copyright: {
-        ...theme.typography.caption,
         color: theme.palette.text.disabled,
         [theme.breakpoints.down('sm')]: {
           width: '100%',
