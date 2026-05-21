@@ -9,13 +9,15 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 0,
     annualDiscountPercent: 0,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Up to 3 projects',
-      '50 automated test runs / day',
+      '50 automated test runs / month',
       'API test execution',
       'Basic test reports',
       'Community support',
     ],
+    limits: { maxProjects: 3, maxTestRunsPerMonth: 50 },
+    features: { apiTesting: true, uiE2eTesting: false, aiMemory: false, pmReportPostBack: true },
   },
   {
     id: 'test-pro',
@@ -24,7 +26,7 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 470,
     annualDiscountPercent: 20,
     isPopular: true,
-    features: [
+    displayFeatures: [
       'Up to 10 projects',
       'Unlimited test runs',
       'API & UI end-to-end testing',
@@ -32,6 +34,8 @@ const mockPlans: PlanDefinition[] = [
       'ADO & Jira report post-back',
       'Email support',
     ],
+    limits: { maxProjects: 10, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'team',
@@ -40,7 +44,7 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 1430,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Unlimited projects',
       'Unlimited test runs',
       'API & UI end-to-end testing',
@@ -49,6 +53,8 @@ const mockPlans: PlanDefinition[] = [
       'Custom test generation prompts',
       'Priority support',
     ],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'centurio',
@@ -57,7 +63,7 @@ const mockPlans: PlanDefinition[] = [
     annualPrice: 3830,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Unlimited projects',
       'Unlimited test runs',
       'All test types including smoke, a11y, visual',
@@ -67,6 +73,8 @@ const mockPlans: PlanDefinition[] = [
       'SLA guarantee',
       'Dedicated support engineer',
     ],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
 ];
 

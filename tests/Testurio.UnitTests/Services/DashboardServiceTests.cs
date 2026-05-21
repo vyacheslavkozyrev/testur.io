@@ -51,8 +51,8 @@ public class DashboardServiceTests
 
         Assert.Single(result.Projects);
         Assert.Equal("proj-1", result.Projects[0].ProjectId);
-        Assert.Equal(5, result.QuotaUsage.UsedToday);
-        Assert.Equal(50, result.QuotaUsage.DailyLimit);
+        Assert.Equal(5, result.QuotaUsage.UsedThisMonth);
+        Assert.Equal(50, result.QuotaUsage.MonthlyLimit);
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class DashboardServiceTests
 
         var result = await _sut.GetDashboardAsync("user-1");
 
-        Assert.Equal(50, result.QuotaUsage.UsedToday);
-        Assert.Equal(50, result.QuotaUsage.DailyLimit);
+        Assert.Equal(50, result.QuotaUsage.UsedThisMonth);
+        Assert.Equal(50, result.QuotaUsage.MonthlyLimit);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class DashboardServiceTests
 
         var result = await _sut.GetDashboardAsync("user-1");
 
-        Assert.Equal(0, result.QuotaUsage.DailyLimit);
-        Assert.Equal(0, result.QuotaUsage.UsedToday);
+        Assert.Equal(0, result.QuotaUsage.MonthlyLimit);
+        Assert.Equal(0, result.QuotaUsage.UsedThisMonth);
     }
 }

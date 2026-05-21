@@ -145,10 +145,10 @@ public class ProjectApiAuthServiceTests
 
         var request = new UpdateProjectApiAuthRequest
         {
-            ApiAuthMethod       = "api_key",
-            ApiAuthApiKeyName   = "X-Api-Key",
+            ApiAuthMethod = "api_key",
+            ApiAuthApiKeyName = "X-Api-Key",
             ApiAuthApiKeyPlacement = "header",
-            ApiAuthApiKeyValue  = "key-secret",
+            ApiAuthApiKeyValue = "key-secret",
         };
         var (result, dto) = await _sut.UpdateAsync("user-1", "proj-1", request);
 
@@ -177,7 +177,7 @@ public class ProjectApiAuthServiceTests
 
         var request = new UpdateProjectApiAuthRequest
         {
-            ApiAuthMethod       = "basic",
+            ApiAuthMethod = "basic",
             ApiAuthBasicUsername = "api-user",
             ApiAuthBasicPassword = "api-pass",
         };

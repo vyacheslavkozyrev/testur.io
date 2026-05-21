@@ -64,9 +64,9 @@ public class Project
     /// <summary>Returns the default allowed issue types for the given PM tool.</summary>
     public static string[] GetDefaultAllowedWorkItemTypes(PMToolType pmTool) => pmTool switch
     {
-        PMToolType.Ado  => ["User Story", "Bug"],
+        PMToolType.Ado => ["User Story", "Bug"],
         PMToolType.Jira => ["Story", "Bug"],
-        _               => ["Story", "Bug"],
+        _ => ["Story", "Bug"],
     };
 
     // Report format & attachment settings — feature 0009

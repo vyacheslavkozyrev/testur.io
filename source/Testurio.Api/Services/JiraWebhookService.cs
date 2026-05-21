@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -17,6 +18,7 @@ public partial class JiraWebhookService : IJiraWebhookService
     private readonly IJiraApiClient _jiraApiClient;
     private readonly ISecretResolver _secretResolver;
     private readonly IWorkItemTypeFilterService _filterService;
+    private readonly IPlanEnforcementService _planEnforcementService;
     private readonly ILogger<JiraWebhookService> _logger;
 
     public JiraWebhookService(
@@ -26,6 +28,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         IJiraApiClient jiraApiClient,
         ISecretResolver secretResolver,
         IWorkItemTypeFilterService filterService,
+        IPlanEnforcementService planEnforcementService,
         ILogger<JiraWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
@@ -34,6 +37,7 @@ public partial class JiraWebhookService : IJiraWebhookService
         _jiraApiClient = jiraApiClient;
         _secretResolver = secretResolver;
         _filterService = filterService;
+        _planEnforcementService = planEnforcementService;
         _logger = logger;
     }
 
@@ -114,6 +118,11 @@ public partial class JiraWebhookService : IJiraWebhookService
         JiraIssue issue,
         CancellationToken cancellationToken)
     {
+        // AC-015/AC-016: check monthly run quota before creating TestRun or Service Bus message.
+        // Throws PlanLimitExceededException when quota is exhausted — propagates to the endpoint
+        // which returns 403 via GlobalExceptionHandler.
+        await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+
         // TOCTOU race: concurrent webhooks for the same story could both pass GetActiveRunAsync.
         // A unique constraint on (ProjectId, JiraIssueId, Status=Pending) in the TestRuns Cosmos container
         // would prevent duplicate documents — configure this in infra/modules/cosmos.bicep before relying on it.

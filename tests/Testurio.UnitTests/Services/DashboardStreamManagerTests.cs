@@ -106,7 +106,7 @@ public class DashboardStreamManagerTests
 
         // Start streaming for both users first.
         var alphaTask = Task.Run(() => DrainAsync(sut, "user-alpha", 10, cts.Token), cts.Token);
-        var betaTask  = Task.Run(() => DrainAsync(sut, "user-beta",  10, cts.Token), cts.Token);
+        var betaTask = Task.Run(() => DrainAsync(sut, "user-beta", 10, cts.Token), cts.Token);
 
         // Brief delay to let both StreamAsync calls register their channels.
         await Task.Delay(50, cts.Token);
@@ -121,10 +121,10 @@ public class DashboardStreamManagerTests
         await Task.WhenAll(publishTasks);
 
         var alphaEvents = await alphaTask;
-        var betaEvents  = await betaTask;
+        var betaEvents = await betaTask;
 
         Assert.All(alphaEvents, e => Assert.StartsWith("alpha-", e.ProjectId));
-        Assert.All(betaEvents,  e => Assert.StartsWith("beta-",  e.ProjectId));
+        Assert.All(betaEvents, e => Assert.StartsWith("beta-", e.ProjectId));
     }
 
     // ─── Multi-tab fan-out: two connections for the same user each receive every event ─

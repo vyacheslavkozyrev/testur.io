@@ -13,6 +13,18 @@ public sealed record PlanDocument
     public required int AnnualPrice { get; init; }
     public required int AnnualDiscountPercent { get; init; }
     public required bool IsPopular { get; init; }
-    public required IReadOnlyList<string> Features { get; init; }
+
+    /// <summary>
+    /// Marketing-copy feature strings displayed on the pricing page.
+    /// Renamed from <c>Features</c> in feature 0046 to distinguish display copy from enforcement data.
+    /// </summary>
+    public required IReadOnlyList<string> DisplayFeatures { get; init; }
+
+    /// <summary>Enforcement ceilings (project count, monthly run quota). Added in feature 0046.</summary>
+    public required PlanLimits Limits { get; init; }
+
+    /// <summary>Boolean capability flags controlling which pipeline stages are available. Added in feature 0046.</summary>
+    public required PlanFeatures Features { get; init; }
+
     public required int SortOrder { get; init; }
 }

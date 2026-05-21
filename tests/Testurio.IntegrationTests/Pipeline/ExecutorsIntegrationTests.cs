@@ -26,7 +26,7 @@ public class ExecutorsIntegrationTests
     private readonly Mock<IScreenshotStorage> _screenshotStorage = new();
 
     private static readonly Guid UserId = Guid.NewGuid();
-    private static readonly Guid RunId  = Guid.NewGuid();
+    private static readonly Guid RunId = Guid.NewGuid();
 
     private static readonly Project DefaultProject = new()
     {
@@ -63,7 +63,10 @@ public class ExecutorsIntegrationTests
     {
         var uiResult = new UiE2eScenarioResult
         {
-            ScenarioId = "ui-1", Title = "UI test", Passed = true, DurationMs = 200,
+            ScenarioId = "ui-1",
+            Title = "UI test",
+            Passed = true,
+            DurationMs = 200,
             StepResults = []
         };
 
@@ -74,7 +77,7 @@ public class ExecutorsIntegrationTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios   = [MakeApiScenario()],
+            ApiScenarios = [MakeApiScenario()],
             UiE2eScenarios = [MakeUiScenario()]
         };
 
@@ -94,7 +97,7 @@ public class ExecutorsIntegrationTests
     {
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios   = [],
+            ApiScenarios = [],
             UiE2eScenarios = []
         };
 
@@ -130,7 +133,7 @@ public class ExecutorsIntegrationTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios   = [MakeApiScenario()],
+            ApiScenarios = [MakeApiScenario()],
             UiE2eScenarios = [MakeUiScenario()]
         };
 
@@ -172,7 +175,7 @@ public class ExecutorsIntegrationTests
 
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios   =
+            ApiScenarios =
             [
                 new ApiTestScenario
                 {
@@ -220,7 +223,7 @@ public class ExecutorsIntegrationTests
         };
         var generatorResults = new GeneratorResults
         {
-            ApiScenarios   = scenarios,
+            ApiScenarios = scenarios,
             UiE2eScenarios = []
         };
 
@@ -236,13 +239,17 @@ public class ExecutorsIntegrationTests
 
     private static ApiTestScenario MakeApiScenario(string id = "api-sc1") => new()
     {
-        Id = id, Title = "API scenario", Method = "GET", Path = "/items",
+        Id = id,
+        Title = "API scenario",
+        Method = "GET",
+        Path = "/items",
         Assertions = [new StatusCodeAssertion { Expected = 200 }]
     };
 
     private static UiE2eTestScenario MakeUiScenario(string id = "ui-sc1") => new()
     {
-        Id = id, Title = "UI scenario",
+        Id = id,
+        Title = "UI scenario",
         Steps = [new NavigateStep { Url = "https://staging.example.com" }]
     };
 

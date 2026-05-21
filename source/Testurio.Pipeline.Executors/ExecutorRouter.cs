@@ -30,8 +30,8 @@ public sealed class ExecutorRouter : IExecutorRouter
         Guid runId,
         CancellationToken ct = default)
     {
-        var hasApi    = results.ApiScenarios.Count > 0;
-        var hasUiE2e  = results.UiE2eScenarios.Count > 0;
+        var hasApi = results.ApiScenarios.Count > 0;
+        var hasUiE2e = results.UiE2eScenarios.Count > 0;
 
         // AC-004: both lists empty — cannot select any executor.
         if (!hasApi && !hasUiE2e)
@@ -40,18 +40,18 @@ public sealed class ExecutorRouter : IExecutorRouter
                 "No scenarios to execute — both API and UI E2E scenario lists are empty");
         }
 
-        IReadOnlyList<ApiScenarioResult>    apiResults    = [];
-        IReadOnlyList<UiE2eScenarioResult>  uiE2eResults  = [];
+        IReadOnlyList<ApiScenarioResult> apiResults = [];
+        IReadOnlyList<UiE2eScenarioResult> uiE2eResults = [];
 
         if (hasApi && hasUiE2e)
         {
             // AC-001: both lists non-empty → run executors in parallel.
             var apiTask = _httpExecutor.ExecuteAsync(results.ApiScenarios, projectConfig, ct);
-            var uiTask  = _playwrightExecutor.ExecuteAsync(results.UiE2eScenarios, projectConfig, userId, runId, ct);
+            var uiTask = _playwrightExecutor.ExecuteAsync(results.UiE2eScenarios, projectConfig, userId, runId, ct);
 
             await Task.WhenAll(apiTask, uiTask);
 
-            apiResults   = await apiTask;
+            apiResults = await apiTask;
             uiE2eResults = await uiTask;
         }
         else if (hasApi)
@@ -67,7 +67,7 @@ public sealed class ExecutorRouter : IExecutorRouter
 
         return new ExecutionResult
         {
-            ApiResults   = apiResults,
+            ApiResults = apiResults,
             UiE2eResults = uiE2eResults
         };
     }

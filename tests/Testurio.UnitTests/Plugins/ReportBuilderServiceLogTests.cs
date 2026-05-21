@@ -55,21 +55,21 @@ public class ReportBuilderServiceLogTests
         string? responseBlobUrl = null,
         bool responseTruncated = false,
         int? responseStatusCode = 200) => new()
-    {
-        TestRunId = "run1",
-        ProjectId = "proj1",
-        UserId = "user1",
-        ScenarioId = scenarioId,
-        StepIndex = stepIndex,
-        StepTitle = stepTitle,
-        HttpMethod = "GET",
-        RequestUrl = "https://app.example.com/api/items",
-        ResponseStatusCode = responseStatusCode,
-        ResponseBodyInline = responseBodyInline,
-        ResponseBodyBlobUrl = responseBlobUrl,
-        ResponseTruncated = responseTruncated,
-        DurationMs = 50
-    };
+        {
+            TestRunId = "run1",
+            ProjectId = "proj1",
+            UserId = "user1",
+            ScenarioId = scenarioId,
+            StepIndex = stepIndex,
+            StepTitle = stepTitle,
+            HttpMethod = "GET",
+            RequestUrl = "https://app.example.com/api/items",
+            ResponseStatusCode = responseStatusCode,
+            ResponseBodyInline = responseBodyInline,
+            ResponseBodyBlobUrl = responseBlobUrl,
+            ResponseTruncated = responseTruncated,
+            DurationMs = 50
+        };
 
     // — AC-012: log included for every run regardless of outcome —
 

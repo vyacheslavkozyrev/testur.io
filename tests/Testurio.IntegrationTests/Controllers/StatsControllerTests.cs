@@ -23,6 +23,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Events;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
+using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -102,7 +103,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         Assert.Single(body.Projects);
         Assert.Equal("proj-001", body.Projects[0].ProjectId);
         Assert.NotNull(body.QuotaUsage);
-        Assert.Equal(3, body.QuotaUsage.UsedToday);
+        Assert.Equal(3, body.QuotaUsage.UsedThisMonth);
     }
 
     [Fact]
@@ -177,7 +178,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
         var projectId = Guid.NewGuid().ToString();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        var runs = (IReadOnlyList<RunHistoryItem>) new[]
+        var runs = (IReadOnlyList<RunHistoryItem>)new[]
         {
             new RunHistoryItem("r1", "run-1", "Story A", "PASSED", "approve", 2, 2, 0, 0, 3000, DateTimeOffset.UtcNow),
         };
@@ -205,8 +206,8 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     {
         // Repository-level filtering is verified via the repository mock returning only active records.
         var projectId = Guid.NewGuid().ToString();
-        var runs = (IReadOnlyList<RunHistoryItem>) Array.Empty<RunHistoryItem>();
-        var trendPoints = (IReadOnlyList<TrendPoint>) Array.Empty<TrendPoint>();
+        var runs = (IReadOnlyList<RunHistoryItem>)Array.Empty<RunHistoryItem>();
+        var trendPoints = (IReadOnlyList<TrendPoint>)Array.Empty<TrendPoint>();
 
         _factory.StatsRepoMock
             .Setup(r => r.GetProjectHistoryAsync("test-user-oid", projectId, It.IsAny<CancellationToken>()))
@@ -236,7 +237,7 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
 
         _factory.StatsRepoMock
             .Setup(r => r.GetRunDetailAsync("test-user-oid", projectId, runId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TestResult?) null);
+            .ReturnsAsync((TestResult?)null);
 
         var client = CreateAuthenticatedClient();
         var response = await client.GetAsync($"/v1/stats/projects/{projectId}/runs/{runId}");
@@ -400,10 +401,15 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
     public class ApiFactory : WebApplicationFactory<Program>
     {
         private readonly Mock<IStatsRepository> _statsRepo = new();
+        private readonly Mock<ITestRunRepository> _testRunRepo = new();
 
         public Mock<IStatsRepository> StatsRepoMock => _statsRepo;
 
-        public void ResetMocks() => _statsRepo.Reset();
+        public void ResetMocks()
+        {
+            _statsRepo.Reset();
+            _testRunRepo.Reset();
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -427,6 +433,10 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             builder.ConfigureTestServices(services =>
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<ITestRunRepository>(_ => _testRunRepo.Object));
+                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
+                services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 
                 // Feature 0043: remove the DashboardEventRelay singleton and its companion
                 // IHostedService registration so the test host does not attempt a real Service

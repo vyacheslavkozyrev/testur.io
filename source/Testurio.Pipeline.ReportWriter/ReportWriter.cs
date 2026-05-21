@@ -66,6 +66,7 @@ public sealed partial class ReportWriter : IReportWriter
         ExecutionResult execution,
         Project projectConfig,
         TestRun run,
+        bool postBackEnabled,
         CancellationToken ct = default)
     {
         // AC-001: call Claude with the serialised execution result, story title, and warnings.
@@ -81,16 +82,23 @@ public sealed partial class ReportWriter : IReportWriter
         // Format the markdown comment.
         var commentMarkdown = PmCommentFormatter.Format(enrichedReport, story.Title);
 
-        // AC-013 / AC-014 / AC-015 / AC-016: post comment to PM tool (non-throwing on failure).
+        // AC-029–AC-031: post comment to PM tool only when postBackEnabled is true.
         string? commentId = null;
-        try
+        if (postBackEnabled)
         {
-            commentId = await PostCommentAsync(projectConfig, run, commentMarkdown, ct);
+            try
+            {
+                commentId = await PostCommentAsync(projectConfig, run, commentMarkdown, ct);
+            }
+            catch (Exception ex)
+            {
+                // AC-016: log warning and continue — PM post failure does not throw ReportWriterException.
+                LogCommentPostFailed(_logger, run.Id, run.JiraIssueKey, ex);
+            }
         }
-        catch (Exception ex)
+        else
         {
-            // AC-016: log warning and continue — PM post failure does not throw ReportWriterException.
-            LogCommentPostFailed(_logger, run.Id, run.JiraIssueKey, ex);
+            LogPmPostBackSkipped(_logger, run.Id);
         }
 
         // AC-015: set PmCommentId in-memory (null when post failed).
@@ -491,4 +499,8 @@ public sealed partial class ReportWriter : IReportWriter
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "ReportWriter: scenario '{ScenarioId}' returned by Claude was not found in ApiResults or UiE2eResults — stored with TestType 'unknown'")]
     private static partial void LogUnknownScenarioId(ILogger logger, string scenarioId);
+
+    [LoggerMessage(Level = LogLevel.Information,
+        Message = "ReportWriter: PM post-back skipped for run {RunId} — pmReportPostBack flag is false on this plan")]
+    private static partial void LogPmPostBackSkipped(ILogger logger, string runId);
 }

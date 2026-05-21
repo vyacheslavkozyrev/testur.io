@@ -29,14 +29,22 @@ public sealed class PlanSeeder : IPlanSeeder
             AnnualDiscountPercent = 20,
             IsPopular = false,
             SortOrder = 0,
-            Features =
+            DisplayFeatures =
             [
                 "Up to 3 projects",
-                "50 automated test runs / day",
+                "50 automated test runs / month",
                 "API test execution",
                 "Basic test reports",
                 "Community support",
             ],
+            Limits = new PlanLimits { MaxProjects = 3, MaxTestRunsPerMonth = 50 },
+            Features = new PlanFeatures
+            {
+                ApiTesting = true,
+                UiE2eTesting = false,
+                AiMemory = false,
+                PmReportPostBack = true,
+            },
         },
         new()
         {
@@ -48,7 +56,7 @@ public sealed class PlanSeeder : IPlanSeeder
             AnnualDiscountPercent = 20,
             IsPopular = true,
             SortOrder = 1,
-            Features =
+            DisplayFeatures =
             [
                 "Up to 10 projects",
                 "Unlimited test runs",
@@ -57,6 +65,14 @@ public sealed class PlanSeeder : IPlanSeeder
                 "ADO & Jira report post-back",
                 "Email support",
             ],
+            Limits = new PlanLimits { MaxProjects = 10, MaxTestRunsPerMonth = -1 },
+            Features = new PlanFeatures
+            {
+                ApiTesting = true,
+                UiE2eTesting = true,
+                AiMemory = true,
+                PmReportPostBack = true,
+            },
         },
         new()
         {
@@ -68,7 +84,7 @@ public sealed class PlanSeeder : IPlanSeeder
             AnnualDiscountPercent = 20,
             IsPopular = false,
             SortOrder = 2,
-            Features =
+            DisplayFeatures =
             [
                 "Unlimited projects",
                 "Unlimited test runs",
@@ -78,6 +94,14 @@ public sealed class PlanSeeder : IPlanSeeder
                 "Custom test generation prompts",
                 "Priority support",
             ],
+            Limits = new PlanLimits { MaxProjects = -1, MaxTestRunsPerMonth = -1 },
+            Features = new PlanFeatures
+            {
+                ApiTesting = true,
+                UiE2eTesting = true,
+                AiMemory = true,
+                PmReportPostBack = true,
+            },
         },
         new()
         {
@@ -89,7 +113,7 @@ public sealed class PlanSeeder : IPlanSeeder
             AnnualDiscountPercent = 20,
             IsPopular = false,
             SortOrder = 3,
-            Features =
+            DisplayFeatures =
             [
                 "Unlimited projects",
                 "Unlimited test runs",
@@ -100,6 +124,14 @@ public sealed class PlanSeeder : IPlanSeeder
                 "SLA guarantee",
                 "Dedicated support engineer",
             ],
+            Limits = new PlanLimits { MaxProjects = -1, MaxTestRunsPerMonth = -1 },
+            Features = new PlanFeatures
+            {
+                ApiTesting = true,
+                UiE2eTesting = true,
+                AiMemory = true,
+                PmReportPostBack = true,
+            },
         },
     ];
 

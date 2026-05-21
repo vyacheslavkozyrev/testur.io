@@ -54,8 +54,8 @@ public class StripeService : IStripeService
 
         var planMetadata = new Dictionary<string, string>
         {
-            ["userId"]          = userId,
-            ["plan"]            = plan.ToString(),
+            ["userId"] = userId,
+            ["plan"] = plan.ToString(),
             ["billingInterval"] = billingInterval.ToString(),
         };
 
@@ -116,7 +116,7 @@ public class StripeService : IStripeService
         var listOptions = new InvoiceListOptions
         {
             Customer = stripeCustomerId,
-            Limit    = limit,
+            Limit = limit,
         };
 
         var invoices = await _invoiceService.ListAsync(listOptions, ApiRequestOptions, cancellationToken);
@@ -140,7 +140,7 @@ public class StripeService : IStripeService
     {
         var createOptions = new PortalSessionCreateOptions
         {
-            Customer  = stripeCustomerId,
+            Customer = stripeCustomerId,
             ReturnUrl = returnUrl,
         };
 
@@ -166,23 +166,23 @@ public class StripeService : IStripeService
         var status = subscription.Status switch
         {
             "trialing" => SubscriptionStatus.Trialing,
-            "active"   => SubscriptionStatus.Active,
-            _          => SubscriptionStatus.Expired,
+            "active" => SubscriptionStatus.Active,
+            _ => SubscriptionStatus.Expired,
         };
 
         var card = subscription.DefaultPaymentMethod?.Card;
 
         return new UserSubscription
         {
-            StripeSubscriptionId  = subscription.Id,
-            StripeCustomerId      = subscription.CustomerId,
-            Status                = status,
-            TrialEndsAt           = subscription.TrialEnd,
-            CurrentPeriodEnd      = subscription.CurrentPeriodEnd,
-            PaymentMethodLast4    = card?.Last4,
+            StripeSubscriptionId = subscription.Id,
+            StripeCustomerId = subscription.CustomerId,
+            Status = status,
+            TrialEndsAt = subscription.TrialEnd,
+            CurrentPeriodEnd = subscription.CurrentPeriodEnd,
+            PaymentMethodLast4 = card?.Last4,
             PaymentMethodExpMonth = (int?)card?.ExpMonth,
-            PaymentMethodExpYear  = (int?)card?.ExpYear,
-            UpdatedAt             = DateTimeOffset.UtcNow,
+            PaymentMethodExpYear = (int?)card?.ExpYear,
+            UpdatedAt = DateTimeOffset.UtcNow,
         };
     }
 }

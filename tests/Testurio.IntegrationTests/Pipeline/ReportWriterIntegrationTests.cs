@@ -109,7 +109,7 @@ public class ReportWriterIntegrationTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run);
+        await sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run, postBackEnabled: true);
 
         // Assert
         Assert.Equal(TestRunStatus.Completed, run.Status);
@@ -156,7 +156,7 @@ public class ReportWriterIntegrationTests
             .Returns(Task.CompletedTask);
 
         // Act — must not throw.
-        await sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run);
+        await sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run, postBackEnabled: true);
 
         // Assert
         Assert.Equal(TestRunStatus.Completed, run.Status);
@@ -191,7 +191,7 @@ public class ReportWriterIntegrationTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ReportWriterException>(() =>
-            sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run));
+            sut.WriteAsync(DefaultStory, BothExecutorsResult, JiraProject, run, postBackEnabled: true));
 
         Assert.Equal(TestRunStatus.ReportFailed, run.Status);
     }

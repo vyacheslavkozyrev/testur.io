@@ -17,4 +17,15 @@ public interface ITestRunRepository
     /// <c>resolvedTestTypes</c> for feedback memory entries (AC-007 / AC-008).
     /// </summary>
     Task<TestRun?> GetMostRecentByWorkItemAsync(string projectId, string workItemId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the count of <see cref="TestRun"/> documents for <paramref name="userId"/>
+    /// whose <c>createdAt</c> falls within [<paramref name="monthStart"/>, <paramref name="nextMonthStart"/>).
+    /// This is a cross-partition query used by plan enforcement to count the user's monthly run usage.
+    /// </summary>
+    Task<int> CountByUserForMonthAsync(
+        string userId,
+        DateTimeOffset monthStart,
+        DateTimeOffset nextMonthStart,
+        CancellationToken cancellationToken = default);
 }

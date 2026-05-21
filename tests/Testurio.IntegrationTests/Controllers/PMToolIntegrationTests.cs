@@ -3,6 +3,8 @@ using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -22,6 +24,12 @@ namespace Testurio.IntegrationTests.Controllers;
 
 public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFactory>
 {
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     private readonly ApiFactory _factory;
 
     public PMToolIntegrationTests(ApiFactory factory)
@@ -81,7 +89,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var response = await client.GetAsync("/v1/projects/proj-007/integrations");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>(JsonOpts);
         Assert.NotNull(body);
         Assert.Null(body!.PmTool);
     }
@@ -133,7 +141,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/ado", request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>(JsonOpts);
         Assert.NotNull(body);
         Assert.Equal("ado", body!.PmTool?.ToString().ToLowerInvariant());
     }
@@ -195,7 +203,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var response = await client.PostAsJsonAsync("/v1/projects/proj-007/integrations/jira", request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>(JsonOpts);
         Assert.NotNull(body);
     }
 
@@ -237,7 +245,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         var response = await client.DeleteAsync("/v1/projects/proj-007/integrations");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>();
+        var body = await response.Content.ReadFromJsonAsync<PMToolConnectionResponse>(JsonOpts);
         Assert.Null(body!.PmTool);
     }
 
@@ -364,7 +372,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
                 services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => _jiraApiClient.Object));
                 services.Replace(ServiceDescriptor.Singleton<IADOClient>(_ => _adoClient.Object));
                 services.Replace(ServiceDescriptor.Singleton<IJiraClient>(_ => _jiraClient.Object));
-                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));                services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver())); services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));
 

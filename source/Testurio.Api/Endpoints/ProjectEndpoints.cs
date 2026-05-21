@@ -76,8 +76,8 @@ public static class ProjectEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 
@@ -92,8 +92,8 @@ public static class ProjectEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.NoContent(),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.NoContent(),
         };
     }
 
@@ -130,8 +130,8 @@ public static class ProjectEndpoints
         return result switch
         {
             ProjectOperationResult.Forbidden => TypedResults.Forbid(),
-            ProjectOperationResult.NotFound  => TypedResults.NotFound(),
-            _                                => TypedResults.Ok(dto!),
+            ProjectOperationResult.NotFound => TypedResults.NotFound(),
+            _ => TypedResults.Ok(dto!),
         };
     }
 }

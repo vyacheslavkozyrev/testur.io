@@ -44,7 +44,7 @@ export default function PricingTeaserSection() {
                     <Typography sx={styles.planPrice}>
                       {plan.monthlyPrice === 0 ? t('pricingTeaser.free') : `$${plan.monthlyPrice} / mo`}
                     </Typography>
-                    <Typography sx={styles.planFeature}>{plan.features[0]}</Typography>
+                    <Typography sx={styles.planFeature}>{plan.displayFeatures[0]}</Typography>
                   </Box>
                 </Grid>
               ))}
