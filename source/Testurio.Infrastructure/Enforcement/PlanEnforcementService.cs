@@ -162,8 +162,7 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
         if (plan is null)
         {
             // No active plan — treat as a finite limit of 0 (always exceeded).
-            var now = DateTimeOffset.UtcNow;
-            var nextMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero).AddMonths(1);
+            var nextMonth = new DateTimeOffset(utcNow.Year, utcNow.Month, 1, 0, 0, 0, TimeSpan.Zero).AddMonths(1);
             throw new PlanLimitExceededException(
                 $"Your plan allows 0 test runs per month. Your quota resets on {nextMonth:yyyy-MM-dd}. Upgrade to Test Junior to run more tests.",
                 limitName: "maxTestRunsPerMonth",
@@ -176,8 +175,7 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
 
         // Count TestRun documents created this calendar month for this user.
         // Cross-partition query is acceptable here — enforcement fires only on webhook/trigger path.
-        var nowEnforcement = DateTimeOffset.UtcNow;
-        var monthStart = new DateTimeOffset(nowEnforcement.Year, nowEnforcement.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var monthStart = new DateTimeOffset(utcNow.Year, utcNow.Month, 1, 0, 0, 0, TimeSpan.Zero);
         var nextMonthStart = monthStart.AddMonths(1);
 
         var usedThisMonth = await _testRunRepository.CountByUserForMonthAsync(userId, monthStart, nextMonthStart, ct);
