@@ -434,6 +434,18 @@ public class StatsControllerTests : IClassFixture<StatsControllerTests.ApiFactor
             {
                 services.Replace(ServiceDescriptor.Singleton<IStatsRepository>(_ => _statsRepo.Object));
                 services.Replace(ServiceDescriptor.Singleton<ITestRunRepository>(_ => _testRunRepo.Object));
+                // Replace all remaining Cosmos-dependent repositories so CosmosClient is never
+                // instantiated (the test connection string uses a dummy key that fails Base-64
+                // validation inside the Cosmos SDK).
+                services.Replace(ServiceDescriptor.Singleton<IProjectRepository>(_ => new Mock<IProjectRepository>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IUserRepository>(_ => new Mock<IUserRepository>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IRunQueueRepository>(_ => new Mock<IRunQueueRepository>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IUserSubscriptionRepository>(_ => new Mock<IUserSubscriptionRepository>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IPlanRepository>(_ => new Mock<IPlanRepository>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IPlanEnforcementService>(_ => new Mock<IPlanEnforcementService>().Object));
+                services.Replace(ServiceDescriptor.Singleton<ITestRunJobSender>(_ => new Mock<ITestRunJobSender>().Object));
+                services.Replace(ServiceDescriptor.Singleton<IJiraApiClient>(_ => new Mock<IJiraApiClient>().Object));
+                services.Replace(ServiceDescriptor.Singleton<ISecretResolver>(_ => new PassthroughSecretResolver()));
                 services.Replace(ServiceDescriptor.Singleton<ICosmosDbInitializer>(_ => new NoOpCosmosDbInitializer()));
                 services.Replace(ServiceDescriptor.Singleton<IPromptTemplateSeeder>(_ => new NoOpPromptTemplateSeeder()));
                 services.Replace(ServiceDescriptor.Singleton<IPlanSeeder>(_ => new NoOpPlanSeeder()));

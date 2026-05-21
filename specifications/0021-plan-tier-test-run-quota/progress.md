@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete    | 2026-05-20 |       |
 | Implement | ✅ Complete    | 2026-05-20 | T001–T005 complete; also fixed pre-existing stale test files and ADOWebhookService.AdoTokenSecretRef → AdoTokenSecretUri rename |
 | Review    | ✅ Complete    | 2026-05-20 |       |
-| Test      | ⏳ Pending     |            |       |
+| Test      | ✅ Complete    | 2026-05-20 | 526 unit + 178 integration tests, all passed; 12 AC validated |
 
 ---
 
@@ -53,30 +53,61 @@ None. All AC-001 through AC-012 acceptance criteria are satisfied by the impleme
 
 **Date:** 2026-05-20
 
-### Unit Tests
-- **T012** `QuotaPolicyTests`: 9 tests, all passed
-- **T013** `JiraWebhookServiceQuotaTests`: 9 tests, all passed
-- **T014** `ADOWebhookServiceQuotaTests`: 5 tests, all passed
-- **T015** `DashboardServiceQuotaTests`: 12 tests, all passed
-- **Total**: 35 unit tests, all passed
+### Feature 0021 Unit Tests (T004 — PlanEnforcementService trial paths)
+File: `tests/Testurio.UnitTests/Services/PlanEnforcementServiceTests.cs`
 
-### Integration Tests
-- **T016** `QuotaIntegrationTests`: 7 tests, all passed (AC-010 and AC-004 validated)
-  - `GetDashboard_ReturnsCorrectDailyLimitForPlanTier` (4 parametrized tests): TestJunior (10), TestPro (30), Team (100), Centurio (500)
-  - `GetDashboard_NoSubscription_DailyLimitIsZero`: passed
-  - `JiraWebhook_WhenQuotaExhausted_DoesNotCreateTestRun`: passed
-  - `JiraWebhook_WhenQuotaExhausted_Returns200OK`: passed
+| Test | AC |
+|------|----|
+| `CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_CountsRunsInTrialPeriod` | AC-001 |
+| `CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_UnderLimit_DoesNotThrow` | AC-002 |
+| `CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_AtLimit_Throws` | AC-002, AC-004 |
+| `CheckMonthlyRunQuotaAsync_WhenTrialing_TrialExpired_Throws` | AC-003 |
+| `CheckMonthlyRunQuotaAsync_WhenActive_UsesCalendarMonth` | AC-005 |
+| `CheckProjectLimitAsync_WhenTrialing_Below2Projects_Allows` | AC-006 |
+| `CheckProjectLimitAsync_WhenTrialing_At2Projects_Throws` | AC-006, AC-007 |
+| `CheckProjectLimitAsync_WhenTrialing_Expired_Throws` | AC-008 |
+| `CheckProjectLimitAsync_WhenActive_UsesPlanMaxProjects` | AC-009 |
 
-### Summary
-- **Total tests executed**: 42
-- **Passed**: 42
-- **Failed**: 0
-- **Coverage**: All acceptance criteria covered by passing tests
+All 9 trial-path tests passed.
+
+### Feature 0021 Unit Tests (T005 — StatsRepository trial paths)
+File: `tests/Testurio.UnitTests/Services/StatsRepositoryQuotaTests.cs`
+
+| Test | AC |
+|------|----|
+| `GetQuotaUsageAsync_WhenTrialing_WithinWindow_ReturnsTrialPeriodCounts` | AC-010 |
+| `GetQuotaUsageAsync_WhenTrialing_Expired_ReturnsZeroLimit` | AC-011 |
+| `GetQuotaUsageAsync_WhenActive_ReturnsCalendarMonthCounts` | AC-012 |
+
+All 3 trial-path tests passed.
+
+### Full Test Suite
+- **Unit tests**: 526 passed, 0 failed (`Testurio.UnitTests`)
+- **Integration tests**: 178 passed, 0 failed (`Testurio.IntegrationTests`)
+- **Total**: 704 tests, all passed
 
 ### Fixes Applied During Testing
-1. Fixed pre-existing bug in `BillingServiceTests.cs` (line 78): test was passing `SubscriptionPlan` enum instead of string to `CreateCheckoutSessionRequest`. Updated test data to use proper string values ("test-junior", "test-pro", "team", "centurio").
 
-2. Fixed infrastructure bug in `RequestBodyBufferingMiddleware.cs`: middleware was using `StartsWithSegments("/webhooks")` which didn't match paths like `/v1/webhooks/...`. Updated to use `Contains("/webhooks/")` to handle both `/webhooks/*` and `/v1/webhooks/*` patterns, enabling proper request body buffering for webhook signature validation.
+1. `StatsControllerTests.ApiFactory` — added replacements for all Cosmos-dependent repositories
+   (`IProjectRepository`, `IUserRepository`, `IRunQueueRepository`, `IUserSubscriptionRepository`,
+   `IPlanRepository`, `IPlanEnforcementService`, `ITestRunJobSender`, `IJiraApiClient`, `ISecretResolver`)
+   so `CosmosClient` is never instantiated with the dummy test key that fails Base-64 validation.
+
+2. `JiraWebhookControllerTests.ApiFactory` — added missing `ReportsBlobContainerName` config entry
+   (required by `InfrastructureOptions` `[Required]` validation at startup).
+
+3. `JiraWebhookControllerTests` — renamed `PostWebhook_Returns403_WithProblemDetails_WhenMonthlyQuotaExhausted`
+   to `PostWebhook_Returns200_AndDoesNotCreateTestRun_WhenMonthlyQuotaExhausted` and corrected the
+   assertion from `Forbidden` to `OK` to match the "Webhook 200 OK contract" specified in feature context
+   (webhook returns 200 to prevent PM tool retry storms; quota-exceeded comment is posted to the Jira issue).
+   Added verification that `IJiraApiClient.PostCommentAsync` was called once.
+
+4. `JiraWebhookControllerTests.ApiFactory.ResetMocks()` — added default setup for
+   `IJiraApiClient.PostCommentAsync` returning `JiraCommentResult.Success()` to prevent
+   `NullReferenceException` in `PostQuotaCommentAsync` when individual tests do not configure the mock.
+
+5. `PMToolIntegrationTests.ApiFactory` and `ProjectPromptCheckControllerTests.ApiFactory` — added missing
+   `ReportsBlobContainerName` config entry (pre-existing failures from earlier feature implementations).
 
 ---
 
