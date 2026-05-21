@@ -66,26 +66,9 @@ public partial class ADOWebhookService : IADOWebhookService
         var workItemId = payload.Resource.WorkItemId.ToString();
 
         // Quota check — AC-021: same logic as JiraWebhookService; no PM tool comment for ADO (AC-022).
-        var subscription = await _subscriptionRepository.GetByUserIdAsync(project.UserId, cancellationToken);
-        var isActiveSubscription = subscription is not null &&
-            subscription.Status is SubscriptionStatus.Trialing or SubscriptionStatus.Active;
-        var dailyLimit = isActiveSubscription ? _quotaPolicy.GetDailyLimit(subscription!.Plan) : 0;
-
-        if (!isActiveSubscription || dailyLimit == 0)
-        {
-            LogQuotaRejectedNoSubscription(_logger, workItemId, project.Id);
-            return WebhookProcessResult.QuotaExceeded;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var windowStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
-        var windowEnd = windowStart.AddDays(1);
-        var usedToday = await _testRunRepository.CountTodayAsync(project.UserId, windowStart, windowEnd, cancellationToken);
-        if (usedToday >= dailyLimit)
-        {
-            LogQuotaExceeded(_logger, workItemId, project.Id, usedToday, dailyLimit);
-            return WebhookProcessResult.QuotaExceeded;
-        }
+        var quotaResult = await CheckQuotaAsync(project, workItemId, cancellationToken);
+        if (quotaResult is not null)
+            return quotaResult.Value;
 
         var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
         if (activeRun is not null)
@@ -134,6 +117,41 @@ public partial class ADOWebhookService : IADOWebhookService
 
         LogEnqueued(_logger, workItemId, project.Id, created.Id);
         return WebhookProcessResult.Enqueued;
+    }
+
+    /// <summary>
+    /// Checks the daily quota for the given project's user.
+    /// Returns <see cref="WebhookProcessResult.QuotaExceeded"/> when the quota is exhausted or
+    /// no active subscription exists, or <c>null</c> when the quota allows the trigger to proceed.
+    /// No PM tool comment is posted for ADO (AC-022) — rejection is silent and logged only.
+    /// </summary>
+    private async Task<WebhookProcessResult?> CheckQuotaAsync(
+        Project project,
+        string workItemId,
+        CancellationToken cancellationToken)
+    {
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(project.UserId, cancellationToken);
+        var isActiveSubscription = subscription is not null &&
+            subscription.Status is SubscriptionStatus.Trialing or SubscriptionStatus.Active;
+        var dailyLimit = isActiveSubscription ? _quotaPolicy.GetDailyLimit(subscription!.Plan) : 0;
+
+        if (!isActiveSubscription || dailyLimit == 0)
+        {
+            LogQuotaRejectedNoSubscription(_logger, workItemId, project.Id);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var windowStart = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
+        var windowEnd = windowStart.AddDays(1);
+        var usedToday = await _testRunRepository.CountTodayAsync(project.UserId, windowStart, windowEnd, cancellationToken);
+        if (usedToday >= dailyLimit)
+        {
+            LogQuotaExceeded(_logger, workItemId, project.Id, usedToday, dailyLimit);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+
+        return null;
     }
 
     [LoggerMessage(Level = LogLevel.Information,

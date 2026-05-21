@@ -145,7 +145,8 @@ public partial class JiraWebhookService : IJiraWebhookService
         }
         else
         {
-            var resetsAt = DateTimeOffset.UtcNow.Date.AddDays(1);
+            var utcNow = DateTimeOffset.UtcNow;
+            var resetsAt = new DateTimeOffset(utcNow.Year, utcNow.Month, utcNow.Day, 0, 0, 0, TimeSpan.Zero).AddDays(1);
             comment = $"Testurio could not start a test run because the daily quota has been reached " +
                       $"({usedToday}/{dailyLimit} runs used today). " +
                       $"The quota resets at {resetsAt:HH:mm} UTC.";

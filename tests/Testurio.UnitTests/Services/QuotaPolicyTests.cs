@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Testurio.Core.Enums;
 using Testurio.Infrastructure.Quota;
 using Xunit;
@@ -6,7 +7,7 @@ namespace Testurio.UnitTests.Services;
 
 public class QuotaPolicyTests
 {
-    private readonly QuotaPolicy _sut = new();
+    private readonly QuotaPolicy _sut = new(NullLogger<QuotaPolicy>.Instance);
 
     [Fact]
     public void GetDailyLimit_WhenPlanIsTestJunior_Returns10()

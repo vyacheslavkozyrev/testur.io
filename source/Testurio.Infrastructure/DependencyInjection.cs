@@ -280,7 +280,8 @@ public static class DependencyInjection
                 sp.GetRequiredService<ISecretResolver>()));
 
         // Feature 0021: quota policy — singleton because limits are static configuration.
-        services.AddSingleton<IQuotaPolicy, QuotaPolicy>();
+        services.AddSingleton<IQuotaPolicy>(sp =>
+            new QuotaPolicy(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<QuotaPolicy>>()));
 
         // Feature 0024: work item status transition service.
         services.AddSingleton<IWorkItemTransitionService>(sp =>
