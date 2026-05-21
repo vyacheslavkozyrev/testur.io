@@ -2,13 +2,13 @@
 
 ## Phase Status
 
-| Phase     | Status      | Date       | Notes |
-| --------- | ----------- | ---------- | ----- |
-| Specify   | ✅ Complete | 2026-05-19 |       |
-| Plan      | ✅ Complete | 2026-05-19 |       |
-| Implement | ✅ Complete | 2026-05-19 |       |
-| Review    | ✅ Complete | 2026-05-20 |       |
-| Test      | ✅ Complete | 2026-05-20 |       |
+| Phase     | Status         | Date       | Notes |
+| --------- | -------------- | ---------- | ----- |
+| Specify   | ✅ Complete    | 2026-05-20 |       |
+| Plan      | ✅ Complete    | 2026-05-20 |       |
+| Implement | ⏳ Pending     |            | Replanned — see Amendment 2026-05-20 |
+| Review    | ⏳ Pending     |            |       |
+| Test      | ⏳ Pending     |            |       |
 
 ---
 
@@ -70,11 +70,7 @@ _Populated by `/implement [####]`_
 
 ## Amendments
 
-_Populated when spec or plan changes after initial approval. Format:_
-
-```
-### Amendment — YYYY-MM-DD
-**Changed**: [which documents were updated]
-**Reason**: [why the change was needed]
-**Impact**: [phases that need to re-run as a result]
-```
+### Amendment — 2026-05-20
+**Changed**: `stories.md` (created — was missing from initial run), `plan.md` (replanned with 18 tasks replacing 16)
+**Reason**: Specification clarification revealed three gaps in the original plan: (1) trial users get a fixed 5 runs/day for 14 days (tracked via `UserSubscription.TrialEndsAt`), not plan-tier limits — `IQuotaPolicy` signature must accept `UserSubscription?` + `utcNow` instead of `SubscriptionPlan?`; (2) ADO webhook rejections must post a comment to the ADO work item (parity with Jira — `IADOClient.PostCommentAsync` already exists); (3) project creation must be capped at 2 during trial and blocked for `None`/`Expired` accounts.
+**Impact**: Implement, Review, and Test phases must re-run. The PR opened after the original Test phase is superseded by this replanned branch.

@@ -4,43 +4,51 @@
 
 ### Domain — Quota Policy Interface
 
-- [x] T001 [Domain] Add `IQuotaPolicy` interface with `GetDailyLimit(SubscriptionPlan? plan): int` — `source/Testurio.Core/Interfaces/IQuotaPolicy.cs`
+- [ ] T001 [Domain] Update `IQuotaPolicy`: change `GetDailyLimit(SubscriptionPlan? plan)` to `GetDailyLimit(UserSubscription? subscription, DateTimeOffset utcNow): int`; add `GetMaxProjects(UserSubscription? subscription, DateTimeOffset utcNow): int?` (`null` = unlimited) — `source/Testurio.Core/Interfaces/IQuotaPolicy.cs`
 
 ### Infrastructure — Quota Policy Implementation
 
-- [x] T002 [Infra] Implement `QuotaPolicy` class: maps `SubscriptionPlan` to daily limits (TestJunior=10, TestPro=30, Team=100, Centurio=500); returns `0` for `null` — `source/Testurio.Infrastructure/Quota/QuotaPolicy.cs`
-- [x] T003 [Infra] Register `QuotaPolicy` as singleton `IQuotaPolicy` in DI — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [ ] T002 [Infra] Update `QuotaPolicy` to implement the revised `IQuotaPolicy` signatures:
+  - `GetDailyLimit`: `Trialing` with `TrialEndsAt > utcNow` → 5; `Trialing` with expired trial, `None`, or `Expired` → 0; `Active`, `CancelledPendingExpiry`, `PaymentFailed` → plan-tier limit (TestJunior=10, TestPro=30, Team=100, Centurio=500); `null` subscription → 0; unrecognised `SubscriptionPlan` → log warning, return 0.
+  - `GetMaxProjects`: active trial → 2; `None`, `Expired`, expired-trial → 0; `Active`, `CancelledPendingExpiry`, `PaymentFailed` → `null`.
+  - `source/Testurio.Infrastructure/Quota/QuotaPolicy.cs`
+- [ ] T003 [Infra] Update DI registration of `QuotaPolicy` if constructor signature changed — `source/Testurio.Infrastructure/DependencyInjection.cs`
 
 ### Application — Webhook Services Enforcement
 
-- [x] T004 [App] Add `QuotaExceeded` value to `WebhookProcessResult` enum — `source/Testurio.Api/Services/WebhookProcessResult.cs`
-- [x] T005 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `JiraWebhookService`; add quota check in `ProcessAsync` after work-item-type filtering: resolve subscription, compute `dailyLimit`, count today's runs via `ITestRunRepository.CountTodayAsync`, reject with `QuotaExceeded` when `usedToday >= dailyLimit`; post a plan-specific comment to the Jira issue (quota-exhausted message or no-subscription message) — `source/Testurio.Api/Services/JiraWebhookService.cs`
-- [x] T006 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `ADOWebhookService`; add the same quota check in `ProcessAsync` after work-item-type filtering; return `QuotaExceeded` silently (no PM tool comment posted for ADO in v1); log the rejection — `source/Testurio.Api/Services/ADOWebhookService.cs`
+- [ ] T004 [App] Confirm `QuotaExceeded` value exists in `WebhookProcessResult` enum; add if missing — `source/Testurio.Api/Services/WebhookProcessResult.cs`
+- [ ] T005 [App] Update `JiraWebhookService.CheckQuotaAsync`: pass `UserSubscription?` + `utcNow` to `IQuotaPolicy.GetDailyLimit` instead of `subscription.Plan`; handle `Trialing`-with-expired-trial as zero-quota path — `source/Testurio.Api/Services/JiraWebhookService.cs`
+- [ ] T006 [App] Update `ADOWebhookService.CheckQuotaAsync`: pass `UserSubscription?` + `utcNow` to `IQuotaPolicy.GetDailyLimit`; call `IADOClient.PostCommentAsync` on both quota-exhausted and no-subscription rejection paths (mirroring Jira behaviour) — `source/Testurio.Api/Services/ADOWebhookService.cs`
 
 ### Domain — Test Run Count Query
 
-- [x] T007 [Domain] Add `CountTodayAsync(string userId, DateTimeOffset windowStart, DateTimeOffset windowEnd): Task<int>` to `ITestRunRepository` — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
+- [ ] T007 [Domain] Confirm `CountTodayAsync(string userId, DateTimeOffset windowStart, DateTimeOffset windowEnd): Task<int>` exists on `ITestRunRepository`; add if missing — `source/Testurio.Core/Repositories/ITestRunRepository.cs`
 
 ### Infrastructure — Test Run Count Implementation
 
-- [x] T008 [Infra] Implement `CountTodayAsync` in `TestRunRepository`: query Cosmos `TestRuns` container cross-partition by `userId` and `createdAt` range (windowStart inclusive, windowEnd exclusive); include all statuses including `Skipped` — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+- [ ] T008 [Infra] Confirm `CountTodayAsync` implementation exists in `TestRunRepository`; add if missing — `source/Testurio.Infrastructure/Cosmos/TestRunRepository.cs`
+
+### Application — Project Creation Limit
+
+- [ ] T009 [App] Enforce project creation limit in the project creation endpoint or service: inject `IQuotaPolicy` and `IUserSubscriptionRepository`; before creating the project resolve the subscription, call `IQuotaPolicy.GetMaxProjects`, count existing projects for the user, and return `409 Conflict` with `ProblemDetails` if the limit is reached — `source/Testurio.Api/Services/ProjectService.cs` (or equivalent project creation path)
 
 ### Application — Dashboard Quota Fix
 
-- [x] T009 [App] Inject `IQuotaPolicy` and `IUserSubscriptionRepository` into `DashboardService`; resolve subscription and pass `dailyLimit` from `IQuotaPolicy` to a refactored `GetQuotaUsageAsync` call — `source/Testurio.Api/Services/DashboardService.cs`
+- [ ] T010 [App] Update `DashboardService`: pass `UserSubscription?` + `utcNow` to `IQuotaPolicy.GetDailyLimit` instead of `subscription?.Plan` — `source/Testurio.Api/Services/DashboardService.cs`
 
-### Infrastructure — Stats Repository Quota Signature Update
+### Infrastructure — Stats Repository Quota Signature
 
-- [x] T010 [Infra] Update `StatsRepository.GetQuotaUsageAsync` to accept `int dailyLimit` as a parameter instead of hard-coding `0`; remove the `const int dailyLimit = 0` placeholder — `source/Testurio.Infrastructure/Cosmos/StatsRepository.cs`
-- [x] T011 [Domain] Update `IStatsRepository.GetQuotaUsageAsync` signature to accept `int dailyLimit` parameter — `source/Testurio.Core/Interfaces/IStatsRepository.cs`
+- [ ] T011 [Infra] Confirm `StatsRepository.GetQuotaUsageAsync` accepts `int dailyLimit` parameter; add if missing — `source/Testurio.Infrastructure/Cosmos/StatsRepository.cs`
+- [ ] T012 [Domain] Confirm `IStatsRepository.GetQuotaUsageAsync` signature accepts `int dailyLimit`; update if missing — `source/Testurio.Core/Interfaces/IStatsRepository.cs`
 
 ### Tests
 
-- [x] T012 [Test] Unit tests for `QuotaPolicy`: each `SubscriptionPlan` value returns the correct limit; `null` plan returns `0` — `tests/Testurio.UnitTests/Services/QuotaPolicyTests.cs`
-- [x] T013 [Test] Unit tests for `JiraWebhookService` quota path: trigger rejected when `usedToday >= dailyLimit`; quota-exhausted comment posted to Jira; no-subscription comment posted when subscription is `None`; trigger proceeds normally when `usedToday < dailyLimit`; `Trialing` status uses plan-tier limit — `tests/Testurio.UnitTests/Services/JiraWebhookServiceQuotaTests.cs`
-- [x] T014 [Test] Unit tests for `ADOWebhookService` quota path: trigger rejected when quota exhausted; `QuotaExceeded` result returned; no PM tool comment posted — `tests/Testurio.UnitTests/Services/ADOWebhookServiceQuotaTests.cs`
-- [x] T015 [Test] Unit tests for `DashboardService` with quota: `dailyLimit` matches plan-tier value for `Active` user; `dailyLimit` is `0` for `None`/`Expired` user — `tests/Testurio.UnitTests/Services/DashboardServiceQuotaTests.cs`
-- [ ] T016 [Test] Integration tests for quota enforcement: Jira webhook returns `200 OK` when quota is exhausted (no retry storm); ADO webhook returns `200 OK` on quota exhaustion; `GET /v1/stats/dashboard` returns correct `dailyLimit` for each `SubscriptionPlan` — `tests/Testurio.IntegrationTests/Controllers/QuotaIntegrationTests.cs`
+- [ ] T013 [Test] Update `QuotaPolicyTests`: add trial-within-14-days → 5, trial-past-`TrialEndsAt` → 0, `None` → 0, `Expired` → 0, `Active` plan tiers → correct limits, `CancelledPendingExpiry` → plan-tier limit, `PaymentFailed` → plan-tier limit, null subscription → 0; add `GetMaxProjects` tests for all status × trial-window combinations — `tests/Testurio.UnitTests/Services/QuotaPolicyTests.cs`
+- [ ] T014 [Test] Update `JiraWebhookServiceQuotaTests`: update test setup to pass `UserSubscription` objects (with `TrialEndsAt`) rather than bare `SubscriptionPlan?`; add trial-user quota-exhausted path and expired-trial zero-quota path — `tests/Testurio.UnitTests/Services/JiraWebhookServiceQuotaTests.cs`
+- [ ] T015 [Test] Update `ADOWebhookServiceQuotaTests`: add assertions that `IADOClient.PostCommentAsync` is called with the quota-exhausted message on rejection; add no-subscription path test that also asserts the comment is posted — `tests/Testurio.UnitTests/Services/ADOWebhookServiceQuotaTests.cs`
+- [ ] T016 [Test] Unit tests for project creation limit: trial user at limit (2 projects) returns `409`; trial user below limit succeeds; `None`/`Expired` user returns `409`; `Active` user with 10 projects succeeds — `tests/Testurio.UnitTests/Services/ProjectServiceQuotaTests.cs`
+- [ ] T017 [Test] Update `DashboardServiceQuotaTests`: add trial-user path asserting `dailyLimit == 5`; add expired-trial path asserting `dailyLimit == 0` — `tests/Testurio.UnitTests/Services/DashboardServiceQuotaTests.cs`
+- [ ] T018 [Test] Update `QuotaIntegrationTests`: add trial-user `dailyLimit == 5` assertion; add ADO webhook quota-exhausted `200 OK` assertion (if ADO HTTP route is mapped by this point) — `tests/Testurio.IntegrationTests/Controllers/QuotaIntegrationTests.cs`
 
 ---
 
@@ -48,38 +56,43 @@
 
 ### Task ordering
 
-**`IQuotaPolicy` first (T001).** The interface lives in `Testurio.Core` and is the vocabulary that all downstream layers depend on. It must exist before `QuotaPolicy` (T002), `JiraWebhookService` (T005), `ADOWebhookService` (T006), and `DashboardService` (T009) can compile.
+**`IQuotaPolicy` updated first (T001).** The interface lives in `Testurio.Core` and all downstream layers — `QuotaPolicy`, `JiraWebhookService`, `ADOWebhookService`, `DashboardService`, and the new project creation check — depend on its signature. The new signature accepts `UserSubscription?` + `DateTimeOffset utcNow` instead of `SubscriptionPlan?`, enabling trial-period logic without adding a second method.
 
-**`QuotaPolicy` and DI registration before webhook services (T002–T003 before T005–T006).** The concrete implementation must be registered in DI before the webhook services that inject it. The DI registration also acts as the validation checkpoint — if the type is missing, startup fails immediately.
+**`QuotaPolicy` implementation before callers (T002–T003 before T005–T006, T009–T010).** The concrete implementation must compile against the updated interface before any service that injects `IQuotaPolicy` can be modified.
 
-**`WebhookProcessResult` enum extended first (T004).** Both `JiraWebhookService` (T005) and `ADOWebhookService` (T006) return `QuotaExceeded`. The enum value must exist before either service is modified.
+**`WebhookProcessResult` confirmed before webhook services (T004).** Both Jira and ADO services return `QuotaExceeded`; the value must exist first.
 
-**`CountTodayAsync` on `ITestRunRepository` before implementation (T007 before T008).** The interface change (T007) drives the contract that `TestRunRepository` (T008) must satisfy. In this project `ITestRunRepository` lives in `Testurio.Core`, so defining the interface first keeps the dependency direction correct (Core has no dependency on Infrastructure).
+**`CountTodayAsync` confirmed before webhook service changes (T007–T008 before T005–T006).** The quota check in both webhook services reads today's run count. Confirmed-or-added before the services are updated.
 
-**Webhook service changes depend on both `IQuotaPolicy` (T001) and `CountTodayAsync` (T007–T008) (T005–T006 after T001 and T008).** The quota check in each webhook service reads today's run count and the daily limit. Both must be available before modifying the service logic.
+**ADO comment posting is already in `IADOClient.PostCommentAsync`** — no new interface task is required. T006 updates `ADOWebhookService` to call it; this is the only change needed to add ADO comment posting parity with Jira.
 
-**Dashboard fix after quota policy (T009–T011 after T001–T003).** `DashboardService` (T009) needs `IQuotaPolicy` to be injectable. The `IStatsRepository` and `StatsRepository` signature change (T011, T010) must happen together so the interface and implementation stay in sync; T009 and T011 are the callers, T010 is the implementation — the interface must change before the callers compile.
+**Project creation limit after `IQuotaPolicy` is stable (T009 after T001–T003).** The new `GetMaxProjects` method must be defined before the project service can call it.
 
-**Tests last (T012–T016).** All test tasks follow the implementation tasks that they exercise. Unit tests (T012–T015) mock dependencies and can be written once the public contracts are stable. Integration tests (T016) require a fully wired container and the Cosmos emulator.
+**Dashboard fix after quota policy (T010–T012).** `DashboardService` (T010) needs the updated `GetDailyLimit` signature; `IStatsRepository` / `StatsRepository` changes (T011–T012) are confirmed-or-added alongside it.
+
+**Tests last (T013–T018).** All test tasks follow the implementation tasks they exercise. Unit tests mock dependencies; integration tests require the full DI container.
 
 ### Cross-feature dependencies
 
-- **Feature 0010 (Dashboard):** `QuotaUsage` model, `IStatsRepository.GetQuotaUsageAsync`, and `StatsRepository` are all introduced by feature 0010. Feature 0021 modifies the signature of `GetQuotaUsageAsync` to accept a `dailyLimit` parameter, replacing the hard-coded `0` placeholder that feature 0010 left intentionally. Feature 0010 must be complete before feature 0021 can be implemented.
-- **Feature 0015 (Plan Purchase):** `SubscriptionPlan` enum, `SubscriptionStatus` enum, `UserSubscription` entity, and `IUserSubscriptionRepository` are all introduced by feature 0015. Feature 0021 reads the user's subscription to determine the applicable daily limit. Feature 0015 must be complete before feature 0021 can be implemented.
-- **Feature 0001 (Automatic Test Run Trigger):** `JiraWebhookService`, `ADOWebhookService`, `ITestRunRepository`, and `WebhookProcessResult` are introduced by feature 0001. Feature 0021 extends these files. Feature 0001 must be complete before feature 0021 can be implemented.
-- **Feature 0043 (Dashboard Real-Time Updates):** The SSE stream may carry quota increment events. This is out of scope for feature 0021 — feature 0043 will handle real-time quota counter updates independently.
+- **Feature 0015 (Plan Purchase):** `SubscriptionPlan`, `SubscriptionStatus`, `UserSubscription` (including `TrialEndsAt`) are introduced by feature 0015. Feature 0021 reads `TrialEndsAt` to determine the 14-day trial window. Feature 0015 must be complete.
+- **Feature 0001 (Automatic Test Run Trigger):** `JiraWebhookService`, `ADOWebhookService`, `ITestRunRepository`, and `WebhookProcessResult` are introduced by feature 0001. Feature 0021 extends these. Feature 0001 must be complete.
+- **Feature 0010 (Dashboard):** `QuotaUsage` model, `IStatsRepository.GetQuotaUsageAsync`, and `StatsRepository` are introduced by feature 0010. Feature 0021 corrects the hard-coded `dailyLimit = 0` placeholder. Feature 0010 must be complete.
+- **Feature 0006 (Project Creation):** `ProjectService` and `POST /v1/projects` are introduced by feature 0006. Feature 0021 adds a quota check to project creation. Feature 0006 must be complete.
+- **Feature 0043 (Real-Time Dashboard Updates):** The SSE stream may carry quota increment events in the future. This is explicitly out of scope for feature 0021.
 
 ### Architectural decisions
 
-**No persisted counter.** The daily quota is always computed on the fly by counting `TestRun` documents within the UTC calendar-day window. This eliminates a class of bugs (counter drift, reset failures) at the cost of a cross-partition fan-out query in Cosmos. This is acceptable on the quota check path, which is invoked at most once per webhook delivery — not on the hot read path.
+**`IQuotaPolicy` accepts `UserSubscription?` + `utcNow` rather than individual fields.** Passing the full entity keeps the call site simple and avoids proliferating `SubscriptionPlan?`, `SubscriptionStatus`, `DateTimeOffset?` parameters. `utcNow` is injected as a parameter (not read internally via `DateTimeOffset.UtcNow`) to keep `QuotaPolicy` a pure, deterministic function — trivial to unit-test with frozen time.
 
-**Soft quota enforcement.** Two simultaneous webhook deliveries near the boundary may both pass the quota check. This is explicitly accepted in US-005 (AC-020 edge case). Atomic enforcement would require distributed locking or a Cosmos stored procedure — unnecessary complexity for v1.
+**Trial window computed from `UserSubscription.TrialEndsAt`.** The field already exists on `UserSubscription` (feature 0015). No new domain fields are required.
 
-**`IQuotaPolicy` as a Core interface, not an app-layer configuration class.** The interface is placed in `Testurio.Core` so both the webhook services (in `Testurio.Api`) and any future Worker pipeline stages can inject it without a reverse dependency. The `QuotaPolicy` concrete class belongs in `Testurio.Infrastructure` alongside other policy/configuration implementations.
+**`GetMaxProjects` returns `int?` (null = unlimited).** `null` is the clearest signal that no upper bound exists for paid users, avoiding magic numbers like `int.MaxValue`.
 
-**ADO comment posting deferred.** ADO comment posting is not yet implemented in `ADOWebhookService` (only Jira has this capability in v1). Quota-exhausted ADO triggers are rejected silently (result logged, `200 OK` returned). This avoids blocking the feature on ADO comment infrastructure.
+**ADO comment posting reuses `IADOClient.PostCommentAsync`** which already exists from a prior feature. No new interface changes are needed; feature 0021 simply enables the call path that `ADOWebhookService` previously bypassed.
 
-**`GetQuotaUsageAsync` signature change instead of a new method.** Extending the existing method signature with a `dailyLimit` parameter is the minimal change to fulfil AC-020. Adding a second overload or a new repository method would introduce dead code.
+**No persisted counter.** The daily quota is always computed on the fly by counting `TestRun` documents within the UTC calendar-day window. Eliminates counter drift and reset-job failures at the cost of a cross-partition fan-out query — acceptable on the webhook path, which fires at most once per delivery.
+
+**Soft quota enforcement.** Two simultaneous webhook deliveries near the boundary may both pass. Accepted per US-007. Atomic enforcement would require distributed locking — unnecessary for v1.
 
 ## Layer Tags
 
