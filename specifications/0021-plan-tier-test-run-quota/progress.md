@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-19 |       |
 | Implement | ✅ Complete | 2026-05-19 |       |
 | Review    | ✅ Complete | 2026-05-20 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-20 |       |
 
 ---
 
@@ -39,7 +39,32 @@ _Populated by `/implement [####]`_
 
 ## Test Results
 
-_Populated by `/test [####]`_
+**Date:** 2026-05-20
+
+### Unit Tests
+- **T012** `QuotaPolicyTests`: 9 tests, all passed
+- **T013** `JiraWebhookServiceQuotaTests`: 9 tests, all passed
+- **T014** `ADOWebhookServiceQuotaTests`: 5 tests, all passed
+- **T015** `DashboardServiceQuotaTests`: 12 tests, all passed
+- **Total**: 35 unit tests, all passed
+
+### Integration Tests
+- **T016** `QuotaIntegrationTests`: 7 tests, all passed (AC-010 and AC-004 validated)
+  - `GetDashboard_ReturnsCorrectDailyLimitForPlanTier` (4 parametrized tests): TestJunior (10), TestPro (30), Team (100), Centurio (500)
+  - `GetDashboard_NoSubscription_DailyLimitIsZero`: passed
+  - `JiraWebhook_WhenQuotaExhausted_DoesNotCreateTestRun`: passed
+  - `JiraWebhook_WhenQuotaExhausted_Returns200OK`: passed
+
+### Summary
+- **Total tests executed**: 42
+- **Passed**: 42
+- **Failed**: 0
+- **Coverage**: All acceptance criteria covered by passing tests
+
+### Fixes Applied During Testing
+1. Fixed pre-existing bug in `BillingServiceTests.cs` (line 78): test was passing `SubscriptionPlan` enum instead of string to `CreateCheckoutSessionRequest`. Updated test data to use proper string values ("test-junior", "test-pro", "team", "centurio").
+
+2. Fixed infrastructure bug in `RequestBodyBufferingMiddleware.cs`: middleware was using `StartsWithSegments("/webhooks")` which didn't match paths like `/v1/webhooks/...`. Updated to use `Contains("/webhooks/")` to handle both `/webhooks/*` and `/v1/webhooks/*` patterns, enabling proper request body buffering for webhook signature validation.
 
 ---
 

@@ -63,19 +63,19 @@ public class BillingServiceTests
     // ─── CreateCheckoutSessionAsync ───────────────────────────────────────────
 
     [Theory]
-    [InlineData(SubscriptionPlan.TestJunior, BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.TestPro,    BillingInterval.Annual)]
-    [InlineData(SubscriptionPlan.Team,       BillingInterval.Monthly)]
-    [InlineData(SubscriptionPlan.Centurio,   BillingInterval.Annual)]
+    [InlineData("test-junior", SubscriptionPlan.TestJunior, BillingInterval.Monthly)]
+    [InlineData("test-pro",    SubscriptionPlan.TestPro,    BillingInterval.Annual)]
+    [InlineData("team",        SubscriptionPlan.Team,       BillingInterval.Monthly)]
+    [InlineData("centurio",    SubscriptionPlan.Centurio,   BillingInterval.Annual)]
     public async Task CreateCheckoutSessionAsync_DelegatesToStripeService_WithCorrectParameters(
-        SubscriptionPlan plan, BillingInterval interval)
+        string planId, SubscriptionPlan plan, BillingInterval interval)
     {
         _stripeService.Setup(s => s.CreateCheckoutSessionAsync(
                 plan, interval, It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("https://checkout.stripe.com/c/pay/test");
 
-        var request = new CreateCheckoutSessionRequest(plan, interval);
+        var request = new CreateCheckoutSessionRequest(planId, interval);
         var result = await _sut.CreateCheckoutSessionAsync("user-1", "user@example.com", request);
 
         Assert.Equal("https://checkout.stripe.com/c/pay/test", result.CheckoutUrl);
