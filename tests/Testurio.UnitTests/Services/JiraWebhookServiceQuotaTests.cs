@@ -4,6 +4,7 @@ using Moq;
 using Testurio.Api.Services;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
+using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Models;
 using Testurio.Core.Repositories;
@@ -12,8 +13,10 @@ using Xunit;
 namespace Testurio.UnitTests.Services;
 
 /// <summary>
-/// Unit tests covering the quota-enforcement path added to <see cref="JiraWebhookService"/>
-/// in feature 0021.
+/// Unit tests covering the quota-enforcement path in <see cref="JiraWebhookService"/>
+/// (feature 0021). Enforcement delegates to <see cref="IPlanEnforcementService"/>; this
+/// test suite verifies integration points: QuotaExceeded result, Jira comment posted,
+/// and no test run created when quota is exceeded.
 /// </summary>
 public class JiraWebhookServiceQuotaTests
 {
@@ -23,8 +26,7 @@ public class JiraWebhookServiceQuotaTests
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<IWorkItemTypeFilterService> _filterService = new();
-    private readonly Mock<IQuotaPolicy> _quotaPolicy = new();
-    private readonly Mock<IUserSubscriptionRepository> _subscriptionRepository = new();
+    private readonly Mock<IPlanEnforcementService> _planEnforcementService = new();
     private readonly Mock<ILogger<JiraWebhookService>> _logger = new();
 
     public JiraWebhookServiceQuotaTests()
@@ -51,8 +53,7 @@ public class JiraWebhookServiceQuotaTests
         _jiraApiClient.Object,
         _secretResolver.Object,
         _filterService.Object,
-        _quotaPolicy.Object,
-        _subscriptionRepository.Object,
+        _planEnforcementService.Object,
         _logger.Object);
 
     private static Project MakeProject() => new()
@@ -92,29 +93,17 @@ public class JiraWebhookServiceQuotaTests
             }
         };
 
-    private void SetupActiveSubscription(SubscriptionPlan plan, int dailyLimit)
-    {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = plan,
-                Status = SubscriptionStatus.Active
-            });
-        _quotaPolicy.Setup(p => p.GetDailyLimit(plan)).Returns(dailyLimit);
-    }
-
     // ─── Quota exceeded ───────────────────────────────────────────────────────
 
     [Fact]
     public async Task ProcessAsync_WhenQuotaExceeded_ReturnsQuotaExceeded()
     {
-        SetupActiveSubscription(SubscriptionPlan.TestJunior, 10);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10); // usedToday == dailyLimit
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows 50 test runs per month. Your quota resets on 2026-06-01. Upgrade to Test Pro to run more tests.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Pro"));
 
         var sut = CreateSut();
         var result = await sut.ProcessAsync(MakeProject(), MakePayload());
@@ -123,29 +112,33 @@ public class JiraWebhookServiceQuotaTests
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenQuotaExceeded_PostsQuotaExhaustedCommentToJira()
+    public async Task ProcessAsync_WhenQuotaExceeded_PostsCommentToJira()
     {
-        SetupActiveSubscription(SubscriptionPlan.TestJunior, 10);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10);
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows 50 test runs per month.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Pro"));
 
         var sut = CreateSut();
         await sut.ProcessAsync(MakeProject(), MakePayload());
 
         _jiraApiClient.Verify(c => c.PostCommentAsync(
             It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(),
-            It.Is<string>(s => s.Contains("quota") && s.Contains("10")),
+            It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task ProcessAsync_WhenQuotaExceeded_NoTestRunCreated()
     {
-        SetupActiveSubscription(SubscriptionPlan.TestJunior, 10);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10);
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Quota exceeded.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Pro"));
 
         var sut = CreateSut();
         await sut.ProcessAsync(MakeProject(), MakePayload());
@@ -154,68 +147,33 @@ public class JiraWebhookServiceQuotaTests
         _jobSender.VerifyNoOtherCalls();
     }
 
-    // ─── No active subscription ───────────────────────────────────────────────
+    // ─── No active subscription / expired ────────────────────────────────────
 
     [Fact]
     public async Task ProcessAsync_WhenNoSubscription_ReturnsQuotaExceeded()
     {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserSubscription?)null);
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows 0 test runs per month.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Junior"));
 
         var sut = CreateSut();
         var result = await sut.ProcessAsync(MakeProject(), MakePayload());
 
         Assert.Equal(WebhookProcessResult.QuotaExceeded, result);
-    }
-
-    [Fact]
-    public async Task ProcessAsync_WhenNoSubscription_PostsNoSubscriptionCommentToJira()
-    {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((UserSubscription?)null);
-
-        var sut = CreateSut();
-        await sut.ProcessAsync(MakeProject(), MakePayload());
-
-        _jiraApiClient.Verify(c => c.PostCommentAsync(
-            It.IsAny<string>(), "PROJ-1", It.IsAny<string>(), It.IsAny<string>(),
-            It.Is<string>(s => s.Contains("subscription")),
-            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task ProcessAsync_WhenSubscriptionIsExpired_ReturnsQuotaExceeded()
     {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = SubscriptionPlan.TestPro,
-                Status = SubscriptionStatus.Expired
-            });
-
-        var sut = CreateSut();
-        var result = await sut.ProcessAsync(MakeProject(), MakePayload());
-
-        Assert.Equal(WebhookProcessResult.QuotaExceeded, result);
-    }
-
-    [Fact]
-    public async Task ProcessAsync_WhenSubscriptionIsNone_ReturnsQuotaExceeded()
-    {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = SubscriptionPlan.TestPro,
-                Status = SubscriptionStatus.None
-            });
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your plan allows 0 test runs per month.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Junior"));
 
         var sut = CreateSut();
         var result = await sut.ProcessAsync(MakeProject(), MakePayload());
@@ -228,10 +186,9 @@ public class JiraWebhookServiceQuotaTests
     [Fact]
     public async Task ProcessAsync_WhenQuotaNotExceeded_ProceedsToEnqueue()
     {
-        SetupActiveSubscription(SubscriptionPlan.TestPro, 30);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(5); // well below 30
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask); // no exception = quota OK
 
         _testRunRepo
             .Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>()))
@@ -250,24 +207,15 @@ public class JiraWebhookServiceQuotaTests
         _jobSender.Verify(s => s.SendAsync(It.IsAny<TestRunJobMessage>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ─── Trialing status uses plan-tier limit ─────────────────────────────────
+    // ─── Trial paths ──────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task ProcessAsync_WhenTrialingStatus_UsesPlanTierLimit()
+    public async Task ProcessAsync_WhenTrialingWithinWindow_BelowLimit_ProceedsToEnqueue()
     {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = SubscriptionPlan.TestJunior,
-                Status = SubscriptionStatus.Trialing
-            });
-        _quotaPolicy.Setup(p => p.GetDailyLimit(SubscriptionPlan.TestJunior)).Returns(10);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(9); // one below limit
+        // Trial enforcement succeeds (no exception).
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         _testRunRepo
             .Setup(r => r.GetActiveRunAsync("proj1", It.IsAny<CancellationToken>()))
@@ -282,26 +230,34 @@ public class JiraWebhookServiceQuotaTests
         var sut = CreateSut();
         var result = await sut.ProcessAsync(MakeProject(), MakePayload());
 
-        // Trialing user with 9/10 runs used should still be allowed through.
         Assert.Equal(WebhookProcessResult.Enqueued, result);
     }
 
     [Fact]
-    public async Task ProcessAsync_WhenTrialingStatusAndAtLimit_ReturnsQuotaExceeded()
+    public async Task ProcessAsync_WhenTrialingAtLimit_ReturnsQuotaExceeded()
     {
-        _subscriptionRepository
-            .Setup(r => r.GetByUserIdAsync("user1", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new UserSubscription
-            {
-                Id = "user1",
-                UserId = "user1",
-                Plan = SubscriptionPlan.TestJunior,
-                Status = SubscriptionStatus.Trialing
-            });
-        _quotaPolicy.Setup(p => p.GetDailyLimit(SubscriptionPlan.TestJunior)).Returns(10);
-        _testRunRepo
-            .Setup(r => r.CountTodayAsync("user1", It.IsAny<DateTimeOffset>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10); // exactly at limit
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your trial allows 50 test runs. Trial ends on 2026-06-03.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Junior"));
+
+        var sut = CreateSut();
+        var result = await sut.ProcessAsync(MakeProject(), MakePayload());
+
+        Assert.Equal(WebhookProcessResult.QuotaExceeded, result);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_WhenTrialExpired_ReturnsQuotaExceeded()
+    {
+        _planEnforcementService
+            .Setup(s => s.CheckMonthlyRunQuotaAsync("user1", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new PlanLimitExceededException(
+                "Your trial has ended. Purchase a plan to run more tests.",
+                limitName: "maxTestRunsPerMonth",
+                requiredPlan: "Test Junior"));
 
         var sut = CreateSut();
         var result = await sut.ProcessAsync(MakeProject(), MakePayload());

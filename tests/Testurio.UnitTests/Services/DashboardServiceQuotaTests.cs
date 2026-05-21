@@ -177,7 +177,7 @@ public class DashboardServiceQuotaTests
         var sut = CreateSut();
         var result = await sut.GetDashboardAsync("user-1");
 
-        Assert.Equal(7, result.QuotaUsage.UsedToday);
-        Assert.Equal(10, result.QuotaUsage.DailyLimit);
+        Assert.Equal(7, result.QuotaUsage.UsedThisMonth);
+        Assert.Equal(10, result.QuotaUsage.MonthlyLimit);
     }
 }

@@ -59,6 +59,35 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
     /// <inheritdoc />
     public async Task CheckProjectLimitAsync(string userId, CancellationToken ct = default)
     {
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(userId, ct);
+        var utcNow = DateTimeOffset.UtcNow;
+
+        // ── Trial path ────────────────────────────────────────────────────────
+        if (subscription?.Status == SubscriptionStatus.Trialing)
+        {
+            if (subscription.TrialEndsAt is null || subscription.TrialEndsAt.Value <= utcNow)
+            {
+                // Expired trial — block project creation entirely.
+                throw new PlanLimitExceededException(
+                    "Your trial has ended. Purchase a plan to create more projects.",
+                    limitName: "maxProjects",
+                    requiredPlan: "Test Junior");
+            }
+
+            // Active trial — enforce fixed 2-project cap regardless of plan tier.
+            var projects = await _projectRepository.ListByUserAsync(userId, ct);
+            if (projects.Count >= 2)
+            {
+                throw new PlanLimitExceededException(
+                    "Your trial allows a maximum of 2 projects. Purchase a plan to create more.",
+                    limitName: "maxProjects",
+                    requiredPlan: "Test Junior");
+            }
+
+            return;
+        }
+
+        // ── Paid / non-trialing path ──────────────────────────────────────────
         var plan = await GetEffectivePlanAsync(userId, ct);
         if (plan is null)
         {
@@ -73,8 +102,8 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
         if (maxProjects == -1)
             return; // unlimited — skip check
 
-        var projects = await _projectRepository.ListByUserAsync(userId, ct);
-        var activeCount = projects.Count; // ListByUserAsync already filters deleted projects
+        var existingProjects = await _projectRepository.ListByUserAsync(userId, ct);
+        var activeCount = existingProjects.Count; // ListByUserAsync already filters deleted projects
 
         if (activeCount >= maxProjects)
         {
@@ -91,6 +120,44 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
     /// <inheritdoc />
     public async Task CheckMonthlyRunQuotaAsync(string userId, CancellationToken ct = default)
     {
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(userId, ct);
+        var utcNow = DateTimeOffset.UtcNow;
+
+        // ── Trial path ────────────────────────────────────────────────────────
+        if (subscription?.Status == SubscriptionStatus.Trialing)
+        {
+            if (subscription.TrialEndsAt is null || subscription.TrialEndsAt.Value <= utcNow)
+            {
+                // Expired trial — 0-run limit.
+                throw new PlanLimitExceededException(
+                    "Your trial has ended. Purchase a plan to run more tests.",
+                    limitName: "maxTestRunsPerMonth",
+                    requiredPlan: "Test Junior");
+            }
+
+            // Active trial — count runs in the 14-day trial window and apply plan-tier limit.
+            var trialEndsAt = subscription.TrialEndsAt.Value;
+            var trialStart = trialEndsAt.AddDays(-14);
+
+            var planDoc = await _planRepository.GetByPlanAsync(subscription.Plan, ct);
+            var maxRuns = planDoc?.Limits.MaxTestRunsPerMonth ?? 0;
+
+            if (maxRuns != -1) // -1 = unlimited
+            {
+                var usedInTrial = await _testRunRepository.CountByUserForMonthAsync(userId, trialStart, trialEndsAt, ct);
+                if (usedInTrial >= maxRuns)
+                {
+                    throw new PlanLimitExceededException(
+                        $"Your trial allows {maxRuns} test runs. Trial ends on {trialEndsAt:yyyy-MM-dd}.",
+                        limitName: "maxTestRunsPerMonth",
+                        requiredPlan: "Test Junior");
+                }
+            }
+
+            return;
+        }
+
+        // ── Paid / non-trialing path ──────────────────────────────────────────
         var plan = await GetEffectivePlanAsync(userId, ct);
         if (plan is null)
         {
@@ -103,8 +170,8 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
                 requiredPlan: "Test Junior");
         }
 
-        var maxRuns = plan.Limits.MaxTestRunsPerMonth;
-        if (maxRuns == -1)
+        var planMaxRuns = plan.Limits.MaxTestRunsPerMonth;
+        if (planMaxRuns == -1)
             return; // unlimited — skip check
 
         // Count TestRun documents created this calendar month for this user.
@@ -115,13 +182,13 @@ public sealed class PlanEnforcementService : IPlanEnforcementService
 
         var usedThisMonth = await _testRunRepository.CountByUserForMonthAsync(userId, monthStart, nextMonthStart, ct);
 
-        if (usedThisMonth >= maxRuns)
+        if (usedThisMonth >= planMaxRuns)
         {
             var requiredPlan = TryGetPlanEnum(plan.Id, out var planEnum) && NextTierNames.TryGetValue(planEnum, out var next)
                 ? next
                 : plan.Name;
             throw new PlanLimitExceededException(
-                $"Your plan allows {maxRuns} test runs per month. Your quota resets on {nextMonthStart:yyyy-MM-dd}. Upgrade to {requiredPlan} to run more tests.",
+                $"Your plan allows {planMaxRuns} test runs per month. Your quota resets on {nextMonthStart:yyyy-MM-dd}. Upgrade to {requiredPlan} to run more tests.",
                 limitName: "maxTestRunsPerMonth",
                 requiredPlan: requiredPlan);
         }

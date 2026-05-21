@@ -278,6 +278,266 @@ public class PlanEnforcementServiceTests
         Assert.Equal(expectedEnd, capturedEnd);
     }
 
+    // ─── CheckMonthlyRunQuotaAsync — trial paths ──────────────────────────────
+
+    [Fact]
+    public async Task CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_CountsRunsInTrialPeriod()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(3);
+        var expectedStart = trialEndsAt.AddDays(-14);
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+        _planRepo
+            .Setup(r => r.GetByPlanAsync(SubscriptionPlan.TestJunior, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakePlanDocument(maxTestRunsPerMonth: 50));
+
+        DateTimeOffset capturedStart = default;
+        DateTimeOffset capturedEnd = default;
+        _testRunRepo
+            .Setup(r => r.CountByUserForMonthAsync(
+                "user-1",
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, DateTimeOffset, DateTimeOffset, CancellationToken>((_, s, e, _) =>
+            {
+                capturedStart = s;
+                capturedEnd = e;
+            })
+            .ReturnsAsync(0);
+
+        await _sut.CheckMonthlyRunQuotaAsync("user-1");
+
+        // Verify the repo was called with the trial-period window.
+        Assert.Equal(expectedStart, capturedStart);
+        Assert.Equal(trialEndsAt, capturedEnd);
+    }
+
+    [Fact]
+    public async Task CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_UnderLimit_DoesNotThrow()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(5);
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+        _planRepo
+            .Setup(r => r.GetByPlanAsync(SubscriptionPlan.TestJunior, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakePlanDocument(maxTestRunsPerMonth: 50));
+        _testRunRepo
+            .Setup(r => r.CountByUserForMonthAsync(
+                "user-1",
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(49);
+
+        // Should not throw
+        await _sut.CheckMonthlyRunQuotaAsync("user-1");
+    }
+
+    [Fact]
+    public async Task CheckMonthlyRunQuotaAsync_WhenTrialing_WithinWindow_AtLimit_Throws()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(2);
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+        _planRepo
+            .Setup(r => r.GetByPlanAsync(SubscriptionPlan.TestJunior, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(MakePlanDocument(maxTestRunsPerMonth: 50));
+        _testRunRepo
+            .Setup(r => r.CountByUserForMonthAsync(
+                "user-1",
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(50);
+
+        var ex = await Assert.ThrowsAsync<PlanLimitExceededException>(
+            () => _sut.CheckMonthlyRunQuotaAsync("user-1"));
+
+        Assert.Equal("maxTestRunsPerMonth", ex.LimitName);
+        Assert.Equal("Test Junior", ex.RequiredPlan);
+        // Message contains trial end date (AC-004).
+        Assert.Contains(trialEndsAt.ToString("yyyy-MM-dd"), ex.Message);
+    }
+
+    [Fact]
+    public async Task CheckMonthlyRunQuotaAsync_WhenTrialing_TrialExpired_Throws()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(-1); // expired
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+
+        var ex = await Assert.ThrowsAsync<PlanLimitExceededException>(
+            () => _sut.CheckMonthlyRunQuotaAsync("user-1"));
+
+        Assert.Equal("maxTestRunsPerMonth", ex.LimitName);
+        Assert.Equal("Test Junior", ex.RequiredPlan);
+        Assert.Contains("trial has ended", ex.Message);
+    }
+
+    [Fact]
+    public async Task CheckMonthlyRunQuotaAsync_WhenActive_UsesCalendarMonth()
+    {
+        // Regression: non-trial path still uses a calendar-month window.
+        var plan = MakePlanDocument(maxTestRunsPerMonth: 50);
+        SetupActivePlan(plan);
+
+        DateTimeOffset capturedStart = default;
+        DateTimeOffset capturedEnd = default;
+        _testRunRepo
+            .Setup(r => r.CountByUserForMonthAsync(
+                It.IsAny<string>(),
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<DateTimeOffset>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, DateTimeOffset, DateTimeOffset, CancellationToken>((_, s, e, _) =>
+            {
+                capturedStart = s;
+                capturedEnd = e;
+            })
+            .ReturnsAsync(0);
+
+        await _sut.CheckMonthlyRunQuotaAsync("user-1");
+
+        var now = DateTimeOffset.UtcNow;
+        var expectedStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var expectedEnd = expectedStart.AddMonths(1);
+
+        Assert.Equal(expectedStart, capturedStart);
+        Assert.Equal(expectedEnd, capturedEnd);
+    }
+
+    // ─── CheckProjectLimitAsync — trial paths ─────────────────────────────────
+
+    [Fact]
+    public async Task CheckProjectLimitAsync_WhenTrialing_Below2Projects_Allows()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(7);
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+        _projectRepo
+            .Setup(r => r.ListByUserAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Enumerable.Range(0, 1)
+                    .Select(_ => new Core.Entities.Project { UserId = "user-1", Name = "P", ProductUrl = "https://p.example.com", TestingStrategy = "API" })
+                    .ToArray());
+
+        // Should not throw
+        await _sut.CheckProjectLimitAsync("user-1");
+    }
+
+    [Fact]
+    public async Task CheckProjectLimitAsync_WhenTrialing_At2Projects_Throws()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(7);
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+        _projectRepo
+            .Setup(r => r.ListByUserAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Enumerable.Range(0, 2)
+                    .Select(_ => new Core.Entities.Project { UserId = "user-1", Name = "P", ProductUrl = "https://p.example.com", TestingStrategy = "API" })
+                    .ToArray());
+
+        var ex = await Assert.ThrowsAsync<PlanLimitExceededException>(
+            () => _sut.CheckProjectLimitAsync("user-1"));
+
+        Assert.Equal("maxProjects", ex.LimitName);
+        Assert.Equal("Test Junior", ex.RequiredPlan);
+        Assert.Contains("maximum of 2 projects", ex.Message);
+    }
+
+    [Fact]
+    public async Task CheckProjectLimitAsync_WhenTrialing_Expired_Throws()
+    {
+        var trialEndsAt = DateTimeOffset.UtcNow.AddDays(-2); // expired
+
+        _subscriptionRepo
+            .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserSubscription
+            {
+                Id = "user-1", UserId = "user-1",
+                Plan = SubscriptionPlan.TestJunior,
+                Status = SubscriptionStatus.Trialing,
+                TrialEndsAt = trialEndsAt,
+            });
+
+        var ex = await Assert.ThrowsAsync<PlanLimitExceededException>(
+            () => _sut.CheckProjectLimitAsync("user-1"));
+
+        Assert.Equal("maxProjects", ex.LimitName);
+        Assert.Equal("Test Junior", ex.RequiredPlan);
+        Assert.Contains("trial has ended", ex.Message);
+    }
+
+    [Fact]
+    public async Task CheckProjectLimitAsync_WhenActive_UsesPlanMaxProjects()
+    {
+        // Regression: non-trial path uses plan.Limits.MaxProjects.
+        var plan = MakePlanDocument(maxProjects: 5);
+        SetupActivePlan(plan);
+        _projectRepo
+            .Setup(r => r.ListByUserAsync("user-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(
+                Enumerable.Range(0, 4)
+                    .Select(_ => new Core.Entities.Project { UserId = "user-1", Name = "P", ProductUrl = "https://p.example.com", TestingStrategy = "API" })
+                    .ToArray());
+
+        // Should not throw (4 < 5)
+        await _sut.CheckProjectLimitAsync("user-1");
+
+        // No PlanLimitExceededException when below the plan limit.
+        _subscriptionRepo.Verify(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
     // ─── Private helpers ──────────────────────────────────────────────────────
 
     private void SetupActivePlan(PlanDocument plan, SubscriptionPlan planEnum = SubscriptionPlan.TestJunior)

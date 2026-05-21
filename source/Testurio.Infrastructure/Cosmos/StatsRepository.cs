@@ -111,7 +111,51 @@ public class StatsRepository : IStatsRepository
         int dailyLimit,
         CancellationToken cancellationToken = default)
     {
-        // Compute the current calendar month window in UTC.
+        var utcNow = DateTimeOffset.UtcNow;
+
+        // Resolve the subscription first — needed to branch trial vs calendar-month logic.
+        var subscription = await _subscriptionRepository.GetByUserIdAsync(userId, cancellationToken);
+
+        // ── Trial path ────────────────────────────────────────────────────────
+        if (subscription?.Status == SubscriptionStatus.Trialing)
+        {
+            var trialEndsAt = subscription.TrialEndsAt;
+
+            if (trialEndsAt is null || trialEndsAt.Value <= utcNow)
+            {
+                // Expired trial — no active plan; return zero limit with ResetsAt = TrialEndsAt.
+                var resetsAt = trialEndsAt ?? utcNow;
+                return new QuotaUsage(0, 0, resetsAt);
+            }
+
+            // Active trial — count runs in the 14-day trial window.
+            var trialStart = trialEndsAt.Value.AddDays(-14);
+            var countQuery = new QueryDefinition(
+                "SELECT VALUE COUNT(1) FROM c " +
+                "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
+                .WithParameter("@userId", userId)
+                .WithParameter("@start", trialStart.ToString("o"))
+                .WithParameter("@end", trialEndsAt.Value.ToString("o"));
+
+            var usedInTrialPeriod = 0;
+            using var trialCountIterator = _testRunsContainer.GetItemQueryIterator<int>(countQuery);
+            while (trialCountIterator.HasMoreResults)
+            {
+                var page = await trialCountIterator.ReadNextAsync(cancellationToken);
+                foreach (var count in page)
+                    usedInTrialPeriod += count;
+            }
+
+            // Resolve plan-tier limit for the trialing user.
+            var monthlyLimit = 0;
+            var planDoc = await _planRepository.GetByPlanAsync(subscription.Plan, cancellationToken);
+            if (planDoc is not null)
+                monthlyLimit = planDoc.Limits.MaxTestRunsPerMonth;
+
+            return new QuotaUsage(usedInTrialPeriod, monthlyLimit, trialEndsAt.Value);
+        }
+
+        // ── Calendar-month path (Active, CancelledPendingExpiry, PaymentFailed, None, Expired) ──
         var now = DateTimeOffset.UtcNow;
         var monthStart = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
         // resetsAt = first day of the next calendar month (midnight UTC).
@@ -121,7 +165,7 @@ public class StatsRepository : IStatsRepository
         // TestRuns container partition key is projectId, so this is a cross-partition query.
         // Acceptable here: stats query, not on the hot write path.
         // Uses createdAt (consistent with AC-005: createdAt when startedAt is null).
-        var countQuery = new QueryDefinition(
+        var calendarCountQuery = new QueryDefinition(
             "SELECT VALUE COUNT(1) FROM c " +
             "WHERE c.userId = @userId AND c.createdAt >= @start AND c.createdAt < @end")
             .WithParameter("@userId", userId)
@@ -129,7 +173,7 @@ public class StatsRepository : IStatsRepository
             .WithParameter("@end", nextMonthStart.ToString("o"));
 
         var usedThisMonth = 0;
-        using var countIterator = _testRunsContainer.GetItemQueryIterator<int>(countQuery);
+        using var countIterator = _testRunsContainer.GetItemQueryIterator<int>(calendarCountQuery);
         while (countIterator.HasMoreResults)
         {
             var page = await countIterator.ReadNextAsync(cancellationToken);
@@ -140,16 +184,15 @@ public class StatsRepository : IStatsRepository
         // Resolve the monthly limit from the user's active subscription plan.
         // 0 = no active plan (renders "No active plan" in the UI).
         // -1 = unlimited (renders "Unlimited" in the UI).
-        var monthlyLimit = 0;
-        var subscription = await _subscriptionRepository.GetByUserIdAsync(userId, cancellationToken);
-        if (subscription is { Status: SubscriptionStatus.Active or SubscriptionStatus.Trialing or SubscriptionStatus.CancelledPendingExpiry })
+        var calendarMonthlyLimit = 0;
+        if (subscription is { Status: SubscriptionStatus.Active or SubscriptionStatus.CancelledPendingExpiry })
         {
             var planDoc = await _planRepository.GetByPlanAsync(subscription.Plan, cancellationToken);
             if (planDoc is not null)
-                monthlyLimit = planDoc.Limits.MaxTestRunsPerMonth;
+                calendarMonthlyLimit = planDoc.Limits.MaxTestRunsPerMonth;
         }
 
-        return new QuotaUsage(usedThisMonth, monthlyLimit, nextMonthStart);
+        return new QuotaUsage(usedThisMonth, calendarMonthlyLimit, nextMonthStart);
     }
 
     /// <inheritdoc/>

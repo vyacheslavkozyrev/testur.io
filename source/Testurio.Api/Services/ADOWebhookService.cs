@@ -148,13 +148,13 @@ public partial class ADOWebhookService : IADOWebhookService
     {
         if (string.IsNullOrEmpty(project.AdoOrgUrl) ||
             string.IsNullOrEmpty(project.AdoProjectName) ||
-            string.IsNullOrEmpty(project.AdoTokenSecretRef))
+            string.IsNullOrEmpty(project.AdoTokenSecretUri))
             return;
 
         if (!int.TryParse(workItemId, out var workItemIdInt))
             return;
 
-        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretRef, cancellationToken);
+        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri, cancellationToken);
         var result = await _adoClient.PostCommentAsync(
             project.AdoOrgUrl, project.AdoProjectName, workItemIdInt, token, message, cancellationToken);
         if (result is null)

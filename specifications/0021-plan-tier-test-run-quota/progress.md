@@ -6,7 +6,7 @@
 | --------- | -------------- | ---------- | ----- |
 | Specify   | ✅ Complete    | 2026-05-20 |       |
 | Plan      | ✅ Complete    | 2026-05-20 |       |
-| Implement | ⏳ Pending     |            | Replanned — see Amendment 2026-05-20 |
+| Implement | ✅ Complete    | 2026-05-20 | T001–T005 complete; also fixed pre-existing stale test files and ADOWebhookService.AdoTokenSecretRef → AdoTokenSecretUri rename |
 | Review    | ⏳ Pending     |            |       |
 | Test      | ⏳ Pending     |            |       |
 
@@ -70,7 +70,12 @@ _Populated by `/implement [####]`_
 
 ## Amendments
 
-### Amendment — 2026-05-20
+### Amendment — 2026-05-20 (2nd)
+**Changed**: `stories.md` (rewritten — daily quota model replaced by monthly + trial-period window), `plan.md` (replanned — 18 tasks reduced to 5 focused tasks)
+**Reason**: Merged latest `develop` (which contains feature 0046 `IPlanEnforcementService`). The original `IQuotaPolicy` daily-quota model conflicts with develop's monthly enforcement model. Decision: adopt `IPlanEnforcementService` as-is; feature 0021's remaining delta is only trial-period awareness inside `PlanEnforcementService` and `StatsRepository`. The Jira and ADO webhook services' `PlanLimitExceededException` handling was resolved during the merge conflict resolution and is already committed. Test files referencing `IQuotaPolicy` have been replaced with develop's `IPlanEnforcementService` mocking pattern.
+**Impact**: Implement, Review, and Test phases must re-run against the new focused plan.
+
+### Amendment — 2026-05-20 (1st)
 **Changed**: `stories.md` (created — was missing from initial run), `plan.md` (replanned with 18 tasks replacing 16)
 **Reason**: Specification clarification revealed three gaps in the original plan: (1) trial users get a fixed 5 runs/day for 14 days (tracked via `UserSubscription.TrialEndsAt`), not plan-tier limits — `IQuotaPolicy` signature must accept `UserSubscription?` + `utcNow` instead of `SubscriptionPlan?`; (2) ADO webhook rejections must post a comment to the ADO work item (parity with Jira — `IADOClient.PostCommentAsync` already exists); (3) project creation must be capped at 2 during trial and blocked for `None`/`Expired` accounts.
 **Impact**: Implement, Review, and Test phases must re-run. The PR opened after the original Test phase is superseded by this replanned branch.
