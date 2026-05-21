@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1
+# ---------------------------------------------------------------
+# Dockerfile.ci — runtime only, for CI/CD pipeline use
+# Binary is built outside Docker by the workflow (npm run build)
+# and copied in here. No build stage, no build tools in the image.
+#
+# Companion: Dockerfile (full multi-stage) for local development
+# ---------------------------------------------------------------
+
+FROM gcr.io/distroless/nodejs20-debian12:nonroot
+
+WORKDIR /app
+
+# Disable Next.js telemetry at runtime
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# ---------------------------------------------------------------
+# Copy only the standalone output — produced by Next.js when
+# output: 'standalone' is set in next.config.ts.
+#
+# .next/standalone  — self-contained server + trimmed node_modules
+# .next/static      — hashed client-side assets (JS, CSS)
+# public/           — static files served at /
+#
+# :nonroot variant runs as UID 65532 — files must be chowned
+# ---------------------------------------------------------------
+COPY --chown=nonroot:nonroot .next/standalone ./
+COPY --chown=nonroot:nonroot .next/static     ./.next/static
+COPY --chown=nonroot:nonroot public           ./public
+
+# Port declared for documentation and container runtime hints
+EXPOSE 3000
+
+# distroless sets node as the entrypoint — pass the script as CMD
+# standalone output always produces server.js at the root
+CMD ["server.js"]

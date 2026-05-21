@@ -1,0 +1,212 @@
+name: UI Deploy
+
+on:
+  push:
+    tags:
+      - "testurio-web@*"  # fired when release-please PAT-merges the Release PR
+
+env:
+  WORKING_DIR: source/Testurio.Web
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/testurio-web
+  CHART_DIR: source/Testurio.Web/chart
+  BASE_CHART_REPO: oci://ghcr.io/<org>/charts  # <-- replace with base chart registry path
+
+permissions:
+  contents: read
+  packages: write   # push image and chart to GHCR
+  id-token: write   # required for cosign keyless signing (optional)
+
+jobs:
+  build-and-push:
+    name: Build Binary & Push Docker Image
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      # Strip component prefix from tag to get bare semver: testurio-web@1.3.0 → 1.3.0
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#testurio-web@}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+
+      # Layer 1: node_modules cache — skips npm ci entirely on hit
+      - name: Restore node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.WORKING_DIR }}/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # Layer 2: Next.js incremental build cache — only recompiles changed files
+      - name: Restore Next.js build cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.WORKING_DIR }}/.next/cache
+          # Full key: invalidates when deps or source changes
+          key: nextjs-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}-${{ hashFiles(format('{0}/src/**', env.WORKING_DIR)) }}
+          # Fallback: restore closest cache even if source changed — Next.js uses what's still valid
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}-
+
+      - name: Build binary
+        run: npm run build
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.WORKING_DIR }}
+          file: ${{ env.WORKING_DIR }}/Dockerfile.ci
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          # Layer 3: Docker layer cache stored in GHCR — persists across runs, no extra cost
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  # package-chart:
+  #   name: Package & Push Helm Chart
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v6
+
+  #     # Pin Helm version — enables GitHub tool cache reuse across runs
+  #     - name: Install Helm
+  #       uses: azure/setup-helm@v5
+  #       with:
+  #         version: v3.17.0
+
+  #     - name: Log in to GHCR (Helm)
+  #       run: |
+  #         echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} \
+  #           --username ${{ github.actor }} \
+  #           --password-stdin
+
+  #     - name: Update Helm chart versions
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         # Both appVersion and version default to the same semver
+  #         # chart version can be bumped independently in Chart.yaml if needed
+  #         sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" ${{ env.CHART_DIR }}/Chart.yaml
+  #         sed -i "s/^version:.*/version: ${VERSION}/" ${{ env.CHART_DIR }}/Chart.yaml
+
+  #     - name: Update image tag in values
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         sed -i "s/^  tag:.*/  tag: \"${VERSION}\"/" ${{ env.CHART_DIR }}/values.yaml
+
+  #     # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
+  #     - name: Restore Helm dependencies
+  #       id: cache-helm-deps
+  #       uses: actions/cache@v5
+  #       with:
+  #         path: ${{ env.CHART_DIR }}/charts
+  #         key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+
+  #     - name: Pull base chart dependency
+  #       if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+  #       run: helm dependency update ${{ env.CHART_DIR }}
+
+  #     - name: Package Helm chart
+  #       run: helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+
+  #     - name: Push Helm chart to GHCR
+  #       run: |
+  #         helm push /tmp/chart-output/*.tgz \
+  #           oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+
+  # update-gitops:
+  #   name: Update GitOps Repo
+  #   needs: [build-and-push, package-chart]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout GitOps repo
+  #       uses: actions/checkout@v6
+  #       with:
+  #         repository: <org>/<gitops-repo>        # <-- replace with GitOps repo
+  #         token: ${{ secrets.GITOPS_TOKEN }}      # fine-grained PAT: contents:write, pull-requests:write on GitOps repo
+  #         path: gitops
+
+  #     - name: Create deploy branch
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         cd gitops
+  #         git checkout -b "deploy/testurio-web-${VERSION}"
+
+  #     - name: Update dev values
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         sed -i "s/^  tag:.*/  tag: \"${VERSION}\"/" \
+  #           gitops/<path-to-component>/values-dev.yaml  # <-- replace with actual path
+
+  #     - name: Commit and push
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         cd gitops
+  #         git config user.name "github-actions[bot]"
+  #         git config user.email "github-actions[bot]@users.noreply.github.com"
+  #         git add .
+  #         git diff --staged --quiet || git commit \
+  #           -m "chore(testurio-web): bump image to ${VERSION}"
+  #         git push origin "deploy/testurio-web-${VERSION}"
+
+  #     - name: Open PR in GitOps repo
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         gh pr create \
+  #           --title "chore(testurio-web): deploy ${VERSION} to dev" \
+  #           --body "Automated image bump for testurio-web ${VERSION}" \
+  #           --base main \
+  #           --head "deploy/testurio-web-${VERSION}" \
+  #           --repo <org>/<gitops-repo>             # <-- replace with GitOps repo
+
+  #     # Auto-merge for dev (Phase 1)
+  #     # Replace with manual approval gate in Phase 2/3 for stg/prd
+  #     - name: Auto-merge GitOps PR
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+  #       run: |
+  #         VERSION="${{ needs.build-and-push.outputs.version }}"
+  #         gh pr merge \
+  #           --auto \
+  #           --squash \
+  #           "deploy/testurio-web-${VERSION}" \
+  #           --repo <org>/<gitops-repo>             # <-- replace with GitOps repo

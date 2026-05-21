@@ -1,0 +1,11 @@
+{
+  "target-branch": "develop",
+  "separate-pull-requests": true,
+  "packages": {
+    "source/Testurio.Web": {
+      "release-type": "node",
+      "package-name": "testurio-web",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
