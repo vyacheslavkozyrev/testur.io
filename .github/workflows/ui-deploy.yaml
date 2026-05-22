@@ -106,7 +106,7 @@ jobs:
     permissions:
       contents: read
       packages: read          # pull image from GHCR for scanning
-      security-events: write  # upload SARIF to GitHub Security tab
+      security-events: read  # use write when upload SARIF to GitHub Security tab is enabled
     steps:
       - name: Setup Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
@@ -121,36 +121,49 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Scan the already-pushed image directly by digest — immutable reference
-      # No rebuild needed — same image that was built and pushed in build-and-push job
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-          format: sarif
-          output: trivy-results.sarif
+          format: table          # human readable in logs
           severity: HIGH,CRITICAL
           ignore-unfixed: true
+          exit-code: 1           # fail on findings
           skip-setup-trivy: true
 
-      # Upload always — results visible in Security tab even if scan fails the build
-      - name: Upload scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@f52b05f4acaaa234e44466e66d29050e135ea9ef # v4.36.0
-        if: always()
-        with:
-          sarif_file: trivy-results.sarif
+     ##### When Advanced Security in GitHub gets enabled, use this ######
+      # # Scan the already-pushed image directly by digest — immutable reference
+      # # No rebuild needed — same image that was built and pushed in build-and-push job
+      # - name: Scan image for vulnerabilities
+      #   uses: aquasecurity/trivy-action@v0.36.0
+      #   with:
+      #     scan-type: image
+      #     image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+      #     format: sarif
+      #     output: trivy-results.sarif
+      #     severity: HIGH,CRITICAL
+      #     ignore-unfixed: true
+      #     skip-setup-trivy: true
 
-      # Separate failing step — after upload so results are always visible
-      - name: Fail build on HIGH/CRITICAL vulnerabilities
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: image
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: 1
-          skip-setup-trivy: true
+      # # Upload always — results visible in Security tab even if scan fails the build
+      # - name: Upload scan results to GitHub Security
+      #   uses: github/codeql-action/upload-sarif@f52b05f4acaaa234e44466e66d29050e135ea9ef # v4.36.0
+      #   if: always()
+      #   with:
+      #     sarif_file: trivy-results.sarif
+
+      # # Separate failing step — after upload so results are always visible
+      # - name: Fail build on HIGH/CRITICAL vulnerabilities
+      #   uses: aquasecurity/trivy-action@v0.36.0
+      #   with:
+      #     scan-type: image
+      #     image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+      #     severity: HIGH,CRITICAL
+      #     ignore-unfixed: true
+      #     exit-code: 1
+      #     skip-setup-trivy: true
+      #######################################
           
   sign-and-sbom:
     name: Sign Image & Generate SBOM
