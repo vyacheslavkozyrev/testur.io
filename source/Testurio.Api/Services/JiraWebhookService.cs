@@ -67,6 +67,10 @@ public partial class JiraWebhookService : IJiraWebhookService
         if (!string.Equals(transitionedTo, project.InTestingStatusLabel, StringComparison.OrdinalIgnoreCase))
             return WebhookProcessResult.Ignored;
 
+        var quotaResult = await CheckQuotaAsync(project, issue, cancellationToken);
+        if (quotaResult is not null)
+            return quotaResult.Value;
+
         var missingParts = GetMissingParts(fields);
         if (missingParts is not null)
         {
@@ -75,6 +79,42 @@ public partial class JiraWebhookService : IJiraWebhookService
         }
 
         return await EnqueueOrQueueRunAsync(project, issue, cancellationToken);
+    }
+
+    private async Task<WebhookProcessResult?> CheckQuotaAsync(
+        Project project,
+        JiraIssue issue,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+            return null;
+        }
+        catch (PlanLimitExceededException ex)
+        {
+            await PostQuotaCommentAsync(project, issue, ex.Message, cancellationToken);
+            LogQuotaExceeded(_logger, issue.Key, project.Id, ex.LimitName);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+    }
+
+    private async Task PostQuotaCommentAsync(
+        Project project,
+        JiraIssue issue,
+        string message,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(project.JiraApiTokenSecretRef) ||
+            string.IsNullOrEmpty(project.JiraBaseUrl) ||
+            string.IsNullOrEmpty(project.JiraEmail))
+            return;
+
+        var apiToken = await _secretResolver.ResolveAsync(project.JiraApiTokenSecretRef, cancellationToken);
+        var posted = await _jiraApiClient.PostCommentAsync(
+            project.JiraBaseUrl, issue.Key, project.JiraEmail, apiToken, message, cancellationToken);
+        if (!posted.IsSuccess)
+            LogQuotaCommentPostFailed(_logger, issue.Key, project.Id);
     }
 
     private static string? GetMissingParts(JiraIssueFields? fields)
@@ -118,11 +158,6 @@ public partial class JiraWebhookService : IJiraWebhookService
         JiraIssue issue,
         CancellationToken cancellationToken)
     {
-        // AC-015/AC-016: check monthly run quota before creating TestRun or Service Bus message.
-        // Throws PlanLimitExceededException when quota is exhausted — propagates to the endpoint
-        // which returns 403 via GlobalExceptionHandler.
-        await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
-
         // TOCTOU race: concurrent webhooks for the same story could both pass GetActiveRunAsync.
         // A unique constraint on (ProjectId, JiraIssueId, Status=Pending) in the TestRuns Cosmos container
         // would prevent duplicate documents — configure this in infra/modules/cosmos.bicep before relying on it.
@@ -189,4 +224,12 @@ public partial class JiraWebhookService : IJiraWebhookService
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Webhook filtered: issue type '{IssueType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
     private static partial void LogFiltered(ILogger logger, string issueType, string projectId, string eventType, string reason);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Plan limit exceeded for Jira issue {IssueKey} in project {ProjectId}: limit '{LimitName}'")]
+    private static partial void LogQuotaExceeded(ILogger logger, string issueKey, string projectId, string limitName);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Failed to post quota comment on Jira issue {IssueKey} in project {ProjectId}")]
+    private static partial void LogQuotaCommentPostFailed(ILogger logger, string issueKey, string projectId);
 }

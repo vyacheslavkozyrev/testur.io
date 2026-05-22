@@ -20,12 +20,13 @@ public interface ITestRunRepository
 
     /// <summary>
     /// Returns the count of <see cref="TestRun"/> documents for <paramref name="userId"/>
-    /// whose <c>createdAt</c> falls within [<paramref name="monthStart"/>, <paramref name="nextMonthStart"/>).
-    /// This is a cross-partition query used by plan enforcement to count the user's monthly run usage.
+    /// whose <c>createdAt</c> falls within [<paramref name="periodStart"/>, <paramref name="periodEnd"/>).
+    /// Used by plan enforcement for both calendar-month quota (paid plans) and 14-day trial-period
+    /// quota (trialing users). Cross-partition fan-out — only called on the webhook/trigger path.
     /// </summary>
     Task<int> CountByUserForMonthAsync(
         string userId,
-        DateTimeOffset monthStart,
-        DateTimeOffset nextMonthStart,
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd,
         CancellationToken cancellationToken = default);
 }

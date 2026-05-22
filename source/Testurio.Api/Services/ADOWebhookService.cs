@@ -20,6 +20,8 @@ public partial class ADOWebhookService : IADOWebhookService
     private readonly ITestRunJobSender _jobSender;
     private readonly IWorkItemTypeFilterService _filterService;
     private readonly IPlanEnforcementService _planEnforcementService;
+    private readonly IADOClient _adoClient;
+    private readonly ISecretResolver _secretResolver;
     private readonly ILogger<ADOWebhookService> _logger;
 
     public ADOWebhookService(
@@ -28,6 +30,8 @@ public partial class ADOWebhookService : IADOWebhookService
         ITestRunJobSender jobSender,
         IWorkItemTypeFilterService filterService,
         IPlanEnforcementService planEnforcementService,
+        IADOClient adoClient,
+        ISecretResolver secretResolver,
         ILogger<ADOWebhookService> logger)
     {
         _testRunRepository = testRunRepository;
@@ -35,6 +39,8 @@ public partial class ADOWebhookService : IADOWebhookService
         _jobSender = jobSender;
         _filterService = filterService;
         _planEnforcementService = planEnforcementService;
+        _adoClient = adoClient;
+        _secretResolver = secretResolver;
         _logger = logger;
     }
 
@@ -63,10 +69,9 @@ public partial class ADOWebhookService : IADOWebhookService
 
         var workItemId = payload.Resource.WorkItemId.ToString();
 
-        // AC-015/AC-016: check monthly run quota before creating TestRun or Service Bus message.
-        // Throws PlanLimitExceededException when quota is exhausted — propagates to the endpoint
-        // which returns 403 via GlobalExceptionHandler.
-        await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+        var quotaResult = await CheckQuotaAsync(project, workItemId, cancellationToken);
+        if (quotaResult is not null)
+            return quotaResult.Value;
 
         var activeRun = await _testRunRepository.GetActiveRunAsync(project.Id, cancellationToken);
         if (activeRun is not null)
@@ -117,6 +122,45 @@ public partial class ADOWebhookService : IADOWebhookService
         return WebhookProcessResult.Enqueued;
     }
 
+    private async Task<WebhookProcessResult?> CheckQuotaAsync(
+        Project project,
+        string workItemId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _planEnforcementService.CheckMonthlyRunQuotaAsync(project.UserId, cancellationToken);
+            return null;
+        }
+        catch (PlanLimitExceededException ex)
+        {
+            await PostQuotaCommentAsync(project, workItemId, ex.Message, cancellationToken);
+            LogQuotaExceeded(_logger, workItemId, project.Id, ex.LimitName);
+            return WebhookProcessResult.QuotaExceeded;
+        }
+    }
+
+    private async Task PostQuotaCommentAsync(
+        Project project,
+        string workItemId,
+        string message,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(project.AdoOrgUrl) ||
+            string.IsNullOrEmpty(project.AdoProjectName) ||
+            string.IsNullOrEmpty(project.AdoTokenSecretUri))
+            return;
+
+        if (!int.TryParse(workItemId, out var workItemIdInt))
+            return;
+
+        var token = await _secretResolver.ResolveAsync(project.AdoTokenSecretUri, cancellationToken);
+        var result = await _adoClient.PostCommentAsync(
+            project.AdoOrgUrl, project.AdoProjectName, workItemIdInt, token, message, cancellationToken);
+        if (result is null)
+            LogQuotaCommentPostFailed(_logger, workItemId, project.Id);
+    }
+
     [LoggerMessage(Level = LogLevel.Information,
         Message = "ADO webhook filtered: work item type '{WorkItemType}' is not in the allowed list for project {ProjectId}; {EventType} {Reason}")]
     private static partial void LogFiltered(ILogger logger, string workItemType, string projectId, string eventType, string reason);
@@ -129,4 +173,12 @@ public partial class ADOWebhookService : IADOWebhookService
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Enqueued test run {TestRunId} for ADO work item {WorkItemId} in project {ProjectId}")]
     private static partial void LogEnqueued(ILogger logger, string workItemId, string projectId, string testRunId);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Plan limit exceeded for ADO work item {WorkItemId} in project {ProjectId}: limit '{LimitName}'")]
+    private static partial void LogQuotaExceeded(ILogger logger, string workItemId, string projectId, string limitName);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Failed to post quota comment on ADO work item {WorkItemId} in project {ProjectId}")]
+    private static partial void LogQuotaCommentPostFailed(ILogger logger, string workItemId, string projectId);
 }

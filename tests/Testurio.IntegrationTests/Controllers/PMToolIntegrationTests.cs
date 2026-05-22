@@ -357,6 +357,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
                     ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
                     ["PMTool:ApiBaseUrl"] = "https://api.testur.io"

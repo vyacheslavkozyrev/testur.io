@@ -21,6 +21,8 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
 
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+
 // JiraCommentResult is defined in Testurio.Core.Interfaces â€” used for mock setup.
 
 namespace Testurio.IntegrationTests.Controllers;
@@ -176,8 +178,11 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
 
     // ─── Plan quota enforcement (feature 0046 / T035) ─────────────────────────
 
+    // Webhook contract: when quota is exhausted the controller returns 200 OK (not 403) so the
+    // PM tool (Jira / ADO) does not retry the delivery. The quota-exceeded comment is posted
+    // directly to the Jira issue by JiraWebhookService before returning QuotaExceeded.
     [Fact]
-    public async Task PostWebhook_Returns403_WithProblemDetails_WhenMonthlyQuotaExhausted()
+    public async Task PostWebhook_Returns200_AndDoesNotCreateTestRun_WhenMonthlyQuotaExhausted()
     {
         _factory.ProjectRepoMock
             .Setup(r => r.GetByProjectIdAsync("proj1", It.IsAny<CancellationToken>()))
@@ -193,19 +198,20 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload());
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-
-        var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-        var body = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>(jsonOptions);
-        Assert.Equal("Plan limit reached", body.GetProperty("title").GetString());
-        // ASP.NET Core serializes ProblemDetails.Extensions at the root level.
-        Assert.Equal("maxTestRunsPerMonth", body.GetProperty("limitName").GetString());
-        Assert.Equal("Test Pro", body.GetProperty("requiredPlan").GetString());
+        // 200 OK — webhook contract prevents PM tool retry storms.
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         // No TestRun document should be created when quota is exhausted.
         _factory.TestRunRepoMock.Verify(
             r => r.CreateAsync(It.IsAny<TestRun>(), It.IsAny<CancellationToken>()),
             Times.Never);
+
+        // Quota-exceeded comment was posted to the Jira issue.
+        _factory.JiraApiClientMock.Verify(
+            c => c.PostCommentAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     public class ApiFactory : WebApplicationFactory<Program>
@@ -237,6 +243,14 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             _planEnforcement
                 .Setup(e => e.CheckMonthlyRunQuotaAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            // Default: Jira comment post succeeds — prevents NullReferenceException in
+            // PostQuotaCommentAsync when JiraCommentResult is not set up by individual tests.
+            _jiraApiClient
+                .Setup(c => c.PostCommentAsync(
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(JiraCommentResult.Success());
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -252,6 +266,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                     ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });

@@ -183,6 +183,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
                     ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
                     ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
+                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id"
                 });

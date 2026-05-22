@@ -23,12 +23,15 @@ public interface IStatsRepository
     /// <summary>
     /// Returns the quota usage for <paramref name="userId"/> for the current calendar day (UTC).
     /// <para>
-    /// <c>DailyLimit</c> is 0 when the user has no active subscription plan.
+    /// <paramref name="dailyLimit"/> is resolved by the caller (<c>DashboardService</c>) via
+    /// <c>IQuotaPolicy</c> so the repository does not need to know about subscription plans.
+    /// Pass <c>0</c> when the user has no active subscription.
     /// <c>ResetsAt</c> is always the next midnight UTC relative to when the request is processed.
     /// </para>
     /// </summary>
     Task<QuotaUsage> GetQuotaUsageAsync(
         string userId,
+        int dailyLimit,
         CancellationToken cancellationToken = default);
 
     /// <summary>
