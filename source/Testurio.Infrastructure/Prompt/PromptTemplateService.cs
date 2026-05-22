@@ -34,12 +34,10 @@ public sealed partial class PromptTemplateService : IPromptTemplateService
     /// <inheritdoc />
     public async Task<string> GetActiveBodyAsync(string stage, CancellationToken cancellationToken = default)
     {
-        // We do NOT use GetOrCreateAsync here because we must not cache error states.
-        // Instead, check the cache manually, then fall through to the repository only on miss.
-        // HybridCache does not expose a TryGet API; we use a wrapper approach:
-        // attempt to retrieve the body, and if we get a cache hit the factory won't run.
-        // On a cache miss the factory runs and either returns the body or throws — if it throws,
-        // HybridCache will NOT store the result (the entry is never written on exception).
+        // Use GetOrCreateAsync with a factory that throws on missing/inactive templates.
+        // When the factory throws, HybridCache does not write a cache entry — so subsequent
+        // calls after the document is corrected in Cosmos will re-invoke the factory and
+        // retrieve the live document. This satisfies AC-019 (no caching of error state).
 
         var cacheKey = $"prompt-template:{stage}";
 

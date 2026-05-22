@@ -19,9 +19,9 @@ public sealed record PromptTemplateDto(
 public sealed class UpdatePromptTemplateRequest
 {
     /// <summary>
-    /// The new prompt body text. Must be non-empty.
+    /// The new prompt body text. Must be a non-empty, non-whitespace string.
+    /// Whitespace-only values are rejected by the endpoint handler.
     /// </summary>
     [Required]
-    [MinLength(1)]
     public required string Body { get; init; }
 }

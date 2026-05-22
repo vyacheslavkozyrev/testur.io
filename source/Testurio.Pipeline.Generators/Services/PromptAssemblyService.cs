@@ -4,7 +4,7 @@ using Testurio.Core.Models;
 namespace Testurio.Pipeline.Generators.Services;
 
 /// <summary>
-/// Assembles the full Claude user-turn prompt for a generator agent from five ordered context layers.
+/// Assembles the full Claude user-turn prompt for a generator agent from four ordered context layers.
 /// The system prompt is supplied separately by the caller via <see cref="GeneratorContext.SystemPrompt"/>
 /// (resolved from Cosmos by <c>IPromptTemplateService</c>) and passed to the Claude API's
 /// <c>system</c> field independently.
@@ -12,14 +12,15 @@ namespace Testurio.Pipeline.Generators.Services;
 /// logged, persisted, or included in any error response.
 /// </summary>
 /// <remarks>
-/// Layer order (user-turn):
+/// User-turn layer order:
 /// <list type="number">
 ///   <item>Few-shot memory examples — from <see cref="MemoryRetrievalResult.Scenarios"/> (omitted when empty)</item>
 ///   <item>Project custom prompt — from <c>Project.CustomPrompt</c> (omitted when null/empty)</item>
 ///   <item>Testing strategy — from <c>Project.TestingStrategy</c></item>
 ///   <item>Parsed story — full text of title, description, AC, entities, actions, edge cases</item>
-///   <item>System prompt is passed to the Claude API's <c>system</c> field via <see cref="GeneratorContext.SystemPrompt"/></item>
 /// </list>
+/// The system prompt (<see cref="GeneratorContext.SystemPrompt"/>) is passed to the Claude API's
+/// <c>system</c> field by the caller and is not part of the user-turn prompt.
 /// </remarks>
 public sealed class PromptAssemblyService
 {
