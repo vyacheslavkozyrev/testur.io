@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.8.0
+version: 1.9.0
 status: draft
-updated: 2026-05-20
+updated: 2026-05-22
 tags: [features, business, product]
 ---
 
@@ -242,6 +242,12 @@ The plan document is restructured to carry two typed enforcement sections alongs
 ---
 
 ## Post-MVP — Configuration & Integration
+
+**[0047]: Cosmos-Backed Prompt Template Management** `Post-MVP`
+_Business Outcome: Lets the team tune, fix, or extend any pipeline LLM prompt without a code deployment, reducing the iteration cycle from hours to seconds._
+All system prompts used across pipeline stages — StoryParser, AgentRouter, ApiTestGeneratorAgent, UiE2eTestGeneratorAgent, and ReportWriter — are moved from hardcoded strings in source code to documents stored in a dedicated `PromptTemplates` Cosmos DB container. Each document carries a `stage` key (e.g. `story_parser`, `api_generator`), a `version` integer, a `body` field containing the full prompt text, an `isActive` boolean, and standard `createdAt` / `updatedAt` timestamps. At pipeline startup each stage resolves its prompt by querying the container for the single active document matching its key; the result is cached in `IHybridCache` with a five-minute TTL so repeated runs avoid redundant Cosmos reads. If no active template is found, the pipeline throws a startup exception so misconfiguration is caught immediately rather than silently falling back to stale code. An optional admin-only API endpoint (`GET/PUT /v1/admin/prompt-templates/{stage}`) allows authorised operators to read and replace the active prompt body and increment the version without touching source code.
+
+---
 
 **[0019]: Trigger Notification Method Configuration** `Post-MVP`
 _Business Outcome: Lets QA leads choose the integration approach that fits their infrastructure without involving a developer._
