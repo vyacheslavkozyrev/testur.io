@@ -39,7 +39,7 @@ jobs:
         run: npm ci
 
       - name: Cache node_modules
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 v4.2.3
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ${{ env.WORKING_DIR }}/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
@@ -120,7 +120,7 @@ jobs:
 
       - name: Restore node_modules
         id: cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 v4.2.3
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: ${{ env.WORKING_DIR }}/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
