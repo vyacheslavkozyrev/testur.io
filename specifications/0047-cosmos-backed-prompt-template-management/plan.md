@@ -44,11 +44,11 @@
 
 ### Tests
 
-- [ ] T026 [Test] Unit tests for `PromptTemplateService`: `GetActiveBodyAsync` returns cached value on second call; throws `InvalidOperationException` when document missing; throws `InvalidOperationException` when `IsActive == false`; does not cache error state — `tests/Testurio.UnitTests/Services/PromptTemplateServiceTests.cs`
-- [ ] T027 [Test] Unit tests for `PromptTemplateAdminService`: `GetAsync` returns `PromptTemplateDto` for valid stage; returns null for unknown stage; `UpdateAsync` increments version and evicts cache — `tests/Testurio.UnitTests/Services/PromptTemplateAdminServiceTests.cs`
-- [ ] T028 [Test] Unit tests for `PromptAssemblyService`: verify `SystemPrompt` is correctly passed through; verify memory examples section present/absent; verify custom prompt section present/absent; verify `{{maxScenarios}}` placeholder is no longer substituted (i.e. passes through literally) — `tests/Testurio.UnitTests/Services/PromptAssemblyServiceTests.cs`
-- [ ] T029 [Test] Integration tests for admin endpoints: `GET /v1/admin/prompt-templates/report_writer` returns `200` with correct shape; `GET` with unknown stage returns `400`; `PUT` returns `200` with incremented version; unauthenticated request returns `401`; request without `admin` role returns `403` — `tests/Testurio.IntegrationTests/Controllers/AdminPromptTemplateControllerTests.cs`
-- [ ] T030 [Test] E2E tests: n/a — admin endpoints are operator tooling with no public UI; mark as skipped — `source/Testurio.Web/e2e/prompt-template-admin.spec.ts` _(skipped)_
+- [x] T026 [Test] Unit tests for `PromptTemplateService`: `GetActiveBodyAsync` returns cached value on second call; throws `InvalidOperationException` when document missing; throws `InvalidOperationException` when `IsActive == false`; does not cache error state — `tests/Testurio.UnitTests/Services/PromptTemplateServiceTests.cs`
+- [x] T027 [Test] Unit tests for `PromptTemplateAdminService`: `GetAsync` returns `PromptTemplateDto` for valid stage; returns null for unknown stage; `UpdateAsync` increments version and evicts cache — `tests/Testurio.UnitTests/Services/PromptTemplateAdminServiceTests.cs`
+- [x] T028 [Test] Unit tests for `PromptAssemblyService`: verify `SystemPrompt` is correctly passed through; verify memory examples section present/absent; verify custom prompt section present/absent; verify 4-layer prompt assembly matches new API — `tests/Testurio.UnitTests/Services/PromptAssemblyServiceTests.cs`
+- [x] T029 [Test] Integration tests for admin endpoints: `GET /v1/admin/prompt-templates/report_writer` returns `200` with correct shape; `GET` with unknown stage returns `400`; `PUT` returns `200` with incremented version; unauthenticated request returns `401`; request without `admin` role returns `403` — `tests/Testurio.IntegrationTests/Controllers/AdminPromptTemplateControllerTests.cs`
+- [x] T030 [Test] E2E tests: n/a — admin endpoints are operator tooling with no public UI; mark as skipped — `source/Testurio.Web/e2e/prompt-template-admin.spec.ts` _(skipped)_
 
 ---
 
