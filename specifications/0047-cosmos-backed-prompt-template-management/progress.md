@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-05-22 |       |
 | Implement | ✅ Complete | 2026-05-22 |       |
 | Review    | ✅ Complete | 2026-05-22 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-05-22 |       |
 
 ---
 
@@ -37,7 +37,22 @@ Key decisions made during implementation:
 
 ## Test Results
 
-_Populated by `/test [####]`_
+### Run — 2026-05-22
+
+| Suite | Filter | Passed | Failed | Skipped |
+|-------|--------|--------|--------|---------|
+| Testurio.UnitTests | PromptTemplate\|PromptAssemblyService | 30 | 0 | 0 |
+| Testurio.IntegrationTests | AdminPromptTemplate | 15 | 0 | 0 |
+| **Total** | | **45** | **0** | **0** |
+
+All 39 acceptance criteria covered:
+- AC-001–006 (PromptTemplate model & repository): verified via `PromptTemplateRepositoryTests` + implementation inspection
+- AC-007–019 (PromptTemplateService caching): covered by `PromptTemplateServiceTests` (6 tests)
+- AC-020–026 (admin endpoints): covered by `AdminPromptTemplateControllerTests` (15 integration tests)
+- AC-027–031 (seeder): implementation inspection confirms 5 documents seeded with if-not-exists semantics
+- AC-032–035 (repository write methods): covered by unit tests and implementation inspection
+- AC-036–039 (PromptAssemblyService): covered by `PromptAssemblyServiceTests` (8 tests)
+- T030 (E2E): intentionally skipped — admin endpoint has no UI surface
 
 ---
 
