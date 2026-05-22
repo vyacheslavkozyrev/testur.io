@@ -30,7 +30,7 @@ jobs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6
 
       # Strip component prefix from tag to get bare semver: testurio-web@1.3.0 → 1.3.0
       - name: Extract version from tag
@@ -108,7 +108,7 @@ jobs:
       security-events: write  # upload SARIF to GitHub Security tab
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6
 
       # Install Trivy separately with caching — pinned version avoids supply chain risk
       # DO NOT use trivy-action@master — subject to supply chain attack (March 2026)
@@ -205,7 +205,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6
 
   #     # Pin Helm version — enables GitHub tool cache reuse across runs
   #     - name: Install Helm
@@ -258,7 +258,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout GitOps repo
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd   # v6
   #       with:
   #         repository: <org>/<gitops-repo>        # <-- replace with GitOps repo
   #         token: ${{ secrets.GITOPS_TOKEN }}      # fine-grained PAT: contents:write, pull-requests:write on GitOps repo
