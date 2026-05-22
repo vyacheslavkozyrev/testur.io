@@ -1,51 +1,62 @@
 namespace Testurio.Core.Models;
 
 /// <summary>
-/// A generator prompt template stored in the <c>PromptTemplates</c> Cosmos DB container.
-/// Loaded once per pipeline run (stage 4) via <c>IPromptTemplateRepository</c> before
-/// constructing <c>GeneratorContext</c> instances.
+/// A prompt template document stored in the <c>PromptTemplates</c> Cosmos DB container.
+/// Covers all pipeline stages (StoryParser, AgentRouter, ApiTestGenerator, UiE2eTestGenerator, ReportWriter).
 /// <para>
-/// The <see cref="Id"/> field matches <see cref="TemplateType"/> (e.g. <c>"api_test_generator"</c>),
+/// The <see cref="Id"/> field matches <see cref="Stage"/> (e.g. <c>"story_parser"</c>),
 /// so a point-read by <c>id</c> is sufficient to retrieve the correct document.
+/// The <see cref="TemplateType"/> field is an alias for <see cref="Stage"/> kept for
+/// Cosmos partition key path (<c>/templateType</c>) backward compatibility.
 /// </para>
 /// </summary>
 public sealed record PromptTemplate
 {
     /// <summary>
-    /// Cosmos document identifier — same value as <see cref="TemplateType"/>.
-    /// E.g. <c>"api_test_generator"</c> or <c>"ui_e2e_test_generator"</c>.
+    /// Cosmos document identifier — same value as <see cref="Stage"/>.
+    /// E.g. <c>"story_parser"</c> or <c>"api_test_generator"</c>.
     /// </summary>
     public required string Id { get; init; }
 
     /// <summary>
-    /// Identifies which generator this template belongs to.
-    /// Valid MVP values: <c>"api_test_generator"</c>, <c>"ui_e2e_test_generator"</c>.
+    /// The pipeline stage this template belongs to.
+    /// Valid MVP values: <c>"story_parser"</c>, <c>"agent_router"</c>,
+    /// <c>"api_test_generator"</c>, <c>"ui_e2e_test_generator"</c>, <c>"report_writer"</c>.
+    /// Doubles as the Cosmos document <c>id</c> so a single point-read suffices.
+    /// </summary>
+    public required string Stage { get; init; }
+
+    /// <summary>
+    /// Alias for <see cref="Stage"/> kept for Cosmos partition key path (<c>/templateType</c>)
+    /// backward compatibility. Always equal to <see cref="Stage"/>.
     /// </summary>
     public required string TemplateType { get; init; }
 
     /// <summary>
-    /// Semantic version of this template document, e.g. <c>"1.0.0"</c>.
-    /// Incremented when the prompt content is updated.
+    /// Monotonically incrementing version number. Starts at <c>1</c> on the seed document.
+    /// Incremented by 1 on each admin PUT.
     /// </summary>
-    public required string Version { get; init; }
+    public required int Version { get; init; }
 
     /// <summary>
-    /// System-level instructions sent as the <c>system</c> field in the Claude API request.
-    /// Establishes the agent persona and global behaviour constraints.
+    /// The full prompt text for this pipeline stage. Passed as the system prompt to the Claude API.
+    /// Contains the complete instruction set previously hardcoded in the corresponding stage class.
     /// </summary>
-    public required string SystemPrompt { get; init; }
+    public required string Body { get; init; }
 
     /// <summary>
-    /// User-turn instruction appended last in the assembled prompt.
-    /// May contain the <c>{{maxScenarios}}</c> placeholder, which is substituted with
-    /// <see cref="MaxScenarios"/> before the prompt is sent to Claude.
+    /// Whether this template is active. The pipeline will not use a template with <c>IsActive == false</c>.
     /// </summary>
-    public required string GeneratorInstruction { get; init; }
+    public required bool IsActive { get; init; }
 
     /// <summary>
-    /// Maximum number of scenarios the generator is allowed to produce.
-    /// Substituted into <see cref="GeneratorInstruction"/> at <c>{{maxScenarios}}</c>.
-    /// Seeded values: 10 for <c>api_test_generator</c>, 5 for <c>ui_e2e_test_generator</c>.
+    /// UTC timestamp when this document was first created (seed run or initial insert).
     /// </summary>
-    public required int MaxScenarios { get; init; }
+    public required DateTimeOffset CreatedAt { get; init; }
+
+    /// <summary>
+    /// UTC timestamp of the most recent update to this document.
+    /// Set to the seed run timestamp on creation; updated on each admin PUT.
+    /// </summary>
+    public required DateTimeOffset UpdatedAt { get; init; }
 }

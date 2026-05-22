@@ -4,9 +4,9 @@
 
 ### Domain layer
 
-- [ ] T001 [Domain] Rewrite `PromptTemplate` record: replace `SystemPrompt` (string), `GeneratorInstruction` (string), `MaxScenarios` (int), and `Version` (string) fields with a unified `Body` (string) field plus `Stage` (string), `Version` (int), `IsActive` (bool), `CreatedAt` (DateTimeOffset), `UpdatedAt` (DateTimeOffset); retain `Id` and `TemplateType` (kept as alias for `Stage` for Cosmos partition key compatibility) — `source/Testurio.Core/Models/PromptTemplate.cs`
-- [ ] T002 [Domain] Remove `PromptTemplate` reference from `GeneratorContext`: replace the `PromptTemplate PromptTemplate` property with a `string SystemPrompt` property (the resolved `Body` string); update the XML doc comment — `source/Testurio.Core/Models/GeneratorContext.cs`
-- [ ] T003 [Domain] Extend `IPromptTemplateRepository`: add `UpdateAsync(PromptTemplate template, CancellationToken ct) → Task` and `GetAllAsync(CancellationToken ct) → Task<IReadOnlyList<PromptTemplate>>` methods alongside the existing `GetAsync` — `source/Testurio.Core/Interfaces/IPromptTemplateRepository.cs`
+- [x] T001 [Domain] Rewrite `PromptTemplate` record: replace `SystemPrompt` (string), `GeneratorInstruction` (string), `MaxScenarios` (int), and `Version` (string) fields with a unified `Body` (string) field plus `Stage` (string), `Version` (int), `IsActive` (bool), `CreatedAt` (DateTimeOffset), `UpdatedAt` (DateTimeOffset); retain `Id` and `TemplateType` (kept as alias for `Stage` for Cosmos partition key compatibility) — `source/Testurio.Core/Models/PromptTemplate.cs`
+- [x] T002 [Domain] Remove `PromptTemplate` reference from `GeneratorContext`: replace the `PromptTemplate PromptTemplate` property with a `string SystemPrompt` property (the resolved `Body` string); update the XML doc comment — `source/Testurio.Core/Models/GeneratorContext.cs`
+- [x] T003 [Domain] Extend `IPromptTemplateRepository`: add `UpdateAsync(PromptTemplate template, CancellationToken ct) → Task` and `GetAllAsync(CancellationToken ct) → Task<IReadOnlyList<PromptTemplate>>` methods alongside the existing `GetAsync` — `source/Testurio.Core/Interfaces/IPromptTemplateRepository.cs`
 
 ### Infrastructure layer
 

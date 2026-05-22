@@ -28,10 +28,11 @@ public sealed record GeneratorContext
     public required Project ProjectConfig { get; init; }
 
     /// <summary>
-    /// The prompt template for this agent type, loaded from the <c>PromptTemplates</c> Cosmos container.
-    /// Provides the system prompt, generator instruction, and max scenario count.
+    /// The resolved prompt body for this agent type, loaded from the <c>PromptTemplates</c> Cosmos container
+    /// via <c>IPromptTemplateService.GetActiveBodyAsync</c> before constructing this context.
+    /// Passed directly as the system prompt to the Claude API by the generator agent.
     /// </summary>
-    public required PromptTemplate PromptTemplate { get; init; }
+    public required string SystemPrompt { get; init; }
 
     /// <summary>
     /// Unique identifier of the current pipeline run.
