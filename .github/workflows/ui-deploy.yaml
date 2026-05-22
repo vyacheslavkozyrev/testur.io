@@ -103,6 +103,8 @@ jobs:
     name: Scan Image for Vulnerabilities
     needs: build-and-push
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ needs.build-and-push.outputs.digest }}
     permissions:
       contents: read
       packages: read          # pull image from GHCR for scanning
@@ -188,12 +190,12 @@ jobs:
       - name: Sign image
         run: |
           cosign sign --yes \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0.24.0
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
           upload-artifact: false  # we attach via cosign, not as a workflow artifact
@@ -203,7 +205,7 @@ jobs:
           cosign attest --yes \
             --predicate sbom.spdx.json \
             --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
   
   # package-chart:
   #   name: Package & Push Helm Chart
