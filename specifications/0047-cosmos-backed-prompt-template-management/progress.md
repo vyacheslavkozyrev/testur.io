@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-05-22 |       |
 | Plan      | ✅ Complete | 2026-05-22 |       |
 | Implement | ✅ Complete | 2026-05-22 |       |
-| Review    | ⏳ Pending  |            |       |
+| Review    | ✅ Complete | 2026-05-22 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -24,9 +24,14 @@ Key decisions made during implementation:
 
 ---
 
-## Review
+## Review — 2026-05-22
 
-_Populated by `/review [####]`_
+### Warnings fixed
+- `source/Testurio.Pipeline.Generators/Services/PromptAssemblyService.cs:7` — class-level doc said "five ordered context layers" but only four user-turn layers exist; item 5 in the `<remarks>` list was a note about system prompt handling, not a layer; corrected count to "four" and moved the system-prompt note outside the numbered list
+- `source/Testurio.Infrastructure/Prompt/PromptTemplateService.cs:37` — self-contradictory inline comment said "We do NOT use GetOrCreateAsync here" immediately before the `GetOrCreateAsync` call; replaced with accurate explanation of error-state non-caching behaviour
+- `source/Testurio.Api/DTOs/PromptTemplateDtos.cs:25` — `[MinLength(1)]` on `UpdatePromptTemplateRequest.Body` only rejects empty strings but passes whitespace-only values, creating an inconsistency with the `IsNullOrWhiteSpace` check in the endpoint handler; removed `[MinLength(1)]` so all validation is handled by the single handler check
+
+### Status: Complete
 
 ---
 
