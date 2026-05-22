@@ -14,6 +14,7 @@ using Testurio.Infrastructure.Embedding;
 using Testurio.Infrastructure.Enforcement;
 using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.Options;
+using Testurio.Infrastructure.Prompt;
 using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
@@ -196,13 +197,18 @@ public static class DependencyInjection
             return new StatsRepository(cosmos, opts.CosmosDatabaseName, subscriptionRepo, planRepo);
         });
 
-        // Feature 0028: prompt template repository for generator agents (stage 4).
+        // Feature 0028 (extended in 0047): prompt template repository for all pipeline stages.
         services.AddSingleton<IPromptTemplateRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PromptTemplateRepository(cosmos, opts.CosmosDatabaseName);
         });
+
+        // Feature 0047: caching wrapper around IPromptTemplateRepository.
+        // Registered as Singleton — HybridCache is thread-safe and the repository is also Singleton.
+        services.AddHybridCache();
+        services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
 
         // Feature 0030: test result repository for ReportWriter (stage 6).
         services.AddSingleton<ITestResultRepository>(sp =>
