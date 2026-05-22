@@ -105,60 +105,53 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read          # pull image from GHCR for scanning
       security-events: write  # upload SARIF to GitHub Security tab
     steps:
-      - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      # Install Trivy separately with caching — pinned version avoids supply chain risk
-      # DO NOT use trivy-action@master — subject to supply chain attack (March 2026)
       - name: Setup Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
         with:
           cache: true
           version: v0.70.0
 
-      # Build image locally for scanning — Buildx doesn't load to Docker daemon by default
-      # Reuses registry layer cache so this is fast (no re-download of layers)
-      - name: Build image locally for scanning
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+      - name: Log in to GHCR
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
-          context: ${{ env.WORKING_DIR }}
-          file: ${{ env.WORKING_DIR }}/Dockerfile.ci
-          load: true   # loads into local Docker daemon, not pushed
-          tags: scan-target:latest
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Scan local image — no remote pull needed, no MANIFEST_UNKNOWN errors
+      # Scan the already-pushed image directly by digest — immutable reference
+      # No rebuild needed — same image that was built and pushed in build-and-push job
       - name: Scan image for vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: scan-target:latest
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
           format: sarif
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
-          ignore-unfixed: true   # ignore CVEs with no fix available
-          skip-setup-trivy: true # already installed above
+          ignore-unfixed: true
+          skip-setup-trivy: true
 
-      # Upload to GitHub Security tab — visible under Security → Code scanning alerts
+      # Upload always — results visible in Security tab even if scan fails the build
       - name: Upload scan results to GitHub Security
         uses: github/codeql-action/upload-sarif@f52b05f4acaaa234e44466e66d29050e135ea9ef # v4.36.0
-        if: always()  # upload even if scan found vulnerabilities
+        if: always()
         with:
           sarif_file: trivy-results.sarif
 
-      # Separate step that actually fails the build — after upload so results are always visible
-      - name: Fail on vulnerabilities
+      # Separate failing step — after upload so results are always visible
+      - name: Fail build on HIGH/CRITICAL vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: scan-target:latest
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: 1
           skip-setup-trivy: true
-
+          
   sign-and-sbom:
     name: Sign Image & Generate SBOM
     needs: scan   # only runs if scan passes
