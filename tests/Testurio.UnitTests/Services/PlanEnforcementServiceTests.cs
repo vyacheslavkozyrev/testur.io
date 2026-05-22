@@ -290,7 +290,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -330,7 +331,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -359,7 +361,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -393,7 +396,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -450,7 +454,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -475,7 +480,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,
@@ -504,7 +510,8 @@ public class PlanEnforcementServiceTests
             .Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserSubscription
             {
-                Id = "user-1", UserId = "user-1",
+                Id = "user-1",
+                UserId = "user-1",
                 Plan = SubscriptionPlan.TestJunior,
                 Status = SubscriptionStatus.Trialing,
                 TrialEndsAt = trialEndsAt,

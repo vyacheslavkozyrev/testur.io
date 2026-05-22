@@ -23,10 +23,10 @@ public sealed partial class QuotaPolicy : IQuotaPolicy
         switch (plan)
         {
             case SubscriptionPlan.TestJunior: return 10;
-            case SubscriptionPlan.TestPro:   return 30;
-            case SubscriptionPlan.Team:      return 100;
-            case SubscriptionPlan.Centurio:  return 500;
-            case null:                       return 0;
+            case SubscriptionPlan.TestPro: return 30;
+            case SubscriptionPlan.Team: return 100;
+            case SubscriptionPlan.Centurio: return 500;
+            case null: return 0;
             default:
                 LogUnrecognisedPlan(_logger, plan.Value);
                 return 0;
