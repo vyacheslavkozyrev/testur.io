@@ -57,7 +57,10 @@ else
             jwtOpts.Audience = b2cOpts.Value.ClientId;
         });
 }
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(opts =>
+{
+    opts.AddPolicy("admin", policy => policy.RequireRole("admin"));
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevPortal", policy =>
@@ -96,6 +99,9 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProjectHistoryService, ProjectHistoryService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
+
+// Feature 0047: admin service for prompt template management.
+builder.Services.AddScoped<IPromptTemplateAdminService, PromptTemplateAdminService>();
 
 builder.Services.AddOptions<AppOptions>()
     .BindConfiguration("App")
@@ -197,6 +203,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 var v1 = app.MapGroup("/v1").RequireAuthorization();
+
+// Feature 0047: admin prompt template management endpoints.
+// Require the "admin" role policy so only authorised operators can access them.
+var adminGroup = v1.MapGroup("/admin").RequireAuthorization("admin");
+app.MapAdminPromptTemplateEndpoints(adminGroup);
 
 v1.MapPlanEndpoints();
 v1.MapAccountEndpoints();

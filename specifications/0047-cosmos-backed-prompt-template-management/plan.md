@@ -37,10 +37,10 @@
 
 ### API layer — Admin endpoints
 
-- [ ] T022 [App] Create `PromptTemplateDto` and `UpdatePromptTemplateRequest` DTOs — `source/Testurio.Api/DTOs/PromptTemplateDtos.cs`
-- [ ] T023 [API] Create `AdminPromptTemplateEndpoints`: map `GET /v1/admin/prompt-templates/{stage}` (returns `PromptTemplateDto` or `404`; validates `stage` against the five known keys); map `PUT /v1/admin/prompt-templates/{stage}` (validates body, calls service, evicts cache, returns updated `PromptTemplateDto`); both endpoints require `admin` role policy — `source/Testurio.Api/Endpoints/AdminPromptTemplateEndpoints.cs`
-- [ ] T024 [App] Create `IPromptTemplateAdminService` and `PromptTemplateAdminService`: `GetAsync(stage, ct)` reads via `IPromptTemplateRepository.GetAllAsync` and filters by stage; `UpdateAsync(stage, body, ct)` reads current document, increments `Version`, sets `Body`, `UpdatedAt`, `IsActive = true`, writes via `IPromptTemplateRepository.UpdateAsync`, then calls `IPromptTemplateService.EvictAsync` — `source/Testurio.Api/Services/PromptTemplateAdminService.cs`
-- [ ] T025 [API] Register `PromptTemplateAdminService` and map admin endpoint group in `Testurio.Api`; add `admin` role authorization policy if not already defined — `source/Testurio.Api/Program.cs` (or equivalent startup file)
+- [x] T022 [App] Create `PromptTemplateDto` and `UpdatePromptTemplateRequest` DTOs — `source/Testurio.Api/DTOs/PromptTemplateDtos.cs`
+- [x] T023 [API] Create `AdminPromptTemplateEndpoints`: map `GET /v1/admin/prompt-templates/{stage}` (returns `PromptTemplateDto` or `404`; validates `stage` against the five known keys); map `PUT /v1/admin/prompt-templates/{stage}` (validates body, calls service, evicts cache, returns updated `PromptTemplateDto`); both endpoints require `admin` role policy — `source/Testurio.Api/Endpoints/AdminPromptTemplateEndpoints.cs`
+- [x] T024 [App] Create `IPromptTemplateAdminService` and `PromptTemplateAdminService`: `GetAsync(stage, ct)` reads via `IPromptTemplateRepository.GetAllAsync` and filters by stage; `UpdateAsync(stage, body, ct)` reads current document, increments `Version`, sets `Body`, `UpdatedAt`, `IsActive = true`, writes via `IPromptTemplateRepository.UpdateAsync`, then calls `IPromptTemplateService.EvictAsync` — `source/Testurio.Api/Services/PromptTemplateAdminService.cs`
+- [x] T025 [API] Register `PromptTemplateAdminService` and map admin endpoint group in `Testurio.Api`; add `admin` role authorization policy if not already defined — `source/Testurio.Api/Program.cs` (or equivalent startup file)
 
 ### Tests
 
