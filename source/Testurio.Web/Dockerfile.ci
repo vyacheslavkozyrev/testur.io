@@ -7,7 +7,7 @@
 # Companion: Dockerfile (full multi-stage) for local development
 # ---------------------------------------------------------------
 
-FROM gcr.io/distroless/nodejs20-debian12:nonroot
+FROM gcr.io/distroless/nodejs24-debian13:nonroot
 
 WORKDIR /app
 
