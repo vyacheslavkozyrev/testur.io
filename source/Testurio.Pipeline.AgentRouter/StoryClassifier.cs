@@ -13,32 +13,14 @@ namespace Testurio.Pipeline.AgentRouter;
 /// Returns the suggested types and a brief rationale string.
 /// This class performs the Claude call and JSON parsing only; project-config filtering is done
 /// by the caller (<see cref="AgentRouterService"/>).
+/// <para>
+/// Feature 0047: the system prompt is loaded from the <c>PromptTemplates</c> Cosmos container via
+/// <see cref="IPromptTemplateService"/> at the start of each <see cref="ClassifyAsync"/> invocation,
+/// replacing the previous hardcoded <c>const string SystemPrompt</c>.
+/// </para>
 /// </summary>
 public sealed partial class StoryClassifier
 {
-    private const string SystemPrompt =
-        """
-        You are a test-type classification assistant for an automated software testing platform.
-
-        Given a parsed user story, determine which of the following test types are meaningful to test
-        the described functionality. Return ONLY a valid JSON object matching this exact schema
-        (no markdown, no explanation, no code fences):
-
-        {
-          "test_types": ["api", "ui_e2e"],
-          "reason": "<brief rationale — 1–3 sentences>"
-        }
-
-        Rules:
-        - "test_types" must be an array containing zero or more of the values "api" and "ui_e2e".
-        - Include "api" when the story describes backend behaviour, data operations, or HTTP endpoints.
-        - Include "ui_e2e" when the story describes user-facing interactions, navigation, or visual feedback.
-        - Include both when the story involves end-to-end flows that touch both API and UI.
-        - Use an empty array [] when the story describes infrastructure, configuration, or non-testable concerns.
-        - "reason" must be a non-empty string explaining the classification decision.
-        - Do NOT include any text outside the JSON object.
-        """;
-
     private static readonly JsonSerializerOptions JsonOptions;
 
     static StoryClassifier()
@@ -54,11 +36,16 @@ public sealed partial class StoryClassifier
     }
 
     private readonly ILlmGenerationClient _llmClient;
+    private readonly IPromptTemplateService _promptTemplateService;
     private readonly ILogger<StoryClassifier> _logger;
 
-    public StoryClassifier(ILlmGenerationClient llmClient, ILogger<StoryClassifier> logger)
+    public StoryClassifier(
+        ILlmGenerationClient llmClient,
+        IPromptTemplateService promptTemplateService,
+        ILogger<StoryClassifier> logger)
     {
         _llmClient = llmClient;
+        _promptTemplateService = promptTemplateService;
         _logger = logger;
     }
 
@@ -73,11 +60,13 @@ public sealed partial class StoryClassifier
         ParsedStory parsedStory,
         CancellationToken ct = default)
     {
+        var systemPrompt = await _promptTemplateService.GetActiveBodyAsync("agent_router", ct);
+
         var userMessage = BuildUserMessage(parsedStory);
 
         LogClassifying(_logger, parsedStory.Title);
 
-        string rawResponse = await _llmClient.CompleteAsync(SystemPrompt, userMessage, ct);
+        string rawResponse = await _llmClient.CompleteAsync(systemPrompt, userMessage, ct);
 
         return ParseClassificationResponse(rawResponse);
     }

@@ -16,25 +16,6 @@ namespace Testurio.Pipeline.ReportWriter;
 /// </summary>
 public sealed partial class ReportWriter : IReportWriter
 {
-    private const string SystemPrompt =
-        """
-        You are a QA analyst assistant. You will be given a test execution result and must produce a structured JSON report.
-        Return ONLY valid JSON — no markdown fences, no commentary.
-        The JSON must have exactly three top-level fields: "verdict", "recommendation", and "scenario_summaries".
-
-        Rules:
-        - "verdict": "PASSED" if every scenario passed, "FAILED" otherwise.
-        - "recommendation": one of exactly "approve", "request_fixes", or "flag_for_manual_review".
-          - "approve" when verdict is "PASSED" and no execution warnings.
-          - "request_fixes" when verdict is "FAILED" and all failures have clear assertion diffs or step errors (no infrastructure exceptions).
-          - "flag_for_manual_review" when verdict is "FAILED" and at least one failure is an infrastructure-level exception, or when execution warnings are present.
-        - "scenario_summaries": array of objects, one per executed scenario, in execution order.
-          Each object: { "scenario_id": string, "title": string, "passed": bool, "duration_ms": number, "error_summary": string|null }.
-          For failed API scenarios: error_summary lists assertion diffs as "Expected: <v> / Actual: <v>".
-          For failed UI E2E scenarios: error_summary lists the first step error message and step index.
-          error_summary is null when passed is true.
-        """;
-
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private readonly ILlmGenerationClient _llmClient;
@@ -42,6 +23,7 @@ public sealed partial class ReportWriter : IReportWriter
     private readonly IADOClient _adoClient;
     private readonly ISecretResolver _secretResolver;
     private readonly ITestResultRepository _testResultRepository;
+    private readonly IPromptTemplateService _promptTemplateService;
     private readonly ILogger<ReportWriter> _logger;
 
     public ReportWriter(
@@ -50,6 +32,7 @@ public sealed partial class ReportWriter : IReportWriter
         IADOClient adoClient,
         ISecretResolver secretResolver,
         ITestResultRepository testResultRepository,
+        IPromptTemplateService promptTemplateService,
         ILogger<ReportWriter> logger)
     {
         _llmClient = llmClient;
@@ -57,6 +40,7 @@ public sealed partial class ReportWriter : IReportWriter
         _adoClient = adoClient;
         _secretResolver = secretResolver;
         _testResultRepository = testResultRepository;
+        _promptTemplateService = promptTemplateService;
         _logger = logger;
     }
 
@@ -137,13 +121,15 @@ public sealed partial class ReportWriter : IReportWriter
         TestRun run,
         CancellationToken ct)
     {
+        var systemPrompt = await _promptTemplateService.GetActiveBodyAsync("report_writer", ct);
+
         var userMessage = BuildPrompt(story, execution, run);
 
         // First attempt.
         string rawResponse;
         try
         {
-            rawResponse = await _llmClient.CompleteAsync(SystemPrompt, userMessage, ct);
+            rawResponse = await _llmClient.CompleteAsync(systemPrompt, userMessage, ct);
         }
         catch (Exception ex)
         {
@@ -160,7 +146,7 @@ public sealed partial class ReportWriter : IReportWriter
         string retryResponse;
         try
         {
-            retryResponse = await _llmClient.CompleteAsync(SystemPrompt, userMessage, ct);
+            retryResponse = await _llmClient.CompleteAsync(systemPrompt, userMessage, ct);
         }
         catch (Exception ex)
         {

@@ -27,7 +27,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
     private readonly ReportDeliveryStep _reportDeliveryStep;
     private readonly IAgentRouter _agentRouter;
     private readonly IMemoryRetrievalService _memoryRetrievalService;
-    private readonly IPromptTemplateRepository _promptTemplateRepository;
+    private readonly IPromptTemplateService _promptTemplateService;
     private readonly ITestGeneratorFactory _testGeneratorFactory;
     private readonly IExecutorRouter _executorRouter;
     private readonly IReportWriter _reportWriter;
@@ -46,7 +46,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         ReportDeliveryStep reportDeliveryStep,
         IAgentRouter agentRouter,
         IMemoryRetrievalService memoryRetrievalService,
-        IPromptTemplateRepository promptTemplateRepository,
+        IPromptTemplateService promptTemplateService,
         ITestGeneratorFactory testGeneratorFactory,
         IExecutorRouter executorRouter,
         IReportWriter reportWriter,
@@ -67,7 +67,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         _reportDeliveryStep = reportDeliveryStep;
         _agentRouter = agentRouter;
         _memoryRetrievalService = memoryRetrievalService;
-        _promptTemplateRepository = promptTemplateRepository;
+        _promptTemplateService = promptTemplateService;
         _testGeneratorFactory = testGeneratorFactory;
         _executorRouter = executorRouter;
         _reportWriter = reportWriter;
@@ -332,15 +332,16 @@ public partial class TestRunJobProcessor : IAsyncDisposable
         TestType[] resolvedTestTypes,
         CancellationToken cancellationToken)
     {
-        // AC-003 / AC-005: load templates for all resolved types. Throws InvalidOperationException
-        // on missing template; this propagates to OnMessageAsync and dead-letters the message.
-        var templateMap = new Dictionary<TestType, PromptTemplate>();
+        // AC-003 / AC-005: resolve prompt bodies for all resolved types via IPromptTemplateService.
+        // Throws InvalidOperationException on missing or inactive template; this propagates to
+        // OnMessageAsync and dead-letters the message.
+        var promptBodyMap = new Dictionary<TestType, string>();
         foreach (var testType in resolvedTestTypes)
         {
-            var templateType = testType == TestType.Api ? "api_test_generator" : "ui_e2e_test_generator";
-            var template = await _promptTemplateRepository.GetAsync(templateType, cancellationToken);
-            templateMap[testType] = template;
-            LogTemplateLoaded(_logger, testRun.Id, templateType);
+            var stageKey = testType == TestType.Api ? "api_test_generator" : "ui_e2e_test_generator";
+            var body = await _promptTemplateService.GetActiveBodyAsync(stageKey, cancellationToken);
+            promptBodyMap[testType] = body;
+            LogTemplateLoaded(_logger, testRun.Id, stageKey);
         }
 
         // Build a task per enabled test type. Non-enabled types are skipped — their scenario
@@ -354,7 +355,7 @@ public partial class TestRunJobProcessor : IAsyncDisposable
                 ParsedStory = parsedStory,
                 MemoryRetrievalResult = memoryResult,
                 ProjectConfig = project,
-                PromptTemplate = templateMap[testType],
+                SystemPrompt = promptBodyMap[testType],
                 TestRunId = Guid.Parse(testRun.Id)
             };
 
