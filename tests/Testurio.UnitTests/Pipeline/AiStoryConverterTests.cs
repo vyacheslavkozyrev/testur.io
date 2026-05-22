@@ -11,9 +11,17 @@ namespace Testurio.UnitTests.Pipeline;
 public class AiStoryConverterTests
 {
     private readonly Mock<ILlmGenerationClient> _llmClient = new();
+    private readonly Mock<IPromptTemplateService> _promptTemplateService = new();
+
+    public AiStoryConverterTests()
+    {
+        _promptTemplateService
+            .Setup(s => s.GetActiveBodyAsync("story_parser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("You are a story parser assistant.");
+    }
 
     private AiStoryConverter CreateSut() =>
-        new(_llmClient.Object, NullLogger<AiStoryConverter>.Instance);
+        new(_llmClient.Object, _promptTemplateService.Object, NullLogger<AiStoryConverter>.Instance);
 
     private static WorkItem MakeWorkItem() => new()
     {

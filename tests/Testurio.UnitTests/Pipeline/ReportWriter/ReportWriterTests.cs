@@ -21,10 +21,18 @@ public class ReportWriterTests
     private readonly Mock<IADOClient> _adoClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<ITestResultRepository> _testResultRepo = new();
+    private readonly Mock<IPromptTemplateService> _promptTemplateService = new();
+
+    public ReportWriterTests()
+    {
+        _promptTemplateService
+            .Setup(s => s.GetActiveBodyAsync("report_writer", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("You are a report writer assistant.");
+    }
 
     private Testurio.Pipeline.ReportWriter.ReportWriter CreateSut() =>
         new(_llmClient.Object, _jiraClient.Object, _adoClient.Object,
-            _secretResolver.Object, _testResultRepo.Object,
+            _secretResolver.Object, _testResultRepo.Object, _promptTemplateService.Object,
             NullLogger<Testurio.Pipeline.ReportWriter.ReportWriter>.Instance);
 
     // ─── Shared fixtures ──────────────────────────────────────────────────────

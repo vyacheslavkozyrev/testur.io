@@ -41,15 +41,7 @@ public class UiE2eTestGeneratorAgentTests
             ProductUrl = "https://app.example.com",
             TestingStrategy = "UI E2E focus"
         },
-        PromptTemplate = new PromptTemplate
-        {
-            Id = "ui_e2e_test_generator",
-            TemplateType = "ui_e2e_test_generator",
-            Version = "1.0.0",
-            SystemPrompt = "You are a Playwright test engineer.",
-            GeneratorInstruction = "Generate up to {{maxScenarios}} UI scenarios.",
-            MaxScenarios = 5
-        },
+        SystemPrompt = "You are a Playwright test engineer. Generate up to 5 UI scenarios.",
         TestRunId = Guid.NewGuid()
     };
 

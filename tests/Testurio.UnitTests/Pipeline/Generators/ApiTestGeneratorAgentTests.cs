@@ -41,15 +41,7 @@ public class ApiTestGeneratorAgentTests
             ProductUrl = "https://app.example.com",
             TestingStrategy = "REST API focus"
         },
-        PromptTemplate = new PromptTemplate
-        {
-            Id = "api_test_generator",
-            TemplateType = "api_test_generator",
-            Version = "1.0.0",
-            SystemPrompt = "You are an API test engineer.",
-            GeneratorInstruction = "Generate up to {{maxScenarios}} scenarios.",
-            MaxScenarios = 10
-        },
+        SystemPrompt = "You are an API test engineer. Generate up to 10 scenarios.",
         TestRunId = Guid.NewGuid()
     };
 

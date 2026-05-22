@@ -10,9 +10,17 @@ namespace Testurio.UnitTests.Pipeline;
 public class StoryClassifierTests
 {
     private readonly Mock<ILlmGenerationClient> _llmClient = new();
+    private readonly Mock<IPromptTemplateService> _promptTemplateService = new();
+
+    public StoryClassifierTests()
+    {
+        _promptTemplateService
+            .Setup(s => s.GetActiveBodyAsync("agent_router", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("You are an agent router assistant.");
+    }
 
     private StoryClassifier CreateSut() =>
-        new(_llmClient.Object, NullLogger<StoryClassifier>.Instance);
+        new(_llmClient.Object, _promptTemplateService.Object, NullLogger<StoryClassifier>.Instance);
 
     private static ParsedStory MakeStory(string title = "Add item to cart") => new()
     {

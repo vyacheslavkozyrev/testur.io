@@ -8,16 +8,6 @@ public class PromptAssemblyServiceTests
 {
     private readonly PromptAssemblyService _sut = new();
 
-    private static PromptTemplate MakeTemplate(int maxScenarios = 10) => new()
-    {
-        Id = "api_test_generator",
-        TemplateType = "api_test_generator",
-        Version = "1.0.0",
-        SystemPrompt = "You are an expert API test engineer.",
-        GeneratorInstruction = "Generate up to {{maxScenarios}} scenarios.",
-        MaxScenarios = maxScenarios
-    };
-
     private static ParsedStory MakeStory(
         string[]? entities = null,
         string[]? actions = null,
@@ -63,19 +53,19 @@ public class PromptAssemblyServiceTests
     private GeneratorContext MakeContext(
         MemoryRetrievalResult? memory = null,
         string? customPrompt = null,
-        int maxScenarios = 10) => new()
+        string systemPrompt = "You are an expert API test engineer.") => new()
         {
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = memory ?? EmptyMemory(),
             ProjectConfig = MakeProject(customPrompt),
-            PromptTemplate = MakeTemplate(maxScenarios),
+            SystemPrompt = systemPrompt,
             TestRunId = Guid.NewGuid()
         };
 
     [Fact]
     public void Assemble_ReturnsSystemPromptAsOutParameter()
     {
-        var context = MakeContext();
+        var context = MakeContext(systemPrompt: "You are an expert API test engineer.");
 
         _sut.Assemble(context, out var systemPrompt);
 
@@ -83,9 +73,9 @@ public class PromptAssemblyServiceTests
     }
 
     [Fact]
-    public void Assemble_AllSixLayersPresent_WhenAllDataProvided()
+    public void Assemble_AllFourLayersPresent_WhenAllDataProvided()
     {
-        // Use a context with memory examples and a custom prompt so all 6 layers are rendered.
+        // Use a context with memory examples and a custom prompt so all 4 user-turn layers are rendered.
         var context = new GeneratorContext
         {
             ParsedStory = MakeStory(
@@ -94,32 +84,29 @@ public class PromptAssemblyServiceTests
                 edgeCases: ["duplicate order"]),
             MemoryRetrievalResult = MemoryWithScenarios(),
             ProjectConfig = MakeProject(customPrompt: "Always include auth header"),
-            PromptTemplate = MakeTemplate(),
+            SystemPrompt = "You are an expert API test engineer.",
             TestRunId = Guid.NewGuid()
         };
 
         var prompt = _sut.Assemble(context, out _);
 
-        // Layer 1 is the system prompt (returned via out param — not in user prompt).
-        // Layer 2: memory examples
+        // Layer 1: memory examples
         Assert.Contains("Reference Examples", prompt);
         Assert.Contains("Old story text", prompt);
         Assert.Contains("Pass rate: 0.90", prompt);
-        // Layer 3: custom prompt
+        // Layer 2: custom prompt
         Assert.Contains("Custom Instructions", prompt);
         Assert.Contains("Always include auth header", prompt);
-        // Layer 4: testing strategy
+        // Layer 3: testing strategy
         Assert.Contains("Testing Strategy", prompt);
         Assert.Contains("Focus on REST endpoints", prompt);
-        // Layer 5: parsed story
+        // Layer 4: parsed story
         Assert.Contains("Create order", prompt);
         Assert.Contains("User creates a new order.", prompt);
         Assert.Contains("POST /orders returns 201", prompt);
         Assert.Contains("Order", prompt);
         Assert.Contains("create", prompt);
         Assert.Contains("duplicate order", prompt);
-        // Layer 6: generator instruction
-        Assert.Contains("Generate up to 10 scenarios.", prompt);
     }
 
     [Fact]
@@ -163,17 +150,6 @@ public class PromptAssemblyServiceTests
     }
 
     [Fact]
-    public void Assemble_SubstitutesMaxScenarios_InGeneratorInstruction()
-    {
-        var context = MakeContext(maxScenarios: 5);
-
-        var prompt = _sut.Assemble(context, out _);
-
-        Assert.Contains("Generate up to 5 scenarios.", prompt);
-        Assert.DoesNotContain("{{maxScenarios}}", prompt);
-    }
-
-    [Fact]
     public void Assemble_LayerOrder_MemoryBeforeCustomPromptBeforeStrategyBeforeStory()
     {
         var context = new GeneratorContext
@@ -181,7 +157,7 @@ public class PromptAssemblyServiceTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = MemoryWithScenarios(),
             ProjectConfig = MakeProject(customPrompt: "Custom instructions here"),
-            PromptTemplate = MakeTemplate(),
+            SystemPrompt = "You are an expert API test engineer.",
             TestRunId = Guid.NewGuid()
         };
 
@@ -191,12 +167,10 @@ public class PromptAssemblyServiceTests
         var customIdx = prompt.IndexOf("Custom Instructions", StringComparison.Ordinal);
         var strategyIdx = prompt.IndexOf("Testing Strategy", StringComparison.Ordinal);
         var storyIdx = prompt.IndexOf("## Story", StringComparison.Ordinal);
-        var instructionIdx = prompt.IndexOf("Generate up to 10 scenarios.", StringComparison.Ordinal);
 
         Assert.True(memoryIdx < customIdx, "Memory examples should appear before custom prompt");
         Assert.True(customIdx < strategyIdx, "Custom prompt should appear before testing strategy");
         Assert.True(strategyIdx < storyIdx, "Testing strategy should appear before story");
-        Assert.True(storyIdx < instructionIdx, "Story should appear before generator instruction");
     }
 
     [Fact]
@@ -207,7 +181,7 @@ public class PromptAssemblyServiceTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = MemoryWithScenarios(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeTemplate(),
+            SystemPrompt = "You are an expert API test engineer.",
             TestRunId = Guid.NewGuid()
         };
 
