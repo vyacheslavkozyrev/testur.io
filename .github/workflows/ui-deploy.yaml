@@ -27,6 +27,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -49,7 +50,7 @@ jobs:
       # Layer 1: node_modules cache — skips npm ci entirely on hit
       - name: Restore node_modules
         id: cache-node-modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.WORKING_DIR }}/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
@@ -98,6 +99,106 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
+  scan:
+    name: Scan Image for Vulnerabilities
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write  # upload SARIF to GitHub Security tab
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Install Trivy separately with caching — pinned version avoids supply chain risk
+      # DO NOT use trivy-action@master — subject to supply chain attack (March 2026)
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          cache: true
+          version: v0.63.0
+
+      # Build image locally for scanning — Buildx doesn't load to Docker daemon by default
+      # Reuses registry layer cache so this is fast (no re-download of layers)
+      - name: Build image locally for scanning
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ env.WORKING_DIR }}
+          file: ${{ env.WORKING_DIR }}/Dockerfile.ci
+          load: true   # loads into local Docker daemon, not pushed
+          tags: scan-target:latest
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+
+      # Scan local image — no remote pull needed, no MANIFEST_UNKNOWN errors
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: image
+          image-ref: scan-target:latest
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true   # ignore CVEs with no fix available
+          skip-setup-trivy: true # already installed above
+
+      # Upload to GitHub Security tab — visible under Security → Code scanning alerts
+      - name: Upload scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()  # upload even if scan found vulnerabilities
+        with:
+          sarif_file: trivy-results.sarif
+
+      # Separate step that actually fails the build — after upload so results are always visible
+      - name: Fail on vulnerabilities
+        uses: aquasecurity/trivy-action@v0.31.0
+        with:
+          scan-type: image
+          image-ref: scan-target:latest
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+          skip-setup-trivy: true
+
+  sign-and-sbom:
+    name: Sign Image & Generate SBOM
+    needs: scan   # only runs if scan passes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write    # push signature and SBOM to GHCR
+      id-token: write    # required for keyless cosign signing via OIDC
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Sign by digest — immutable, not by mutable tag
+      - name: Sign image
+        run: |
+          cosign sign --yes \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false  # we attach via cosign, not as a workflow artifact
+
+      - name: Attest SBOM
+        run: |
+          cosign attest --yes \
+            --predicate sbom.spdx.json \
+            --type spdxjson \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+  
   # package-chart:
   #   name: Package & Push Helm Chart
   #   needs: build-and-push

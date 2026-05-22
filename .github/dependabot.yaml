@@ -1,0 +1,65 @@
+version: 2
+updates:
+  # ── GitHub Actions ────────────────────────────────────────────
+  # Scans all workflow files in .github/workflows/
+  # Replaces version tags with SHA-pinned references automatically
+  # Groups all action updates into a single weekly PR — avoids noise
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Chicago"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+
+  # ── Node.js (UI component) ────────────────────────────────────
+  # Scans package.json in the UI component directory
+  # Opens PRs for outdated npm dependencies
+  - package-ecosystem: npm
+    directory: /source/Testurio.Web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/Chicago"
+    groups:
+      # Batch all non-breaking updates into one PR
+      npm-minor-patch:
+        update-types:
+          - minor
+          - patch
+      # Major version bumps get their own PR — potentially breaking
+      npm-major:
+        update-types:
+          - major
+    ignore:
+      # Ignore React major bumps — React 19 is already bleeding edge
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+
+  # ── .NET (API component — add when ready) ─────────────────────
+  # - package-ecosystem: nuget
+  #   directory: /source/Testurio.Api
+  #   schedule:
+  #     interval: weekly
+  #     day: monday
+  #     time: "09:00"
+  #     timezone: "America/Chicago"
+  #   groups:
+  #     nuget-minor-patch:
+  #       update-types:
+  #         - minor
+  #         - patch
+  #   commit-message:
+  #     prefix: "chore"
