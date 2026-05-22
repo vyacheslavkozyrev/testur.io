@@ -30,7 +30,7 @@ jobs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Strip component prefix from tag to get bare semver: testurio-web@1.3.0 → 1.3.0
       - name: Extract version from tag
@@ -41,7 +41,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 20
           cache: npm
@@ -50,7 +50,7 @@ jobs:
       # Layer 1: node_modules cache — skips npm ci entirely on hit
       - name: Restore node_modules
         id: cache-node-modules
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.WORKING_DIR }}/node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
@@ -61,7 +61,7 @@ jobs:
 
       # Layer 2: Next.js incremental build cache — only recompiles changed files
       - name: Restore Next.js build cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ${{ env.WORKING_DIR }}/.next/cache
           # Full key: invalidates when deps or source changes
@@ -74,10 +74,10 @@ jobs:
         run: npm run build
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Log in to GHCR
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -85,7 +85,7 @@ jobs:
 
       - name: Build and push Docker image
         id: image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ env.WORKING_DIR }}
           file: ${{ env.WORKING_DIR }}/Dockerfile.ci
@@ -108,7 +108,7 @@ jobs:
       security-events: write  # upload SARIF to GitHub Security tab
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Install Trivy separately with caching — pinned version avoids supply chain risk
       # DO NOT use trivy-action@master — subject to supply chain attack (March 2026)
@@ -121,7 +121,7 @@ jobs:
       # Build image locally for scanning — Buildx doesn't load to Docker daemon by default
       # Reuses registry layer cache so this is fast (no re-download of layers)
       - name: Build image locally for scanning
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: ${{ env.WORKING_DIR }}
           file: ${{ env.WORKING_DIR }}/Dockerfile.ci
@@ -131,7 +131,7 @@ jobs:
 
       # Scan local image — no remote pull needed, no MANIFEST_UNKNOWN errors
       - name: Scan image for vulnerabilities
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: scan-target:latest
@@ -143,14 +143,14 @@ jobs:
 
       # Upload to GitHub Security tab — visible under Security → Code scanning alerts
       - name: Upload scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@f35333b910470a5408cb081b68f0701254a7d27b # v3.28.18
+        uses: github/codeql-action/upload-sarif@ff0a06e83cb2de871e5a09832bc6a81e7276941f # v3.28.18
         if: always()  # upload even if scan found vulnerabilities
         with:
           sarif_file: trivy-results.sarif
 
       # Separate step that actually fails the build — after upload so results are always visible
       - name: Fail on vulnerabilities
-        uses: aquasecurity/trivy-action@v0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: scan-target:latest
@@ -169,10 +169,10 @@ jobs:
       id-token: write    # required for keyless cosign signing via OIDC
     steps:
       - name: Install cosign
-        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Log in to GHCR
-        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -205,7 +205,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout code
-  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
   #     # Pin Helm version — enables GitHub tool cache reuse across runs
   #     - name: Install Helm
@@ -235,7 +235,7 @@ jobs:
   #     # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
   #     - name: Restore Helm dependencies
   #       id: cache-helm-deps
-  #       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+  #       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
   #       with:
   #         path: ${{ env.CHART_DIR }}/charts
   #         key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
@@ -258,7 +258,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout GitOps repo
-  #       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2  # v6
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2  # v6
   #       with:
   #         repository: <org>/<gitops-repo>        # <-- replace with GitOps repo
   #         token: ${{ secrets.GITOPS_TOKEN }}      # fine-grained PAT: contents:write, pull-requests:write on GitOps repo
