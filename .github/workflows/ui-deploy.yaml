@@ -277,6 +277,13 @@ jobs:
           VERSION="${{ needs.helm-lint.outputs.version }}"
           sed -i "s/^\(\s*tag:\s*\).*$/\1\"${VERSION}\"/" ${{ env.CHART_DIR }}/values.yaml
 
+      - name: Verify chart version updates
+        run: |
+          echo "Chart.yaml versions:"
+          grep -E "^version:|^appVersion:" ${{ env.CHART_DIR }}/Chart.yaml
+          echo "values.yaml image tag:"
+          grep -A2 "image:" ${{ env.CHART_DIR }}/values.yaml | grep "tag:"
+
       # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
       - name: Restore Helm dependencies
         id: cache-helm-deps
@@ -284,6 +291,12 @@ jobs:
         with:
           path: ${{ env.CHART_DIR }}/charts
           key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+
+      - name: Debug dependency cache
+        run: |
+          echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
+          echo "Charts directory contents:"
+          ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
 
       - name: Log in to northln GHCR (base chart — only on cache miss)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
@@ -294,16 +307,22 @@ jobs:
             --username ${{ github.actor }} \
             --password-stdin
 
-      - name: Pull base chart dependency
+      - name: Download dependencies
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
-        run: helm dependency update ${{ env.CHART_DIR }}
+        run: |
+          helm dependency update ${{ env.CHART_DIR }}
+          echo "Downloaded charts:"
+          ls -la ${{ env.CHART_DIR }}/charts/
       
-      - name: Build dependencies from cache (cache hit)
-        if: steps.cache-helm-deps.outputs.cache-hit == 'true'
-        run: helm dependency build ${{ env.CHART_DIR }}
+      # - name: Build dependencies from cache (cache hit)
+      #   if: steps.cache-helm-deps.outputs.cache-hit == 'true'
+      #   run: helm dependency build ${{ env.CHART_DIR }}
 
       - name: Package Helm chart
-        run: helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+        run: |
+          helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+          echo "Packaged chart:"
+          ls -la /tmp/chart-output/
 
       # Re-login with vyacheslavkozyrev token for pushing
       - name: Log in to GHCR (push)
@@ -318,6 +337,12 @@ jobs:
         run: |
           helm push /tmp/chart-output/*.tgz \
             oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+
+      - name: Push Helm chart to GHCR
+        run: |
+          helm push /tmp/chart-output/*.tgz \
+            oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+          echo "Chart pushed successfully to oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts"
 
   # update-gitops:
   #   name: Update GitOps Repo
