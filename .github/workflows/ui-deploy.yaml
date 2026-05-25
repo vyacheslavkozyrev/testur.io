@@ -291,7 +291,7 @@ jobs:
           echo "Chart.yaml versions:"
           grep -E "^version:|^appVersion:" ${{ env.CHART_DIR }}/Chart.yaml
           echo "values.yaml image tag:"
-          grep -A2 "image:" ${{ env.CHART_DIR }}/values.yaml | grep "tag:"
+          grep "tag:" ${{ env.CHART_DIR }}/values.yaml
 
       # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
       - name: Restore Helm dependencies
