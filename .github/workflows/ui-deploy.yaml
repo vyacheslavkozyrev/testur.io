@@ -207,58 +207,114 @@ jobs:
             --type spdxjson \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
   
-  # package-chart:
-  #   name: Package & Push Helm Chart
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  helm-lint:
+    name: Helm Lint
+    needs: sign-and-sbom
+    outputs:
+      version: ${{ needs.sign-and-sbom.outputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-  #     # Pin Helm version — enables GitHub tool cache reuse across runs
-  #     - name: Install Helm
-  #       uses: azure/setup-helm@v5
-  #       with:
-  #         version: v3.17.0
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: v4.2.3
 
-  #     - name: Log in to GHCR (Helm)
-  #       run: |
-  #         echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} \
-  #           --username ${{ github.actor }} \
-  #           --password-stdin
+      - name: Restore Helm dependencies
+        id: cache-helm-deps
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.CHART_DIR }}/charts
+          key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
 
-  #     - name: Update Helm chart versions
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         # Both appVersion and version default to the same semver
-  #         # chart version can be bumped independently in Chart.yaml if needed
-  #         sed -i "s/^appVersion:.*/appVersion: \"${VERSION}\"/" ${{ env.CHART_DIR }}/Chart.yaml
-  #         sed -i "s/^version:.*/version: ${VERSION}/" ${{ env.CHART_DIR }}/Chart.yaml
+      - name: Log in to northln GHCR (base chart — only on cache miss)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        env:
+          BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
 
-  #     - name: Update image tag in values
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         sed -i "s/^  tag:.*/  tag: \"${VERSION}\"/" ${{ env.CHART_DIR }}/values.yaml
+      - name: Update dependencies (cache miss only)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        run: helm dependency update ${{ env.CHART_DIR }}
 
-  #     # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
-  #     - name: Restore Helm dependencies
-  #       id: cache-helm-deps
-  #       uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-  #       with:
-  #         path: ${{ env.CHART_DIR }}/charts
-  #         key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+      - name: Build dependencies from cache (cache hit)
+        if: steps.cache-helm-deps.outputs.cache-hit == 'true'
+        run: helm dependency build ${{ env.CHART_DIR }}
 
-  #     - name: Pull base chart dependency
-  #       if: steps.cache-helm-deps.outputs.cache-hit != 'true'
-  #       run: helm dependency update ${{ env.CHART_DIR }}
+      - name: Lint chart
+        run: helm lint ${{ env.CHART_DIR }}
 
-  #     - name: Package Helm chart
-  #       run: helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+  
+  package-chart:
+    name: Package & Push Helm Chart
+    needs: helm-lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-  #     - name: Push Helm chart to GHCR
-  #       run: |
-  #         helm push /tmp/chart-output/*.tgz \
-  #           oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+      # Pin Helm version — enables GitHub tool cache reuse across runs
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: v3.17.0
+
+      - name: Update Chart.yaml versions
+        run: |
+          VERSION="${{ needs.helm-lint.outputs.version }}"
+          sed -i "s/^appVersion:.*$/appVersion: \"${VERSION}\"/" ${{ env.CHART_DIR }}/Chart.yaml
+          sed -i "s/^version:.*$/version: ${VERSION}/" ${{ env.CHART_DIR }}/Chart.yaml
+
+      - name: Update image tag in values
+        run: |
+          VERSION="${{ needs.helm-lint.outputs.version }}"
+          sed -i "s/^\(\s*tag:\s*\).*$/\1\"${VERSION}\"/" ${{ env.CHART_DIR }}/values.yaml
+
+      # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
+      - name: Restore Helm dependencies
+        id: cache-helm-deps
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ${{ env.CHART_DIR }}/charts
+          key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+
+      - name: Log in to northln GHCR (base chart — only on cache miss)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        env:
+          BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
+
+      - name: Pull base chart dependency
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        run: helm dependency update ${{ env.CHART_DIR }}
+      
+      - name: Build dependencies from cache (cache hit)
+        if: steps.cache-helm-deps.outputs.cache-hit == 'true'
+        run: helm dependency build ${{ env.CHART_DIR }}
+
+      - name: Package Helm chart
+        run: helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+
+      # Re-login with vyacheslavkozyrev token for pushing
+      - name: Log in to GHCR (push)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GHCR_TOKEN}" | helm registry login ${{ env.REGISTRY }} \
+            --username ${{ github.actor }} \
+            --password-stdin
+
+      - name: Push Helm chart to GHCR
+        run: |
+          helm push /tmp/chart-output/*.tgz \
+            oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
 
   # update-gitops:
   #   name: Update GitOps Repo

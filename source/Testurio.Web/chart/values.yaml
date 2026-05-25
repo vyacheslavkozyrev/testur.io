@@ -1,0 +1,131 @@
+# testurio-web chart values
+# All overrides go under the base-chart: key — see base-chart README for full reference
+
+base-chart:
+  fullnameOverride: testurio-web
+  # ── Image ──────────────────────────────────────────────────────
+  image:
+    repository: ghcr.io/vyacheslavkozyrev/testur.io/testurio-web
+    pullPolicy: IfNotPresent
+    # tag defaults to .Chart.AppVersion — set explicitly in CI via --set image.tag=<version>
+    tag: "0.0.4-test"
+
+  # GHCR is private — pull secret must exist in the target namespace
+  # Create with: kubectl create secret docker-registry ghcr-pull-secret \
+  #   --docker-server=ghcr.io \
+  #   --docker-username=vyacheslavkozyrev \
+  #   --docker-password=YOUR_PAT \
+  #   --namespace=<namespace>
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+
+  # ── Service ────────────────────────────────────────────────────
+  service:
+    type: ClusterIP
+    port: 3000
+
+  # ── Security context ───────────────────────────────────────────
+  # Override base defaults to match distroless nonroot UID 65532
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true   # enabled — tmpfs mounted for /tmp below
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  # ── Volumes — tmpfs for Next.js runtime writes ─────────────────
+  volumes:
+    - name: tmp
+      emptyDir:
+        medium: Memory   # tmpfs — stays in RAM, no disk writes
+
+  volumeMounts:
+    - name: tmp
+      mountPath: /tmp
+
+  # ── Probes — disabled for local testing ───────────────────────
+  # Enable and configure for production:
+  # livenessProbe:
+  #   enabled: true
+  #   httpGet:
+  #     path: /api/health
+  #     port: http
+  # readinessProbe:
+  #   enabled: true
+  #   httpGet:
+  #     path: /api/health
+  #     port: http
+  # startupProbe:
+  #   enabled: true
+  #   httpGet:
+  #     path: /api/health
+  #     port: http
+  #   failureThreshold: 30
+  #   periodSeconds: 10
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  startupProbe:
+    enabled: false
+
+  # ── Resources — sized for k3s ──────────────────────────────────
+  resources:
+    limits:
+      memory: 512Mi     # Next.js standalone needs more than the 128Mi default
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+  # ── Gateway API (Cilium) ───────────────────────────────────────
+  httpRoute:
+    enabled: false
+    parentRefs:
+      - name: cilium-gateway       # <-- replace with your Cilium gateway name
+        sectionName: http
+        # namespace: default       # uncomment if gateway is in a different namespace
+    hostnames:
+      - testurio.local             # <-- replace with actual hostname
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+  # ── Ingress — disabled, using Gateway API instead ─────────────
+  ingress:
+    enabled: false
+
+  # ── Environment variables ──────────────────────────────────────
+  extraEnv:
+    - name: NODE_ENV
+      value: production
+    - name: NEXT_TELEMETRY_DISABLED
+      value: "1"
+    - name: PORT
+      value: "3000"
+    - name: HOSTNAME
+      value: "0.0.0.0"
+
+  # ── Autoscaling — disabled for now ────────────────────────────
+  autoscaling:
+    enabled: false
+
+  # ── Pod disruption budget — disabled for single replica ───────
+  podDisruptionBudget:
+    enabled: false

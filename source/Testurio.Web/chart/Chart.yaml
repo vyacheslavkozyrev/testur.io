@@ -1,0 +1,17 @@
+apiVersion: v2
+name: testurio-web
+description: Testurio Web UI — Next.js 15 frontend
+type: application
+
+# Chart version — bump when chart structure changes
+# Managed by CI pipeline on release
+version: 0.1.0
+
+# appVersion maps to the container image tag
+# Managed by CI pipeline on release — matches image tag in GHCR
+appVersion: "0.1.0"
+
+dependencies:
+  - name: base-chart
+    version: "v0.1.1"
+    repository: "oci://ghcr.io/northln/charts"  
