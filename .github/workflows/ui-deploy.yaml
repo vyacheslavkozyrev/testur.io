@@ -231,6 +231,12 @@ jobs:
           path: ${{ env.CHART_DIR }}/charts
           key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
 
+      - name: Debug dependency cache
+        run: |
+          echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
+          echo "Charts directory contents:"
+          ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
+
       - name: Log in to northln GHCR (base chart — only on cache miss)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         env:
@@ -239,14 +245,17 @@ jobs:
           echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
             --username ${{ github.actor }} \
             --password-stdin
-
+      
       - name: Update dependencies (cache miss only)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
-        run: helm dependency update ${{ env.CHART_DIR }}
+        run: |
+          helm dependency update ${{ env.CHART_DIR }}
+          echo "Downloaded charts:"
+          ls -la ${{ env.CHART_DIR }}/charts/
 
-      - name: Build dependencies from cache (cache hit)
-        if: steps.cache-helm-deps.outputs.cache-hit == 'true'
-        run: helm dependency build ${{ env.CHART_DIR }}
+      # - name: Build dependencies from cache (cache hit)
+      #   if: steps.cache-helm-deps.outputs.cache-hit == 'true'
+      #   run: helm dependency build ${{ env.CHART_DIR }}
 
       - name: Lint chart
         run: helm lint ${{ env.CHART_DIR }}
