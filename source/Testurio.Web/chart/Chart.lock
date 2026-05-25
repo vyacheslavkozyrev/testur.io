@@ -1,0 +1,6 @@
+dependencies:
+- name: base-chart
+  repository: oci://ghcr.io/northln/charts
+  version: v0.1.1
+digest: sha256:ba7aecfceb266925f668464ea3924e45ebebfdeaca1ca9155c795ae7ac4866ca
+generated: "2026-05-23T22:09:04.023621-05:00"

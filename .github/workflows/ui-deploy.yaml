@@ -105,6 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ needs.build-and-push.outputs.digest }}
+      version: ${{ needs.build-and-push.outputs.version }} 
     permissions:
       contents: read
       packages: read          # pull image from GHCR for scanning
@@ -170,6 +171,8 @@ jobs:
   sign-and-sbom:
     name: Sign Image & Generate SBOM
     needs: scan   # only runs if scan passes
+    outputs:
+      version: ${{ needs.scan.outputs.version }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
