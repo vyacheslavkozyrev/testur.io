@@ -9,13 +9,14 @@ env:
   WORKING_DIR: source/Testurio.Web
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/testurio-web
+  CHART_REGISTRY_PATH: ${{ github.repository }}/testurio-web/charts
   CHART_DIR: source/Testurio.Web/chart
-  BASE_CHART_REPO: oci://ghcr.io/<org>/charts  # <-- replace with base chart registry path
+  BASE_CHART_REPO: oci://ghcr.io/northln/charts  # base chart registry
 
 permissions:
   contents: read
   packages: write   # push image and chart to GHCR
-  id-token: write   # required for cosign keyless signing (optional)
+  id-token: write   # required for cosign keyless signing
 
 jobs:
   build-and-push:
@@ -350,8 +351,8 @@ jobs:
       - name: Push Helm chart to GHCR
         run: |
           helm push /tmp/chart-output/*.tgz \
-            oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
-          echo "Chart pushed successfully to oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts"
+            oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}
+          echo "Chart pushed to oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}"
 
   # update-gitops:
   #   name: Update GitOps Repo
