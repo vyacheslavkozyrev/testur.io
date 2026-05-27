@@ -15,6 +15,14 @@ public class StoryParserServiceTests
     private readonly Mock<IJiraApiClient> _jiraApiClient = new();
     private readonly Mock<IADOClient> _adoClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
+    private readonly Mock<IPromptTemplateService> _promptTemplateService = new();
+
+    public StoryParserServiceTests()
+    {
+        _promptTemplateService
+            .Setup(s => s.GetActiveBodyAsync("story_parser", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("You are a story parser assistant.");
+    }
 
     private static WorkItem MakeConformantWorkItem() => new()
     {
@@ -51,7 +59,7 @@ public class StoryParserServiceTests
     {
         var templateChecker = new TemplateChecker();
         var directParser = new DirectParser();
-        var aiConverter = new AiStoryConverter(_llmClient.Object, NullLogger<AiStoryConverter>.Instance);
+        var aiConverter = new AiStoryConverter(_llmClient.Object, _promptTemplateService.Object, NullLogger<AiStoryConverter>.Instance);
         var commentPoster = new PmToolCommentPoster(
             _jiraApiClient.Object,
             _adoClient.Object,

@@ -27,31 +27,14 @@ public class GeneratorsIntegrationTests
     private readonly Mock<IPromptTemplateRepository> _promptTemplateRepo = new();
     private readonly PromptAssemblyService _promptAssembly = new();
 
+    private const string ApiSystemPrompt = "You are an API test engineer. Generate up to 10 API scenarios.";
+    private const string UiE2eSystemPrompt = "You are a Playwright test engineer. Generate up to 5 UI scenarios.";
+
     private ApiTestGeneratorAgent CreateApiAgent() =>
         new(_llmClient.Object, _promptAssembly, NullLogger<ApiTestGeneratorAgent>.Instance);
 
     private UiE2eTestGeneratorAgent CreateUiE2eAgent() =>
         new(_llmClient.Object, _promptAssembly, NullLogger<UiE2eTestGeneratorAgent>.Instance);
-
-    private static PromptTemplate MakeApiTemplate() => new()
-    {
-        Id = "api_test_generator",
-        TemplateType = "api_test_generator",
-        Version = "1.0.0",
-        SystemPrompt = "You are an API test engineer.",
-        GeneratorInstruction = "Generate up to {{maxScenarios}} API scenarios.",
-        MaxScenarios = 10
-    };
-
-    private static PromptTemplate MakeUiE2eTemplate() => new()
-    {
-        Id = "ui_e2e_test_generator",
-        TemplateType = "ui_e2e_test_generator",
-        Version = "1.0.0",
-        SystemPrompt = "You are a Playwright test engineer.",
-        GeneratorInstruction = "Generate up to {{maxScenarios}} UI scenarios.",
-        MaxScenarios = 5
-    };
 
     private static ParsedStory MakeStory() => new()
     {
@@ -122,7 +105,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeApiTemplate(),
+            SystemPrompt = ApiSystemPrompt,
             TestRunId = Guid.NewGuid()
         };
 
@@ -131,7 +114,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeUiE2eTemplate(),
+            SystemPrompt = UiE2eSystemPrompt,
             TestRunId = apiCtx.TestRunId
         };
 
@@ -181,7 +164,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeApiTemplate(),
+            SystemPrompt = ApiSystemPrompt,
             TestRunId = runId
         };
 
@@ -190,7 +173,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeUiE2eTemplate(),
+            SystemPrompt = UiE2eSystemPrompt,
             TestRunId = runId
         };
 
@@ -248,7 +231,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeApiTemplate(),
+            SystemPrompt = ApiSystemPrompt,
             TestRunId = runId
         };
 
@@ -257,7 +240,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeUiE2eTemplate(),
+            SystemPrompt = UiE2eSystemPrompt,
             TestRunId = runId
         };
 
@@ -285,7 +268,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeApiTemplate(),
+            SystemPrompt = ApiSystemPrompt,
             TestRunId = runId
         };
 
@@ -294,7 +277,7 @@ public class GeneratorsIntegrationTests
             ParsedStory = MakeStory(),
             MemoryRetrievalResult = EmptyMemory(),
             ProjectConfig = MakeProject(),
-            PromptTemplate = MakeUiE2eTemplate(),
+            SystemPrompt = UiE2eSystemPrompt,
             TestRunId = runId
         };
 

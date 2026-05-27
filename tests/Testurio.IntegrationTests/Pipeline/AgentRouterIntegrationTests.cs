@@ -22,10 +22,18 @@ public class AgentRouterIntegrationTests
     private readonly Mock<IADOClient> _adoClient = new();
     private readonly Mock<ISecretResolver> _secretResolver = new();
     private readonly Mock<ITestRunRepository> _testRunRepo = new();
+    private readonly Mock<IPromptTemplateService> _promptTemplateService = new();
+
+    public AgentRouterIntegrationTests()
+    {
+        _promptTemplateService
+            .Setup(s => s.GetActiveBodyAsync("agent_router", It.IsAny<CancellationToken>()))
+            .ReturnsAsync("You are an agent router assistant.");
+    }
 
     private AgentRouterService CreateAgentRouterService()
     {
-        var classifier = new StoryClassifier(_llmClient.Object, NullLogger<StoryClassifier>.Instance);
+        var classifier = new StoryClassifier(_llmClient.Object, _promptTemplateService.Object, NullLogger<StoryClassifier>.Instance);
         var skipPoster = new SkipCommentPoster(
             _jiraApiClient.Object,
             _adoClient.Object,

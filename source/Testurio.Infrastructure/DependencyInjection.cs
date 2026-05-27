@@ -14,6 +14,7 @@ using Testurio.Infrastructure.Embedding;
 using Testurio.Infrastructure.Enforcement;
 using Testurio.Infrastructure.Jira;
 using Testurio.Infrastructure.Options;
+using Testurio.Infrastructure.Prompt;
 using Testurio.Infrastructure.ServiceBus;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
@@ -68,15 +69,31 @@ public static class DependencyInjection
         services.AddSingleton(sp =>
         {
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
-            return new CosmosClient(opts.CosmosConnectionString, new CosmosClientOptions
+            var clientOptions = new CosmosClientOptions
             {
                 UseSystemTextJsonSerializerWithOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
                     DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
                     Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
                 }
-            });
+            };
+
+            // The local Cosmos emulator uses a self-signed certificate; bypass validation so the
+            // SDK does not hang on TLS handshake in development.
+            if (opts.CosmosConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+            {
+                clientOptions.HttpClientFactory = () => new HttpClient(
+                    new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback =
+                            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                    });
+                clientOptions.ConnectionMode = ConnectionMode.Gateway;
+            }
+
+            return new CosmosClient(opts.CosmosConnectionString, clientOptions);
         });
 
         services.AddSingleton(sp =>
@@ -196,13 +213,18 @@ public static class DependencyInjection
             return new StatsRepository(cosmos, opts.CosmosDatabaseName, subscriptionRepo, planRepo);
         });
 
-        // Feature 0028: prompt template repository for generator agents (stage 4).
+        // Feature 0028 (extended in 0047): prompt template repository for all pipeline stages.
         services.AddSingleton<IPromptTemplateRepository>(sp =>
         {
             var cosmos = sp.GetRequiredService<CosmosClient>();
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new PromptTemplateRepository(cosmos, opts.CosmosDatabaseName);
         });
+
+        // Feature 0047: caching wrapper around IPromptTemplateRepository.
+        // Registered as Singleton — HybridCache is thread-safe and the repository is also Singleton.
+        services.AddHybridCache();
+        services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
 
         // Feature 0030: test result repository for ReportWriter (stage 6).
         services.AddSingleton<ITestResultRepository>(sp =>
@@ -234,13 +256,6 @@ public static class DependencyInjection
             var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
             return new UserSubscriptionRepository(cosmos, opts.CosmosDatabaseName);
         });
-
-        services.AddOptions<StripeOptions>()
-            .BindConfiguration("Stripe")
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        services.AddSingleton<IStripeService, StripeService>();
 
         // Feature 0046: plan enforcement service.
         // Registered as Singleton — all dependencies (repositories) are also Singleton.
@@ -355,6 +370,23 @@ public static class DependencyInjection
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
             return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers Stripe options (validated at startup) and <see cref="IStripeService"/>.
+    /// Call this only from hosts that handle billing — <c>Testurio.Api</c>.
+    /// Not required by <c>Testurio.Worker</c>.
+    /// </summary>
+    public static IServiceCollection AddStripe(this IServiceCollection services)
+    {
+        services.AddOptions<StripeOptions>()
+            .BindConfiguration("Stripe")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<IStripeService, StripeService>();
 
         return services;
     }

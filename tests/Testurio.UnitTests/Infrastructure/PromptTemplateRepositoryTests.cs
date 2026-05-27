@@ -15,63 +15,65 @@ public class PromptTemplateRepositoryTests
 {
     private readonly Mock<IPromptTemplateRepository> _repository = new();
 
-    private static PromptTemplate MakeTemplate(string templateType = "api_test_generator") => new()
+    private static PromptTemplate MakeTemplate(string stage = "api_test_generator") => new()
     {
-        Id = templateType,
-        TemplateType = templateType,
-        Version = "1.0.0",
-        SystemPrompt = "You are an API test engineer.",
-        GeneratorInstruction = "Generate up to {{maxScenarios}} scenarios.",
-        MaxScenarios = 10
+        Id = stage,
+        Stage = stage,
+        TemplateType = stage,
+        Version = 1,
+        Body = "You are an API test engineer.",
+        IsActive = true,
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow
     };
 
     [Fact]
-    public async Task GetAsync_ExistingTemplateType_ReturnsDocument()
+    public async Task GetAsync_ExistingStage_ReturnsDocument()
     {
-        const string templateType = "api_test_generator";
-        var expected = MakeTemplate(templateType);
+        const string stage = "api_test_generator";
+        var expected = MakeTemplate(stage);
 
         _repository
-            .Setup(r => r.GetAsync(templateType, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAsync(stage, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _repository.Object.GetAsync(templateType, CancellationToken.None);
+        var result = await _repository.Object.GetAsync(stage, CancellationToken.None);
 
-        Assert.Equal(templateType, result.TemplateType);
-        Assert.Equal("1.0.0", result.Version);
-        Assert.Equal(10, result.MaxScenarios);
+        Assert.Equal(stage, result.Stage);
+        Assert.Equal(1, result.Version);
+        Assert.Equal("You are an API test engineer.", result.Body);
     }
 
     [Fact]
-    public async Task GetAsync_MissingTemplateType_ThrowsInvalidOperationException()
+    public async Task GetAsync_MissingStage_ThrowsInvalidOperationException()
     {
-        const string missingType = "nonexistent_generator";
+        const string missingStage = "nonexistent_generator";
 
         _repository
-            .Setup(r => r.GetAsync(missingType, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAsync(missingStage, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException(
-                $"PromptTemplate '{missingType}' not found in the PromptTemplates container."));
+                $"PromptTemplate '{missingStage}' not found in the PromptTemplates container."));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _repository.Object.GetAsync(missingType, CancellationToken.None));
+            () => _repository.Object.GetAsync(missingStage, CancellationToken.None));
 
-        Assert.Contains(missingType, ex.Message);
+        Assert.Contains(missingStage, ex.Message);
     }
 
     [Fact]
-    public async Task GetAsync_UiE2eTemplateType_ReturnsCorrectDocument()
+    public async Task GetAsync_UiE2eStage_ReturnsCorrectDocument()
     {
-        const string templateType = "ui_e2e_test_generator";
-        var expected = MakeTemplate(templateType) with { MaxScenarios = 5 };
+        const string stage = "ui_e2e_test_generator";
+        var expected = MakeTemplate(stage) with { Body = "You are a Playwright test engineer." };
 
         _repository
-            .Setup(r => r.GetAsync(templateType, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetAsync(stage, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
 
-        var result = await _repository.Object.GetAsync(templateType, CancellationToken.None);
+        var result = await _repository.Object.GetAsync(stage, CancellationToken.None);
 
-        Assert.Equal(templateType, result.TemplateType);
-        Assert.Equal(5, result.MaxScenarios);
+        Assert.Equal(stage, result.Stage);
+        Assert.Equal("You are a Playwright test engineer.", result.Body);
     }
 
     [Fact]
@@ -86,5 +88,38 @@ public class PromptTemplateRepositoryTests
 
         await Assert.ThrowsAsync<OperationCanceledException>(
             () => _repository.Object.GetAsync("api_test_generator", cts.Token));
+    }
+
+    [Fact]
+    public async Task GetAllAsync_ReturnsAllTemplates()
+    {
+        var templates = new List<PromptTemplate>
+        {
+            MakeTemplate("story_parser"),
+            MakeTemplate("agent_router"),
+            MakeTemplate("api_test_generator")
+        };
+
+        _repository
+            .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(templates);
+
+        var result = await _repository.Object.GetAllAsync(CancellationToken.None);
+
+        Assert.Equal(3, result.Count);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CallsRepositoryWithUpdatedTemplate()
+    {
+        var updated = MakeTemplate("story_parser") with { Version = 2, Body = "Updated body." };
+
+        _repository
+            .Setup(r => r.UpdateAsync(updated, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        await _repository.Object.UpdateAsync(updated, CancellationToken.None);
+
+        _repository.Verify(r => r.UpdateAsync(updated, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
