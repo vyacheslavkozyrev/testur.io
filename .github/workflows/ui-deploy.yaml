@@ -363,7 +363,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2 
         with:
           repository: northLn/k3s-local        # <-- GitOps repo
-          token: ${{ secrets.BASE_CHART_TOKEN }} # classic PAT — needs repo scope for git push
+          token: ${{ secrets.GITOPS_TOKEN }} # 
           path: gitops
 
       - name: Create deploy branch
@@ -391,7 +391,7 @@ jobs:
 
       - name: Open PR in GitOps repo
         env:
-          GH_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr create \
@@ -405,7 +405,7 @@ jobs:
       # Replace with manual approval gate in Phase 2/3 for stg/prd
       - name: Auto-merge GitOps PR
         env:
-          GH_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr merge \
