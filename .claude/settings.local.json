@@ -105,7 +105,17 @@
       "Bash(ls \"D:\\\\\\\\projects\\\\\\\\testur.io\\\\\\\\specifications\\\\\\\\\")",
       "Bash(grep *)",
       "Bash(kubectl kustomize *)",
-      "Bash(npx @next/codemod@canary next-lint-to-eslint-cli .)"
+      "Bash(npx @next/codemod@canary next-lint-to-eslint-cli .)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(curl -sk https://localhost:8081/_explorer/emulator.pem)",
+      "Bash(ASPNETCORE_ENVIRONMENT=Development dotnet run --project source/Testurio.Worker/Testurio.Worker.csproj --no-build)",
+      "Bash(curl *)",
+      "Bash(jobs -l)",
+      "Bash(tee /tmp/worker_out.txt)",
+      "Bash(echo \"---EXIT $?---\")",
+      "Bash(DOTNET_ENVIRONMENT=Development stdbuf -oL dotnet run --project source/Testurio.Worker/Testurio.Worker.csproj --no-build --no-launch-profile)",
+      "Bash(stdbuf -oL tee /tmp/wout.txt)",
+      "PowerShell(netstat *)"
     ]
   },
   "enableAllProjectMcpServers": true

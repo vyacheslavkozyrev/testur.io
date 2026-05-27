@@ -69,6 +69,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 builder.Services.AddInfrastructure();
+builder.Services.AddStripe();
 
 // ILlmGenerationClient — used by PromptCheckService for AI-assisted prompt quality checks.
 // The API key is optional at startup; if absent the prompt-check endpoint will fail at runtime

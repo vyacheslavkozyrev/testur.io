@@ -28,7 +28,7 @@ using var startupCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
 try
 {
-    var initializer = host.Services.GetRequiredService<CosmosDbInitializer>();
+    var initializer = host.Services.GetRequiredService<ICosmosDbInitializer>();
     await initializer.InitializeAsync(startupCts.Token);
 }
 catch (Exception ex)
@@ -39,7 +39,7 @@ catch (Exception ex)
 
 try
 {
-    var seeder = host.Services.GetRequiredService<PromptTemplateSeeder>();
+    var seeder = host.Services.GetRequiredService<IPromptTemplateSeeder>();
     await seeder.SeedAsync(startupCts.Token);
 }
 catch (Exception ex)
@@ -50,7 +50,7 @@ catch (Exception ex)
 
 try
 {
-    var planSeeder = host.Services.GetRequiredService<PlanSeeder>();
+    var planSeeder = host.Services.GetRequiredService<IPlanSeeder>();
     await planSeeder.SeedAsync(startupCts.Token);
 }
 catch (Exception ex)

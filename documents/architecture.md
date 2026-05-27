@@ -2,7 +2,7 @@
 name: Testurio — Architecture
 version: 0.5.0
 status: draft
-updated: 2026-05-10
+updated: 2026-05-26
 tags: [technical, architecture]
 ---
 
@@ -104,7 +104,6 @@ Three-layer SaaS platform: a public website + user portal (frontend), a backend 
 | Secrets                      | Azure Key Vault + Managed Identity       |
 | Worker egress / static IPs   | Azure NAT Gateway (fixed egress IPs)     |
 | Webhook auth / rate limiting | Azure API Management                     |
-| Memory / vector search       | Azure AI Search (vector index)           |
 | Observability                | Azure Application Insights               |
 | Container registry           | Azure Container Registry                 |
 | CDN / edge                   | Azure Front Door                         |
@@ -365,7 +364,7 @@ Partition key: `userId`. Stores effective test scenarios with semantic embedding
 
 **Logical multi-tenancy over physical isolation** — all clients share a single Cosmos DB account. Tenant isolation is enforced by `userId` as the partition key on every container, combined with API-layer auth (Azure AD B2C token validation on every request). No client can access another's data. Physical per-tenant accounts (one Cosmos account per client) are explicitly out of scope for v1 — they would multiply operational overhead linearly with client count and are only justified for enterprise compliance requirements.
 
-**Global memory layer via Azure AI Search** — past test scenarios and outcomes are embedded and indexed after every run. The `MemoryRetriever` plugin retrieves semantically similar examples before TestGenerator runs, injecting them as few-shot context. Retrieval is always scoped to `userId`, preventing cross-tenant leakage. Indexing is wired from v1; retrieval activates per-project once sufficient signal accumulates (~hundreds of runs).
+**Global memory layer via Cosmos DB DiskANN** — past test scenarios and outcomes are embedded (Azure OpenAI `text-embedding-3-small`, 1536 dimensions) and stored in the `TestMemory` Cosmos container with a native DiskANN vector index. The `MemoryRetrieval` stage queries by cosine similarity, always filtered to `userId`, preventing cross-tenant leakage. No separate vector search service is required.
 
 **NAT Gateway for static egress IPs** — all worker outbound traffic routes through a single NAT Gateway, giving Testurio a predictable, publishable IP range. This makes IP allowlisting a reliable, zero-credential option for clients. Credentials (Basic Auth, header tokens) are stored exclusively in Key Vault; only a secret reference lives in the project document in Cosmos DB.
 

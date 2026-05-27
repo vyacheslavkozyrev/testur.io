@@ -220,20 +220,18 @@ public sealed class PromptTemplateSeeder : IPromptTemplateSeeder
 
     private async Task SeedTemplateAsync(PromptTemplate template, CancellationToken cancellationToken)
     {
-        try
-        {
-            await _container.ReadItemAsync<PromptTemplate>(
-                template.Id,
-                new PartitionKey(template.TemplateType),
-                cancellationToken: cancellationToken);
-            // Document already exists — skip to preserve any manual edits.
-        }
-        catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        using var response = await _container.ReadItemStreamAsync(
+            template.Id,
+            new PartitionKey(template.TemplateType),
+            cancellationToken: cancellationToken);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
             await _container.CreateItemAsync(
                 template,
                 new PartitionKey(template.TemplateType),
                 cancellationToken: cancellationToken);
         }
+        // Any other status (200 OK) means the document exists — skip to preserve manual edits.
     }
 }
