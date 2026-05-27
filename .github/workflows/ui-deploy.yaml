@@ -354,62 +354,62 @@ jobs:
             oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}
           echo "Chart pushed to oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}"
 
-  # update-gitops:
-  #   name: Update GitOps Repo
-  #   needs: [build-and-push, package-chart]
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout GitOps repo
-  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2  # v6
-  #       with:
-  #         repository: <org>/<gitops-repo>        # <-- replace with GitOps repo
-  #         token: ${{ secrets.GITOPS_TOKEN }}      # fine-grained PAT: contents:write, pull-requests:write on GitOps repo
-  #         path: gitops
+  update-gitops:
+    name: Update GitOps Repo
+    needs: package-chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2 
+        with:
+          repository: northLn/k3s-local        # <-- GitOps repo
+          token: ${{ secrets.BASE_CHART_TOKEN }} # classic PAT — needs repo scope for git push
+          path: gitops
 
-  #     - name: Create deploy branch
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         cd gitops
-  #         git checkout -b "deploy/testurio-web-${VERSION}"
+      - name: Create deploy branch
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          cd gitops
+          git checkout -b "deploy/testurio-web-${VERSION}"
 
-  #     - name: Update dev values
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         sed -i "s/^  tag:.*/  tag: \"${VERSION}\"/" \
-  #           gitops/<path-to-component>/values-dev.yaml  # <-- replace with actual path
+      - name: Update dev values
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          sed -i "s/^\(\s*chartVersion:\s*\).*$/\1\"${VERSION}\"/" \
+            argocd/clusters/dev01/workload/testurio-web/service.yaml
 
-  #     - name: Commit and push
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         cd gitops
-  #         git config user.name "github-actions[bot]"
-  #         git config user.email "github-actions[bot]@users.noreply.github.com"
-  #         git add .
-  #         git diff --staged --quiet || git commit \
-  #           -m "chore(testurio-web): bump image to ${VERSION}"
-  #         git push origin "deploy/testurio-web-${VERSION}"
+      - name: Commit and push
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          cd gitops
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --staged --quiet || git commit \
+            -m "chore(testurio-web): bump chart and image to ${VERSION}"
+          git push origin "deploy/testurio-web-${VERSION}"
 
-  #     - name: Open PR in GitOps repo
-  #       env:
-  #         GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         gh pr create \
-  #           --title "chore(testurio-web): deploy ${VERSION} to dev" \
-  #           --body "Automated image bump for testurio-web ${VERSION}" \
-  #           --base main \
-  #           --head "deploy/testurio-web-${VERSION}" \
-  #           --repo <org>/<gitops-repo>             # <-- replace with GitOps repo
+      - name: Open PR in GitOps repo
+        env:
+          GH_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          gh pr create \
+            --title "chore(testurio-web): deploy ${VERSION} to dev" \
+            --body "Automated chart and image bump for testurio-web ${VERSION}" \
+            --base main \
+            --head "deploy/testurio-web-${VERSION}" \
+            --repo northLn/k3s-local
 
-  #     # Auto-merge for dev (Phase 1)
-  #     # Replace with manual approval gate in Phase 2/3 for stg/prd
-  #     - name: Auto-merge GitOps PR
-  #       env:
-  #         GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
-  #       run: |
-  #         VERSION="${{ needs.build-and-push.outputs.version }}"
-  #         gh pr merge \
-  #           --auto \
-  #           --squash \
-  #           "deploy/testurio-web-${VERSION}" \
-  #           --repo <org>/<gitops-repo>             # <-- replace with GitOps repo
+      # Auto-merge for dev (Phase 1)
+      # Replace with manual approval gate in Phase 2/3 for stg/prd
+      - name: Auto-merge GitOps PR
+        env:
+          GH_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          gh pr merge \
+            --auto \
+            --squash \
+            "deploy/testurio-web-${VERSION}" \
+            --repo northLn/k3s-local
