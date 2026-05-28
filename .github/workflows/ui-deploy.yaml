@@ -362,9 +362,10 @@ jobs:
       - name: Checkout GitOps repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4.2.2 
         with:
-          repository: northLn/k3s-local        # <-- GitOps repo
-          token: ${{ secrets.GITOPS_TOKEN }} # 
+          repository: northLn/k3s-local
+          token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
+          ref: feature/argocd 
 
       - name: Create deploy branch
         run: |
@@ -376,7 +377,12 @@ jobs:
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           sed -i "s/^\(\s*chartVersion:\s*\).*$/\1\"${VERSION}\"/" \
-            argocd/clusters/dev01/workload/testurio-web/service.yaml
+            gitops/argocd/clusters/dev01/workload/testurio-web/service.yaml
+
+      - name: Verify service.yaml update
+        run: |
+          echo "service.yaml after update:"
+          cat gitops/argocd/clusters/dev01/workload/testurio-web/service.yaml
 
       - name: Commit and push
         run: |
@@ -397,7 +403,7 @@ jobs:
           gh pr create \
             --title "chore(testurio-web): deploy ${VERSION} to dev" \
             --body "Automated chart and image bump for testurio-web ${VERSION}" \
-            --base main \
+            --base feature/argocd \
             --head "deploy/testurio-web-${VERSION}" \
             --repo northLn/k3s-local
 
