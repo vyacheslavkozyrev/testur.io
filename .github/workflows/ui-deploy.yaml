@@ -265,6 +265,8 @@ jobs:
   package-chart:
     name: Package & Push Helm Chart
     needs: helm-lint
+    outputs:
+      version: ${{ needs.helm-lint.outputs.version }} 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -415,7 +417,7 @@ jobs:
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr merge \
-            --auto \
+            --delete-branch \
             --squash \
             "deploy/testurio-web-${VERSION}" \
             --repo northLn/k3s-local
