@@ -1,0 +1,17 @@
+.git
+.github
+.vs
+.vscode
+**/.vs
+**/bin
+**/obj
+**/node_modules
+**/.next
+infra
+documents
+tests
+*.md
+.env
+.env.*
+**/.env
+**/.env.*

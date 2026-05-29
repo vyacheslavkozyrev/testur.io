@@ -10,6 +10,8 @@ COPY ["source/Testurio.Pipeline.Executors/Testurio.Pipeline.Executors.csproj", "
 COPY ["source/Testurio.Pipeline.Generators/Testurio.Pipeline.Generators.csproj", "source/Testurio.Pipeline.Generators/"]
 COPY ["source/Testurio.Pipeline.MemoryRetrieval/Testurio.Pipeline.MemoryRetrieval.csproj", "source/Testurio.Pipeline.MemoryRetrieval/"]
 COPY ["source/Testurio.Pipeline.StoryParser/Testurio.Pipeline.StoryParser.csproj", "source/Testurio.Pipeline.StoryParser/"]
+COPY ["source/Testurio.Pipeline.FeedbackLoop/Testurio.Pipeline.FeedbackLoop.csproj", "source/Testurio.Pipeline.FeedbackLoop/"]
+COPY ["source/Testurio.Pipeline.MemoryWriter/Testurio.Pipeline.MemoryWriter.csproj", "source/Testurio.Pipeline.MemoryWriter/"]
 COPY ["source/Testurio.Plugins/Testurio.Plugins.csproj", "source/Testurio.Plugins/"]
 
 RUN dotnet restore "source/Testurio.Worker/Testurio.Worker.csproj"
