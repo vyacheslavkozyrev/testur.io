@@ -348,11 +348,6 @@ jobs:
       - name: Push Helm chart to GHCR
         run: |
           helm push /tmp/chart-output/*.tgz \
-            oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
-
-      - name: Push Helm chart to GHCR
-        run: |
-          helm push /tmp/chart-output/*.tgz \
             oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}
           echo "Chart pushed to oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}"
 

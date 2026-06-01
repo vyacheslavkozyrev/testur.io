@@ -6,6 +6,11 @@
       "release-type": "node",
       "package-name": "testurio-web",
       "changelog-path": "CHANGELOG.md"
+    },
+    "source/Testurio.Api": {
+      "release-type": "simple",
+      "package-name": "testurio-api",
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }
