@@ -44,15 +44,11 @@ jobs:
         run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Api.csproj
 
       - name: Build
-        run: dotnet build ${{ env.WORKING_DIR }}/Testurio.Api.csproj \
-          --no-restore \
-          --configuration Release
+        run: dotnet build ${{ env.WORKING_DIR }}/Testurio.Api.csproj --no-restore --configuration Release
 
       # Lint — verify no formatting issues
       - name: Lint (format check)
-        run: dotnet format ${{ env.WORKING_DIR }}/Testurio.Api.csproj \
-          --no-restore \
-          --verify-no-changes || true
+        run: dotnet format ${{ env.WORKING_DIR }}/Testurio.Api.csproj --no-restore --verify-no-changes || true
 
   audit:
     name: Dependency Audit
@@ -78,6 +74,4 @@ jobs:
         run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Api.csproj
 
       - name: Audit NuGet packages
-        run: dotnet list ${{ env.WORKING_DIR }}/Testurio.Api.csproj package \
-          --vulnerable \
-          --include-transitive
+        run: dotnet list ${{ env.WORKING_DIR }}/Testurio.Api.csproj package --vulnerable --include-transitive
