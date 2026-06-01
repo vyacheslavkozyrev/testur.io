@@ -1,0 +1,25 @@
+# syntax=docker/dockerfile:1
+# ---------------------------------------------------------------
+# Dockerfile.ci — runtime only, for CI/CD pipeline use
+# Binary is built outside Docker by the workflow (dotnet publish)
+# Output is placed in source/Testurio.Api/publish/ before docker build
+#
+# Companion: Dockerfile (full multi-stage) for local development
+# ---------------------------------------------------------------
+
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine
+
+WORKDIR /app
+
+ENV DOTNET_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
+
+# Copy pre-built publish output — placed here by CI before docker build
+COPY source/Testurio.Api/publish/ ./
+
+EXPOSE 8080
+
+# Use built-in non-root user from aspnet image
+USER $APP_UID
+
+ENTRYPOINT ["dotnet", "Testurio.Api.dll"]

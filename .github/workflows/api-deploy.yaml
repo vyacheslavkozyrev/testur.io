@@ -1,30 +1,27 @@
-name: UI Deploy
+name: API Deploy
 
 on:
   push:
     tags:
-      - "testurio-web@*"  # fired when release-please PAT-merges the Release PR
+      - "testurio-api@*"  # fired when release-please PAT-merges the Release PR
 
 env:
-  WORKING_DIR: source/Testurio.Web
+  WORKING_DIR: source/Testurio.Api
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/testurio-web
-  CHART_REGISTRY_PATH: ${{ github.repository }}/testurio-web/charts
-  CHART_DIR: source/Testurio.Web/chart
-  BASE_CHART_REPO: oci://ghcr.io/northln/charts  # base chart registry
+  IMAGE_NAME: ${{ github.repository }}/testurio-api
+  CHART_REGISTRY_PATH: ${{ github.repository }}/testurio-api/charts
+  CHART_DIR: source/Testurio.Api/chart
+  BASE_CHART_REPO: oci://ghcr.io/northln/charts
 
 permissions:
   contents: read
-  packages: write   # push image and chart to GHCR
-  id-token: write   # required for cosign keyless signing
+  packages: write
+  id-token: write
 
 jobs:
   build-and-push:
     name: Build Binary & Push Docker Image
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIR }}
     outputs:
       version: ${{ steps.version.outputs.version }}
       image: ${{ steps.image.outputs.image }}
@@ -33,46 +30,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Strip component prefix from tag to get bare semver: testurio-web@1.3.0 → 1.3.0
+      # Strip component prefix: testurio-api@1.3.0 → 1.3.0
       - name: Extract version from tag
         id: version
         run: |
           TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#testurio-web@}"
+          VERSION="${TAG#testurio-api@}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: ${{ env.WORKING_DIR }}/package-lock.json
+          dotnet-version: 9.0.x
 
-      # Layer 1: node_modules cache — skips npm ci entirely on hit
-      - name: Restore node_modules
-        id: cache-node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      # Cache NuGet packages — keyed on all csproj files in the solution
+      - name: Cache NuGet packages
+        id: cache-nuget
+        uses: actions/cache@v4
         with:
-          path: ${{ env.WORKING_DIR }}/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}
-
-      - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
-      # Layer 2: Next.js incremental build cache — only recompiles changed files
-      - name: Restore Next.js build cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: ${{ env.WORKING_DIR }}/.next/cache
-          # Full key: invalidates when deps or source changes
-          key: nextjs-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}-${{ hashFiles(format('{0}/src/**', env.WORKING_DIR)) }}
-          # Fallback: restore closest cache even if source changed — Next.js uses what's still valid
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
           restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}-
+            nuget-${{ runner.os }}-
 
-      - name: Build binary
-        run: npm run build
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Api.csproj
+
+      - name: Build and publish binary
+        run: |
+          dotnet publish ${{ env.WORKING_DIR }}/Testurio.Api.csproj --no-restore --configuration Release --output source/Testurio.Api/publish
+          echo "Published output:"
+          ls -la source/Testurio.Api/publish/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
@@ -88,7 +76,7 @@ jobs:
         id: image
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          context: ${{ env.WORKING_DIR }}
+          context: .
           file: ${{ env.WORKING_DIR }}/Dockerfile.ci
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
@@ -96,7 +84,6 @@ jobs:
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-          # Layer 3: Docker layer cache stored in GHCR — persists across runs, no extra cost
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
@@ -106,11 +93,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       digest: ${{ needs.build-and-push.outputs.digest }}
-      version: ${{ needs.build-and-push.outputs.version }} 
+      version: ${{ needs.build-and-push.outputs.version }}
     permissions:
       contents: read
-      packages: read          # pull image from GHCR for scanning
-      security-events: read  # use write when upload SARIF to GitHub Security tab is enabled
+      packages: read
+      security-events: read
     steps:
       - name: Setup Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
@@ -130,55 +117,22 @@ jobs:
         with:
           scan-type: image
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-          format: table          # human readable in logs
+          format: table
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: 1           # fail on findings
+          exit-code: 1
           skip-setup-trivy: true
 
-     ##### When Advanced Security in GitHub gets enabled, use this ######
-      # # Scan the already-pushed image directly by digest — immutable reference
-      # # No rebuild needed — same image that was built and pushed in build-and-push job
-      # - name: Scan image for vulnerabilities
-      #   uses: aquasecurity/trivy-action@v0.36.0
-      #   with:
-      #     scan-type: image
-      #     image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-      #     format: sarif
-      #     output: trivy-results.sarif
-      #     severity: HIGH,CRITICAL
-      #     ignore-unfixed: true
-      #     skip-setup-trivy: true
-
-      # # Upload always — results visible in Security tab even if scan fails the build
-      # - name: Upload scan results to GitHub Security
-      #   uses: github/codeql-action/upload-sarif@f52b05f4acaaa234e44466e66d29050e135ea9ef # v4.36.0
-      #   if: always()
-      #   with:
-      #     sarif_file: trivy-results.sarif
-
-      # # Separate failing step — after upload so results are always visible
-      # - name: Fail build on HIGH/CRITICAL vulnerabilities
-      #   uses: aquasecurity/trivy-action@v0.36.0
-      #   with:
-      #     scan-type: image
-      #     image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-      #     severity: HIGH,CRITICAL
-      #     ignore-unfixed: true
-      #     exit-code: 1
-      #     skip-setup-trivy: true
-      #######################################
-          
   sign-and-sbom:
     name: Sign Image & Generate SBOM
-    needs: scan   # only runs if scan passes
+    needs: scan
     outputs:
       version: ${{ needs.scan.outputs.version }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write    # push signature and SBOM to GHCR
-      id-token: write    # required for keyless cosign signing via OIDC
+      packages: write
+      id-token: write
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -190,7 +144,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Sign by digest — immutable, not by mutable tag
       - name: Sign image
         run: |
           cosign sign --yes \
@@ -202,7 +155,7 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
-          upload-artifact: false  # we attach via cosign, not as a workflow artifact
+          upload-artifact: false
 
       - name: Attest SBOM
         run: |
@@ -210,7 +163,7 @@ jobs:
             --predicate sbom.spdx.json \
             --type spdxjson \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
-  
+
   helm-lint:
     name: Helm Lint
     needs: sign-and-sbom
@@ -223,7 +176,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v5
         with:
-          version: v4.2.0
+          version: v3.17.0
 
       - name: Restore Helm dependencies
         id: cache-helm-deps
@@ -235,10 +188,9 @@ jobs:
       - name: Debug dependency cache
         run: |
           echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
-          echo "Charts directory contents:"
           ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
 
-      - name: Log in to northln GHCR (base chart — only on cache miss)
+      - name: Log in to northln GHCR (cache miss only)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         env:
           BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
@@ -246,7 +198,7 @@ jobs:
           echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
             --username ${{ github.actor }} \
             --password-stdin
-      
+
       - name: Update dependencies (cache miss only)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         run: |
@@ -254,29 +206,23 @@ jobs:
           echo "Downloaded charts:"
           ls -la ${{ env.CHART_DIR }}/charts/
 
-      # - name: Build dependencies from cache (cache hit)
-      #   if: steps.cache-helm-deps.outputs.cache-hit == 'true'
-      #   run: helm dependency build ${{ env.CHART_DIR }}
-
       - name: Lint chart
         run: helm lint ${{ env.CHART_DIR }}
 
-  
   package-chart:
     name: Package & Push Helm Chart
     needs: helm-lint
     outputs:
-      version: ${{ needs.helm-lint.outputs.version }} 
+      version: ${{ needs.helm-lint.outputs.version }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Pin Helm version — enables GitHub tool cache reuse across runs
       - name: Install Helm
         uses: azure/setup-helm@v5
         with:
-          version: v4.2.0
+          version: v3.17.0
 
       - name: Update Chart.yaml versions
         run: |
@@ -296,7 +242,6 @@ jobs:
           echo "values.yaml image tag:"
           grep "tag:" ${{ env.CHART_DIR }}/values.yaml
 
-      # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
       - name: Restore Helm dependencies
         id: cache-helm-deps
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -307,10 +252,9 @@ jobs:
       - name: Debug dependency cache
         run: |
           echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
-          echo "Charts directory contents:"
           ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
 
-      - name: Log in to northln GHCR (base chart — only on cache miss)
+      - name: Log in to northln GHCR (cache miss only)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         env:
           BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
@@ -319,16 +263,12 @@ jobs:
             --username ${{ github.actor }} \
             --password-stdin
 
-      - name: Download dependencies
+      - name: Download dependencies (cache miss only)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         run: |
           helm dependency update ${{ env.CHART_DIR }}
           echo "Downloaded charts:"
           ls -la ${{ env.CHART_DIR }}/charts/
-      
-      # - name: Build dependencies from cache (cache hit)
-      #   if: steps.cache-helm-deps.outputs.cache-hit == 'true'
-      #   run: helm dependency build ${{ env.CHART_DIR }}
 
       - name: Package Helm chart
         run: |
@@ -336,7 +276,6 @@ jobs:
           echo "Packaged chart:"
           ls -la /tmp/chart-output/
 
-      # Re-login with vyacheslavkozyrev token for pushing
       - name: Log in to GHCR (push)
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -362,24 +301,24 @@ jobs:
           repository: northLn/k3s-local
           token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
-          ref: feature/argocd 
+          ref: feature/argocd
 
       - name: Create deploy branch
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           cd gitops
-          git checkout -b "deploy/testurio-web-${VERSION}"
+          git checkout -b "deploy/testurio-api-${VERSION}"
 
       - name: Update dev values
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           sed -i "s/^\(\s*chartVersion:\s*\).*$/\1\"${VERSION}\"/" \
-            gitops/argocd/clusters/dev01/workload/testurio-web/service.yaml
+            gitops/argocd/clusters/dev01/workload/testurio-api/service.yaml
 
       - name: Verify service.yaml update
         run: |
           echo "service.yaml after update:"
-          cat gitops/argocd/clusters/dev01/workload/testurio-web/service.yaml
+          cat gitops/argocd/clusters/dev01/workload/testurio-api/service.yaml
 
       - name: Commit and push
         run: |
@@ -389,8 +328,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --staged --quiet || git commit \
-            -m "chore(testurio-web): bump chart and image to ${VERSION}"
-          git push origin "deploy/testurio-web-${VERSION}"
+            -m "chore(testurio-api): bump chart and image to ${VERSION}"
+          git push origin "deploy/testurio-api-${VERSION}"
 
       - name: Open PR in GitOps repo
         env:
@@ -398,21 +337,19 @@ jobs:
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr create \
-            --title "chore(testurio-web): deploy ${VERSION} to dev" \
-            --body "Automated chart and image bump for testurio-web ${VERSION}" \
+            --title "chore(testurio-api): deploy ${VERSION} to dev" \
+            --body "Automated chart and image bump for testurio-api ${VERSION}" \
             --base feature/argocd \
-            --head "deploy/testurio-web-${VERSION}" \
+            --head "deploy/testurio-api-${VERSION}" \
             --repo northLn/k3s-local
 
-      # Auto-merge for dev (Phase 1)
-      # Replace with manual approval gate in Phase 2/3 for stg/prd
-      - name: Auto-merge GitOps PR
+      - name: Merge GitOps PR
         env:
           GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr merge \
-            --delete-branch \
             --squash \
-            "deploy/testurio-web-${VERSION}" \
+            --delete-branch \
+            "deploy/testurio-api-${VERSION}" \
             --repo northLn/k3s-local
