@@ -13,5 +13,5 @@ appVersion: "0.1.0"
 
 dependencies:
   - name: base-chart
-    version: "0.1.1"
+    version: "v0.1.1"
     repository: "oci://ghcr.io/northln/charts"
