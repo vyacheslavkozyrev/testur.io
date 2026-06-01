@@ -46,7 +46,7 @@ jobs:
       # Cache NuGet packages — keyed on all csproj files in the solution
       - name: Cache NuGet packages
         id: cache-nuget
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
@@ -84,6 +84,7 @@ jobs:
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+          # Layer 3: Docker layer cache stored in GHCR — persists across runs, no extra cost
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
@@ -96,8 +97,8 @@ jobs:
       version: ${{ needs.build-and-push.outputs.version }}
     permissions:
       contents: read
-      packages: read
-      security-events: read
+      packages: read          # pull image from GHCR for scanning
+      security-events: read  # use write when upload SARIF to GitHub Security tab is enabled
     steps:
       - name: Setup Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
@@ -117,22 +118,22 @@ jobs:
         with:
           scan-type: image
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-          format: table
+          format: table          # human readable in logs
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: 1
+          exit-code: 1           # fail on findings
           skip-setup-trivy: true
 
   sign-and-sbom:
     name: Sign Image & Generate SBOM
-    needs: scan
+    needs: scan   # only runs if scan passes
     outputs:
       version: ${{ needs.scan.outputs.version }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-      id-token: write
+      packages: write    # push signature and SBOM to GHCR
+      id-token: write    # required for keyless cosign signing via OIDC
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
@@ -144,6 +145,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Sign by digest — immutable, not by mutable tag
       - name: Sign image
         run: |
           cosign sign --yes \
@@ -155,7 +157,7 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
           format: spdx-json
           output-file: sbom.spdx.json
-          upload-artifact: false
+          upload-artifact: false  # we attach via cosign, not as a workflow artifact
 
       - name: Attest SBOM
         run: |
@@ -176,7 +178,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v5
         with:
-          version: v3.17.0
+          version: v4.2.0
 
       - name: Restore Helm dependencies
         id: cache-helm-deps
@@ -190,7 +192,7 @@ jobs:
           echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
           ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
 
-      - name: Log in to northln GHCR (cache miss only)
+      - name: Log in to northln GHCR (base chart — only on cache miss)
         if: steps.cache-helm-deps.outputs.cache-hit != 'true'
         env:
           BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
@@ -219,10 +221,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      # Pin Helm version — enables GitHub tool cache reuse across runs
       - name: Install Helm
         uses: azure/setup-helm@v5
         with:
-          version: v3.17.0
+          version: v4.2.0
 
       - name: Update Chart.yaml versions
         run: |
@@ -242,6 +245,7 @@ jobs:
           echo "values.yaml image tag:"
           grep "tag:" ${{ env.CHART_DIR }}/values.yaml
 
+      # Layer 4: Helm chart dependencies — avoids re-pulling base chart on every run
       - name: Restore Helm dependencies
         id: cache-helm-deps
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -276,6 +280,7 @@ jobs:
           echo "Packaged chart:"
           ls -la /tmp/chart-output/
 
+      # Re-login with vyacheslavkozyrev token for pushing
       - name: Log in to GHCR (push)
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -343,13 +348,15 @@ jobs:
             --head "deploy/testurio-api-${VERSION}" \
             --repo northLn/k3s-local
 
-      - name: Merge GitOps PR
+      # Auto-merge for dev (Phase 1)
+      # Replace with manual approval gate in Phase 2/3 for stg/prd
+      - name: Auto-merge GitOps PR
         env:
           GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |
           VERSION="${{ needs.package-chart.outputs.version }}"
           gh pr merge \
-            --squash \
             --delete-branch \
+            --squash \
             "deploy/testurio-api-${VERSION}" \
             --repo northLn/k3s-local

@@ -102,12 +102,26 @@ base-chart:
   ingress:
     enabled: false
 
+  # kubectl create secret generic testurio-api-b2c \
+  # --from-literal=authority="https://testuriob2cdevelop.ciamlogin.com/YOUR_TENANT/v2.0" \
+  # --from-literal=clientId="YOUR_CLIENT_ID" \
+  # --namespace=dev01-testurio
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
       value: Production
     - name: ASPNETCORE_URLS
       value: "http://+:8080"
+    - name: AzureAdB2C__Authority
+      valueFrom:
+        secretKeyRef:
+          name: testurio-api-b2c
+          key: authority
+    - name: AzureAdB2C__ClientId
+      valueFrom:
+        secretKeyRef:
+          name: testurio-api-b2c
+          key: clientId
 
   # ── Autoscaling — disabled for now ────────────────────────────
   autoscaling:
