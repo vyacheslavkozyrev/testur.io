@@ -10,7 +10,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Production
+      DOTNET_ENVIRONMENT: Development
     restart: unless-stopped
 
   worker:
@@ -20,7 +20,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Production
+      DOTNET_ENVIRONMENT: Development
     depends_on:
       - api
     restart: unless-stopped
@@ -31,6 +31,13 @@ services:
       dockerfile: source/Testurio.Web/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+        NEXT_PUBLIC_B2C_TENANT: ${NEXT_PUBLIC_B2C_TENANT}
+        NEXT_PUBLIC_B2C_CLIENT_ID: ${NEXT_PUBLIC_B2C_CLIENT_ID}
+        NEXT_PUBLIC_B2C_AUTHORITY: ${NEXT_PUBLIC_B2C_AUTHORITY}
+        NEXT_PUBLIC_B2C_KNOWN_AUTHORITY: ${NEXT_PUBLIC_B2C_KNOWN_AUTHORITY}
+        NEXT_PUBLIC_B2C_REDIRECT_URI: ${NEXT_PUBLIC_B2C_REDIRECT_URI:-http://localhost:3000}
+        NEXT_PUBLIC_B2C_SCOPES: ${NEXT_PUBLIC_B2C_SCOPES:-openid profile email offline_access}
+        NEXT_PUBLIC_B2C_NATIVE_AUTH_URL: ${NEXT_PUBLIC_B2C_NATIVE_AUTH_URL}
     ports:
       - "3000:3000"
     depends_on:
