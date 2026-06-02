@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Security;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
@@ -82,13 +83,17 @@ public static class DependencyInjection
 
             // The local Cosmos emulator uses a self-signed certificate; bypass validation so the
             // SDK does not hang on TLS handshake in development.
-            if (opts.CosmosConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase))
+            if (opts.CosmosConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                opts.CosmosConnectionString.Contains("host.docker.internal", StringComparison.OrdinalIgnoreCase) ||
+                opts.CosmosConnectionString.Contains("cosmos:8081", StringComparison.OrdinalIgnoreCase))
             {
                 clientOptions.HttpClientFactory = () => new HttpClient(
-                    new HttpClientHandler
+                    new SocketsHttpHandler
                     {
-                        ServerCertificateCustomValidationCallback =
-                            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+                        SslOptions = new SslClientAuthenticationOptions
+                        {
+                            RemoteCertificateValidationCallback = (_, _, _, _) => true
+                        }
                     });
                 clientOptions.ConnectionMode = ConnectionMode.Gateway;
             }

@@ -10,6 +10,9 @@ COPY ["source/Testurio.Pipeline.Executors/Testurio.Pipeline.Executors.csproj", "
 COPY ["source/Testurio.Pipeline.Generators/Testurio.Pipeline.Generators.csproj", "source/Testurio.Pipeline.Generators/"]
 COPY ["source/Testurio.Pipeline.MemoryRetrieval/Testurio.Pipeline.MemoryRetrieval.csproj", "source/Testurio.Pipeline.MemoryRetrieval/"]
 COPY ["source/Testurio.Pipeline.StoryParser/Testurio.Pipeline.StoryParser.csproj", "source/Testurio.Pipeline.StoryParser/"]
+COPY ["source/Testurio.Pipeline.FeedbackLoop/Testurio.Pipeline.FeedbackLoop.csproj", "source/Testurio.Pipeline.FeedbackLoop/"]
+COPY ["source/Testurio.Pipeline.MemoryWriter/Testurio.Pipeline.MemoryWriter.csproj", "source/Testurio.Pipeline.MemoryWriter/"]
+COPY ["source/Testurio.Pipeline.ReportWriter/Testurio.Pipeline.ReportWriter.csproj", "source/Testurio.Pipeline.ReportWriter/"]
 COPY ["source/Testurio.Plugins/Testurio.Plugins.csproj", "source/Testurio.Plugins/"]
 
 RUN dotnet restore "source/Testurio.Worker/Testurio.Worker.csproj"
@@ -17,6 +20,12 @@ RUN dotnet restore "source/Testurio.Worker/Testurio.Worker.csproj"
 COPY . .
 WORKDIR /src/source/Testurio.Worker
 RUN dotnet publish "Testurio.Worker.csproj" -c Release -o /app/publish --no-restore
+
+# Install Playwright browsers in the build stage (SDK available here)
+ENV PLAYWRIGHT_BROWSERS_PATH=/app/publish/.playwright
+RUN dotnet tool install --global Microsoft.Playwright.CLI
+ENV PATH="$PATH:/root/.dotnet/tools"
+RUN playwright install chromium
 
 # Stage 2: Runtime with Playwright Chromium
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
@@ -37,11 +46,6 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=build /app/publish .
 
-# Install Playwright Chromium browser into the published app's Playwright browser path.
-# The playwright.sh helper script is published alongside the app binaries by the
-# Microsoft.Playwright NuGet package. PLAYWRIGHT_BROWSERS_PATH controls where browsers
-# are installed so they are available at the same path at runtime.
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
-RUN chmod +x /app/playwright.sh && /app/playwright.sh install chromium
 
 ENTRYPOINT ["dotnet", "Testurio.Worker.dll"]
