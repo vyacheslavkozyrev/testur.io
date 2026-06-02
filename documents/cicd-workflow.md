@@ -1,218 +1,222 @@
-# CI/CD Workflow — Monorepo Components
+# CI/CD State — June 2026
 
-## Overview
+> Snapshot of current pipeline implementation, known issues, and tech debt.
+> Last updated: June 2026
 
-Every component that runs in production is packaged as a container image.
-The image is the deployable unit, regardless of language or framework.
+---
 
-The monorepo currently contains **Node.js** and **.NET** components.
-Each component owns its `Dockerfile.ci`, Helm chart, and workflow — all co-located with its source code.
+## Current Implementation
 
-Versioning is driven by **release-please** (Google, monorepo-native), which reads conventional commits
-and manages semver automatically. Each component is versioned independently.
+### Components in scope
+
+| Component         | Language             | Status               |
+| ----------------- | -------------------- | -------------------- |
+| `Testurio.Web`    | Next.js 15 / Node 24 | ✅ Pipeline complete |
+| `Testurio.Api`    | ASP.NET Core 9       | ✅ Pipeline complete |
+| `Testurio.Worker` | ASP.NET Core 9       | 🔲 Not started       |
+
+---
+
+## Pipeline Flow
+
+### PR Open → develop
 
 ```
-PR Open      →  lint → test
-PR Merge     →  release-please opens Release PR (bumps package.json + CHANGELOG) → auto-merges → creates git tag
-On git tag   →  build binary → build & push Docker image → package & push Helm chart → update GitOps repo → ArgoCD syncs
+feature/*
+    │
+    │  open PR → develop
+    ▼
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+ PR VALIDATION WORKFLOW
+   UI:  install → lint → test → audit
+   API: build → lint (format check) → audit
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
 ```
 
-> Phase 1 covers the `develop` branch and `dev` environment only.
-> Branches, tagging strategy, and promotion gates will expand in Phase 2 (ArgoCD Image Updater) and Phase 3 (Kargo).
+### Merge to develop → Tag → Deploy
+
+```
+    │  merge to develop
+    ▼
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+ RELEASE-PLEASE (watches develop)
+   reads conventional commits since last tag
+   opens Release PR (bumps version + CHANGELOG)
+   auto-merges Release PR (Phase 1)
+   creates component-scoped git tag:
+     testurio-web@1.3.0
+     testurio-api@1.3.0
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+    │
+    │  on: push tag testurio-web@* / testurio-api@*
+    ▼
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+ DEPLOY WORKFLOW
+   build binary (npm run build / dotnet publish)
+   docker build → push to GHCR (tagged: 1.3.0)
+        ↓
+   trivy scan (HIGH/CRITICAL, ignore-unfixed)
+        ↓
+   cosign sign (keyless OIDC)
+   syft SBOM → cosign attest
+        ↓
+   helm lint
+        ↓
+   helm package → push to GHCR OCI
+   (chart: ghcr.io/org/repo/component/charts)
+        ↓
+   update GitOps repo (northLn/k3s-local)
+   open + merge PR into feature/argocd
+        ↓
+   ArgoCD detects change → syncs dev
+─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
+```
+
+### Environments
+
+| Environment | Branch    | Trigger                              | Promotion                 |
+| ----------- | --------- | ------------------------------------ | ------------------------- |
+| dev         | `develop` | tag push (release-please auto-merge) | automatic                 |
+| stg         | —         | —                                    | Phase 2 (not implemented) |
+| prd         | —         | —                                    | Phase 3 (not implemented) |
 
 ---
 
-## PR Open (`pull_request: opened, synchronize, reopened → develop`)
+## Repository Structure
 
-Triggered on every push to an open PR targeting `develop`.
-Each component has its own workflow, scoped to its subdirectory via `paths:` filters.
-**No binary is built and no image is produced at this stage.**
+```
+testur.io/                          ← monorepo
+├── .github/
+│   ├── workflows/
+│   │   ├── ui-pr-validation.yml    ← PR checks for Web
+│   │   ├── ui-deploy.yml           ← Deploy pipeline for Web
+│   │   ├── api-pr-validation.yml   ← PR checks for API
+│   │   ├── api-deploy.yml          ← Deploy pipeline for API
+│   │   └── release-please.yml      ← Versioning for all components
+│   ├── release-please-config.json  ← Component definitions
+│   ├── .release-please-manifest.json ← Current versions
+│   └── dependabot.yml              ← Automated dependency updates
+├── source/
+│   ├── Testurio.Web/
+│   │   ├── Dockerfile              ← Full multi-stage (local dev)
+│   │   ├── Dockerfile.ci           ← Runtime only (CI/CD)
+│   │   └── chart/                  ← Helm chart
+│   │       ├── Chart.yaml
+│   │       └── values.yaml
+│   ├── Testurio.Api/
+│   │   ├── Dockerfile              ← Full multi-stage (local dev)
+│   │   ├── Dockerfile.ci           ← Runtime only (CI/CD)
+│   │   └── chart/                  ← Helm chart
+│   │       ├── Chart.yaml
+│   │       └── values.yaml
+│   └── Testurio.Worker/            ← Pipeline not yet implemented
+```
 
-### 1. Install & Cache Dependencies
-- Restore dependency cache keyed on the component's lockfile hash
-- Run a clean, reproducible install:
-  - Node.js: `npm ci` keyed on `package-lock.json`
-  - .NET: `dotnet restore` keyed on `*.csproj` / `packages.lock.json`
-- Cache resolved dependencies for downstream jobs in the same run
+## GHCR Package Structure
 
-### 2. Lint
-- Restore dependencies from cache
-- Run the component's linter:
-  - Node.js: `npm run lint`
-  - .NET: `dotnet format --verify-no-changes`
-- Fails fast — no point testing if code doesn't pass lint
-- Runs in parallel with tests
+```
+ghcr.io/vyacheslavkozyrev/
+└── testur.io/
+    ├── testurio-web                ← Docker image
+    ├── testurio-web/charts         ← Helm chart (OCI)
+    ├── testurio-api                ← Docker image
+    └── testurio-api/charts         ← Helm chart (OCI)
+```
 
-### 3. Test
-- Restore dependencies from cache
-- Run the component's unit/integration test suite:
-  - Node.js: `npm test`
-  - .NET: `dotnet test`
-- Runs in parallel with lint
+## GitOps Repo Structure (northLn/k3s-local)
 
-> **This is the validation gate.** Both lint and test must pass before a PR can be merged.
-
----
-
-## PR Merge (`push` to `develop`)
-
-No code is built on merge. release-please runs and manages the release lifecycle.
-
-### 1. release-please
-- Reads conventional commits since the last tag for the component that changed
-- Opens or updates a Release PR for that component:
-  - Bumps `version` in `package.json` (Node.js) or `.csproj` (.NET)
-  - Updates `CHANGELOG.md`
-- Auto-merges the Release PR immediately (Phase 1)
-- Creates a component-scoped git tag, e.g. `testurio-web@1.3.0` or `testurio-api@2.1.0`
-- Only the component whose files changed gets a new tag — other components are unaffected
-
-> Conventional commit types that drive version bumps:
-> `fix:` → patch, `feat:` → minor, `feat!:` or `BREAKING CHANGE:` → major.
-> `chore:`, `docs:`, `ci:` do not trigger a release.
-
-> Auto-merge can be switched to manual PR review when promoting to higher environments in Phase 2/3.
-
----
-
-## On Git Tag (`push` of tag matching `<component>@*`)
-
-The tag event is the single trigger for all build and deploy activity.
-The source code at the tag is identical to what was validated in the PR — the build is deterministic.
-
-### 1. Build Binary
-- Check out the repo at the tagged commit
-- Install dependencies (warm cache unlikely on tag runners — full install)
-- Compile or bundle the component:
-  - Node.js: `npm run build` → outputs to `.next/standalone/` (Next.js standalone mode)
-  - .NET: `dotnet publish` → outputs to `publish/`
-
-### 2. Build & Push Docker Image
-- Build the container image using `Dockerfile.ci` (runtime-only, no build stage)
-- Copy only the built output into the image — no source code, no build tools, no dev dependencies
-- Use a minimal base image appropriate for the runtime (see [Base Image Selection](#base-image-selection))
-- Push to GHCR tagged as the bare semver from the git tag (e.g. `1.3.0`)
-- Requires `permissions: packages: write` on the job
-
-### 3. Package & Push Helm Chart
-- The Helm chart lives next to the component's source code and `Dockerfile.ci`
-- Update `Chart.yaml`:
-  - `appVersion` → semver from the git tag (e.g. `1.3.0`)
-  - `version` → same semver by default; can be bumped independently when chart structure changes
-- Package the chart and push to GHCR as an OCI artifact:
-  ```
-  helm package .
-  helm push <chart>-1.3.0.tgz oci://ghcr.io/<org>/<repo>/charts
-  ```
-- Chart and image live in the same GHCR registry — no separate chart repository needed
-
-### 4. Sign Image _(optional)_
-- Sign the pushed image using `sigstore/cosign-installer` + `cosign sign`
-- Signature stored in GHCR alongside the image — no separate registry needed
-- Keyless signing via GitHub OIDC — no long-lived secrets required
-- Recommended for production workloads and compliance-sensitive environments
-
-### 5. Generate & Attach SBOM _(optional)_
-- Generate a Software Bill of Materials using `syft` or `docker buildx`
-- Attach the SBOM to the image manifest in GHCR
-- Recommended when compliance frameworks apply (SLSA, SOC2, FedRAMP)
-
-### 6. Update GitOps Repo
-- Check out the GitOps repo (contains ArgoCD `Application` manifests and environment values)
-- Update `values-dev.yaml` for the component:
-  - `image.tag: 1.3.0`
-  - `chart version: 1.3.0`
-- Commit and open a PR in the GitOps repo
-- Auto-merge for `dev` (Phase 1) — ArgoCD detects the change and syncs
-
-> **ArgoCD is never pushed to directly.** CI proposes the change via PR; ArgoCD pulls it. This is the core GitOps principle.
+```
+argocd/clusters/dev01/workload/
+├── testurio-web/
+│   └── service.yaml               ← ArgoCD app definition (chartVersion updated by CI)
+└── testurio-api/
+    └── service.yaml               ← ArgoCD app definition (chartVersion updated by CI)
+```
 
 ---
 
-## Image Tagging Strategy
+## Base Chart
 
-| Event | Tag Format | Example | Purpose |
-|---|---|---|---|
-| Git tag created | `<semver>` | `1.3.0` | Immutable, ties image to exact release |
-
-All tags are immutable — no tag is ever overwritten. `latest` is never used.
-
-**Phase 2/3 note:** ArgoCD Image Updater and Kargo track images by **digest**, not by tag.
-Environment-prefixed tags (e.g. `dev-1.3.0`, `stg-1.3.0`) are therefore not needed and are intentionally omitted.
-The plain semver tag is sufficient for all phases.
+- **Repo:** `northLn/charts` (separate private repo)
+- **Registry:** `oci://ghcr.io/northln/charts`
+- **Current version:** `0.1.1`
+- **Features:** Deployment, Service, HTTPRoute (Gateway API), ServiceAccount, HPA, PDB, security contexts, probes, extraEnv, extraEnvFrom
 
 ---
 
-## Helm Chart Versioning
+## Infrastructure
 
-| Field | Value | Example | Notes |
-|---|---|---|---|
-| `appVersion` | semver from git tag | `1.3.0` | Tracks the app version |
-| `version` | same as `appVersion` by default | `1.3.0` | Can be bumped independently when chart templates or structure change |
-| `image.tag` (values) | semver | `1.3.0` | Same value across all environments; env distinction handled by ArgoCD values overlay |
-
----
-
-## Versioning
-
-Semver is sourced exclusively from **release-please** git tags. No manual version bumps in `package.json` or `.csproj` — release-please owns those files.
-
-Tag format per component (release-please monorepo convention):
-- `testurio-web@1.3.0` — Node.js UI
-- `testurio-api@2.1.0` — .NET API
-
-The deploy workflow strips the component prefix to extract the bare semver for image and chart tagging.
-
-release-please config lives at the repo root in two files:
-- `release-please-config.json` — component definitions, release types, options
-- `.release-please-manifest.json` — current version per component (source of truth for next bump)
+| Component       | Details                                    |
+| --------------- | ------------------------------------------ |
+| Kubernetes      | k3s v1.35.4 on FCOS 43 (bare metal)        |
+| CNI             | Cilium 1.19.3                              |
+| Ingress         | Gateway API (Cilium)                       |
+| GitOps          | ArgoCD (latest)                            |
+| Registry        | GHCR (GitHub Container Registry)           |
+| Node IP         | `10.0.22.10` (VLAN 22)                     |
+| DNS             | Cloudflare (proxied)                       |
+| External access | Cloudflare → Dream Router → Cilium Gateway |
 
 ---
 
-## Monorepo Notes
+## Tech Debt
 
-- Each component has its own workflow files, scoped via `paths:` filters to its subdirectory
-- A top-level `env.WORKING_DIR` in each workflow points to the component's root
-- `defaults.run.working-directory` is set per job — no `cd` repetition
-- Dependency cache keys are scoped to the component's own lockfile — components never share or invalidate each other's caches
-- The Docker build context and Helm chart are co-located in `WORKING_DIR`
-- release-please `separate-pull-requests: true` ensures each component gets its own Release PR
+### High Priority
+
+| Item                           | Component   | Description                                                                                                                                                                                                                  |
+| ------------------------------ | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node.js 20 → 24                | Web         | Actions deprecated as of June 2026. Migrate `node-version: 24` already done. Verify no runtime issues.                                                                                                                       |
+| .NET 9 → 10                    | API, Worker | .NET 9 EOL November 2026. Migrate `TargetFramework` + package versions + base images.                                                                                                                                        |
+| `NEXT_PUBLIC_*` baked at build | Web         | B2C config and API URL are compiled into the bundle — one image per environment. Implement runtime config injection via `/api/config` endpoint to enable build-once promote pattern.                                         |
+| Key Vault authentication       | API         | Currently requires Azure Service Principal credentials (`AZURE_CLIENT_ID/SECRET/TENANT_ID`) in Kubernetes secret. Migrate to Azure Workload Identity for keyless auth when moving to AKS or installing OIDC provider on k3s. |
+| Health endpoints               | API, Worker | No `/health` or `/ready` endpoints implemented. Probes disabled in Helm charts. Add `app.MapHealthChecks("/health")` and enable probes.                                                                                      |
+
+### Medium Priority
+
+| Item                                  | Component        | Description                                                                                                                    |
+| ------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------ | --- | ------------------------------------------------------ |
+| `actions/checkout@v6` SHA             | All workflows    | Wrong SHA in several workflow files — v6 doesn't exist, should be v4.2.x. Dependabot will fix on next run.                     |
+| `azure/setup-helm@v5`                 | Deploy workflows | Doesn't exist, use `@v4`. Dependabot will fix.                                                                                 |
+| `codeql-action/upload-sarif` sub-path | UI, API deploy   | Dependabot doesn't track sub-action paths — update `github/codeql-action/upload-sarif` SHA manually when new versions release. |
+| Release-please auto-merge             | All              | Phase 1: Release PRs auto-merge immediately. Phase 2/3: switch to manual merge gate before promoting to stg/prd.               |
+| Worker pipeline                       | Worker           | `Testurio.Worker` has no CI/CD pipeline. Implement after API is stable.                                                        |
+| Helm chart for Worker                 | Worker           | No Helm chart created yet.                                                                                                     |
+| `dotnet format` enforcement           | API              | Lint step is non-blocking (`                                                                                                   |     | true`). Enable enforcement once codebase is formatted. |
+| `dotnet list --vulnerable` exit code  | API              | Audit step reports but does not fail on vulnerabilities. Enable failure gate when team is ready.                               |
+
+### Low Priority
+
+| Item                               | Component | Description                                                                                                                                                                    |
+| ---------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Trivy binary version               | All       | `version: v0.70.0` in setup-trivy is manually pinned. Check for updates periodically — Dependabot does not manage this value.                                                  |
+| SBOM format                        | All       | Currently `spdx-json`. Consider also generating `cyclonedx` for broader tooling compatibility.                                                                                 |
+| GitHub Advanced Security           | All       | SARIF upload to GitHub Security tab commented out — requires paid Advanced Security. Uncomment when enabled.                                                                   |
+| Cosign/SBOM in PR validation       | All       | Currently only in deploy pipeline. Consider adding image signing to PR builds for earlier validation.                                                                          |
+| Multi-platform Docker images       | All       | Images built for `linux/amd64` only. Add `linux/arm64` for Apple Silicon dev machines and ARM k3s nodes. Add QEMU + `platforms: linux/amd64,linux/arm64` to build-push-action. |
+| `Wired connection 1` NM connection | FCOS      | Old network connection kept as fallback after VLAN migration. Delete after confirming VLAN 22 is stable.                                                                       |
+
+### Phase 2 (ArgoCD Image Updater)
+
+| Item                        | Description                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Replace GitOps PR flow      | ArgoCD Image Updater watches GHCR by digest, auto-updates GitOps repo. Eliminates `update-gitops` job from deploy pipeline. |
+| Multi-environment promotion | Add stg environment with auto-promotion from dev, manual gate for prd.                                                      |
+| Remove env-prefixed tags    | Image Updater tracks by digest — `dev-1.3.0` / `stg-1.3.0` tags no longer needed.                                           |
+
+### Phase 3 (Kargo)
+
+| Item                    | Description                                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Full promotion pipeline | Kargo handles dev→stg→prd promotion with gates, approvals, and rollback. Replaces Phase 2 Image Updater. |
+| Release-please on main  | Move release-please target branch from `develop` to `main` for proper release gating.                    |
 
 ---
 
-## Dockerfile Strategy
+## Conventional Commits Reference
 
-Each component maintains two Dockerfiles:
-
-| File | Purpose | Used by |
-|---|---|---|
-| `Dockerfile` | Full multi-stage build (build + runtime) | Local development, manual builds |
-| `Dockerfile.ci` | Runtime only — expects pre-built output | CI/CD pipeline (tag workflow) |
-
-`Dockerfile.ci` is minimal by design — it copies only the built output, producing the smallest possible image with no build tools or source code included.
-
----
-
-## Base Image Selection
-
-| Runtime | Recommended Base | Notes |
-|---|---|---|
-| Node.js (Next.js) | `gcr.io/distroless/nodejs20-debian12` | No shell, no package manager; compatible with Next.js standalone output |
-| .NET | `mcr.microsoft.com/dotnet/aspnet:<version>-alpine` | Runtime only, no SDK |
-
-Avoid `latest` tags on base images. Pin to a specific version tag or digest for reproducibility.
-
----
-
-## Key Principles
-
-- **Validate early, build late** — lint and test on PR open; binary and image built only on release tag
-- **Build once per release** — the image built on tag is the image that reaches all environments
-- **Immutable tags** — every image tag maps to exactly one digest, forever; nothing is overwritten
-- **Automated semver** — release-please owns all version bumps; no manual changes to version files
-- **Independent component versioning** — a change to one component never bumps another
-- **Co-located ownership** — each component owns its `Dockerfile.ci` and Helm chart; no central chart repo
-- **Single registry** — both container images and Helm charts are stored as OCI artifacts in GHCR
-- **GitOps separation** — CI never deploys directly; it updates configuration and ArgoCD does the rest
-- **Minimal images** — only the runtime and built output ship in the final image; no build tools, no source
-- **Scoped caches** — each component manages its own cache; monorepo components are fully independent
+| Prefix                         | Version bump | Example                          |
+| ------------------------------ | ------------ | -------------------------------- |
+| `fix:`                         | patch        | `fix: correct pagination offset` |
+| `feat:`                        | minor        | `feat: add project export`       |
+| `feat!:` or `BREAKING CHANGE:` | major        | `feat!: remove v1 API endpoints` |
+| `chore:`, `docs:`, `ci:`       | none         | `chore: update dependencies`     |
