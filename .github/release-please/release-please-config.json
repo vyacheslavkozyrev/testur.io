@@ -11,6 +11,11 @@
       "release-type": "simple",
       "package-name": "testurio-api",
       "changelog-path": "CHANGELOG.md"
+    },
+    "source/Testurio.Worker": {
+      "release-type": "simple",
+      "package-name": "testurio-worker",
+      "changelog-path": "CHANGELOG.md"
     }
   }
 }

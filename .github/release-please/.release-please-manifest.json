@@ -1,4 +1,5 @@
 {
   "source/Testurio.Web": "0.1.0",
-  "source/Testurio.Api": "0.1.0"
+  "source/Testurio.Api": "0.1.0",
+  "source/Testurio.Worker": "0.1.0"
 }

@@ -1,0 +1,366 @@
+name: Worker Deploy
+
+on:
+  push:
+    tags:
+      - "testurio-worker@*"  # fired when release-please PAT-merges the Release PR
+
+env:
+  WORKING_DIR: source/Testurio.Worker
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/testurio-worker
+  CHART_REGISTRY_PATH: ${{ github.repository }}/testurio-worker/charts
+  CHART_DIR: source/Testurio.Worker/chart
+  BASE_CHART_REPO: oci://ghcr.io/northln/charts
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  build-and-push:
+    name: Build Binary & Push Docker Image
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Strip component prefix: testurio-worker@1.3.0 → 1.3.0
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#testurio-worker@}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Worker.csproj
+
+      # Install Playwright CLI and download Chromium browser for inclusion in image
+      # Must run after dotnet publish so browsers land in publish output
+      - name: Build and publish binary
+        run: |
+          dotnet publish ${{ env.WORKING_DIR }}/Testurio.Worker.csproj --no-restore --configuration Release --output source/Testurio.Worker/publish
+          echo "Published output:"
+          ls -la source/Testurio.Worker/publish/
+
+      - name: Install Playwright CLI and download Chromium
+        run: |
+          dotnet tool install --global Microsoft.Playwright.CLI
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          PLAYWRIGHT_BROWSERS_PATH=source/Testurio.Worker/publish/.playwright \
+            playwright install chromium
+          echo "Playwright browsers:"
+          ls -la source/Testurio.Worker/publish/.playwright/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ env.WORKING_DIR }}/Dockerfile.ci
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  scan:
+    name: Scan Image for Vulnerabilities
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ needs.build-and-push.outputs.digest }}
+      version: ${{ needs.build-and-push.outputs.version }}
+    permissions:
+      contents: read
+      packages: read
+      security-events: read
+    steps:
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.6
+        with:
+          cache: true
+          version: v0.70.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Worker image is larger (includes Chromium) — more CVEs expected
+      # HIGH/CRITICAL from Chromium OS deps may need ignore list over time
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+          skip-setup-trivy: true
+
+  sign-and-sbom:
+    name: Sign Image & Generate SBOM
+    needs: scan
+    outputs:
+      version: ${{ needs.scan.outputs.version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign image
+        run: |
+          cosign sign --yes \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          upload-artifact: false
+
+      - name: Attest SBOM
+        run: |
+          cosign attest --yes \
+            --predicate sbom.spdx.json \
+            --type spdxjson \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.scan.outputs.digest }}
+
+  helm-lint:
+    name: Helm Lint
+    needs: sign-and-sbom
+    outputs:
+      version: ${{ needs.sign-and-sbom.outputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.0
+
+      - name: Restore Helm dependencies
+        id: cache-helm-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CHART_DIR }}/charts
+          key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+
+      - name: Debug dependency cache
+        run: |
+          echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
+          ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
+
+      - name: Log in to northln GHCR (cache miss only)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        env:
+          BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
+
+      - name: Update dependencies (cache miss only)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        run: |
+          helm dependency update ${{ env.CHART_DIR }}
+          echo "Downloaded charts:"
+          ls -la ${{ env.CHART_DIR }}/charts/
+
+      - name: Lint chart
+        run: helm lint ${{ env.CHART_DIR }}
+
+  package-chart:
+    name: Package & Push Helm Chart
+    needs: helm-lint
+    outputs:
+      version: ${{ needs.helm-lint.outputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.0
+
+      - name: Update Chart.yaml versions
+        run: |
+          VERSION="${{ needs.helm-lint.outputs.version }}"
+          sed -i "s/^appVersion:.*$/appVersion: \"${VERSION}\"/" ${{ env.CHART_DIR }}/Chart.yaml
+          sed -i "s/^version:.*$/version: ${VERSION}/" ${{ env.CHART_DIR }}/Chart.yaml
+
+      - name: Update image tag in values
+        run: |
+          VERSION="${{ needs.helm-lint.outputs.version }}"
+          sed -i "s/^\(\s*tag:\s*\).*$/\1\"${VERSION}\"/" ${{ env.CHART_DIR }}/values.yaml
+
+      - name: Verify chart version updates
+        run: |
+          echo "Chart.yaml versions:"
+          grep -E "^version:|^appVersion:" ${{ env.CHART_DIR }}/Chart.yaml
+          echo "values.yaml image tag:"
+          grep "tag:" ${{ env.CHART_DIR }}/values.yaml
+
+      - name: Restore Helm dependencies
+        id: cache-helm-deps
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CHART_DIR }}/charts
+          key: helm-deps-${{ runner.os }}-${{ hashFiles(format('{0}/Chart.lock', env.CHART_DIR)) }}
+
+      - name: Debug dependency cache
+        run: |
+          echo "Cache hit: ${{ steps.cache-helm-deps.outputs.cache-hit }}"
+          ls -la ${{ env.CHART_DIR }}/charts/ 2>/dev/null || echo "charts/ directory is empty or missing"
+
+      - name: Log in to northln GHCR (cache miss only)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        env:
+          BASE_CHART_TOKEN: ${{ secrets.BASE_CHART_TOKEN }}
+        run: |
+          echo "${BASE_CHART_TOKEN}" | helm registry login ghcr.io \
+            --username ${{ github.actor }} \
+            --password-stdin
+
+      - name: Download dependencies (cache miss only)
+        if: steps.cache-helm-deps.outputs.cache-hit != 'true'
+        run: |
+          helm dependency update ${{ env.CHART_DIR }}
+          echo "Downloaded charts:"
+          ls -la ${{ env.CHART_DIR }}/charts/
+
+      - name: Package Helm chart
+        run: |
+          helm package ${{ env.CHART_DIR }} --destination /tmp/chart-output
+          echo "Packaged chart:"
+          ls -la /tmp/chart-output/
+
+      - name: Log in to GHCR (push)
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GHCR_TOKEN}" | helm registry login ${{ env.REGISTRY }} \
+            --username ${{ github.actor }} \
+            --password-stdin
+
+      - name: Push Helm chart to GHCR
+        run: |
+          helm push /tmp/chart-output/*.tgz \
+            oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}
+          echo "Chart pushed to oci://${{ env.REGISTRY }}/${{ env.CHART_REGISTRY_PATH }}"
+
+  update-gitops:
+    name: Update GitOps Repo
+    needs: package-chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: northLn/k3s-local
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+          ref: feature/argocd
+
+      - name: Create deploy branch
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          cd gitops
+          git checkout -b "deploy/testurio-worker-${VERSION}"
+
+      - name: Update dev values
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          sed -i "s/^\(\s*chartVersion:\s*\).*$/\1\"${VERSION}\"/" \
+            gitops/argocd/clusters/dev01/workload/testurio-worker/service.yaml
+
+      - name: Verify service.yaml update
+        run: |
+          echo "service.yaml after update:"
+          cat gitops/argocd/clusters/dev01/workload/testurio-worker/service.yaml
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          cd gitops
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --staged --quiet || git commit \
+            -m "chore(testurio-worker): bump chart and image to ${VERSION}"
+          git push origin "deploy/testurio-worker-${VERSION}"
+
+      - name: Open PR in GitOps repo
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          gh pr create \
+            --title "chore(testurio-worker): deploy ${VERSION} to dev" \
+            --body "Automated chart and image bump for testurio-worker ${VERSION}" \
+            --base feature/argocd \
+            --head "deploy/testurio-worker-${VERSION}" \
+            --repo northLn/k3s-local
+
+      - name: Merge GitOps PR
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          VERSION="${{ needs.package-chart.outputs.version }}"
+          gh pr merge \
+            --squash \
+            --delete-branch \
+            "deploy/testurio-worker-${VERSION}" \
+            --repo northLn/k3s-local
