@@ -1,0 +1,93 @@
+# testurio-worker chart values
+# All overrides go under the base-chart: key — see base-chart README for full reference
+
+base-chart:
+  fullnameOverride: testurio-worker
+
+  # ── Image ──────────────────────────────────────────────────────
+  image:
+    repository: ghcr.io/vyacheslavkozyrev/testur.io/testurio-worker
+    pullPolicy: IfNotPresent
+    tag: ""
+
+  imagePullSecrets:
+    - name: ghcr-pull-secret
+
+  # ── Service ────────────────────────────────────────────────────
+  # Worker is a background service — no HTTP port exposed
+  # ClusterIP service still created by base-chart but not used externally
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # ── Security context ───────────────────────────────────────────
+  # Uses aspnet:9.0 (Debian) — NOT alpine — required for Playwright
+  # APP_UID = 1654 (built-in aspnet non-root user)
+  # readOnlyRootFilesystem: false — Playwright/Chromium writes temp files
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1654
+    runAsGroup: 1654
+    fsGroup: 1654
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false  # Playwright/Chromium requires writable filesystem
+    runAsNonRoot: true
+    runAsUser: 1654
+    runAsGroup: 1654
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  # ── Probes — disabled (background service, no HTTP endpoint) ───
+  # Worker has no HTTP health endpoint — probes not applicable
+  # Add health check via IHealthCheck + TCP probe if needed in future
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+  startupProbe:
+    enabled: false
+
+  # ── Resources — larger than API due to Chromium ────────────────
+  # Chromium requires significant memory — adjust based on observed usage
+  resources:
+    limits:
+      memory: 1Gi      # Chromium can use 512Mi+ per browser instance
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+  # ── HTTPRoute — disabled (background service, no ingress needed) ─
+  httpRoute:
+    enabled: false
+
+  ingress:
+    enabled: false
+
+  # ── Environment variables ──────────────────────────────────────
+  extraEnv:
+    - name: DOTNET_ENVIRONMENT
+      value: Production
+    - name: PLAYWRIGHT_BROWSERS_PATH
+      value: /app/.playwright
+
+  # Sensitive config injected per environment via GitOps values-dev.yaml
+  # See argocd/clusters/dev01/workload/testurio-worker/values-dev.yaml
+  extraEnvFrom: []
+
+  # ── Autoscaling — disabled ─────────────────────────────────────
+  # Worker scales based on Service Bus queue depth — HPA on queue metric
+  # not CPU/memory. Implement KEDA for queue-based autoscaling in Phase 2.
+  autoscaling:
+    enabled: false
+
+  podDisruptionBudget:
+    enabled: false

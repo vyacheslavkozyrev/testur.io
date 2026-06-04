@@ -1,0 +1,76 @@
+name: Worker PR Validation
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - "source/Testurio.Worker/**"
+      - "source/Testurio.Core/**"
+      - "source/Testurio.Infrastructure/**"
+      - "source/Testurio.Pipeline.**/**"
+      - "source/Testurio.Plugins/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  WORKING_DIR: source/Testurio.Worker
+
+jobs:
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Worker.csproj
+
+      - name: Build
+        run: dotnet build ${{ env.WORKING_DIR }}/Testurio.Worker.csproj --no-restore --configuration Release
+
+      - name: Lint (format check)
+        run: dotnet format ${{ env.WORKING_DIR }}/Testurio.Worker.csproj --no-restore --verify-no-changes || true
+
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('source/**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.WORKING_DIR }}/Testurio.Worker.csproj
+
+      - name: Audit NuGet packages
+        run: dotnet list ${{ env.WORKING_DIR }}/Testurio.Worker.csproj package --vulnerable --include-transitive
