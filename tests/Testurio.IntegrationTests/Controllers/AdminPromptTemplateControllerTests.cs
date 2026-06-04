@@ -220,7 +220,8 @@ public class AdminPromptTemplateControllerTests : IClassFixture<AdminPromptTempl
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id"
+                    ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost"
                 });
             });
 

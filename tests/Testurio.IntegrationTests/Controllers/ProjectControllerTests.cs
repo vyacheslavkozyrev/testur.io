@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -50,12 +50,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     {
         // The test host uses a no-op auth handler that accepts any bearer token.
         var client = _factory.CreateClient();
-        // Pass a dummy Bearer token â€” the test host replaces authentication with a passthrough.
+        // Pass a dummy Bearer token — the test host replaces authentication with a passthrough.
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
         return client;
     }
 
-    // â”€â”€â”€ GET /v1/projects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects ────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetProjects_ReturnsEmptyArray_WhenNoProjects()
@@ -90,7 +90,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal("Test Project", body[0].Name);
     }
 
-    // â”€â”€â”€ GET /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects/{id} ───────────────────────────────────────────────
 
     [Fact]
     public async Task GetProject_ReturnsProject_WhenExists()
@@ -140,7 +140,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects ───────────────────────────────────────────────────
 
     [Fact]
     public async Task CreateProject_Returns201_WithNewProject()
@@ -180,7 +180,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PUT /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PUT /v1/projects/{id} ───────────────────────────────────────────────
 
     [Fact]
     public async Task UpdateProject_Returns200_WithUpdatedProject()
@@ -235,7 +235,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ DELETE /v1/projects/{id} â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── DELETE /v1/projects/{id} ────────────────────────────────────────────
 
     [Fact]
     public async Task DeleteProject_Returns204_WhenDeleted()
@@ -284,7 +284,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH /v1/projects/{id}/work-item-type-filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH /v1/projects/{id}/work-item-type-filter ───────────────────────
 
     [Fact]
     public async Task PatchWorkItemTypeFilter_Returns200_WithUpdatedProject()
@@ -373,7 +373,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ RequestTimeoutSeconds validation â€” feature 0022 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── RequestTimeoutSeconds validation — feature 0022 ────────────────────
 
     [Fact]
     public async Task UpdateProject_Returns200_AndPersistsRequestTimeoutSeconds()
@@ -446,7 +446,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
             .ReturnsAsync((Project p, CancellationToken _) => p);
 
         var client = CreateAuthenticatedClient();
-        // Omit requestTimeoutSeconds â€” the DTO default (30) will be used
+        // Omit requestTimeoutSeconds — the DTO default (30) will be used
         var payload = new { name = "My App", productUrl = "https://app.example.com", testingStrategy = "Smoke." };
         var response = await client.PutAsJsonAsync("/v1/projects/proj-001", payload);
 
@@ -475,7 +475,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(45, body!.RequestTimeoutSeconds);
     }
 
-    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetProjects_Returns401_WithoutAuthToken()
@@ -486,12 +486,12 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ─── Plan limit enforcement (feature 0046) ────────────────────────────────
+    // --- Plan limit enforcement (feature 0046) --------------------------------
 
     [Fact]
     public async Task CreateProject_Returns403_WithProblemDetails_WhenProjectLimitReached()
     {
-        // Arrange — enforcement throws PlanLimitExceededException.
+        // Arrange � enforcement throws PlanLimitExceededException.
         _factory.PlanEnforcementMock
             .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new PlanLimitExceededException(
@@ -517,7 +517,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
     [Fact]
     public async Task CreateProject_Returns201_WhenPlanEnforcementPasses()
     {
-        // Arrange — enforcement allows the request.
+        // Arrange � enforcement allows the request.
         _factory.PlanEnforcementMock
             .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -553,7 +553,7 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
             _jiraApiClient.Reset();
             _planEnforcement.Reset();
 
-            // Default: no limit exceeded — existing tests pass without touching enforcement.
+            // Default: no limit exceeded � existing tests pass without touching enforcement.
             _planEnforcement
                 .Setup(e => e.CheckProjectLimitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
@@ -574,7 +574,8 @@ public class ProjectControllerTests : IClassFixture<ProjectControllerTests.ApiFa
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id"
+                    ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost"
                 });
             });
 
