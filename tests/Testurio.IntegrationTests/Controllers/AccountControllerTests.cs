@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -44,7 +44,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         return client;
     }
 
-    // â”€â”€â”€ GET /v1/account/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/account/profile ─────────────────────────────────────────────
 
     [Fact]
     public async Task GetProfile_Returns200_WithName_WhenUserExists()
@@ -83,7 +83,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Null(body.LastName);
     }
 
-    // â”€â”€â”€ PATCH /v1/account/profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH /v1/account/profile ────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProfile_Returns200_WithUpdatedName()
@@ -134,7 +134,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Contains("LastName", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
-    // â”€â”€â”€ GET /v1/account/preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/account/preferences ─────────────────────────────────────────
 
     [Fact]
     public async Task GetPreferences_Returns200_WhenUserExists()
@@ -167,7 +167,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH /v1/account/preferences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH /v1/account/preferences ───────────────────────────────────────
 
     [Fact]
     public async Task PatchPreferences_Returns200_WithMergedPreferences()
@@ -220,7 +220,7 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
         Assert.Contains("Theme", body.Errors.Keys, StringComparer.OrdinalIgnoreCase);
     }
 
-    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetProfile_Returns401_WithoutAuthToken()
@@ -259,7 +259,8 @@ public class AccountControllerTests : IClassFixture<AccountControllerTests.ApiFa
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id"
+                    ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost"
                 });
             });
 

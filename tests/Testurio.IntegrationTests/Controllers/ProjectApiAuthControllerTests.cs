@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -59,7 +59,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         return client;
     }
 
-    // â”€â”€â”€ PATCH â€” valid Bearer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — valid Bearer ─────────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns200_WithBearerTokenConfiguredTrue()
@@ -83,7 +83,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.True(body.ApiAuthBearerTokenConfigured);
     }
 
-    // â”€â”€â”€ PATCH â€” bearer without token â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — bearer without token ────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns400_WhenBearerTokenMissing()
@@ -95,7 +95,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” api_key without name â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — api_key without name ────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns400_WhenApiKeyNameMissing()
@@ -107,7 +107,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” api_key without placement â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — api_key without placement ───────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns400_WhenApiKeyPlacementMissing()
@@ -119,7 +119,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” basic without username â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — basic without username ──────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns400_WhenBasicUsernameMissing()
@@ -131,7 +131,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” none â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — none ─────────────────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns200_WithNoneMethod()
@@ -154,7 +154,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal("none", body.ApiAuthMethod);
     }
 
-    // â”€â”€â”€ PATCH â€” wrong user â†’ 403 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — wrong user → 403 ─────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns403_WhenProjectBelongsToDifferentUser()
@@ -171,7 +171,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” unknown project â†’ 404 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — unknown project → 404 ───────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectApiAuth_Returns404_WhenProjectNotFound()
@@ -187,7 +187,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET ──────────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetProjectApiAuth_Returns200_WithNoneForNewProject()
@@ -269,6 +269,7 @@ public class ProjectApiAuthControllerTests : IClassFixture<ProjectApiAuthControl
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost",
                 });
             });
 

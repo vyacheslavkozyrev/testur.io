@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -72,7 +72,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         return client;
     }
 
-    // â”€â”€â”€ GET /v1/projects/{id}/integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects/{id}/integrations ──────────────────────────────────
 
     [Fact]
     public async Task GetIntegrationStatus_ReturnsNone_WhenNotConfigured()
@@ -117,7 +117,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/integrations/ado â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/integrations/ado ─────────────────────────────
 
     [Fact]
     public async Task SaveADOConnection_Returns200_WhenValid()
@@ -179,7 +179,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/integrations/jira â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/integrations/jira ─────────────────────────────
 
     [Fact]
     public async Task SaveJiraConnection_Returns200_WhenValid()
@@ -220,7 +220,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ DELETE /v1/projects/{id}/integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── DELETE /v1/projects/{id}/integrations ────────────────────────────────
 
     [Fact]
     public async Task RemoveIntegration_Returns200_WithEmptyConfig()
@@ -263,7 +263,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/integrations/test-connection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/integrations/test-connection ─────────────────
 
     [Fact]
     public async Task TestConnection_Returns200_WithStructuredResult()
@@ -293,7 +293,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
         Assert.Equal("ok", body!.Status);
     }
 
-    // â”€â”€â”€ GET /v1/projects/{id}/integrations/webhook-setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects/{id}/integrations/webhook-setup ────────────────────
 
     [Fact]
     public async Task GetWebhookSetup_Returns200_WithWebhookUrl()
@@ -360,6 +360,7 @@ public class PMToolIntegrationTests : IClassFixture<PMToolIntegrationTests.ApiFa
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost",
                     ["PMTool:ApiBaseUrl"] = "https://api.testur.io"
                 });
             });

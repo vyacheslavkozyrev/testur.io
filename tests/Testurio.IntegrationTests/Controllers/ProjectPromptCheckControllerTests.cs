@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -55,7 +55,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         return client;
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” success â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/prompt-check — success ───────────────────────
 
     [Fact]
     public async Task PromptCheck_Returns200_WithFeedback_WhenProjectOwnedByUser()
@@ -81,7 +81,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal("Clear and concise.", body.Clarity.Assessment);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 404 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/prompt-check — 404 ───────────────────────────
 
     [Fact]
     public async Task PromptCheck_Returns404_WhenProjectDoesNotExist()
@@ -97,7 +97,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 403 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/prompt-check — 403 ───────────────────────────
 
     [Fact]
     public async Task PromptCheck_Returns403_WhenProjectBelongsToDifferentUser()
@@ -114,7 +114,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 400 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/prompt-check — 400 ───────────────────────────
 
     [Fact]
     public async Task PromptCheck_Returns400_WhenCustomPromptIsEmpty()
@@ -136,7 +136,7 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{id}/prompt-check â€” 401 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{id}/prompt-check — 401 ───────────────────────────
 
     [Fact]
     public async Task PromptCheck_Returns401_WithoutAuthToken()
@@ -185,7 +185,8 @@ public class ProjectPromptCheckControllerTests : IClassFixture<ProjectPromptChec
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id"
+                    ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost"
                 });
             });
 

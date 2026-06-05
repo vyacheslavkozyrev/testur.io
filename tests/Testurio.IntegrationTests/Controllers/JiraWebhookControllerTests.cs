@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Json;
@@ -21,9 +21,9 @@ using Testurio.Core.Repositories;
 using Testurio.Infrastructure;
 using Xunit;
 
-// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
+// JiraCommentResult is defined in Testurio.Core.Interfaces � used for mock setup.
 
-// JiraCommentResult is defined in Testurio.Core.Interfaces â€” used for mock setup.
+// JiraCommentResult is defined in Testurio.Core.Interfaces — used for mock setup.
 
 namespace Testurio.IntegrationTests.Controllers;
 
@@ -176,7 +176,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    // ─── Plan quota enforcement (feature 0046 / T035) ─────────────────────────
+    // --- Plan quota enforcement (feature 0046 / T035) -------------------------
 
     // Webhook contract: when quota is exhausted the controller returns 200 OK (not 403) so the
     // PM tool (Jira / ADO) does not retry the delivery. The quota-exceeded comment is posted
@@ -198,7 +198,7 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
         var client = CreateClient();
         var response = await PostWebhookAsync(client, MakePayload());
 
-        // 200 OK — webhook contract prevents PM tool retry storms.
+        // 200 OK � webhook contract prevents PM tool retry storms.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         // No TestRun document should be created when quota is exhausted.
@@ -239,12 +239,12 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
             _jiraApiClient.Reset();
             _planEnforcement.Reset();
 
-            // Default: quota not exceeded — existing tests pass without touching enforcement.
+            // Default: quota not exceeded � existing tests pass without touching enforcement.
             _planEnforcement
                 .Setup(e => e.CheckMonthlyRunQuotaAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            // Default: Jira comment post succeeds — prevents NullReferenceException in
+            // Default: Jira comment post succeeds � prevents NullReferenceException in
             // PostQuotaCommentAsync when JiraCommentResult is not set up by individual tests.
             _jiraApiClient
                 .Setup(c => c.PostCommentAsync(
@@ -268,7 +268,8 @@ public class JiraWebhookControllerTests : IClassFixture<JiraWebhookControllerTes
                     ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id"
+                    ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost"
                 });
             });
 

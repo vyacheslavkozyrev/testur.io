@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -56,7 +56,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         return client;
     }
 
-    // â”€â”€â”€ GET /v1/projects/{projectId}/report-settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects/{projectId}/report-settings ────────────────────────
 
     [Fact]
     public async Task GetReportSettings_Returns200_WithCurrentSettings()
@@ -91,7 +91,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    // â”€â”€â”€ DELETE /v1/projects/{projectId}/report-settings/template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── DELETE /v1/projects/{projectId}/report-settings/template ────────────
 
     [Fact]
     public async Task RemoveTemplate_Returns204_OnSuccess()
@@ -130,7 +130,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ POST /v1/projects/{projectId}/report-settings/template â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── POST /v1/projects/{projectId}/report-settings/template ─────────────
 
     [Fact]
     public async Task UploadTemplate_Returns200_WithBlobUri_ForValidMdFile()
@@ -199,7 +199,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH /v1/projects/{projectId}/report-settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH /v1/projects/{projectId}/report-settings ─────────────────────
 
     [Fact]
     public async Task UpdateReportSettings_Returns200_WithUpdatedValues()
@@ -240,7 +240,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    // â”€â”€â”€ Auth guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Auth guard ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task GetReportSettings_Returns401_WithoutAuthToken()
@@ -280,6 +280,7 @@ public class ProjectSettingsControllerTests : IClassFixture<ProjectSettingsContr
                     ["Infrastructure:ReportsBlobContainerName"] = "test-reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost",
                 });
             });
 

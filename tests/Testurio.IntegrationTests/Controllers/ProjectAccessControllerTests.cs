@@ -1,4 +1,4 @@
-﻿using Testurio.Infrastructure.Seeding;
+using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Cosmos;
 using System.Net;
 using System.Net.Http.Headers;
@@ -59,7 +59,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         return client;
     }
 
-    // â”€â”€â”€ GET /v1/projects/{projectId}/access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── GET /v1/projects/{projectId}/access ─────────────────────────────────
 
     [Fact]
     public async Task GetProjectAccess_Returns200_WithIpAllowlistMode()
@@ -120,7 +120,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH /v1/projects/{projectId}/access â€” IpAllowlist â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH /v1/projects/{projectId}/access — IpAllowlist ─────────────────
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithIpAllowlistMode()
@@ -147,7 +147,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         Assert.Equal(AccessMode.IpAllowlist, body.AccessMode);
     }
 
-    // â”€â”€â”€ PATCH â€” BasicAuth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — BasicAuth ────────────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithBasicAuthMode()
@@ -172,7 +172,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
             JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(AccessMode.BasicAuth, body.AccessMode);
-        // Response must not expose the password â€” basic_auth_user can be pre-filled
+        // Response must not expose the password — basic_auth_user can be pre-filled
         Assert.Null(body.HeaderTokenName);
     }
 
@@ -204,11 +204,11 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         var payload = new { accessMode = "basicAuth", basicAuthUser = "admin" };
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/access", payload);
 
-        // BasicAuthPass is optional on re-save — omitting it preserves the existing Key Vault secret.
+        // BasicAuthPass is optional on re-save � omitting it preserves the existing Key Vault secret.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    // â”€â”€â”€ PATCH â€” HeaderToken â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── PATCH — HeaderToken ──────────────────────────────────────────────────
 
     [Fact]
     public async Task PatchProjectAccess_Returns200_WithHeaderTokenMode()
@@ -265,7 +265,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
         var payload = new { accessMode = "headerToken", headerTokenName = "X-Testurio-Token" };
         var response = await client.PatchAsJsonAsync("/v1/projects/proj-001/access", payload);
 
-        // HeaderTokenValue is optional on re-save — omitting it preserves the existing Key Vault secret.
+        // HeaderTokenValue is optional on re-save � omitting it preserves the existing Key Vault secret.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
@@ -353,6 +353,7 @@ public class ProjectAccessControllerTests : IClassFixture<ProjectAccessControlle
                     ["Infrastructure:ReportsBlobContainerName"] = "reports",
                     ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
                     ["AzureAdB2C:ClientId"] = "test-client-id",
+                    ["App:BaseUrl"] = "https://localhost",
                 });
             });
 
