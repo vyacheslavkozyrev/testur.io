@@ -4,17 +4,17 @@
 # Binary is built outside Docker by the workflow (dotnet publish)
 # and copied in here. No build stage, no SDK in the image.
 #
-# Uses full aspnet:9.0 (Debian) — NOT alpine — required for
-# Playwright Chromium OS dependencies.
+# Uses aspnet:10.0 (Ubuntu 24.04 Noble) — NOT alpine — required
+# for Playwright Chromium OS dependencies.
 #
 # Companion: Dockerfile (full multi-stage) for local development
 # ---------------------------------------------------------------
-
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 WORKDIR /app
 
 # Install Playwright Chromium OS-level dependencies
+# Note: Ubuntu 24.04 renames libasound2 → libasound2t64
 RUN apt-get update && apt-get install -y \
     libnss3 \
     libatk-bridge2.0-0 \
@@ -23,18 +23,15 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     libgtk-3-0 \
     libxshmfence1 \
-    libasound2 \
+    libasound2t64 \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy pre-built publish output — placed here by CI before docker build
-# Includes Playwright Chromium browser at .playwright/
 COPY source/Testurio.Worker/publish/ ./
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/app/.playwright
 ENV DOTNET_ENVIRONMENT=Production
 
-# Use built-in non-root user from aspnet image
 USER $APP_UID
 
 ENTRYPOINT ["dotnet", "Testurio.Worker.dll"]
