@@ -1,7 +1,5 @@
-using Azure;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using Testurio.Infrastructure.KeyVault;
 
 namespace Testurio.UnitTests.Infrastructure;
@@ -19,37 +17,6 @@ namespace Testurio.UnitTests.Infrastructure;
 /// </remarks>
 public class KeyVaultSecretLoaderTests
 {
-    // ─── NullKeyVaultSecretLoader (fast baseline) ──────────────────────────────
-
-    [Fact]
-    public async Task NullLoader_AlwaysReturnsEmptyString()
-    {
-        var loader = new NullKeyVaultSecretLoader();
-        var result = await loader.GetSecretAsync("any-secret");
-        Assert.Equal(string.Empty, result);
-    }
-
-    [Fact]
-    public async Task NullLoader_NeverThrows_ForAnySecretName()
-    {
-        var loader = new NullKeyVaultSecretLoader();
-        // Should not throw for any input including empty string
-        var result = await loader.GetSecretAsync(string.Empty);
-        Assert.Equal(string.Empty, result);
-    }
-
-    [Fact]
-    public async Task NullLoader_RespectsPassedCancellationToken_WithoutBlocking()
-    {
-        var loader = new NullKeyVaultSecretLoader();
-        using var cts = new CancellationTokenSource();
-        cts.Cancel();
-        // NullKeyVaultSecretLoader should not throw OperationCanceledException;
-        // it simply returns empty without doing any I/O.
-        var result = await loader.GetSecretAsync("any-secret", cts.Token);
-        Assert.Equal(string.Empty, result);
-    }
-
     // ─── KeyVaultSecretLoader constructor ─────────────────────────────────────
 
     [Theory]

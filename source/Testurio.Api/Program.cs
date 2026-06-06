@@ -151,7 +151,8 @@ else
 {
     var keyVaultUri = builder.Configuration["KeyVault:Uri"]
         ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
-    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
+    builder.Services.AddSingleton<ISecretResolver>(sp =>
+        new KeyVaultSecretResolver(sp.GetRequiredService<IKeyVaultSecretLoader>(), keyVaultUri));
 }
 
 var app = builder.Build();

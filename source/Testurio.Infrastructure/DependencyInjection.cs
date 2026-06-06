@@ -330,8 +330,8 @@ public static class DependencyInjection
     /// <summary>
     /// Registers <see cref="IEmbeddingService"/> as <see cref="AzureOpenAIEmbeddingService"/>,
     /// <see cref="TestMemoryRepository"/>, and the <see cref="AzureOpenAIOptions"/> validated binding.
-    /// Requires <c>AzureOpenAI:Endpoint</c>, <c>AzureOpenAI:ApiKey</c>, and
-    /// <c>AzureOpenAI:EmbeddingDeployment</c> in configuration.
+    /// Requires <c>AzureOpenAI:Endpoint</c> and <c>AzureOpenAI:EmbeddingDeployment</c> in configuration.
+    /// The API key is sourced separately via <c>AzureOpenAISecrets</c> from Key Vault.
     /// </summary>
     public static IServiceCollection AddAzureOpenAI(this IServiceCollection services)
     {

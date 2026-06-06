@@ -19,7 +19,8 @@ builder.Services.AddInfrastructure();
 builder.Services.AddWorkerServices();
 
 // ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
-// In production it reuses the Key Vault URI already validated above.
+// In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
+// the same SecretClient and retry logic rather than constructing a second one independently.
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
@@ -28,7 +29,8 @@ else
 {
     var keyVaultUri = builder.Configuration["KeyVault:Uri"]
         ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
-    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
+    builder.Services.AddSingleton<ISecretResolver>(sp =>
+        new KeyVaultSecretResolver(sp.GetRequiredService<IKeyVaultSecretLoader>(), keyVaultUri));
 }
 
 var host = builder.Build();
