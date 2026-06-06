@@ -2,9 +2,9 @@
 
 ## Tasks
 
-- [ ] T001 [Domain] Define `IKeyVaultSecretLoader` interface — `source/Testurio.Core/Interfaces/IKeyVaultSecretLoader.cs`
-- [ ] T002 [Infra] Implement `KeyVaultSecretLoader` with retry (3× exponential back-off) — `source/Testurio.Infrastructure/KeyVault/KeyVaultSecretLoader.cs`
-- [ ] T003 [Infra] Implement `NullKeyVaultSecretLoader` (development no-op returning empty string) — `source/Testurio.Infrastructure/KeyVault/NullKeyVaultSecretLoader.cs`
+- [x] T001 [Domain] Define `IKeyVaultSecretLoader` interface — `source/Testurio.Core/Interfaces/IKeyVaultSecretLoader.cs`
+- [x] T002 [Infra] Implement `KeyVaultSecretLoader` with retry (3× exponential back-off) — `source/Testurio.Infrastructure/KeyVault/KeyVaultSecretLoader.cs`
+- [x] T003 [Infra] Implement `NullKeyVaultSecretLoader` (development no-op returning empty string) — `source/Testurio.Infrastructure/KeyVault/NullKeyVaultSecretLoader.cs`
 - [ ] T004 [Infra] Add `InfrastructureSecrets` class (CosmosConnectionString, ServiceBusConnectionString, BlobStorageConnectionString) — `source/Testurio.Infrastructure/Options/InfrastructureSecrets.cs`
 - [ ] T005 [Infra] Add `AnthropicSecrets` class (ApiKey) — `source/Testurio.Infrastructure/Options/AnthropicSecrets.cs`
 - [ ] T006 [Infra] Add `AzureOpenAISecrets` class (ApiKey) — `source/Testurio.Infrastructure/Options/AzureOpenAISecrets.cs`
