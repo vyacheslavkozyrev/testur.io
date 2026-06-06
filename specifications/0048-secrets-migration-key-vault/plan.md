@@ -9,10 +9,10 @@
 - [x] T005 [Infra] Add `AnthropicSecrets` class (ApiKey) — `source/Testurio.Infrastructure/Options/AnthropicSecrets.cs`
 - [x] T006 [Infra] Add `AzureOpenAISecrets` class (ApiKey) — `source/Testurio.Infrastructure/Options/AzureOpenAISecrets.cs`
 - [x] T007 [Infra] Add `StripeSecrets` class (SecretKey, WebhookSecret) — `source/Testurio.Infrastructure/Options/StripeSecrets.cs`
-- [ ] T008 [Infra] Remove secret fields from `InfrastructureOptions` (CosmosConnectionString, ServiceBusConnectionString, BlobStorageConnectionString) — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T009 [Infra] Remove `ApiKey` from `AnthropicOptions` — `source/Testurio.Infrastructure/DependencyInjection.cs`
-- [ ] T010 [Infra] Remove `ApiKey` from `AzureOpenAIOptions` — `source/Testurio.Infrastructure/Options/AzureOpenAIOptions.cs`
-- [ ] T011 [Infra] Remove `SecretKey` and `WebhookSecret` from `StripeOptions` — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
+- [x] T008 [Infra] Remove secret fields from `InfrastructureOptions` (CosmosConnectionString, ServiceBusConnectionString, BlobStorageConnectionString) — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T009 [Infra] Remove `ApiKey` from `AnthropicOptions` — `source/Testurio.Infrastructure/DependencyInjection.cs`
+- [x] T010 [Infra] Remove `ApiKey` from `AzureOpenAIOptions` — `source/Testurio.Infrastructure/Options/AzureOpenAIOptions.cs`
+- [x] T011 [Infra] Remove `SecretKey` and `WebhookSecret` from `StripeOptions` — `source/Testurio.Infrastructure/Stripe/StripeOptions.cs`
 - [ ] T012 [Infra] Add `AddKeyVaultSecretLoader` DI extension that registers `KeyVaultSecretLoader` in production and `NullKeyVaultSecretLoader` in development — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T013 [Infra] Add `AddInfrastructureSecrets` startup helper: resolves `InfrastructureSecrets` via `IKeyVaultSecretLoader` (production) or local config (development) and registers as singleton — `source/Testurio.Infrastructure/DependencyInjection.cs`
 - [ ] T014 [Infra] Add `AddAnthropicSecrets` startup helper: resolves `AnthropicSecrets` via `IKeyVaultSecretLoader` (production) or local config (development) and registers as singleton — `source/Testurio.Infrastructure/DependencyInjection.cs`
