@@ -25,8 +25,10 @@ public class KeyVaultSecretLoaderTests
     [InlineData("   ")]
     public void Constructor_ThrowsArgumentException_WhenKeyVaultUriIsNullOrWhiteSpace(string? uri)
     {
-        Assert.Throws<ArgumentException>(() =>
+        // ThrowIfNullOrWhiteSpace throws ArgumentNullException for null, ArgumentException for empty/whitespace
+        var ex = Assert.ThrowsAny<ArgumentException>(() =>
             new KeyVaultSecretLoader(uri!, NullLogger<KeyVaultSecretLoader>.Instance));
+        Assert.NotNull(ex);
     }
 
     // ─── Secret name validation ────────────────────────────────────────────────
@@ -44,7 +46,9 @@ public class KeyVaultSecretLoaderTests
             "https://fake-vault.vault.azure.net/",
             NullLogger<KeyVaultSecretLoader>.Instance);
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        // ThrowIfNullOrWhiteSpace throws ArgumentNullException for null, ArgumentException for empty/whitespace
+        var ex = await Assert.ThrowsAnyAsync<ArgumentException>(() =>
             loader.GetSecretAsync(name!));
+        Assert.NotNull(ex);
     }
 }

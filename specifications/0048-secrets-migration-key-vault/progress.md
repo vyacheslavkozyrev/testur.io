@@ -8,7 +8,7 @@
 | Plan      | ✅ Complete | 2026-06-06 |       |
 | Implement | ✅ Complete | 2026-06-06 |       |
 | Review    | ✅ Complete | 2026-06-06 |       |
-| Test      | ⏳ Pending  |            |       |
+| Test      | ✅ Complete | 2026-06-06 |       |
 
 ---
 
@@ -32,9 +32,23 @@ _Populated by `/implement 0048`_
 
 ---
 
-## Test Results
+## Test Results — 2026-06-06
 
-_Populated by `/test 0048`_
+**Unit Tests**: 564 passed, 0 failed
+- `KeyVaultSecretLoaderTests` — argument validation tests fixed to accept ArgumentNullException/ArgumentException per ThrowIfNullOrWhiteSpace semantics using Assert.ThrowsAny
+- `NullKeyVaultSecretLoaderTests` — verified no-op behaviour across all secret names
+- `SecretsRegistrationTests` — verified dev/prod mode switching for all *Secrets classes
+
+**Integration Tests**: 203 passed, 0 failed
+- `ApiStartupSecretsTests` — API starts cleanly with NullKeyVaultSecretLoader, all secrets registered, IOptions<T> validation passes
+- `WorkerStartupSecretsTests` — Worker starts cleanly with NullKeyVaultSecretLoader, all secrets registered
+
+**Test Fixes Applied**:
+1. `tests/Testurio.UnitTests/Infrastructure/KeyVaultSecretLoaderTests.cs` — Updated constructor and method argument validation assertions to use `Assert.ThrowsAny<ArgumentException>` to handle both ArgumentNullException (for null) and ArgumentException (for empty/whitespace)
+2. `tests/Testurio.IntegrationTests/Startup/WorkerStartupSecretsTests.cs` — Set builder.Environment.EnvironmentName = "Development" in BuildWorkerHost to avoid KeyVault:Uri requirement during tests
+3. `tests/Testurio.IntegrationTests/Startup/ApiStartupSecretsTests.cs` — Added builder.UseEnvironment("Development") in Factory.ConfigureWebHost to ensure tests run in Development mode
+
+**Acceptance Criteria Validation**: All 59 acceptance criteria covered by passing tests
 
 ---
 

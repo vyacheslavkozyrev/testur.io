@@ -80,6 +80,8 @@ public class ApiStartupSecretsTests : IClassFixture<ApiStartupSecretsTests.Facto
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.UseEnvironment("Development");
+
             builder.ConfigureAppConfiguration((_, config) =>
             {
                 config.AddInMemoryCollection(new Dictionary<string, string?>

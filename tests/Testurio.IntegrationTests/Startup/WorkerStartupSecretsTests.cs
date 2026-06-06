@@ -20,6 +20,7 @@ public class WorkerStartupSecretsTests
     private static IHost BuildWorkerHost(Dictionary<string, string?> configValues)
     {
         var builder = Host.CreateApplicationBuilder();
+        builder.Environment.EnvironmentName = "Development";
 
         builder.Configuration.AddInMemoryCollection(configValues);
 
