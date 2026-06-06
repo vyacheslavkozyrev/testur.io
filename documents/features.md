@@ -241,6 +241,14 @@ The plan document is restructured to carry two typed enforcement sections alongs
 
 ---
 
+## MVP — Security & Infrastructure
+
+**[0048]: Secrets Migration to Azure Key Vault** `MVP`
+_Business Outcome: Eliminates plaintext credentials from deployment configuration, reducing the blast radius of a compromised environment and satisfying baseline security requirements for production._
+All credential-bearing values are removed from environment variables and loaded exclusively from Azure Key Vault at application startup. Affected secrets: Cosmos DB connection string, Service Bus connection string, Blob Storage connection string, Anthropic Claude API key, Stripe secret key, Stripe webhook secret, and Azure OpenAI API key. The API and Worker services authenticate to Key Vault using Azure Managed Identity — no bootstrap secret is required. Non-sensitive configuration (database names, queue names, container names, model IDs, public URLs, Stripe price IDs) remains in standard app settings. Local development continues to use `.env` / .NET user secrets, which are never committed. The `.env.example` file is updated to document which values are Key Vault-backed in production.
+
+---
+
 ## Post-MVP — Configuration & Integration
 
 **[0047]: Cosmos-Backed Prompt Template Management** `Post-MVP`
