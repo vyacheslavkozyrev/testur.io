@@ -30,11 +30,11 @@
 - [x] T026 [App] Call `AddKeyVaultSecretLoader`, `AddInfrastructureSecrets`, `AddAnthropicSecrets`, and `AddAzureOpenAISecrets` at startup before `AddInfrastructure()` — `source/Testurio.Worker/Program.cs`
 - [x] T027 [App] Remove the existing `KeyVault:Uri`-based `ISecretResolver` registration block from Worker and add `ISecretResolver` wiring consistent with the updated API pattern — `source/Testurio.Worker/Program.cs`
 - [x] T028 [Config] Update `.env.example` — annotate all 7 Key Vault-backed variables, add dual-source explanation header, add missing `AzureOpenAI__ApiKey` entry — `.env.example`
-- [ ] T029 [Test] Unit tests for `KeyVaultSecretLoader`: retry behaviour on transient failure, fast-fail on secret-not-found, correct secret name mapping — `tests/Testurio.UnitTests/Infrastructure/KeyVaultSecretLoaderTests.cs`
-- [ ] T030 [Test] Unit tests for `NullKeyVaultSecretLoader`: always returns empty string, never calls Azure SDK — `tests/Testurio.UnitTests/Infrastructure/NullKeyVaultSecretLoaderTests.cs`
-- [ ] T031 [Test] Unit tests for `*Secrets` helpers: verify that in development mode each `Add*Secrets` extension reads from `IConfiguration` and produces the correct singleton; in production mode it reads from `IKeyVaultSecretLoader` — `tests/Testurio.UnitTests/Infrastructure/SecretsRegistrationTests.cs`
-- [ ] T032 [Test] Integration test: `Testurio.Api` starts cleanly with `NullKeyVaultSecretLoader` and local `.env` values; all previously registered `IOptions<T>` still validate on start — `tests/Testurio.IntegrationTests/Startup/ApiStartupSecretsTests.cs`
-- [ ] T033 [Test] Integration test: `Testurio.Worker` starts cleanly with `NullKeyVaultSecretLoader` and local `.env` values — `tests/Testurio.IntegrationTests/Startup/WorkerStartupSecretsTests.cs`
+- [x] T029 [Test] Unit tests for `KeyVaultSecretLoader`: retry behaviour on transient failure, fast-fail on secret-not-found, correct secret name mapping — `tests/Testurio.UnitTests/Infrastructure/KeyVaultSecretLoaderTests.cs`
+- [x] T030 [Test] Unit tests for `NullKeyVaultSecretLoader`: always returns empty string, never calls Azure SDK — `tests/Testurio.UnitTests/Infrastructure/NullKeyVaultSecretLoaderTests.cs`
+- [x] T031 [Test] Unit tests for `*Secrets` helpers: verify that in development mode each `Add*Secrets` extension reads from `IConfiguration` and produces the correct singleton; in production mode it reads from `IKeyVaultSecretLoader` — `tests/Testurio.UnitTests/Infrastructure/SecretsRegistrationTests.cs`
+- [x] T032 [Test] Integration test: `Testurio.Api` starts cleanly with `NullKeyVaultSecretLoader` and local `.env` values; all previously registered `IOptions<T>` still validate on start — `tests/Testurio.IntegrationTests/Startup/ApiStartupSecretsTests.cs`
+- [x] T033 [Test] Integration test: `Testurio.Worker` starts cleanly with `NullKeyVaultSecretLoader` and local `.env` values — `tests/Testurio.IntegrationTests/Startup/WorkerStartupSecretsTests.cs`
 
 ## Rationale
 

@@ -3,6 +3,7 @@ using Moq;
 using Stripe;
 using Stripe.Checkout;
 using Testurio.Core.Enums;
+using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.Stripe;
 
 namespace Testurio.UnitTests.Infrastructure;
@@ -17,8 +18,6 @@ public class StripeServiceTests
 {
     private static readonly StripeOptions ValidOptions = new()
     {
-        SecretKey = "sk_test_fake",
-        WebhookSecret = "whsec_fake",
         PriceIds = new Dictionary<string, string>
         {
             ["TestJunior_Monthly"] = "price_tj_monthly",
@@ -32,17 +31,18 @@ public class StripeServiceTests
         },
     };
 
+    private static readonly StripeSecrets ValidSecrets = new()
+    {
+        SecretKey = "sk_test_fake",
+        WebhookSecret = "whsec_fake",
+    };
+
     [Fact]
     public async Task CreateCheckoutSessionAsync_ThrowsInvalidOperation_WhenPriceIdNotConfigured()
     {
         // StripeOptions with empty price map — simulates a misconfigured deployment.
-        var options = Options.Create(new StripeOptions
-        {
-            SecretKey = "sk_test_fake",
-            WebhookSecret = "whsec_fake",
-            PriceIds = [],
-        });
-        var sut = new StripeService(options);
+        var options = Options.Create(new StripeOptions { PriceIds = [] });
+        var sut = new StripeService(options, new StripeSecrets { SecretKey = "sk_test_fake", WebhookSecret = "whsec_fake" });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             sut.CreateCheckoutSessionAsync(
@@ -78,7 +78,7 @@ public class StripeServiceTests
         // StripeService uses real Stripe SDK HTTP calls; invalid API key causes StripeException.
         // This test verifies the method signature is callable and propagates Stripe errors.
         // Live HTTP success is covered by integration tests.
-        var sut = new StripeService(Options.Create(ValidOptions));
+        var sut = new StripeService(Options.Create(ValidOptions), ValidSecrets);
 
         await Assert.ThrowsAsync<StripeException>(() =>
             sut.CreatePortalSessionAsync("cus_fake", "https://app.testur.io/settings"));
@@ -90,7 +90,7 @@ public class StripeServiceTests
     public async Task ReactivateSubscriptionAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
     {
         // Verifies method signature and error propagation; live HTTP covered by integration tests.
-        var sut = new StripeService(Options.Create(ValidOptions));
+        var sut = new StripeService(Options.Create(ValidOptions), ValidSecrets);
 
         await Assert.ThrowsAsync<StripeException>(() =>
             sut.ReactivateSubscriptionAsync("sub_fake"));
@@ -102,7 +102,7 @@ public class StripeServiceTests
     public async Task ListInvoicesAsync_ThrowsStripeException_WhenApiKeyIsInvalid()
     {
         // Verifies method signature and error propagation; live HTTP covered by integration tests.
-        var sut = new StripeService(Options.Create(ValidOptions));
+        var sut = new StripeService(Options.Create(ValidOptions), ValidSecrets);
 
         await Assert.ThrowsAsync<StripeException>(() =>
             sut.ListInvoicesAsync("cus_fake", 20));
