@@ -115,7 +115,9 @@
       "Bash(echo \"---EXIT $?---\")",
       "Bash(DOTNET_ENVIRONMENT=Development stdbuf -oL dotnet run --project source/Testurio.Worker/Testurio.Worker.csproj --no-build --no-launch-profile)",
       "Bash(stdbuf -oL tee /tmp/wout.txt)",
-      "PowerShell(netstat *)"
+      "PowerShell(netstat *)",
+      "Bash(winget install *)",
+      "Bash(xargs rm *)"
     ]
   },
   "enableAllProjectMcpServers": true
