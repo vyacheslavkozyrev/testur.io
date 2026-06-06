@@ -72,6 +72,16 @@ jobs:
             nextjs-${{ runner.os }}-${{ hashFiles(format('{0}/package-lock.json', env.WORKING_DIR)) }}-
 
       - name: Build binary
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_API_BASE_URL: ${{secret.NEXT_PUBLIC_API_BASE_URL}} #https://api-dev01.testur.io
+          NEXT_PUBLIC_B2C_TENANT: ${{ secrets.NEXT_PUBLIC_B2C_TENANT }}
+          NEXT_PUBLIC_B2C_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_B2C_CLIENT_ID }}
+          NEXT_PUBLIC_B2C_AUTHORITY: ${{ secrets.NEXT_PUBLIC_B2C_AUTHORITY }}
+          NEXT_PUBLIC_B2C_KNOWN_AUTHORITY: ${{ secrets.NEXT_PUBLIC_B2C_KNOWN_AUTHORITY }}
+          NEXT_PUBLIC_B2C_REDIRECT_URI: ${{ secrets.NEXT_PUBLIC_B2C_REDIRECT_URI }}
+          NEXT_PUBLIC_B2C_SCOPES: ${{ secrets.NEXT_PUBLIC_B2C_SCOPES }}
+          NEXT_PUBLIC_B2C_NATIVE_AUTH_URL: ${{ secrets.NEXT_PUBLIC_B2C_NATIVE_AUTH_URL }}
         run: npm run build
 
       - name: Set up Docker Buildx
