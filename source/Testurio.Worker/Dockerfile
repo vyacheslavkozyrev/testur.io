@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY ["source/Testurio.Worker/Testurio.Worker.csproj", "source/Testurio.Worker/"]
@@ -28,7 +28,7 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 RUN playwright install chromium
 
 # Stage 2: Runtime with Playwright Chromium
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 # Install Playwright OS-level dependencies for Chromium
