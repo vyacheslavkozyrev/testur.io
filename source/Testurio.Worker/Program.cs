@@ -2,13 +2,24 @@ using Microsoft.Extensions.Logging;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// ── Secrets (Key Vault in production; local config in development) ────────────
+// Must be called before AddInfrastructure() because factories depend on the singletons.
+builder.Services.AddKeyVaultSecretLoader(builder.Configuration, builder.Environment);
+await builder.Services.AddInfrastructureSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddAnthropicSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddAzureOpenAISecretsAsync(builder.Configuration, builder.Environment);
+
 builder.Services.AddInfrastructure();
 builder.Services.AddWorkerServices();
 
+// ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
+// In production it reuses the Key Vault URI already validated above.
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
