@@ -29,7 +29,7 @@
 - [x] T025 [API] Remove inline `Claude:ApiKey` / `Claude:ModelId` configuration reads for the prompt-check `AnthropicGenerationClient`; source `ApiKey` from `AnthropicSecrets` singleton — `source/Testurio.Api/Program.cs`
 - [x] T026 [App] Call `AddKeyVaultSecretLoader`, `AddInfrastructureSecrets`, `AddAnthropicSecrets`, and `AddAzureOpenAISecrets` at startup before `AddInfrastructure()` — `source/Testurio.Worker/Program.cs`
 - [x] T027 [App] Remove the existing `KeyVault:Uri`-based `ISecretResolver` registration block from Worker and add `ISecretResolver` wiring consistent with the updated API pattern — `source/Testurio.Worker/Program.cs`
-- [ ] T028 [Config] Update `.env.example` — annotate all 7 Key Vault-backed variables, add dual-source explanation header, add missing `AzureOpenAI__ApiKey` entry — `.env.example`
+- [x] T028 [Config] Update `.env.example` — annotate all 7 Key Vault-backed variables, add dual-source explanation header, add missing `AzureOpenAI__ApiKey` entry — `.env.example`
 - [ ] T029 [Test] Unit tests for `KeyVaultSecretLoader`: retry behaviour on transient failure, fast-fail on secret-not-found, correct secret name mapping — `tests/Testurio.UnitTests/Infrastructure/KeyVaultSecretLoaderTests.cs`
 - [ ] T030 [Test] Unit tests for `NullKeyVaultSecretLoader`: always returns empty string, never calls Azure SDK — `tests/Testurio.UnitTests/Infrastructure/NullKeyVaultSecretLoaderTests.cs`
 - [ ] T031 [Test] Unit tests for `*Secrets` helpers: verify that in development mode each `Add*Secrets` extension reads from `IConfiguration` and produces the correct singleton; in production mode it reads from `IKeyVaultSecretLoader` — `tests/Testurio.UnitTests/Infrastructure/SecretsRegistrationTests.cs`
