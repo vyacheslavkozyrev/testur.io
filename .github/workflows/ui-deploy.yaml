@@ -74,7 +74,7 @@ jobs:
       - name: Build binary
         env:
           NEXT_TELEMETRY_DISABLED: "1"
-          NEXT_PUBLIC_API_BASE_URL: ${{secret.NEXT_PUBLIC_API_BASE_URL}} #https://api-dev01.testur.io
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }} #https://api-dev01.testur.io
           NEXT_PUBLIC_B2C_TENANT: ${{ secrets.NEXT_PUBLIC_B2C_TENANT }}
           NEXT_PUBLIC_B2C_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_B2C_CLIENT_ID }}
           NEXT_PUBLIC_B2C_AUTHORITY: ${{ secrets.NEXT_PUBLIC_B2C_AUTHORITY }}
