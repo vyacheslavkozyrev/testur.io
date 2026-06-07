@@ -11,9 +11,9 @@ namespace Testurio.UnitTests.Infrastructure;
 
 /// <summary>
 /// Unit tests for the <c>Add*Secrets</c> DI extension methods.
-/// Verifies that in development mode each helper reads from <see cref="IConfiguration"/>
-/// and registers the correct singleton; in production mode it reads from
-/// <see cref="IKeyVaultSecretLoader"/>.
+/// Verifies that in Development and Test environments each helper reads from
+/// <see cref="IConfiguration"/> and registers the correct singleton;
+/// in Develop and Production environments it reads from <see cref="IKeyVaultSecretLoader"/>.
 /// </summary>
 public class SecretsRegistrationTests
 {
@@ -22,10 +22,17 @@ public class SecretsRegistrationTests
     private static IConfiguration BuildConfig(Dictionary<string, string?> values) =>
         new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
-    private static IHostEnvironment DevEnvironment()
+    private static IHostEnvironment LocalEnvironment()
     {
         var env = new Mock<IHostEnvironment>();
         env.Setup(e => e.EnvironmentName).Returns("Development");
+        return env.Object;
+    }
+
+    private static IHostEnvironment TestEnvironment()
+    {
+        var env = new Mock<IHostEnvironment>();
+        env.Setup(e => e.EnvironmentName).Returns("Test");
         return env.Object;
     }
 
@@ -39,7 +46,7 @@ public class SecretsRegistrationTests
     // ─── AddInfrastructureSecretsAsync ────────────────────────────────────────
 
     [Fact]
-    public async Task AddInfrastructureSecretsAsync_Dev_ReadsFromConfiguration()
+    public async Task AddInfrastructureSecretsAsync_Local_ReadsFromConfiguration()
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
@@ -49,7 +56,7 @@ public class SecretsRegistrationTests
         });
 
         var services = new ServiceCollection();
-        await services.AddInfrastructureSecretsAsync(config, DevEnvironment());
+        await services.AddInfrastructureSecretsAsync(config, LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<InfrastructureSecrets>();
@@ -60,12 +67,12 @@ public class SecretsRegistrationTests
     }
 
     [Fact]
-    public async Task AddInfrastructureSecretsAsync_Dev_UsesMissingFieldsAsEmptyString()
+    public async Task AddInfrastructureSecretsAsync_Local_UsesMissingFieldsAsEmptyString()
     {
         var config = BuildConfig(new Dictionary<string, string?>());
 
         var services = new ServiceCollection();
-        await services.AddInfrastructureSecretsAsync(config, DevEnvironment());
+        await services.AddInfrastructureSecretsAsync(config, LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<InfrastructureSecrets>();
@@ -102,7 +109,7 @@ public class SecretsRegistrationTests
     // ─── AddAnthropicSecretsAsync ─────────────────────────────────────────────
 
     [Fact]
-    public async Task AddAnthropicSecretsAsync_Dev_ReadsFromConfiguration()
+    public async Task AddAnthropicSecretsAsync_Local_ReadsFromConfiguration()
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
@@ -110,7 +117,7 @@ public class SecretsRegistrationTests
         });
 
         var services = new ServiceCollection();
-        await services.AddAnthropicSecretsAsync(config, DevEnvironment());
+        await services.AddAnthropicSecretsAsync(config, LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<AnthropicSecrets>();
@@ -138,7 +145,7 @@ public class SecretsRegistrationTests
     // ─── AddAzureOpenAISecretsAsync ───────────────────────────────────────────
 
     [Fact]
-    public async Task AddAzureOpenAISecretsAsync_Dev_ReadsFromConfiguration()
+    public async Task AddAzureOpenAISecretsAsync_Local_ReadsFromConfiguration()
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
@@ -146,7 +153,7 @@ public class SecretsRegistrationTests
         });
 
         var services = new ServiceCollection();
-        await services.AddAzureOpenAISecretsAsync(config, DevEnvironment());
+        await services.AddAzureOpenAISecretsAsync(config, LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<AzureOpenAISecrets>();
@@ -174,7 +181,7 @@ public class SecretsRegistrationTests
     // ─── AddStripeSecretsAsync ────────────────────────────────────────────────
 
     [Fact]
-    public async Task AddStripeSecretsAsync_Dev_ReadsFromConfiguration()
+    public async Task AddStripeSecretsAsync_Local_ReadsFromConfiguration()
     {
         var config = BuildConfig(new Dictionary<string, string?>
         {
@@ -183,7 +190,7 @@ public class SecretsRegistrationTests
         });
 
         var services = new ServiceCollection();
-        await services.AddStripeSecretsAsync(config, DevEnvironment());
+        await services.AddStripeSecretsAsync(config, LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<StripeSecrets>();
@@ -215,15 +222,48 @@ public class SecretsRegistrationTests
     // ─── AddKeyVaultSecretLoader ──────────────────────────────────────────────
 
     [Fact]
-    public void AddKeyVaultSecretLoader_Dev_RegistersNullLoader()
+    public void AddKeyVaultSecretLoader_Local_RegistersNullLoader()
     {
         var services = new ServiceCollection();
-        services.AddKeyVaultSecretLoader(BuildConfig([]), DevEnvironment());
+        services.AddKeyVaultSecretLoader(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
 
         Assert.IsType<NullKeyVaultSecretLoader>(loader);
+    }
+
+    [Fact]
+    public void AddKeyVaultSecretLoader_Test_RegistersNullLoader()
+    {
+        var services = new ServiceCollection();
+        services.AddKeyVaultSecretLoader(BuildConfig([]), TestEnvironment());
+
+        var sp = services.BuildServiceProvider();
+        var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
+
+        Assert.IsType<NullKeyVaultSecretLoader>(loader);
+    }
+
+    [Fact]
+    public async Task AddInfrastructureSecretsAsync_Test_ReadsFromConfiguration()
+    {
+        var config = BuildConfig(new Dictionary<string, string?>
+        {
+            ["Infrastructure:CosmosConnectionString"] = "cosmos-test",
+            ["Infrastructure:ServiceBusConnectionString"] = "sb-test",
+            ["Infrastructure:BlobStorageConnectionString"] = "blob-test",
+        });
+
+        var services = new ServiceCollection();
+        await services.AddInfrastructureSecretsAsync(config, TestEnvironment());
+
+        var sp = services.BuildServiceProvider();
+        var secrets = sp.GetRequiredService<InfrastructureSecrets>();
+
+        Assert.Equal("cosmos-test", secrets.CosmosConnectionString);
+        Assert.Equal("sb-test", secrets.ServiceBusConnectionString);
+        Assert.Equal("blob-test", secrets.BlobStorageConnectionString);
     }
 
     [Fact]

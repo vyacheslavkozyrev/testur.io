@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Extensions;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
@@ -21,7 +22,7 @@ builder.Services.AddWorkerServices();
 // ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
 // In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
 // the same SecretClient and retry logic rather than constructing a second one independently.
-if (builder.Environment.IsDevelopment())
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }

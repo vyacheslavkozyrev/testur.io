@@ -10,6 +10,7 @@ using Testurio.Api.Services;
 using Testurio.Api.Webhooks;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Extensions;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
@@ -23,7 +24,7 @@ var builder = WebApplication.CreateBuilder(args);
 var b2cOptions = builder.Services.AddOptions<AzureAdB2COptions>()
     .BindConfiguration("AzureAdB2C")
     .ValidateDataAnnotations();
-if (!builder.Environment.IsDevelopment())
+if (!builder.Environment.IsLocalOrTest())
     b2cOptions.ValidateOnStart();
 
 builder.Services.AddOpenApi();
@@ -41,7 +42,7 @@ builder.Services.AddHttpLogging(o =>
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
 });
-if (builder.Environment.IsDevelopment())
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddAuthentication(DevAuthHandler.SchemeName)
         .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
@@ -143,7 +144,7 @@ builder.Services.AddOptions<PMToolConnectionServiceOptions>()
 // ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
 // In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
 // the same SecretClient and retry logic rather than constructing a second one independently.
-if (builder.Environment.IsDevelopment())
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }
@@ -199,17 +200,17 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
 app.UseHttpLogging();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsLocalOrTest())
 {
     app.MapOpenApi();
 }
 
 app.UseExceptionHandler();
-if (!app.Environment.IsDevelopment())
+if (!app.Environment.IsLocalOrTest())
 {
     app.UseHttpsRedirection();
 }
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsLocalOrTest())
 {
     app.UseCors("DevPortal");
 }

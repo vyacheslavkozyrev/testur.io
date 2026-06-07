@@ -69,7 +69,7 @@ public class ApiStartupSecretsTests : IClassFixture<ApiStartupSecretsTests.Facto
     }
 
     [Fact]
-    public void KeyVaultSecretLoader_IsNullLoader_InDevelopmentEnvironment()
+    public void KeyVaultSecretLoader_IsNullLoader_InTestEnvironment()
     {
         using var scope = _factory.Services.CreateScope();
         var loader = scope.ServiceProvider.GetRequiredService<IKeyVaultSecretLoader>();
@@ -80,29 +80,10 @@ public class ApiStartupSecretsTests : IClassFixture<ApiStartupSecretsTests.Facto
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            builder.UseEnvironment("Development");
+            builder.UseEnvironment("Test");
 
-            builder.ConfigureAppConfiguration((_, config) =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["Infrastructure:CosmosConnectionString"] = "AccountEndpoint=https://localhost:8081/;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-                    ["Infrastructure:CosmosDatabaseName"] = "TestDb",
-                    ["Infrastructure:ServiceBusConnectionString"] = "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=dummykey==",
-                    ["Infrastructure:TestRunJobQueueName"] = "test-runs",
-                    ["Infrastructure:BlobStorageConnectionString"] = "UseDevelopmentStorage=true",
-                    ["Infrastructure:ExecutionLogsBlobContainerName"] = "execution-logs",
-                    ["Infrastructure:ReportTemplatesBlobContainerName"] = "report-templates",
-                    ["Infrastructure:ReportsBlobContainerName"] = "reports",
-                    ["Stripe:SecretKey"] = "sk_test_startup",
-                    ["Stripe:WebhookSecret"] = "whsec_startup",
-                    ["Stripe:PriceIds:TestPro_Monthly"] = "price_test",
-                    ["AzureAdB2C:Authority"] = "https://login.microsoftonline.com/test-tenant",
-                    ["AzureAdB2C:ClientId"] = "test-client-id",
-                    ["App:BaseUrl"] = "https://localhost",
-                    ["Claude:ModelId"] = "claude-opus-4-7",
-                });
-            });
+            // appsettings.Test.json (loaded automatically for "Test" environment) provides
+            // all secret and infrastructure values needed at startup.
 
             builder.ConfigureTestServices(services =>
             {

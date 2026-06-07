@@ -12,6 +12,7 @@ using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
+using Testurio.Infrastructure.Extensions;
 using Testurio.Infrastructure.Quota;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Embedding;
@@ -403,24 +404,24 @@ public static class DependencyInjection
     /// Registers the correct <see cref="IKeyVaultSecretLoader"/> implementation based on the
     /// hosting environment:
     /// <list type="bullet">
-    ///   <item>Development: <see cref="NullKeyVaultSecretLoader"/> — returns empty string so callers fall back to local config.</item>
-    ///   <item>Production: <see cref="KeyVaultSecretLoader"/> — reads from Azure Key Vault via Managed Identity.</item>
+    ///   <item>Development / Test: <see cref="NullKeyVaultSecretLoader"/> — returns empty string so callers fall back to local config.</item>
+    ///   <item>Develop / Production: <see cref="KeyVaultSecretLoader"/> — reads from Azure Key Vault via Managed Identity.</item>
     /// </list>
-    /// Requires <c>KeyVault:Uri</c> in non-Development configuration.
+    /// Requires <c>KeyVault:Uri</c> in non-local environments.
     /// </summary>
     public static IServiceCollection AddKeyVaultSecretLoader(
         this IServiceCollection services,
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        if (environment.IsDevelopment())
+        if (environment.IsLocalOrTest())
         {
             services.AddSingleton<IKeyVaultSecretLoader, NullKeyVaultSecretLoader>();
         }
         else
         {
             var keyVaultUri = configuration["KeyVault:Uri"]
-                ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
+                ?? throw new InvalidOperationException("KeyVault:Uri is required in non-local environments (Develop, Production).");
 
             services.AddSingleton<IKeyVaultSecretLoader>(sp =>
                 new KeyVaultSecretLoader(keyVaultUri, sp.GetRequiredService<ILogger<KeyVaultSecretLoader>>()));
@@ -444,7 +445,7 @@ public static class DependencyInjection
     {
         InfrastructureSecrets secrets;
 
-        if (environment.IsDevelopment())
+        if (environment.IsLocalOrTest())
         {
             secrets = new InfrastructureSecrets
             {
@@ -485,7 +486,7 @@ public static class DependencyInjection
     {
         AnthropicSecrets secrets;
 
-        if (environment.IsDevelopment())
+        if (environment.IsLocalOrTest())
         {
             secrets = new AnthropicSecrets
             {
@@ -521,7 +522,7 @@ public static class DependencyInjection
     {
         AzureOpenAISecrets secrets;
 
-        if (environment.IsDevelopment())
+        if (environment.IsLocalOrTest())
         {
             secrets = new AzureOpenAISecrets
             {
@@ -558,7 +559,7 @@ public static class DependencyInjection
     {
         StripeSecrets secrets;
 
-        if (environment.IsDevelopment())
+        if (environment.IsLocalOrTest())
         {
             secrets = new StripeSecrets
             {

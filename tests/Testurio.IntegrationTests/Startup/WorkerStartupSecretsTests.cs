@@ -20,7 +20,7 @@ public class WorkerStartupSecretsTests
     private static IHost BuildWorkerHost(Dictionary<string, string?> configValues)
     {
         var builder = Host.CreateApplicationBuilder();
-        builder.Environment.EnvironmentName = "Development";
+        builder.Environment.EnvironmentName = "Test";
 
         builder.Configuration.AddInMemoryCollection(configValues);
 
@@ -99,7 +99,7 @@ public class WorkerStartupSecretsTests
     }
 
     [Fact]
-    public void KeyVaultSecretLoader_IsNullLoader_InDevelopmentEnvironment()
+    public void KeyVaultSecretLoader_IsNullLoader_InTestEnvironment()
     {
         using var host = BuildWorkerHost(ValidWorkerConfig());
         var loader = host.Services.GetRequiredService<IKeyVaultSecretLoader>();
