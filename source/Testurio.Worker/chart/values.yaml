@@ -75,7 +75,7 @@ base-chart:
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Production
+      value: Develop
     - name: PLAYWRIGHT_BROWSERS_PATH
       value: /app/.playwright
 
