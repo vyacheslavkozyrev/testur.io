@@ -6,6 +6,7 @@ interface SessionData {
   displayName: string | null;
   avatarUrl?: string;
   exp: number;
+  idToken: string;
 }
 
 export type { SessionData };

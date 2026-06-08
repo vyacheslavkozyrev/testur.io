@@ -12,7 +12,7 @@ function evictExpired(): void {
   }
 }
 
-function createSessionResponse(user: AuthUser, exp: number): NextResponse {
+function createSessionResponse(user: AuthUser, exp: number, idToken: string): NextResponse {
   evictExpired();
 
   const sessionId = crypto.randomUUID();
@@ -26,6 +26,7 @@ function createSessionResponse(user: AuthUser, exp: number): NextResponse {
     displayName: user.displayName ?? null,
     avatarUrl: user.avatarUrl,
     exp,
+    idToken,
   });
 
   const response = NextResponse.json(user);
@@ -99,5 +100,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch { /* use default */ }
   }
 
-  return createSessionResponse(user, exp);
+  return createSessionResponse(user, exp, idToken);
 }
