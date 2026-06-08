@@ -7,6 +7,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.Stripe;
 
 namespace Testurio.Api.Services;
@@ -20,6 +21,7 @@ public class BillingService(
     IStripeService stripeService,
     IUserSubscriptionRepository subscriptionRepository,
     IOptions<StripeOptions> stripeOptions,
+    StripeSecrets stripeSecrets,
     IOptions<AppOptions> appOptions,
     ILogger<BillingService> logger) : IBillingService
 {
@@ -152,7 +154,7 @@ public class BillingService(
             stripeEvent = EventUtility.ConstructEvent(
                 payload,
                 stripeSignature,
-                _stripeOptions.WebhookSecret,
+                stripeSecrets.WebhookSecret,
                 throwOnApiVersionMismatch: false);
         }
         catch (StripeException ex)

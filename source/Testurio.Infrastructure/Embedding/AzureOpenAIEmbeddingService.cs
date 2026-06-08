@@ -20,12 +20,13 @@ public sealed partial class AzureOpenAIEmbeddingService : IEmbeddingService
 
     public AzureOpenAIEmbeddingService(
         IOptions<AzureOpenAIOptions> options,
+        AzureOpenAISecrets secrets,
         ILogger<AzureOpenAIEmbeddingService> logger)
     {
         var opts = options.Value;
         var azureClient = new AzureOpenAIClient(
             new Uri(opts.Endpoint),
-            new AzureKeyCredential(opts.ApiKey));
+            new AzureKeyCredential(secrets.ApiKey));
 
         _embeddingClient = azureClient.GetEmbeddingClient(opts.EmbeddingDeployment);
         _logger = logger;

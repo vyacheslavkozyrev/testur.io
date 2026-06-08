@@ -3,12 +3,16 @@ using System.Net.Security;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
+using Testurio.Infrastructure.Extensions;
 using Testurio.Infrastructure.Quota;
 using Testurio.Infrastructure.Cosmos;
 using Testurio.Infrastructure.Embedding;
@@ -27,9 +31,7 @@ namespace Testurio.Infrastructure;
 
 public class InfrastructureOptions
 {
-    [Required] public required string CosmosConnectionString { get; init; }
     [Required] public required string CosmosDatabaseName { get; init; }
-    [Required] public required string ServiceBusConnectionString { get; init; }
     [Required] public required string TestRunJobQueueName { get; init; }
     /// <summary>
     /// Service Bus topic name for comment-created webhook events (feature 0031).
@@ -42,7 +44,6 @@ public class InfrastructureOptions
     /// Defaults to <c>worker</c> when absent from configuration.
     /// </summary>
     public string CommentEventSubscriptionName { get; init; } = "worker";
-    [Required] public required string BlobStorageConnectionString { get; init; }
     [Required] public required string ExecutionLogsBlobContainerName { get; init; }
     [Required] public required string ReportTemplatesBlobContainerName { get; init; }
     [Required] public required string ReportsBlobContainerName { get; init; }
@@ -51,10 +52,10 @@ public class InfrastructureOptions
 /// <summary>
 /// Options for the Anthropic Claude API client. Validated at startup.
 /// Shared by Testurio.Worker and any pipeline project that needs LLM access.
+/// The API key is sourced separately via <c>AnthropicSecrets</c> from Key Vault.
 /// </summary>
 public class AnthropicOptions
 {
-    [Required] public required string ApiKey { get; init; }
     [Required] public required string ModelId { get; init; }
 }
 
@@ -69,7 +70,7 @@ public static class DependencyInjection
 
         services.AddSingleton(sp =>
         {
-            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
+            var secrets = sp.GetRequiredService<InfrastructureSecrets>();
             var clientOptions = new CosmosClientOptions
             {
                 UseSystemTextJsonSerializerWithOptions = new System.Text.Json.JsonSerializerOptions
@@ -83,9 +84,9 @@ public static class DependencyInjection
 
             // The local Cosmos emulator uses a self-signed certificate; bypass validation so the
             // SDK does not hang on TLS handshake in development.
-            if (opts.CosmosConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
-                opts.CosmosConnectionString.Contains("host.docker.internal", StringComparison.OrdinalIgnoreCase) ||
-                opts.CosmosConnectionString.Contains("cosmos:8081", StringComparison.OrdinalIgnoreCase))
+            if (secrets.CosmosConnectionString.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                secrets.CosmosConnectionString.Contains("host.docker.internal", StringComparison.OrdinalIgnoreCase) ||
+                secrets.CosmosConnectionString.Contains("cosmos:8081", StringComparison.OrdinalIgnoreCase))
             {
                 clientOptions.HttpClientFactory = () => new HttpClient(
                     new SocketsHttpHandler
@@ -98,13 +99,13 @@ public static class DependencyInjection
                 clientOptions.ConnectionMode = ConnectionMode.Gateway;
             }
 
-            return new CosmosClient(opts.CosmosConnectionString, clientOptions);
+            return new CosmosClient(secrets.CosmosConnectionString, clientOptions);
         });
 
         services.AddSingleton(sp =>
         {
-            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
-            return new ServiceBusClient(opts.ServiceBusConnectionString);
+            var secrets = sp.GetRequiredService<InfrastructureSecrets>();
+            return new ServiceBusClient(secrets.ServiceBusConnectionString);
         });
 
         services.AddSingleton<IUserRepository>(sp =>
@@ -168,8 +169,8 @@ public static class DependencyInjection
 
         services.AddSingleton(sp =>
         {
-            var opts = sp.GetRequiredService<IOptions<InfrastructureOptions>>().Value;
-            return new BlobServiceClient(opts.BlobStorageConnectionString);
+            var secrets = sp.GetRequiredService<InfrastructureSecrets>();
+            return new BlobServiceClient(secrets.BlobStorageConnectionString);
         });
 
         services.AddSingleton<BlobStorageClient>(sp =>
@@ -330,8 +331,8 @@ public static class DependencyInjection
     /// <summary>
     /// Registers <see cref="IEmbeddingService"/> as <see cref="AzureOpenAIEmbeddingService"/>,
     /// <see cref="TestMemoryRepository"/>, and the <see cref="AzureOpenAIOptions"/> validated binding.
-    /// Requires <c>AzureOpenAI:Endpoint</c>, <c>AzureOpenAI:ApiKey</c>, and
-    /// <c>AzureOpenAI:EmbeddingDeployment</c> in configuration.
+    /// Requires <c>AzureOpenAI:Endpoint</c> and <c>AzureOpenAI:EmbeddingDeployment</c> in configuration.
+    /// The API key is sourced separately via <c>AzureOpenAISecrets</c> from Key Vault.
     /// </summary>
     public static IServiceCollection AddAzureOpenAI(this IServiceCollection services)
     {
@@ -366,13 +367,14 @@ public static class DependencyInjection
 
         services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
         {
-            var opts = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
-            client.DefaultRequestHeaders.Add("x-api-key", opts.ApiKey);
+            var secrets = sp.GetRequiredService<AnthropicSecrets>();
+            if (!string.IsNullOrEmpty(secrets.ApiKey))
+                client.DefaultRequestHeaders.Add("x-api-key", secrets.ApiKey);
         })
         .AddTypedClient<ILlmGenerationClient>((client, sp) =>
         {
             var opts = sp.GetRequiredService<IOptions<AnthropicOptions>>().Value;
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
+            var logger = sp.GetRequiredService<ILogger<AnthropicGenerationClient>>();
             return new AnthropicGenerationClient(client, opts.ModelId, logger);
         });
 
@@ -394,5 +396,189 @@ public static class DependencyInjection
         services.AddSingleton<IStripeService, StripeService>();
 
         return services;
+    }
+
+    // ─── T012: Key Vault Secret Loader ────────────────────────────────────────
+
+    /// <summary>
+    /// Registers the correct <see cref="IKeyVaultSecretLoader"/> implementation based on the
+    /// hosting environment:
+    /// <list type="bullet">
+    ///   <item>Development / Test: <see cref="NullKeyVaultSecretLoader"/> — returns empty string so callers fall back to local config.</item>
+    ///   <item>Develop / Production: <see cref="KeyVaultSecretLoader"/> — reads from Azure Key Vault via Managed Identity.</item>
+    /// </list>
+    /// Requires <c>KeyVault:Uri</c> in non-local environments.
+    /// </summary>
+    public static IServiceCollection AddKeyVaultSecretLoader(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment)
+    {
+        if (environment.IsLocalOrTest())
+        {
+            services.AddSingleton<IKeyVaultSecretLoader, NullKeyVaultSecretLoader>();
+        }
+        else
+        {
+            var keyVaultUri = configuration["KeyVault:Uri"]
+                ?? throw new InvalidOperationException("KeyVault:Uri is required in non-local environments (Develop, Production).");
+
+            services.AddSingleton<IKeyVaultSecretLoader>(sp =>
+                new KeyVaultSecretLoader(keyVaultUri, sp.GetRequiredService<ILogger<KeyVaultSecretLoader>>()));
+        }
+
+        return services;
+    }
+
+    // ─── T013: Infrastructure Secrets ─────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves and registers <see cref="InfrastructureSecrets"/> as a singleton.
+    /// In production, reads from Key Vault. In development, reads from local configuration.
+    /// Must be called after <see cref="AddKeyVaultSecretLoader"/> and before <see cref="AddInfrastructure"/>.
+    /// </summary>
+    public static async Task AddInfrastructureSecretsAsync(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken ct = default)
+    {
+        InfrastructureSecrets secrets;
+
+        if (environment.IsLocalOrTest())
+        {
+            secrets = new InfrastructureSecrets
+            {
+                CosmosConnectionString = configuration["Infrastructure:CosmosConnectionString"] ?? string.Empty,
+                ServiceBusConnectionString = configuration["Infrastructure:ServiceBusConnectionString"] ?? string.Empty,
+                BlobStorageConnectionString = configuration["Infrastructure:BlobStorageConnectionString"] ?? string.Empty,
+            };
+        }
+        else
+        {
+            // Resolve via the already-registered IKeyVaultSecretLoader.
+            using var sp = services.BuildServiceProvider();
+            var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
+
+            secrets = new InfrastructureSecrets
+            {
+                CosmosConnectionString = await loader.GetSecretAsync("cosmos-connection-string", ct),
+                ServiceBusConnectionString = await loader.GetSecretAsync("servicebus-connection-string", ct),
+                BlobStorageConnectionString = await loader.GetSecretAsync("blob-storage-connection-string", ct),
+            };
+        }
+
+        services.AddSingleton(secrets);
+    }
+
+    // ─── T014: Anthropic Secrets ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves and registers <see cref="AnthropicSecrets"/> as a singleton.
+    /// In production, reads from Key Vault. In development, reads from local configuration.
+    /// Must be called after <see cref="AddKeyVaultSecretLoader"/> and before <see cref="AddAnthropicClient"/>.
+    /// </summary>
+    public static async Task AddAnthropicSecretsAsync(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken ct = default)
+    {
+        AnthropicSecrets secrets;
+
+        if (environment.IsLocalOrTest())
+        {
+            secrets = new AnthropicSecrets
+            {
+                ApiKey = configuration["Claude:ApiKey"] ?? string.Empty,
+            };
+        }
+        else
+        {
+            using var sp = services.BuildServiceProvider();
+            var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
+
+            secrets = new AnthropicSecrets
+            {
+                ApiKey = await loader.GetSecretAsync("anthropic-api-key", ct),
+            };
+        }
+
+        services.AddSingleton(secrets);
+    }
+
+    // ─── T015: Azure OpenAI Secrets ───────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves and registers <see cref="AzureOpenAISecrets"/> as a singleton.
+    /// In production, reads from Key Vault. In development, reads from local configuration.
+    /// Must be called after <see cref="AddKeyVaultSecretLoader"/> and before <see cref="AddAzureOpenAI"/>.
+    /// </summary>
+    public static async Task AddAzureOpenAISecretsAsync(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken ct = default)
+    {
+        AzureOpenAISecrets secrets;
+
+        if (environment.IsLocalOrTest())
+        {
+            secrets = new AzureOpenAISecrets
+            {
+                ApiKey = configuration["AzureOpenAI:ApiKey"] ?? string.Empty,
+            };
+        }
+        else
+        {
+            using var sp = services.BuildServiceProvider();
+            var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
+
+            secrets = new AzureOpenAISecrets
+            {
+                ApiKey = await loader.GetSecretAsync("azure-openai-api-key", ct),
+            };
+        }
+
+        services.AddSingleton(secrets);
+    }
+
+    // ─── T016: Stripe Secrets ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves and registers <see cref="StripeSecrets"/> as a singleton.
+    /// In production, reads from Key Vault. In development, reads from local configuration.
+    /// Must be called after <see cref="AddKeyVaultSecretLoader"/> and before <see cref="AddStripe"/>.
+    /// Only required by <c>Testurio.Api</c> — not needed in <c>Testurio.Worker</c>.
+    /// </summary>
+    public static async Task AddStripeSecretsAsync(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        CancellationToken ct = default)
+    {
+        StripeSecrets secrets;
+
+        if (environment.IsLocalOrTest())
+        {
+            secrets = new StripeSecrets
+            {
+                SecretKey = configuration["Stripe:SecretKey"] ?? string.Empty,
+                WebhookSecret = configuration["Stripe:WebhookSecret"] ?? string.Empty,
+            };
+        }
+        else
+        {
+            using var sp = services.BuildServiceProvider();
+            var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
+
+            secrets = new StripeSecrets
+            {
+                SecretKey = await loader.GetSecretAsync("stripe-secret-key", ct),
+                WebhookSecret = await loader.GetSecretAsync("stripe-webhook-secret", ct),
+            };
+        }
+
+        services.AddSingleton(secrets);
     }
 }
