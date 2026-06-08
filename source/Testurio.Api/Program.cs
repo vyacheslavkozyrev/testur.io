@@ -70,6 +70,10 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod());
+    options.AddPolicy("DevelopPortal", policy =>
+        policy.WithOrigins("https://web-dev01.testur.io")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
 // ── Secrets (Key Vault in production; local config in development) ────────────
 // Must be called before AddInfrastructure() because factories depend on the singletons.
@@ -206,13 +210,17 @@ if (app.Environment.IsLocalOrTest())
 }
 
 app.UseExceptionHandler();
-if (!app.Environment.IsLocalOrTest())
+if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection();
 }
 if (app.Environment.IsLocalOrTest())
 {
     app.UseCors("DevPortal");
+}
+else if (app.Environment.IsEnvironment("Develop"))
+{
+    app.UseCors("DevelopPortal");
 }
 app.UseAuthentication();
 app.UseAuthorization();
