@@ -117,7 +117,8 @@
       "Bash(stdbuf -oL tee /tmp/wout.txt)",
       "PowerShell(netstat *)",
       "Bash(winget install *)",
-      "Bash(xargs rm *)"
+      "Bash(xargs rm *)",
+      "Bash(Remove-Item -Force \"source\\\\Testurio.Infrastructure\\\\obj\\\\Debug\\\\net10.0\\\\Testurio.Infrastructure.csproj.CoreCompileInputs.cache\" -ErrorAction SilentlyContinue)"
     ]
   },
   "enableAllProjectMcpServers": true

@@ -10,7 +10,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Develop
+      DOTNET_ENVIRONMENT: Development
       KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
     restart: unless-stopped
 
@@ -21,7 +21,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Develop
+      DOTNET_ENVIRONMENT: Development
       KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
       Worker__TestRunJobQueueName: story-test-pipeline
     depends_on:
