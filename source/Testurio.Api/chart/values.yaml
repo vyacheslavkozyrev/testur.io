@@ -89,9 +89,9 @@ base-chart:
     enabled: true
     parentRefs:
       - name: cilium-gateway
-        sectionName: http
+        sectionName: https
     hostnames:
-      - api.testurio.local
+      - api-dev01.testur.io
     rules:
       - matches:
           - path:
@@ -106,10 +106,16 @@ base-chart:
   # --from-literal=authority="https://testuriob2cdevelop.ciamlogin.com/YOUR_TENANT/v2.0" \
   # --from-literal=clientId="YOUR_CLIENT_ID" \
   # --namespace=dev01-testurio
+  #
+  # kubectl create secret generic testurio-api-azure-sp \
+  # --from-literal=tenantId="YOUR_AZURE_TENANT_ID" \
+  # --from-literal=clientId="YOUR_AZURE_CLIENT_ID" \
+  # --from-literal=clientSecret="YOUR_AZURE_CLIENT_SECRET" \
+  # --namespace=dev01-testurio
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Production
+      value: Develop
     - name: ASPNETCORE_URLS
       value: "http://+:8080"
     - name: AzureAdB2C__Authority
@@ -122,6 +128,57 @@ base-chart:
         secretKeyRef:
           name: testurio-api-b2c
           key: clientId
+    - name: AZURE_TENANT_ID
+      valueFrom:
+        secretKeyRef:
+          name: testurio-api-azure-sp
+          key: tenantId
+    - name: AZURE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: testurio-api-azure-sp
+          key: clientId
+    - name: AZURE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: testurio-api-azure-sp
+          key: clientSecret
+    - name: Infrastructure__CosmosDatabaseName
+      value: testurio-dev
+    - name: Infrastructure__TestRunJobQueueName
+      value: story-test-pipeline
+    - name: Infrastructure__RunStatusChangedQueueName
+      value: run-status-changed
+    - name: Infrastructure__CommentEventTopicName
+      value: testurio-comment-events
+    - name: Infrastructure__CommentEventSubscriptionName
+      value: worker
+    - name: Infrastructure__ExecutionLogsBlobContainerName
+      value: execution-logs
+    - name: Infrastructure__ReportTemplatesBlobContainerName
+      value: report-templates
+    - name: Infrastructure__ReportsBlobContainerName
+      value: test-reports
+    - name: App__BaseUrl
+      value: https://web-dev01.testur.io
+    - name: PMTool__ApiBaseUrl
+      value: https://api-dev01.testur.io
+    - name: Stripe__PriceIds__TestJunior_Monthly
+      value: price_1TYu2y08x3ytd9CGx4bNOfBy
+    - name: Stripe__PriceIds__TestJunior_Annual
+      value: price_1TYu3L08x3ytd9CG1AzpJ4W1
+    - name: Stripe__PriceIds__TestPro_Monthly
+      value: price_1TYqEW08x3ytd9CGWQDaPUvg
+    - name: Stripe__PriceIds__TestPro_Annual
+      value: price_1TYqEW08x3ytd9CGPWNyvLaR
+    - name: Stripe__PriceIds__Team_Monthly
+      value: price_1TYqEW08x3ytd9CGV26fSLti
+    - name: Stripe__PriceIds__Team_Annual
+      value: price_1TYqEW08x3ytd9CG0mjHAvGc
+    - name: Stripe__PriceIds__Centurio_Monthly
+      value: price_1TYqEW08x3ytd9CG7fATYogc
+    - name: Stripe__PriceIds__Centurio_Annual
+      value: price_1TYq8u08x3ytd9CGGBgqEK4E
 
   # ── Autoscaling — disabled for now ────────────────────────────
   autoscaling:
