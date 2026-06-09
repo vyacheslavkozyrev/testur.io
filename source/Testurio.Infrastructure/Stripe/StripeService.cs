@@ -3,6 +3,7 @@ using Stripe;
 using Testurio.Core.Entities;
 using Testurio.Core.Enums;
 using Testurio.Core.Interfaces;
+using Testurio.Infrastructure.Options;
 using CheckoutSessionService = global::Stripe.Checkout.SessionService;
 using CheckoutSessionCreateOptions = global::Stripe.Checkout.SessionCreateOptions;
 using CheckoutSessionLineItemOptions = global::Stripe.Checkout.SessionLineItemOptions;
@@ -14,19 +15,23 @@ namespace Testurio.Infrastructure.Stripe;
 
 /// <summary>
 /// Concrete Stripe API client that implements <see cref="IStripeService"/>.
-/// Uses the Stripe.net SDK; API key is read from <see cref="StripeOptions"/>.
+/// Uses the Stripe.net SDK; API key and webhook secret are read from <see cref="StripeSecrets"/>
+/// (populated from Key Vault at startup). Non-secret configuration (Price IDs) comes from
+/// <see cref="StripeOptions"/>.
 /// </summary>
 public class StripeService : IStripeService
 {
     private readonly StripeOptions _options;
+    private readonly StripeSecrets _secrets;
     private readonly CheckoutSessionService _sessionService;
     private readonly SubscriptionService _subscriptionService;
     private readonly PortalSessionService _portalSessionService;
     private readonly InvoiceService _invoiceService;
 
-    public StripeService(IOptions<StripeOptions> options)
+    public StripeService(IOptions<StripeOptions> options, StripeSecrets secrets)
     {
         _options = options.Value;
+        _secrets = secrets;
         // Do NOT set StripeConfiguration.ApiKey globally — it is a static shared across
         // the AppDomain and would be overwritten in multi-tenant or test scenarios.
         // Pass the API key per-request via RequestOptions instead.
@@ -36,7 +41,7 @@ public class StripeService : IStripeService
         _invoiceService = new InvoiceService();
     }
 
-    private RequestOptions ApiRequestOptions => new() { ApiKey = _options.SecretKey };
+    private RequestOptions ApiRequestOptions => new() { ApiKey = _secrets.SecretKey };
 
     /// <inheritdoc/>
     public async Task<string> CreateCheckoutSessionAsync(

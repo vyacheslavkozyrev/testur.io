@@ -1,15 +1,28 @@
 using Microsoft.Extensions.Logging;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Extensions;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.KeyVault;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// ── Secrets (Key Vault in production; local config in development) ────────────
+// Must be called before AddInfrastructure() because factories depend on the singletons.
+builder.Services.AddKeyVaultSecretLoader(builder.Configuration, builder.Environment);
+await builder.Services.AddInfrastructureSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddAnthropicSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddAzureOpenAISecretsAsync(builder.Configuration, builder.Environment);
+
 builder.Services.AddInfrastructure();
 builder.Services.AddWorkerServices();
 
-if (builder.Environment.IsDevelopment())
+// ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
+// In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
+// the same SecretClient and retry logic rather than constructing a second one independently.
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }
@@ -17,7 +30,8 @@ else
 {
     var keyVaultUri = builder.Configuration["KeyVault:Uri"]
         ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
-    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
+    builder.Services.AddSingleton<ISecretResolver>(sp =>
+        new KeyVaultSecretResolver(sp.GetRequiredService<IKeyVaultSecretLoader>(), keyVaultUri));
 }
 
 var host = builder.Build();

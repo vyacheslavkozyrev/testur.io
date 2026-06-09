@@ -10,6 +10,7 @@ using Testurio.Core.Enums;
 using Testurio.Core.Exceptions;
 using Testurio.Core.Interfaces;
 using Testurio.Core.Repositories;
+using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.Stripe;
 using ApiBillingService = Testurio.Api.Services.BillingService;
 
@@ -24,8 +25,6 @@ public class BillingServiceTests
 
     private static readonly StripeOptions TestStripeOptions = new()
     {
-        SecretKey = "sk_test_secret",
-        WebhookSecret = "whsec_test",
         PriceIds = new Dictionary<string, string>
         {
             ["TestJunior_Monthly"] = "price_tj_monthly",
@@ -37,6 +36,12 @@ public class BillingServiceTests
             ["Centurio_Monthly"] = "price_cent_monthly",
             ["Centurio_Annual"] = "price_cent_annual",
         },
+    };
+
+    private static readonly StripeSecrets TestStripeSecrets = new()
+    {
+        SecretKey = "sk_test_secret",
+        WebhookSecret = "whsec_test",
     };
 
     public BillingServiceTests()
@@ -56,6 +61,7 @@ public class BillingServiceTests
             _stripeService.Object,
             _subscriptionRepository.Object,
             stripeOptions,
+            TestStripeSecrets,
             appOptions,
             _logger.Object);
     }

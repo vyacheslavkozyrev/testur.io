@@ -16,7 +16,6 @@ RUN dotnet publish "source/Testurio.Api/Testurio.Api.csproj" -c Release -o /app/
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
-ENV DOTNET_ENVIRONMENT=Production
 ENV ASPNETCORE_URLS=http://+:8080
 
 EXPOSE 8080

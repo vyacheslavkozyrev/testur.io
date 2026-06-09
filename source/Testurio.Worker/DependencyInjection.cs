@@ -9,6 +9,7 @@ using Testurio.Infrastructure;
 using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.KeyVault;
+using Testurio.Infrastructure.Options;
 using Testurio.Pipeline.AgentRouter;
 using Testurio.Pipeline.Executors;
 using Testurio.Pipeline.Generators;
@@ -37,8 +38,6 @@ public class ClaudeOptions
 {
     [System.ComponentModel.DataAnnotations.Required]
     public required string ModelId { get; init; }
-    [System.ComponentModel.DataAnnotations.Required]
-    public required string ApiKey { get; init; }
 }
 
 public static class DependencyInjection
@@ -55,12 +54,13 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // Anthropic Claude API client for scenario generation (legacy worker-level registration).
+        // Anthropic Claude API client for scenario generation.
+        // ApiKey is sourced from AnthropicSecrets (populated from Key Vault at startup).
         // The StoryParser pipeline stage resolves ILlmGenerationClient from the same registration.
         services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
         {
-            var opts = sp.GetRequiredService<IOptions<ClaudeOptions>>().Value;
-            client.DefaultRequestHeaders.Add("x-api-key", opts.ApiKey);
+            var secrets = sp.GetRequiredService<AnthropicSecrets>();
+            client.DefaultRequestHeaders.Add("x-api-key", secrets.ApiKey);
         })
         .AddTypedClient<ILlmGenerationClient>((client, sp) =>
         {

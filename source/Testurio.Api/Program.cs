@@ -10,18 +10,21 @@ using Testurio.Api.Services;
 using Testurio.Api.Webhooks;
 using Testurio.Core.Interfaces;
 using Testurio.Infrastructure;
+using Testurio.Infrastructure.Extensions;
+using Testurio.Infrastructure.Anthropic;
 using Testurio.Infrastructure.Blob;
 using Testurio.Infrastructure.Cosmos;
+using Testurio.Infrastructure.KeyVault;
+using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Security;
-using Testurio.Infrastructure.Anthropic;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var b2cOptions = builder.Services.AddOptions<AzureAdB2COptions>()
     .BindConfiguration("AzureAdB2C")
     .ValidateDataAnnotations();
-if (!builder.Environment.IsDevelopment())
+if (!builder.Environment.IsLocalOrTest())
     b2cOptions.ValidateOnStart();
 
 builder.Services.AddOpenApi();
@@ -39,7 +42,7 @@ builder.Services.AddHttpLogging(o =>
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
 });
-if (builder.Environment.IsDevelopment())
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddAuthentication(DevAuthHandler.SchemeName)
         .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
@@ -67,23 +70,34 @@ builder.Services.AddCors(options =>
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod());
+    options.AddPolicy("DevelopPortal", policy =>
+        policy.WithOrigins("https://web-dev01.testur.io")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
+// ── Secrets (Key Vault in production; local config in development) ────────────
+// Must be called before AddInfrastructure() because factories depend on the singletons.
+builder.Services.AddKeyVaultSecretLoader(builder.Configuration, builder.Environment);
+await builder.Services.AddInfrastructureSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddAnthropicSecretsAsync(builder.Configuration, builder.Environment);
+await builder.Services.AddStripeSecretsAsync(builder.Configuration, builder.Environment);
+
 builder.Services.AddInfrastructure();
 builder.Services.AddStripe();
 
 // ILlmGenerationClient — used by PromptCheckService for AI-assisted prompt quality checks.
-// The API key is optional at startup; if absent the prompt-check endpoint will fail at runtime
-// (acceptable: the key is always present in non-development environments).
+// The API key is sourced from AnthropicSecrets (populated above); if absent (empty string) the
+// prompt-check endpoint will fail gracefully at runtime.
 builder.Services.AddHttpClient<ILlmGenerationClient, AnthropicGenerationClient>((sp, client) =>
 {
-    var apiKey = builder.Configuration["Claude:ApiKey"] ?? string.Empty;
-    if (!string.IsNullOrEmpty(apiKey))
-        client.DefaultRequestHeaders.Add("x-api-key", apiKey);
+    var secrets = sp.GetRequiredService<AnthropicSecrets>();
+    if (!string.IsNullOrEmpty(secrets.ApiKey))
+        client.DefaultRequestHeaders.Add("x-api-key", secrets.ApiKey);
 })
 .AddTypedClient<ILlmGenerationClient>((client, sp) =>
 {
     var modelId = builder.Configuration["Claude:ModelId"] ?? "claude-opus-4-7";
-    var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AnthropicGenerationClient>>();
+    var logger = sp.GetRequiredService<ILogger<AnthropicGenerationClient>>();
     return new AnthropicGenerationClient(client, modelId, logger);
 });
 
@@ -131,7 +145,10 @@ builder.Services.AddOptions<PMToolConnectionServiceOptions>()
             opts.ApiBaseUrl = "https://api.testur.io";
     });
 
-if (builder.Environment.IsDevelopment())
+// ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
+// In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
+// the same SecretClient and retry logic rather than constructing a second one independently.
+if (builder.Environment.IsLocalOrTest())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }
@@ -139,7 +156,8 @@ else
 {
     var keyVaultUri = builder.Configuration["KeyVault:Uri"]
         ?? throw new InvalidOperationException("KeyVault:Uri is required in non-Development environments.");
-    builder.Services.AddSingleton<ISecretResolver>(_ => new KeyVaultSecretResolver(keyVaultUri));
+    builder.Services.AddSingleton<ISecretResolver>(sp =>
+        new KeyVaultSecretResolver(sp.GetRequiredService<IKeyVaultSecretLoader>(), keyVaultUri));
 }
 
 var app = builder.Build();
@@ -186,19 +204,23 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
 app.UseHttpLogging();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsLocalOrTest())
 {
     app.MapOpenApi();
 }
 
 app.UseExceptionHandler();
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection();
 }
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsLocalOrTest())
 {
     app.UseCors("DevPortal");
+}
+else if (app.Environment.IsEnvironment("Develop"))
+{
+    app.UseCors("DevelopPortal");
 }
 app.UseAuthentication();
 app.UseAuthorization();

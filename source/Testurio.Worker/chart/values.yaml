@@ -72,12 +72,56 @@ base-chart:
   ingress:
     enabled: false
 
+  # kubectl create secret generic testurio-worker-azure-sp \
+  # --from-literal=tenantId="YOUR_AZURE_TENANT_ID" \
+  # --from-literal=clientId="YOUR_AZURE_CLIENT_ID" \
+  # --from-literal=clientSecret="YOUR_AZURE_CLIENT_SECRET" \
+  # --namespace=dev01-testurio
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Production
+      value: Develop
     - name: PLAYWRIGHT_BROWSERS_PATH
       value: /app/.playwright
+    - name: AZURE_TENANT_ID
+      valueFrom:
+        secretKeyRef:
+          name: testurio-worker-azure-sp
+          key: tenantId
+    - name: AZURE_CLIENT_ID
+      valueFrom:
+        secretKeyRef:
+          name: testurio-worker-azure-sp
+          key: clientId
+    - name: AZURE_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: testurio-worker-azure-sp
+          key: clientSecret
+    - name: Infrastructure__CosmosDatabaseName
+      value: testurio-dev
+    - name: Infrastructure__TestRunJobQueueName
+      value: story-test-pipeline
+    - name: Infrastructure__RunStatusChangedQueueName
+      value: run-status-changed
+    - name: Infrastructure__CommentEventTopicName
+      value: testurio-comment-events
+    - name: Infrastructure__CommentEventSubscriptionName
+      value: worker
+    - name: Infrastructure__ExecutionLogsBlobContainerName
+      value: execution-logs
+    - name: Infrastructure__ReportTemplatesBlobContainerName
+      value: report-templates
+    - name: Infrastructure__ReportsBlobContainerName
+      value: test-reports
+    - name: Worker__TestRunJobQueueName
+      value: story-test-pipeline
+    - name: Claude__ModelId
+      value: claude-opus-4-7
+    - name: AzureOpenAI__Endpoint
+      value: https://testurio-openai-dev-7f274.openai.azure.com/
+    - name: AzureOpenAI__EmbeddingDeployment
+      value: text-embedding-3-small
 
   # Sensitive config injected per environment via GitOps values-dev.yaml
   # See argocd/clusters/dev01/workload/testurio-worker/values-dev.yaml

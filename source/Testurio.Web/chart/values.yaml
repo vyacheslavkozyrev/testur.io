@@ -115,6 +115,8 @@ base-chart:
   extraEnv:
     - name: NODE_ENV
       value: production
+    - name: API_BASE_URL
+      value: http://testurio-api.dev01-testurio.svc.cluster.local:8080
     - name: NEXT_TELEMETRY_DISABLED
       value: "1"
     - name: PORT

@@ -13,10 +13,6 @@ public class AzureOpenAIOptions
     [Required]
     public required string Endpoint { get; init; }
 
-    /// <summary>Azure OpenAI API key. Loaded from Key Vault at startup via Managed Identity.</summary>
-    [Required]
-    public required string ApiKey { get; init; }
-
     /// <summary>Deployment name for the <c>text-embedding-3-small</c> model (1536 dimensions).</summary>
     [Required]
     public required string EmbeddingDeployment { get; init; }
