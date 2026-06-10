@@ -82,3 +82,17 @@ export function useReactivateSubscription() {
     onSuccess: () => qc.invalidateQueries({ queryKey: BILLING_KEYS.subscription }),
   });
 }
+
+/**
+ * Syncs the subscription record from a completed Stripe Checkout session.
+ * Call this once on the success page with the `session_id` query parameter to
+ * immediately create the DB record without waiting for the Stripe webhook.
+ * On success, seeds the subscription query cache so polling finds the result at once.
+ */
+export function useSyncCheckoutSession() {
+  const qc = useQueryClient();
+  return useMutation<SubscriptionStatusResponse, ApiError, string>({
+    mutationFn: billingService.syncCheckoutSession,
+    onSuccess: (data) => qc.setQueryData(BILLING_KEYS.subscription, data),
+  });
+}

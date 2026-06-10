@@ -166,6 +166,32 @@ public class StripeService : IStripeService
         await _subscriptionService.UpdateAsync(stripeSubscriptionId, updateOptions, ApiRequestOptions, cancellationToken);
     }
 
+    /// <inheritdoc/>
+    public async Task<StripeCheckoutSession?> GetCheckoutSessionAsync(
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var session = await _sessionService.GetAsync(
+                sessionId,
+                new global::Stripe.Checkout.SessionGetOptions { Expand = ["subscription"] },
+                ApiRequestOptions,
+                cancellationToken);
+
+            return new StripeCheckoutSession(
+                session.CustomerId,
+                session.SubscriptionId,
+                session.ClientReferenceId,
+                session.Metadata ?? new Dictionary<string, string>(),
+                session.Subscription?.TrialEnd);
+        }
+        catch (StripeException ex) when (ex.StripeError?.Code == "resource_missing")
+        {
+            return null;
+        }
+    }
+
     private static UserSubscription MapToUserSubscription(global::Stripe.Subscription subscription)
     {
         var status = subscription.Status switch

@@ -200,6 +200,24 @@ public class BillingService(
         _ => throw new ArgumentException($"Unknown plan: '{planId}'.", nameof(planId)),
     };
 
+    public async Task<SubscriptionStatusResponse> SyncCheckoutSessionAsync(
+        string userId,
+        string sessionId,
+        CancellationToken cancellationToken = default)
+    {
+        var session = await stripeService.GetCheckoutSessionAsync(sessionId, cancellationToken);
+
+        if (session is null)
+            throw new NotFoundException($"Stripe checkout session '{sessionId}' not found.");
+
+        if (session.ClientReferenceId != userId)
+            throw new UnauthorizedAccessException("Session does not belong to the authenticated user.");
+
+        await UpsertSubscriptionFromSessionAsync(userId, session, cancellationToken);
+
+        return await GetSubscriptionStatusAsync(userId, cancellationToken);
+    }
+
     private async Task HandleCheckoutSessionCompletedAsync(Event stripeEvent, CancellationToken cancellationToken)
     {
         if (stripeEvent.Data.Object is not global::Stripe.Checkout.Session session)
@@ -212,30 +230,43 @@ public class BillingService(
             return;
         }
 
+        var stripeSession = new Testurio.Core.Interfaces.StripeCheckoutSession(
+            session.CustomerId,
+            session.SubscriptionId,
+            session.ClientReferenceId,
+            session.Metadata ?? new Dictionary<string, string>(),
+            session.Subscription?.TrialEnd);
+
+        await UpsertSubscriptionFromSessionAsync(userId, stripeSession, cancellationToken);
+
+        logger.LogInformation(
+            "Subscription created for user {UserId} via Stripe session {SessionId}.",
+            userId, session.Id);
+    }
+
+    private async Task UpsertSubscriptionFromSessionAsync(
+        string userId,
+        Testurio.Core.Interfaces.StripeCheckoutSession session,
+        CancellationToken cancellationToken)
+    {
         var existing = await subscriptionRepository.GetByUserIdAsync(userId, cancellationToken)
             ?? new UserSubscription { Id = userId, UserId = userId };
 
         existing.StripeCustomerId = session.CustomerId;
         existing.StripeSubscriptionId = session.SubscriptionId;
         existing.Status = SubscriptionStatus.Trialing;
-        existing.TrialEndsAt = session.Subscription?.TrialEnd;
+        existing.TrialEndsAt = session.TrialEnd;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
 
-        // Recover plan and billing interval from session metadata (always present and expanded).
-        var metadata = session.Metadata ?? new Dictionary<string, string>();
-        if (metadata.TryGetValue("plan", out var planStr) &&
+        if (session.Metadata.TryGetValue("plan", out var planStr) &&
             Enum.TryParse<SubscriptionPlan>(planStr, out var plan))
             existing.Plan = plan;
 
-        if (metadata.TryGetValue("billingInterval", out var intervalStr) &&
+        if (session.Metadata.TryGetValue("billingInterval", out var intervalStr) &&
             Enum.TryParse<BillingInterval>(intervalStr, out var billingInterval))
             existing.BillingInterval = billingInterval;
 
         await subscriptionRepository.UpsertAsync(existing, cancellationToken);
-
-        logger.LogInformation(
-            "Subscription created for user {UserId} via Stripe session {SessionId}.",
-            userId, session.Id);
     }
 
     private async Task HandleSubscriptionUpdatedAsync(Event stripeEvent, CancellationToken cancellationToken)
