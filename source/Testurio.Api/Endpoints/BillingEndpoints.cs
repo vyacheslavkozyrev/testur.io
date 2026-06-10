@@ -16,6 +16,7 @@ public static class BillingEndpoints
         billing.MapGet("/subscription", GetSubscriptionStatusAsync).WithName("GetSubscriptionStatus");
         billing.MapPost("/portal-session", CreatePortalSessionAsync).WithName("CreatePortalSession");
         billing.MapPost("/reactivate", ReactivateSubscriptionAsync).WithName("ReactivateSubscription");
+        billing.MapPost("/sync-session", SyncCheckoutSessionAsync).WithName("SyncCheckoutSession");
 
         return v1;
     }
@@ -73,6 +74,17 @@ public static class BillingEndpoints
         var userId = user.GetUserId();
         await billingService.ReactivateSubscriptionAsync(userId, cancellationToken);
         return TypedResults.NoContent();
+    }
+
+    private static async Task<Ok<SubscriptionStatusResponse>> SyncCheckoutSessionAsync(
+        [Microsoft.AspNetCore.Mvc.FromBody] SyncSessionRequest request,
+        ClaimsPrincipal user,
+        IBillingService billingService,
+        CancellationToken cancellationToken)
+    {
+        var userId = user.GetUserId();
+        var response = await billingService.SyncCheckoutSessionAsync(userId, request.SessionId, cancellationToken);
+        return TypedResults.Ok(response);
     }
 
     private static async Task<IResult> HandleStripeWebhookAsync(

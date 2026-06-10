@@ -48,4 +48,8 @@ export const billingHandlers = [
   ),
 
   http.post('/v1/billing/reactivate', () => new HttpResponse(null, { status: 204 })),
+
+  http.post('/v1/billing/sync-session', () =>
+    HttpResponse.json(mockSubscriptionStatus, { status: 200 }),
+  ),
 ];

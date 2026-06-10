@@ -43,6 +43,8 @@ services:
         NEXT_PUBLIC_B2C_NATIVE_AUTH_URL: ${NEXT_PUBLIC_B2C_NATIVE_AUTH_URL}
     ports:
       - "3000:3000"
+    environment:
+      API_BASE_URL: http://api:8080
     depends_on:
       - api
     restart: unless-stopped
