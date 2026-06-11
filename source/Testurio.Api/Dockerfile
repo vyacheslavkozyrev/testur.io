@@ -16,6 +16,9 @@ RUN dotnet publish "source/Testurio.Api/Testurio.Api.csproj" -c Release -o /app/
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
+# Upgrade Alpine packages to pick up any security fixes not yet in the base image.
+RUN apk upgrade --no-cache
+
 ENV ASPNETCORE_URLS=http://+:8080
 
 EXPOSE 8080
