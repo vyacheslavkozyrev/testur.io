@@ -34,16 +34,13 @@ public sealed class DotEnvTests : IDisposable
     [Fact]
     public void Load_NoFileFound_NoOp()
     {
-        var isolated = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(isolated);
-        try
-        {
-            DotEnv.Load(".env.nonexistent", isolated);
-        }
-        finally
-        {
-            Directory.Delete(isolated);
-        }
+        // Use a guaranteed-unique filename so the walk cannot accidentally find a real file.
+        var uniqueFileName = $".env.{Guid.NewGuid():N}";
+        var sentinel = UniqueKey("DOTENV_NOOP");
+
+        DotEnv.Load(uniqueFileName, _tempDir);
+
+        Assert.Null(Environment.GetEnvironmentVariable(sentinel));
     }
 
     [Fact]
@@ -126,5 +123,50 @@ public sealed class DotEnvTests : IDisposable
 
         Assert.Equal("first", Environment.GetEnvironmentVariable(key1));
         Assert.Equal("second", Environment.GetEnvironmentVariable(key2));
+    }
+
+    [Fact]
+    public void Load_StripsDoubleQuotesFromValue()
+    {
+        var key = UniqueKey("DOTENV_DQUOTE");
+        File.WriteAllText(_envFilePath, $"{key}=\"quoted value\"");
+
+        DotEnv.Load(".env", _tempDir);
+
+        Assert.Equal("quoted value", Environment.GetEnvironmentVariable(key));
+    }
+
+    [Fact]
+    public void Load_StripsSingleQuotesFromValue()
+    {
+        var key = UniqueKey("DOTENV_SQUOTE");
+        File.WriteAllText(_envFilePath, $"{key}='single quoted'");
+
+        DotEnv.Load(".env", _tempDir);
+
+        Assert.Equal("single quoted", Environment.GetEnvironmentVariable(key));
+    }
+
+    [Fact]
+    public void Load_TrimsKeyAndValueWhitespace()
+    {
+        var key = UniqueKey("DOTENV_TRIMMED");
+        File.WriteAllText(_envFilePath, $"  {key}  =  spaced value  ");
+
+        DotEnv.Load(".env", _tempDir);
+
+        Assert.Equal("spaced value", Environment.GetEnvironmentVariable(key));
+    }
+
+    [Fact]
+    public void Load_SkipsLineWithEmptyKey()
+    {
+        var sentinel = UniqueKey("DOTENV_EMPTYKEY");
+        // A line starting with '=' has an empty key and should be silently skipped.
+        File.WriteAllText(_envFilePath, $"=orphaned-value\n{sentinel}=ok\n");
+
+        DotEnv.Load(".env", _tempDir);
+
+        Assert.Equal("ok", Environment.GetEnvironmentVariable(sentinel));
     }
 }

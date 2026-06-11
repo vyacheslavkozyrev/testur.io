@@ -204,7 +204,7 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
 app.UseHttpLogging();
 
-if (!app.Environment.IsProduction())
+if (app.Environment.IsTest() || app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }

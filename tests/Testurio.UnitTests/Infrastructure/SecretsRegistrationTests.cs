@@ -42,6 +42,13 @@ public class SecretsRegistrationTests
         return env.Object;
     }
 
+    private static IHostEnvironment DevelopEnvironment()
+    {
+        var env = new Mock<IHostEnvironment>();
+        env.Setup(e => e.EnvironmentName).Returns("Develop");
+        return env.Object;
+    }
+
     // ─── AddInfrastructureSecretsAsync ────────────────────────────────────────
 
     [Fact]
@@ -84,6 +91,10 @@ public class SecretsRegistrationTests
         Assert.Equal(string.Empty, secrets.CosmosConnectionString);
         Assert.Equal(string.Empty, secrets.ServiceBusConnectionString);
         Assert.Equal(string.Empty, secrets.BlobStorageConnectionString);
+
+        loader.Verify(l => l.GetSecretAsync("cosmos-connection-string", It.IsAny<CancellationToken>()), Times.Once);
+        loader.Verify(l => l.GetSecretAsync("servicebus-connection-string", It.IsAny<CancellationToken>()), Times.Once);
+        loader.Verify(l => l.GetSecretAsync("blob-storage-connection-string", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -232,6 +243,14 @@ public class SecretsRegistrationTests
         var services = new ServiceCollection();
         Assert.Throws<InvalidOperationException>(() =>
             services.AddKeyVaultSecretLoader(BuildConfig([]), LocalEnvironment()));
+    }
+
+    [Fact]
+    public void AddKeyVaultSecretLoader_Develop_ThrowsWhenKeyVaultUriMissing()
+    {
+        var services = new ServiceCollection();
+        Assert.Throws<InvalidOperationException>(() =>
+            services.AddKeyVaultSecretLoader(BuildConfig([]), DevelopEnvironment()));
     }
 
     [Fact]

@@ -421,7 +421,7 @@ public static class DependencyInjection
         else
         {
             var keyVaultUri = configuration["KeyVault:Uri"]
-                ?? throw new InvalidOperationException("KeyVault:Uri is required in non-local environments (Develop, Production).");
+                ?? throw new InvalidOperationException("KeyVault:Uri is required in all environments except Test.");
 
             services.AddSingleton<IKeyVaultSecretLoader>(sp =>
                 new KeyVaultSecretLoader(keyVaultUri, sp.GetRequiredService<ILogger<KeyVaultSecretLoader>>()));

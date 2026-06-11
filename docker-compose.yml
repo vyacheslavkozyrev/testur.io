@@ -19,7 +19,6 @@ services:
       dockerfile: source/Testurio.Worker/Dockerfile
     env_file:
       - .env
-    environment: {}
     depends_on:
       - api
     restart: unless-stopped

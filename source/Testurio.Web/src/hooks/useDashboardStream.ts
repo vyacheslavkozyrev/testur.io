@@ -63,8 +63,10 @@ export function useDashboardStream({
 
     const es = new EventSource(SSE_URL);
     esRef.current = es;
+    let openedSuccessfully = false;
 
     es.onopen = () => {
+      openedSuccessfully = true;
       // Reset attempt counter on a successful connection.
       attemptsRef.current = 0;
       // Notify caller that the connection is healthy (clears any reconnecting indicator).
@@ -84,6 +86,13 @@ export function useDashboardStream({
       // EventSource closes itself after an error; we handle reconnect manually.
       es.close();
       esRef.current = null;
+
+      // If the error fired before onopen, the server rejected the connection (e.g. 401/403/500).
+      // Retrying won't help — call onFallback immediately instead of exhausting the retry budget.
+      if (!openedSuccessfully) {
+        onFallbackRef.current();
+        return;
+      }
 
       attemptsRef.current += 1;
       if (attemptsRef.current > MAX_ATTEMPTS) {

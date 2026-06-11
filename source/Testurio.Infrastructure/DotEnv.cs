@@ -4,6 +4,14 @@ namespace Testurio.Infrastructure;
 /// Loads a .env file from the solution root into environment variables.
 /// Only sets variables that are not already present — real environment variables
 /// (container, CI) always take precedence. No-ops when the file does not exist.
+/// <para>
+/// NOTE: This method walks up from <paramref name="startDirectory"/> (defaulting to
+/// <see cref="Directory.GetCurrentDirectory"/>) until it finds the file or reaches the
+/// filesystem root. When running <c>dotnet test</c> from below the repository root the walk
+/// will locate any repo-root <c>.env</c> and inject its values into the test process.
+/// This is intentional for local developer convenience; CI and container environments are
+/// unaffected because their real environment variables take precedence.
+/// </para>
 /// </summary>
 public static class DotEnv
 {
@@ -21,7 +29,7 @@ public static class DotEnv
 
         if (path is null) return;
 
-        foreach (var line in File.ReadAllLines(path))
+        foreach (var line in File.ReadLines(path))
         {
             var trimmed = line.Trim();
             if (trimmed.StartsWith('#') || trimmed.Length == 0) continue;
@@ -31,6 +39,12 @@ public static class DotEnv
 
             var key = trimmed[..idx].Trim();
             var value = trimmed[(idx + 1)..].Trim();
+
+            // Strip surrounding matching quote pairs (single or double).
+            if (value.Length >= 2 &&
+                ((value.StartsWith('"') && value.EndsWith('"')) ||
+                 (value.StartsWith('\'') && value.EndsWith('\''))))
+                value = value[1..^1];
 
             if (!string.IsNullOrEmpty(key) && Environment.GetEnvironmentVariable(key) is null)
                 Environment.SetEnvironmentVariable(key, value);
