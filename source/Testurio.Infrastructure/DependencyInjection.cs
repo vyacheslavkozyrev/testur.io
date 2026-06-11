@@ -414,14 +414,14 @@ public static class DependencyInjection
         IConfiguration configuration,
         IHostEnvironment environment)
     {
-        if (environment.IsLocalOrTest())
+        if (environment.IsTest())
         {
             services.AddSingleton<IKeyVaultSecretLoader, NullKeyVaultSecretLoader>();
         }
         else
         {
             var keyVaultUri = configuration["KeyVault:Uri"]
-                ?? throw new InvalidOperationException("KeyVault:Uri is required in non-local environments (Develop, Production).");
+                ?? throw new InvalidOperationException("KeyVault:Uri is required in all environments except Test.");
 
             services.AddSingleton<IKeyVaultSecretLoader>(sp =>
                 new KeyVaultSecretLoader(keyVaultUri, sp.GetRequiredService<ILogger<KeyVaultSecretLoader>>()));
@@ -445,7 +445,7 @@ public static class DependencyInjection
     {
         InfrastructureSecrets secrets;
 
-        if (environment.IsLocalOrTest())
+        if (environment.IsTest())
         {
             secrets = new InfrastructureSecrets
             {
@@ -486,7 +486,7 @@ public static class DependencyInjection
     {
         AnthropicSecrets secrets;
 
-        if (environment.IsLocalOrTest())
+        if (environment.IsTest())
         {
             secrets = new AnthropicSecrets
             {
@@ -522,7 +522,7 @@ public static class DependencyInjection
     {
         AzureOpenAISecrets secrets;
 
-        if (environment.IsLocalOrTest())
+        if (environment.IsTest())
         {
             secrets = new AzureOpenAISecrets
             {
@@ -559,7 +559,7 @@ public static class DependencyInjection
     {
         StripeSecrets secrets;
 
-        if (environment.IsLocalOrTest())
+        if (environment.IsTest())
         {
             secrets = new StripeSecrets
             {

@@ -19,8 +19,7 @@ export interface UseDashboardStreamOptions {
   enabled: boolean;
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '');
-const SSE_URL = `${API_BASE}/v1/stats/dashboard/stream`;
+const SSE_URL = '/v1/stats/dashboard/stream';
 const INITIAL_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30_000;
 const MAX_ATTEMPTS = 5;
@@ -64,8 +63,10 @@ export function useDashboardStream({
 
     const es = new EventSource(SSE_URL);
     esRef.current = es;
+    let openedSuccessfully = false;
 
     es.onopen = () => {
+      openedSuccessfully = true;
       // Reset attempt counter on a successful connection.
       attemptsRef.current = 0;
       // Notify caller that the connection is healthy (clears any reconnecting indicator).
@@ -85,6 +86,13 @@ export function useDashboardStream({
       // EventSource closes itself after an error; we handle reconnect manually.
       es.close();
       esRef.current = null;
+
+      // If the error fired before onopen, the server rejected the connection (e.g. 401/403/500).
+      // Retrying won't help — call onFallback immediately instead of exhausting the retry budget.
+      if (!openedSuccessfully) {
+        onFallbackRef.current();
+        return;
+      }
 
       attemptsRef.current += 1;
       if (attemptsRef.current > MAX_ATTEMPTS) {

@@ -25,17 +25,29 @@ async function proxyRequest(
   if (session?.idToken) headers['Authorization'] = `Bearer ${session.idToken}`;
 
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
-  const body = hasBody ? await request.text() : undefined;
+  // Use arrayBuffer to safely handle binary and text bodies without corruption.
+  const body = hasBody ? await request.arrayBuffer() : undefined;
 
   const upstreamResponse = await fetch(upstream.toString(), {
     method: request.method,
     headers,
     body,
-  });
+    cache: 'no-store',
+    // Required by Node.js fetch for streaming response pass-through (e.g. SSE).
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    duplex: 'half',
+  } as RequestInit);
+
+  const isEventStream = upstreamResponse.headers.get('Content-Type')?.startsWith('text/event-stream');
 
   const responseHeaders = new Headers();
   const responseContentType = upstreamResponse.headers.get('Content-Type');
   if (responseContentType) responseHeaders.set('Content-Type', responseContentType);
+  const cacheControl = upstreamResponse.headers.get('Cache-Control');
+  if (cacheControl) responseHeaders.set('Cache-Control', cacheControl);
+  // Tell nginx/CDN not to buffer SSE responses; ignored for non-streaming content types.
+  if (isEventStream) responseHeaders.set('X-Accel-Buffering', 'no');
 
   return new NextResponse(upstreamResponse.body, {
     status: upstreamResponse.status,

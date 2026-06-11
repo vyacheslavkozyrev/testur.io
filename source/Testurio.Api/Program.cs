@@ -19,12 +19,14 @@ using Testurio.Infrastructure.Options;
 using Testurio.Infrastructure.Seeding;
 using Testurio.Infrastructure.Security;
 
+DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 var b2cOptions = builder.Services.AddOptions<AzureAdB2COptions>()
     .BindConfiguration("AzureAdB2C")
     .ValidateDataAnnotations();
-if (!builder.Environment.IsLocalOrTest())
+if (!builder.Environment.IsTest())
     b2cOptions.ValidateOnStart();
 
 builder.Services.AddOpenApi();
@@ -42,7 +44,7 @@ builder.Services.AddHttpLogging(o =>
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponseStatusCode
         | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.Duration;
 });
-if (builder.Environment.IsLocalOrTest())
+if (builder.Environment.IsTest())
 {
     builder.Services.AddAuthentication(DevAuthHandler.SchemeName)
         .AddScheme<AuthenticationSchemeOptions, DevAuthHandler>(DevAuthHandler.SchemeName, _ => { });
@@ -66,14 +68,12 @@ builder.Services.AddAuthorization(opts =>
 });
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("DevPortal", policy =>
-        policy.WithOrigins("http://localhost:3000")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
-    options.AddPolicy("DevelopPortal", policy =>
-        policy.WithOrigins("https://web-dev01.testur.io")
-              .AllowAnyHeader()
-              .AllowAnyMethod());
+    var corsOrigin = builder.Configuration["App:CorsOrigin"];
+    options.AddDefaultPolicy(policy =>
+    {
+        if (!string.IsNullOrEmpty(corsOrigin))
+            policy.WithOrigins(corsOrigin).AllowAnyHeader().AllowAnyMethod();
+    });
 });
 // ── Secrets (Key Vault in production; local config in development) ────────────
 // Must be called before AddInfrastructure() because factories depend on the singletons.
@@ -148,7 +148,7 @@ builder.Services.AddOptions<PMToolConnectionServiceOptions>()
 // ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
 // In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
 // the same SecretClient and retry logic rather than constructing a second one independently.
-if (builder.Environment.IsLocalOrTest())
+if (builder.Environment.IsTest())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }
@@ -204,7 +204,7 @@ using (var scope = app.Services.CreateScope())
 app.UseMiddleware<RequestBodyBufferingMiddleware>();
 app.UseHttpLogging();
 
-if (app.Environment.IsLocalOrTest())
+if (app.Environment.IsTest() || app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
@@ -214,14 +214,7 @@ if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection();
 }
-if (app.Environment.IsLocalOrTest())
-{
-    app.UseCors("DevPortal");
-}
-else if (app.Environment.IsEnvironment("Develop"))
-{
-    app.UseCors("DevelopPortal");
-}
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 

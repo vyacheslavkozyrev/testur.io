@@ -10,8 +10,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Development
-      KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
+      App__CorsOrigin: http://localhost:3000
     restart: unless-stopped
 
   worker:
@@ -20,10 +19,6 @@ services:
       dockerfile: source/Testurio.Worker/Dockerfile
     env_file:
       - .env
-    environment:
-      DOTNET_ENVIRONMENT: Development
-      KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
-      Worker__TestRunJobQueueName: story-test-pipeline
     depends_on:
       - api
     restart: unless-stopped
@@ -41,10 +36,10 @@ services:
         NEXT_PUBLIC_B2C_REDIRECT_URI: ${NEXT_PUBLIC_B2C_REDIRECT_URI:-http://localhost:3000}
         NEXT_PUBLIC_B2C_SCOPES: ${NEXT_PUBLIC_B2C_SCOPES:-openid profile email offline_access}
         NEXT_PUBLIC_B2C_NATIVE_AUTH_URL: ${NEXT_PUBLIC_B2C_NATIVE_AUTH_URL}
-    ports:
-      - "3000:3000"
     environment:
       API_BASE_URL: http://api:8080
+    ports:
+      - "3000:3000"
     depends_on:
       - api
     restart: unless-stopped

@@ -80,7 +80,7 @@ base-chart:
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Develop
+      value: Development
     - name: PLAYWRIGHT_BROWSERS_PATH
       value: /app/.playwright
     - name: AZURE_TENANT_ID
@@ -116,6 +116,8 @@ base-chart:
       value: test-reports
     - name: Worker__TestRunJobQueueName
       value: story-test-pipeline
+    - name: KeyVault__Uri
+      value: https://testurio-secrets-develop.vault.azure.net/
     - name: Claude__ModelId
       value: claude-opus-4-7
     - name: AzureOpenAI__Endpoint
