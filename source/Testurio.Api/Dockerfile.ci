@@ -11,6 +11,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 
 WORKDIR /app
 
+# Upgrade Alpine packages to pick up any security fixes not yet in the base image.
+RUN apk upgrade --no-cache
+
 ENV ASPNETCORE_URLS=http://+:8080
 
 # Copy pre-built publish output — placed here by CI before docker build
