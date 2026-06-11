@@ -159,6 +159,8 @@ base-chart:
       value: report-templates
     - name: Infrastructure__ReportsBlobContainerName
       value: test-reports
+    - name: KeyVault__Uri
+      value: https://testurio-secrets-develop.vault.azure.net/
     - name: App__BaseUrl
       value: https://web-dev01.testur.io
     - name: PMTool__ApiBaseUrl
