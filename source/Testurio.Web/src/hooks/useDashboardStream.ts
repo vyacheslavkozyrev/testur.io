@@ -19,8 +19,7 @@ export interface UseDashboardStreamOptions {
   enabled: boolean;
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '').replace(/\/$/, '');
-const SSE_URL = `${API_BASE}/v1/stats/dashboard/stream`;
+const SSE_URL = '/v1/stats/dashboard/stream';
 const INITIAL_DELAY_MS = 1000;
 const MAX_DELAY_MS = 30_000;
 const MAX_ATTEMPTS = 5;

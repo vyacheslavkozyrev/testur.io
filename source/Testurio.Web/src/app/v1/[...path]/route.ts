@@ -36,6 +36,8 @@ async function proxyRequest(
   const responseHeaders = new Headers();
   const responseContentType = upstreamResponse.headers.get('Content-Type');
   if (responseContentType) responseHeaders.set('Content-Type', responseContentType);
+  const cacheControl = upstreamResponse.headers.get('Cache-Control');
+  if (cacheControl) responseHeaders.set('Cache-Control', cacheControl);
 
   return new NextResponse(upstreamResponse.body, {
     status: upstreamResponse.status,
