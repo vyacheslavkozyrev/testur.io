@@ -5,10 +5,9 @@ namespace Testurio.Infrastructure.Extensions;
 public static class HostEnvironmentExtensions
 {
     /// <summary>
-    /// Returns true for environments that use local config / user secrets instead of Key Vault:
-    /// <c>Development</c> (local dev) and <c>Test</c> (unit &amp; integration test runner).
-    /// All other environments — <c>Develop</c>, <c>Production</c>, etc. — require Key Vault.
+    /// Returns true only for the <c>Test</c> environment (unit &amp; integration test runner).
+    /// All other environments — <c>Development</c>, <c>Develop</c>, <c>Production</c> — use Key Vault.
     /// </summary>
-    public static bool IsLocalOrTest(this IHostEnvironment environment) =>
-        environment.IsDevelopment() || environment.IsEnvironment("Test");
+    public static bool IsTest(this IHostEnvironment environment) =>
+        environment.IsEnvironment("Test");
 }

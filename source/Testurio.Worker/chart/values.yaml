@@ -80,7 +80,7 @@ base-chart:
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Develop
+      value: Development
     - name: PLAYWRIGHT_BROWSERS_PATH
       value: /app/.playwright
     - name: AZURE_TENANT_ID

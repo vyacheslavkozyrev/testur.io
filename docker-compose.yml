@@ -10,8 +10,7 @@ services:
     env_file:
       - .env
     environment:
-      DOTNET_ENVIRONMENT: Development
-      KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
+      App__CorsOrigin: http://localhost:3000
     restart: unless-stopped
 
   worker:
@@ -20,10 +19,7 @@ services:
       dockerfile: source/Testurio.Worker/Dockerfile
     env_file:
       - .env
-    environment:
-      DOTNET_ENVIRONMENT: Development
-      KeyVault__Uri: https://testurio-secrets-develop.vault.azure.net/
-      Worker__TestRunJobQueueName: story-test-pipeline
+    environment: {}
     depends_on:
       - api
     restart: unless-stopped

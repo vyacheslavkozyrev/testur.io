@@ -115,7 +115,7 @@ base-chart:
   # ── Environment variables ──────────────────────────────────────
   extraEnv:
     - name: DOTNET_ENVIRONMENT
-      value: Develop
+      value: Development
     - name: ASPNETCORE_URLS
       value: "http://+:8080"
     - name: AzureAdB2C__Authority
@@ -162,6 +162,8 @@ base-chart:
     - name: KeyVault__Uri
       value: https://testurio-secrets-develop.vault.azure.net/
     - name: App__BaseUrl
+      value: https://web-dev01.testur.io
+    - name: App__CorsOrigin
       value: https://web-dev01.testur.io
     - name: PMTool__ApiBaseUrl
       value: https://api-dev01.testur.io
