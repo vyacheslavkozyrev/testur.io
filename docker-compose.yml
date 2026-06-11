@@ -37,6 +37,8 @@ services:
         NEXT_PUBLIC_B2C_REDIRECT_URI: ${NEXT_PUBLIC_B2C_REDIRECT_URI:-http://localhost:3000}
         NEXT_PUBLIC_B2C_SCOPES: ${NEXT_PUBLIC_B2C_SCOPES:-openid profile email offline_access}
         NEXT_PUBLIC_B2C_NATIVE_AUTH_URL: ${NEXT_PUBLIC_B2C_NATIVE_AUTH_URL}
+    environment:
+      API_BASE_URL: http://api:8080
     ports:
       - "3000:3000"
     depends_on:
