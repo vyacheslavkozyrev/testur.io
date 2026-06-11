@@ -11,9 +11,8 @@ namespace Testurio.UnitTests.Infrastructure;
 
 /// <summary>
 /// Unit tests for the <c>Add*Secrets</c> DI extension methods.
-/// Verifies that in Development and Test environments each helper reads from
-/// <see cref="IConfiguration"/> and registers the correct singleton;
-/// in Develop and Production environments it reads from <see cref="IKeyVaultSecretLoader"/>.
+/// Verifies that in Test environment each helper reads from <see cref="IConfiguration"/>;
+/// in Development and Production environments it reads from <see cref="IKeyVaultSecretLoader"/>.
 /// </summary>
 public class SecretsRegistrationTests
 {
@@ -46,17 +45,19 @@ public class SecretsRegistrationTests
     // ─── AddInfrastructureSecretsAsync ────────────────────────────────────────
 
     [Fact]
-    public async Task AddInfrastructureSecretsAsync_Local_ReadsFromConfiguration()
+    public async Task AddInfrastructureSecretsAsync_Development_ReadsFromKeyVaultLoader()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
-        {
-            ["Infrastructure:CosmosConnectionString"] = "cosmos-dev",
-            ["Infrastructure:ServiceBusConnectionString"] = "sb-dev",
-            ["Infrastructure:BlobStorageConnectionString"] = "blob-dev",
-        });
+        var loader = new Mock<IKeyVaultSecretLoader>();
+        loader.Setup(l => l.GetSecretAsync("cosmos-connection-string", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("cosmos-dev");
+        loader.Setup(l => l.GetSecretAsync("servicebus-connection-string", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("sb-dev");
+        loader.Setup(l => l.GetSecretAsync("blob-storage-connection-string", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("blob-dev");
 
         var services = new ServiceCollection();
-        await services.AddInfrastructureSecretsAsync(config, LocalEnvironment());
+        services.AddSingleton(loader.Object);
+        await services.AddInfrastructureSecretsAsync(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<InfrastructureSecrets>();
@@ -67,12 +68,15 @@ public class SecretsRegistrationTests
     }
 
     [Fact]
-    public async Task AddInfrastructureSecretsAsync_Local_UsesMissingFieldsAsEmptyString()
+    public async Task AddInfrastructureSecretsAsync_Development_UsesKeyVaultLoader_WhenLoaderReturnsEmpty()
     {
-        var config = BuildConfig(new Dictionary<string, string?>());
+        var loader = new Mock<IKeyVaultSecretLoader>();
+        loader.Setup(l => l.GetSecretAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+              .ReturnsAsync(string.Empty);
 
         var services = new ServiceCollection();
-        await services.AddInfrastructureSecretsAsync(config, LocalEnvironment());
+        services.AddSingleton(loader.Object);
+        await services.AddInfrastructureSecretsAsync(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<InfrastructureSecrets>();
@@ -109,15 +113,15 @@ public class SecretsRegistrationTests
     // ─── AddAnthropicSecretsAsync ─────────────────────────────────────────────
 
     [Fact]
-    public async Task AddAnthropicSecretsAsync_Local_ReadsFromConfiguration()
+    public async Task AddAnthropicSecretsAsync_Development_ReadsFromKeyVaultLoader()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
-        {
-            ["Claude:ApiKey"] = "sk-ant-dev",
-        });
+        var loader = new Mock<IKeyVaultSecretLoader>();
+        loader.Setup(l => l.GetSecretAsync("anthropic-api-key", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("sk-ant-dev");
 
         var services = new ServiceCollection();
-        await services.AddAnthropicSecretsAsync(config, LocalEnvironment());
+        services.AddSingleton(loader.Object);
+        await services.AddAnthropicSecretsAsync(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<AnthropicSecrets>();
@@ -145,15 +149,15 @@ public class SecretsRegistrationTests
     // ─── AddAzureOpenAISecretsAsync ───────────────────────────────────────────
 
     [Fact]
-    public async Task AddAzureOpenAISecretsAsync_Local_ReadsFromConfiguration()
+    public async Task AddAzureOpenAISecretsAsync_Development_ReadsFromKeyVaultLoader()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
-        {
-            ["AzureOpenAI:ApiKey"] = "oai-dev",
-        });
+        var loader = new Mock<IKeyVaultSecretLoader>();
+        loader.Setup(l => l.GetSecretAsync("azure-openai-api-key", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("oai-dev");
 
         var services = new ServiceCollection();
-        await services.AddAzureOpenAISecretsAsync(config, LocalEnvironment());
+        services.AddSingleton(loader.Object);
+        await services.AddAzureOpenAISecretsAsync(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<AzureOpenAISecrets>();
@@ -181,16 +185,17 @@ public class SecretsRegistrationTests
     // ─── AddStripeSecretsAsync ────────────────────────────────────────────────
 
     [Fact]
-    public async Task AddStripeSecretsAsync_Local_ReadsFromConfiguration()
+    public async Task AddStripeSecretsAsync_Development_ReadsFromKeyVaultLoader()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
-        {
-            ["Stripe:SecretKey"] = "sk_test_dev",
-            ["Stripe:WebhookSecret"] = "whsec_dev",
-        });
+        var loader = new Mock<IKeyVaultSecretLoader>();
+        loader.Setup(l => l.GetSecretAsync("stripe-secret-key", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("sk_test_dev");
+        loader.Setup(l => l.GetSecretAsync("stripe-webhook-secret", It.IsAny<CancellationToken>()))
+              .ReturnsAsync("whsec_dev");
 
         var services = new ServiceCollection();
-        await services.AddStripeSecretsAsync(config, LocalEnvironment());
+        services.AddSingleton(loader.Object);
+        await services.AddStripeSecretsAsync(BuildConfig([]), LocalEnvironment());
 
         var sp = services.BuildServiceProvider();
         var secrets = sp.GetRequiredService<StripeSecrets>();
@@ -222,15 +227,11 @@ public class SecretsRegistrationTests
     // ─── AddKeyVaultSecretLoader ──────────────────────────────────────────────
 
     [Fact]
-    public void AddKeyVaultSecretLoader_Local_RegistersNullLoader()
+    public void AddKeyVaultSecretLoader_Development_ThrowsWhenKeyVaultUriMissing()
     {
         var services = new ServiceCollection();
-        services.AddKeyVaultSecretLoader(BuildConfig([]), LocalEnvironment());
-
-        var sp = services.BuildServiceProvider();
-        var loader = sp.GetRequiredService<IKeyVaultSecretLoader>();
-
-        Assert.IsType<NullKeyVaultSecretLoader>(loader);
+        Assert.Throws<InvalidOperationException>(() =>
+            services.AddKeyVaultSecretLoader(BuildConfig([]), LocalEnvironment()));
     }
 
     [Fact]

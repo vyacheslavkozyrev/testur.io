@@ -7,9 +7,9 @@ namespace Testurio.Infrastructure;
 /// </summary>
 public static class DotEnv
 {
-    public static void Load(string fileName = ".env")
+    public static void Load(string fileName = ".env", string? startDirectory = null)
     {
-        var dir = Directory.GetCurrentDirectory();
+        var dir = startDirectory ?? Directory.GetCurrentDirectory();
         string? path = null;
 
         while (dir is not null)
