@@ -139,7 +139,8 @@ public static class ProjectEndpoints
 internal static class ClaimsPrincipalExtensions
 {
     internal static string GetUserId(this ClaimsPrincipal user)
-        => user.FindFirstValue("oid")
-           ?? user.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+        => user.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+           ?? user.FindFirstValue("sub")
+           ?? user.FindFirstValue("oid")
            ?? throw new UnauthorizedAccessException("User identity could not be resolved from token.");
 }
