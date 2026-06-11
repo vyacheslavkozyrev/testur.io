@@ -18,4 +18,9 @@ export const billingService = {
 
   reactivateSubscription: (): Promise<void> =>
     apiClient.post('/v1/billing/reactivate').then(() => undefined),
+
+  syncCheckoutSession: (sessionId: string): Promise<SubscriptionStatusResponse> =>
+    apiClient
+      .post<SubscriptionStatusResponse>('/v1/billing/sync-session', { sessionId })
+      .then((r) => r.data),
 };

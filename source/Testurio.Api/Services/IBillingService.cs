@@ -26,4 +26,9 @@ public interface IBillingService
     Task ReactivateSubscriptionAsync(
         string userId,
         CancellationToken cancellationToken = default);
+
+    Task<SubscriptionStatusResponse> SyncCheckoutSessionAsync(
+        string userId,
+        string sessionId,
+        CancellationToken cancellationToken = default);
 }

@@ -25,6 +25,7 @@ const mockSubscriptionState: { data: SubscriptionStatusResponse | undefined } = 
 jest.mock('@/hooks/useBilling', () => ({
   useSubscriptionStatus: () => mockSubscriptionState,
   useCreateCheckoutSession: () => ({ mutate: jest.fn(), isPending: false }),
+  useSyncCheckoutSession: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
 // ─── i18n setup ───────────────────────────────────────────────────────────────

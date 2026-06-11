@@ -72,7 +72,29 @@ public interface IStripeService
     Task ReactivateSubscriptionAsync(
         string stripeSubscriptionId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a completed Stripe Checkout Session by its ID, with the subscription expanded.
+    /// Used to sync subscription state immediately after checkout without waiting for a webhook.
+    /// </summary>
+    /// <param name="sessionId">The Stripe Checkout Session ID (<c>cs_*</c>).</param>
+    /// <param name="cancellationToken">Propagated to the Stripe HTTP call.</param>
+    /// <returns>The session data, or <c>null</c> if not found.</returns>
+    Task<StripeCheckoutSession?> GetCheckoutSessionAsync(
+        string sessionId,
+        CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// Lightweight representation of a Stripe Checkout Session.
+/// Keeps <c>Stripe.*</c> types out of the domain layer.
+/// </summary>
+public sealed record StripeCheckoutSession(
+    string? CustomerId,
+    string? SubscriptionId,
+    string? ClientReferenceId,
+    IReadOnlyDictionary<string, string> Metadata,
+    DateTimeOffset? TrialEnd);
 
 /// <summary>
 /// Lightweight DTO carrying invoice data retrieved from Stripe.

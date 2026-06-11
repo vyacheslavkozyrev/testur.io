@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useTheme, type Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
-import { useSubscriptionStatus } from '@/hooks/useBilling';
+import { useSubscriptionStatus, useSyncCheckoutSession } from '@/hooks/useBilling';
 import { PRICING_ROUTE, NEW_PROJECT_ROUTE } from '@/routes/routes';
 
 const TIMEOUT_MS = 30_000;
@@ -32,6 +32,9 @@ export default function CheckoutSuccessPage() {
 
   const [timedOut, setTimedOut] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncedRef = useRef(false);
+
+  const syncSession = useSyncCheckoutSession();
 
   const canPoll = !timedOut && Boolean(sessionId);
   const { data: subscription } = useSubscriptionStatus(canPoll, canPoll);
@@ -46,6 +49,12 @@ export default function CheckoutSuccessPage() {
     }
 
     timerRef.current = setTimeout(() => setTimedOut(true), TIMEOUT_MS);
+
+    if (!syncedRef.current) {
+      syncedRef.current = true;
+      syncSession.mutate(sessionId);
+    }
+
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
