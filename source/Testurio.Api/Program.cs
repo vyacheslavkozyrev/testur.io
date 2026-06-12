@@ -77,10 +77,20 @@ builder.Services.AddCors(options =>
 });
 // ── Secrets (Key Vault in production; local config in development) ────────────
 // Must be called before AddInfrastructure() because factories depend on the singletons.
+// Errors are written directly to stderr — the async logging infrastructure is not yet
+// initialized at this point, so ILogger output would be silently lost on crash.
 builder.Services.AddKeyVaultSecretLoader(builder.Configuration, builder.Environment);
-await builder.Services.AddInfrastructureSecretsAsync(builder.Configuration, builder.Environment);
-await builder.Services.AddAnthropicSecretsAsync(builder.Configuration, builder.Environment);
-await builder.Services.AddStripeSecretsAsync(builder.Configuration, builder.Environment);
+try
+{
+    await builder.Services.AddInfrastructureSecretsAsync(builder.Configuration, builder.Environment);
+    await builder.Services.AddAnthropicSecretsAsync(builder.Configuration, builder.Environment);
+    await builder.Services.AddStripeSecretsAsync(builder.Configuration, builder.Environment);
+}
+catch (Exception ex)
+{
+    await Console.Error.WriteLineAsync($"[FATAL] Key Vault secret loading failed: {ex}");
+    throw;
+}
 
 builder.Services.AddInfrastructure();
 builder.Services.AddStripe();
