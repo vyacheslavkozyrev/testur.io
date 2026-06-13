@@ -160,3 +160,53 @@ The following are explicitly **not** part of this feature:
 - [ ] AC-036: The suite reads `BASE_URL`, `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`, `CF_ACCESS_CLIENT_ID`, and `CF_ACCESS_CLIENT_SECRET` exclusively from `.env.test` (loaded by `playwright.live.config.ts`)
 - [ ] AC-037: `.env.test` is listed in `.gitignore` and is never committed
 - [ ] AC-038: The repository contains a `.env.test.example` file (or the existing `.env.example` documents these variables) so a new engineer knows which values to supply
+
+---
+
+### US-011: New User Registration Flow
+
+**As a** QA engineer validating onboarding
+**I want to** verify that a brand-new user can complete the sign-up flow through the portal UI
+**So that** regressions in the registration path (B2C hosted UI → API user-document creation) are caught before reaching staging
+
+#### Acceptance Criteria
+
+- [ ] AC-039: Navigating to `/sign-up` (or clicking "Create account" on the sign-in page) redirects the browser to the Azure AD B2C / Entra External ID hosted registration UI
+- [ ] AC-040: Completing the registration form (email, password, display name) and submitting creates a new account in Azure AD B2C and redirects the browser to `/dashboard`
+- [ ] AC-041: Within 5 seconds of the post-registration redirect, `GET /v1/account/me` returns `200` with a user document (confirming the fire-and-forget PATCH from B2C to the API has completed and a Cosmos `Users` document exists)
+- [ ] AC-042: The newly registered user's display name or avatar is visible in the portal shell after registration
+- [ ] AC-043: The test uses a unique, generated email address (e.g. `e2e+reg+<timestamp>@testur.io`) so it does not collide with the permanent test user account; the generated email is not written to `.auth/` files and is not reused across runs
+- [ ] AC-044: The test does not clean up the B2C account (B2C account deletion requires admin credentials out of scope for this suite); this is documented in a test-level comment
+
+---
+
+### US-012: Forgot Password / Password Reset Flow
+
+**As a** QA engineer validating account recovery
+**I want to** verify that the "Forgot password" link on the sign-in page initiates the B2C password-reset flow and returns the user to the portal after completion
+**So that** regressions in the B2C password-reset policy are caught before reaching staging
+
+#### Acceptance Criteria
+
+- [ ] AC-045: Clicking the "Forgot password" or "Reset password" link on the Azure AD B2C hosted sign-in page navigates to the B2C password-reset policy page (a distinct hosted UI page, not a portal route)
+- [ ] AC-046: Entering the test user's email address and submitting the verification-code form sends a code email (the test asserts the page advances to the "Enter verification code" step without validating actual email delivery)
+- [ ] AC-047: After entering a valid verification code and setting a new password, the browser is redirected back to `/dashboard` (or `/sign-in` if the policy does not auto-authenticate after reset)
+- [ ] AC-048: The test uses the permanent `TEST_USER_EMAIL` / `TEST_USER_PASSWORD` env-var account; if the policy auto-authenticates after reset, the test asserts the authenticated state; if it redirects to sign-in instead, the test asserts the sign-in page is shown
+- [ ] AC-049: The test is tagged `@slow` and excluded from the default `playwright.live.config.ts` run filter unless explicitly opted in, because it consumes a real B2C verification-code send
+
+---
+
+### US-013: Post-Suite Database Cleanup (Teardown)
+
+**As a** QA engineer maintaining a clean test environment
+**I want to** have all projects created during the suite automatically deleted at the end of the run
+**So that** repeated suite executions do not accumulate stale test data in Cosmos DB
+
+#### Acceptance Criteria
+
+- [ ] AC-050: A `teardown.ts` Playwright global teardown file is added under `e2e/real/` and registered in `playwright.live.config.ts` as the `globalTeardown` script
+- [ ] AC-051: The teardown reads `projectId` from `e2e/.auth/seed.json` (if it exists) and calls `DELETE /v1/projects/:id` using the persisted auth state from `e2e/.auth/user.json`; it logs but does not throw if the project is already gone (404 is silently skipped)
+- [ ] AC-052: The teardown also queries `GET /v1/projects` and deletes any project whose name starts with `[E2E]`, catching projects created by `project-create.spec.ts` that were not cleaned up inline (e.g. due to test failure mid-run)
+- [ ] AC-053: The teardown does NOT delete the Azure AD B2C test user account or its Cosmos `Users` / `UserSubscriptions` documents — only projects are removed
+- [ ] AC-054: After the teardown runs, `e2e/.auth/seed.json` is deleted so the next run starts fresh and re-provisions the seed project
+- [ ] AC-055: The teardown uses the Playwright `request` API (not `fetch`) authenticated via the stored `storageState`, so no additional credentials are required beyond what `auth.setup.ts` already persisted

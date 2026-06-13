@@ -32,11 +32,7 @@ _Populated by `/test [####]`_
 
 ## Amendments
 
-_Populated when spec or plan changes after initial approval. Format:_
-
-```
-### Amendment — YYYY-MM-DD
-**Changed**: [which documents were updated]
-**Reason**: [why the change was needed]
-**Impact**: [phases that need to re-run as a result]
-```
+### Amendment — 2026-06-12
+**Changed**: `stories.md` (added US-011, US-012, US-013), `plan.md` (rewritten — 12 tasks, 1:1 with stories)
+**Reason**: Three missing stories added (new user registration, forgot-password/reset, post-suite DB teardown); task list was not granular enough (7 tasks for 10 stories); tasks now map 1:1 to user stories and include teardown wiring in the config task
+**Impact**: Plan phase re-run to produce updated task list; Implement phase not yet started so no rework required
