@@ -70,7 +70,7 @@ export async function decodeAndValidateIdToken(token: string): Promise<AuthUser 
 
     if (claims.iss !== EXPECTED_ISSUER) return null;
 
-    const oid = claims.oid ?? claims.sub;
+    const oid = claims.sub ?? claims.oid;
     if (!oid) return null;
 
     const email =

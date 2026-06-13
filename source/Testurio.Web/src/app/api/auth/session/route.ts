@@ -100,5 +100,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     } catch { /* use default */ }
   }
 
+  // Upsert the user document in Cosmos via the backend API.
+  // Fire-and-forget with swallowed error — session is still created even if the
+  // backend is temporarily unavailable (e.g. local dev without the API running).
+  const apiBase = process.env.API_BASE_URL ?? 'http://localhost:8080';
+  fetch(`${apiBase}/v1/account/profile`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ firstName, lastName }),
+  }).catch(() => { /* non-fatal */ });
+
   return createSessionResponse(user, exp, idToken);
 }
