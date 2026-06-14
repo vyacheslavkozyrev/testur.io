@@ -7,7 +7,7 @@
 | Specify   | ✅ Complete | 2026-06-13 |       |
 | Plan      | ✅ Complete | 2026-06-13 |       |
 | Implement | ✅ Complete | 2026-06-13 |       |
-| Review    | ⏳ Pending  |            |       |
+| Review    | ✅ Complete | 2026-06-13 |       |
 | Test      | ⏳ Pending  |            |       |
 
 ---
@@ -18,9 +18,24 @@ _Populated by `/implement [####]`_
 
 ---
 
-## Review
+## Review — 2026-06-13
 
-_Populated by `/review [####]`_
+### Blockers fixed
+- `source/Testurio.Web/playwright.live.config.ts`:5 — `.env.test` loaded from repo root (`../../`) instead of `source/Testurio.Web/` where the file lives; fixed to `path.resolve(__dirname, '.env.test')`
+- `source/Testurio.Web/playwright.live.config.ts`:51 — hardcoded developer machine Chromium path `C:/Users/vyach/...` as the default fallback; replaced with `undefined` so Playwright uses its own binary resolution
+- `source/Testurio.Web/e2e/real/teardown.ts`:18 — `.env.test` path `../../../` pointed to repo root while config now points to `Testurio.Web/`; aligned to `../../` (two levels up from `e2e/real/` = `Testurio.Web/`)
+
+### Warnings fixed
+- `source/Testurio.Web/e2e/real/navigation.spec.ts`:26–28 — unreliable `page.on('load')` listener registered before flag reset; replaced with `framenavigated` counter with correct reset-before-listen ordering
+- `source/Testurio.Web/e2e/real/project-history.spec.ts`:129–135 — hardcoded `page.waitForTimeout(500)` for chart toggle assertion; replaced with `framenavigated` counter plus attribute-based wait on the active button state
+- `source/Testurio.Web/e2e/real/project-delete.spec.ts`:12–13 — module-level `let deleteTargetProjectId` is mutable state shared across tests; moved into a describe-scoped `state` object with a comment to convert to `test.extend` if workers > 1 is ever enabled
+
+### Suggestions (not fixed — acceptable trade-offs)
+- `playwright.live.config.ts` `testDir: './e2e'` picks up both mock-based and real specs; chromium project's `testMatch` correctly restricts to `real/` — by design, separate configs
+- `e2e/real/auth.spec.ts` AC-021 (disabled/spinner state during sign-out) not fully asserted — spinner state is transient and asserting it reliably requires intercepting the network request; acceptable partial coverage
+- `e2e/real/project-history.spec.ts` AC-151 (`errorSummary` monospace block) not asserted — history tests are skip-guarded when no history project is available; adding a FAILED scenario requires pipeline execution which is out of scope for this suite
+
+### Status: Complete
 
 ---
 
