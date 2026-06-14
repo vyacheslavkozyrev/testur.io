@@ -15,8 +15,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
 
-// __dirname is e2e/real/ — two levels up reaches source/Testurio.Web/ where .env.test lives
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
+// __dirname is e2e/real/ — four levels up reaches the repo root where .env.test lives
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env.test') });
 
 const authFile = path.join(__dirname, '../.auth/user.json');
 const seedFile = path.join(__dirname, '../.auth/seed.json');

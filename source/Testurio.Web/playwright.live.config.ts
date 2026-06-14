@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '.env.test') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 
 const baseURL = process.env.BASE_URL!;
 const authFile = path.join(__dirname, 'e2e/.auth/user.json');
