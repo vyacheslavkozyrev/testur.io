@@ -14,6 +14,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: 'html',
+  globalTeardown: path.join(__dirname, 'e2e/real/teardown.ts'),
   use: {
     baseURL,
     trace: 'on-first-retry',
@@ -31,6 +32,14 @@ export default defineConfig({
       testMatch: /auth\.setup\.ts/,
     },
     {
+      name: 'setup:seed',
+      testMatch: /seed\.setup\.ts/,
+      use: {
+        storageState: authFile,
+      },
+      dependencies: ['setup:auth'],
+    },
+    {
       name: 'chromium',
       testMatch: /real\/.+\.spec\.ts/,
       use: {
@@ -42,7 +51,7 @@ export default defineConfig({
             'C:/Users/vyach/AppData/Local/ms-playwright/chromium-1208/chrome-win64/chrome.exe',
         },
       },
-      dependencies: ['setup:auth'],
+      dependencies: ['setup:auth', 'setup:seed'],
     },
   ],
 });
