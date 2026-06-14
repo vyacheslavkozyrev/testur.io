@@ -9,9 +9,12 @@
 
 import { test, expect } from '@playwright/test';
 
-let deleteTargetProjectId: string | null = null;
-
+// Project ID is stored in a per-describe state object — avoids module-level mutable state
+// that could corrupt behaviour if Playwright workers > 1 is ever enabled.
+// If workers > 1 is needed, convert this to a test.extend fixture instead.
 test.describe('Project Delete', () => {
+  const state: { projectId: string | null } = { projectId: null };
+
   test.beforeEach(async ({ request }) => {
     // Create a fresh [E2E] Delete Target project before each test
     const res = await request.post('/v1/projects', {
@@ -24,19 +27,19 @@ test.describe('Project Delete', () => {
     });
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as { projectId: string };
-    deleteTargetProjectId = body.projectId;
+    state.projectId = body.projectId;
   });
 
   test.afterEach(async ({ request }) => {
     // Belt-and-suspenders: delete the project if it still exists (e.g. cancel test)
-    if (deleteTargetProjectId) {
-      await request.delete(`/v1/projects/${deleteTargetProjectId}`).catch(() => {});
-      deleteTargetProjectId = null;
+    if (state.projectId) {
+      await request.delete(`/v1/projects/${state.projectId}`).catch(() => {});
+      state.projectId = null;
     }
   });
 
   test('Danger Zone section is visible on settings page (AC-133)', async ({ page }) => {
-    await page.goto(`/projects/${deleteTargetProjectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
 
     await expect(
       page.getByText(/danger zone|delete project/i).first(),
@@ -44,7 +47,7 @@ test.describe('Project Delete', () => {
   });
 
   test('clicking delete opens a confirmation dialog before any API call (AC-134)', async ({ page }) => {
-    await page.goto(`/projects/${deleteTargetProjectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
 
     let apiDeleteCalled = false;
     page.on('request', (req) => {
@@ -67,7 +70,7 @@ test.describe('Project Delete', () => {
   });
 
   test('cancelling the confirmation dialog leaves project intact (AC-137)', async ({ page }) => {
-    await page.goto(`/projects/${deleteTargetProjectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
 
     await page
       .getByRole('button', { name: /delete project|delete/i })
@@ -81,11 +84,11 @@ test.describe('Project Delete', () => {
 
     // AC-137: still on settings page, project intact
     await expect(page.getByRole('dialog')).not.toBeVisible();
-    expect(page.url()).toContain(`/projects/${deleteTargetProjectId}/settings`);
+    expect(page.url()).toContain(`/projects/${state.projectId}/settings`);
   });
 
   test('confirming deletion calls DELETE API and redirects to /projects; project no longer appears in list (AC-135, AC-136, AC-138)', async ({ page }) => {
-    await page.goto(`/projects/${deleteTargetProjectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
 
     await page
       .getByRole('button', { name: /delete project|delete/i })
@@ -106,6 +109,6 @@ test.describe('Project Delete', () => {
     await expect(page.getByText('[E2E] Delete Target')).not.toBeVisible({ timeout: 5_000 });
 
     // The project was deleted by the UI — clear the ID so afterEach doesn't double-delete
-    deleteTargetProjectId = null;
+    state.projectId = null;
   });
 });

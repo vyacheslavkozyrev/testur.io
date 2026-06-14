@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 const baseURL = process.env.BASE_URL!;
 const authFile = path.join(__dirname, 'e2e/.auth/user.json');
@@ -46,9 +46,10 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: authFile,
         launchOptions: {
-          executablePath:
-            process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
-            'C:/Users/vyach/AppData/Local/ms-playwright/chromium-1208/chrome-win64/chrome.exe',
+          // Override the Chromium binary path via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH in .env.test
+          // when running on a machine where the default ms-playwright install is not on PATH.
+          // Leave undefined to let Playwright resolve the binary automatically.
+          executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? undefined,
         },
       },
       dependencies: ['setup:auth', 'setup:seed'],

@@ -23,41 +23,52 @@ test.describe('Sidebar Navigation — Links', () => {
   test('Dashboard link navigates to /dashboard (AC-154)', async ({ page }) => {
     await page.goto('/settings', { waitUntil: 'networkidle' });
 
-    let reloaded = false;
-    page.on('load', () => { reloaded = true; });
-    reloaded = false;
+    // Track full-page navigations (framenavigated fires on both soft and hard navs;
+    // we count only main-frame events AFTER the initial load settles).
+    let fullReloadCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) fullReloadCount++;
+    });
+    // Reset after initial load to ignore the settled state
+    fullReloadCount = 0;
 
     await page.getByRole('link', { name: /^dashboard$/i }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
 
-    // AC-157: client-side navigation (no full reload)
-    expect(reloaded).toBe(false);
+    // AC-157: client-side navigation — framenavigated fires once for a soft nav
+    // (URL change via history.pushState does NOT fire framenavigated); so count
+    // should remain 0 for a Next.js client-side transition.
+    expect(fullReloadCount).toBe(0);
   });
 
   test('Projects link navigates to /projects (AC-155)', async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'networkidle' });
 
-    let reloaded = false;
-    page.on('load', () => { reloaded = true; });
-    reloaded = false;
+    let fullReloadCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) fullReloadCount++;
+    });
+    fullReloadCount = 0;
 
     await page.getByRole('link', { name: /^projects$/i }).click();
     await expect(page).toHaveURL(/\/projects/, { timeout: 10_000 });
 
-    expect(reloaded).toBe(false);
+    expect(fullReloadCount).toBe(0);
   });
 
   test('Settings link navigates to /settings (AC-156)', async ({ page }) => {
     await page.goto('/dashboard', { waitUntil: 'networkidle' });
 
-    let reloaded = false;
-    page.on('load', () => { reloaded = true; });
-    reloaded = false;
+    let fullReloadCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) fullReloadCount++;
+    });
+    fullReloadCount = 0;
 
     await page.getByRole('link', { name: /^settings$/i }).click();
     await expect(page).toHaveURL(/\/settings/, { timeout: 10_000 });
 
-    expect(reloaded).toBe(false);
+    expect(fullReloadCount).toBe(0);
   });
 });
 

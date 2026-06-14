@@ -126,13 +126,26 @@ test.describe('Project History — With Records', () => {
     expect(isSelected).toBe(true);
 
     // AC-146: switching to Last 7 days updates chart without full reload
-    let reloaded = false;
-    page.on('load', () => { reloaded = true; });
-    reloaded = false;
+    // Track main-frame navigations; a client-side update via React state must not fire any.
+    let fullReloadCount = 0;
+    page.on('framenavigated', (frame) => {
+      if (frame === page.mainFrame()) fullReloadCount++;
+    });
+    fullReloadCount = 0;
 
     await page.getByRole('button', { name: /last 7 days/i }).click();
-    await page.waitForTimeout(500);
-    expect(reloaded).toBe(false);
+
+    // Wait for the button to reflect active state — confirms the update settled
+    await expect(page.getByRole('button', { name: /last 7 days/i })).toHaveAttribute(
+      /aria-pressed|data-selected|class/,
+      /true|active|selected/,
+      { timeout: 5_000 },
+    ).catch(() => {
+      // If the attribute pattern is not present, at minimum wait for network idle
+      return page.waitForLoadState('networkidle');
+    });
+
+    expect(fullReloadCount).toBe(0);
   });
 
   test('clicking a run row opens the detail panel (AC-147, AC-148)', async ({ page }) => {
