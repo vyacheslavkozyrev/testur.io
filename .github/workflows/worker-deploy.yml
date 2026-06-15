@@ -28,7 +28,7 @@ jobs:
       digest: ${{ steps.image.outputs.digest }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Strip component prefix: testurio-worker@1.3.0 → 1.3.0
       - name: Extract version from tag
@@ -39,7 +39,7 @@ jobs:
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
@@ -83,7 +83,7 @@ jobs:
 
       - name: Build and push Docker image
         id: image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ${{ env.WORKING_DIR }}/Dockerfile.ci
@@ -109,7 +109,7 @@ jobs:
       security-events: read
     steps:
       - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
           cache: true
           version: v0.70.0

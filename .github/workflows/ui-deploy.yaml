@@ -123,7 +123,7 @@ jobs:
       security-events: read  # use write when upload SARIF to GitHub Security tab is enabled
     steps:
       - name: Setup Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
+        uses: aquasecurity/setup-trivy@v0.3.1
         with:
           cache: true
           version: v0.70.0
