@@ -3,28 +3,43 @@
  * US-025 (Integration Tab), US-026 (ADO Form), US-027 (Jira Form)
  *
  * AC-103–AC-114
+ *
+ * Uses a dedicated [E2E] Integration Test project (not the seed project) so
+ * these tests always start without a PM tool configured.  The project is
+ * created in beforeAll and deleted in afterAll to keep the environment clean.
  */
 
 import { test, expect } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
-
-const seedFile = path.join(__dirname, '../.auth/seed.json');
-
-function readSeedProjectId(): string {
-  const data = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
-  return data.projectId;
-}
 
 // ---------------------------------------------------------------------------
 // US-025 — Integration Tab Accessible
 // ---------------------------------------------------------------------------
 
 test.describe('Project Settings — Integration Tab', () => {
-  test('Integration tab renders without page error and has PM tool buttons (AC-103, AC-104)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
+  let integrationProjectId: string;
 
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+  test.beforeAll(async ({ request }) => {
+    const res = await request.post('/v1/projects', {
+      data: {
+        name: '[E2E] Integration Test',
+        productUrl: 'https://integration-test.example.com',
+        testingStrategy: 'Temporary project — created for integration form tests.',
+        requestTimeoutSeconds: 30,
+      },
+    });
+    expect(res.ok()).toBeTruthy();
+    const body = (await res.json()) as { projectId: string };
+    integrationProjectId = body.projectId;
+  });
+
+  test.afterAll(async ({ request }) => {
+    if (integrationProjectId) {
+      await request.delete(`/v1/projects/${integrationProjectId}`).catch(() => {});
+    }
+  });
+
+  test('Integration tab renders without page error and has PM tool buttons (AC-103, AC-104)', async ({ page }) => {
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
 
     // Click the Integration tab
     await page.getByRole('tab', { name: /^integration$/i }).click();
@@ -44,9 +59,7 @@ test.describe('Project Settings — Integration Tab', () => {
   });
 
   test('switching between Settings and Integration tabs is client-side (AC-105)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     const baseUrl = page.url();
 
     await page.getByRole('tab', { name: /^integration$/i }).click();
@@ -61,18 +74,11 @@ test.describe('Project Settings — Integration Tab', () => {
   // ---------------------------------------------------------------------------
 
   test('clicking Connect Azure DevOps reveals ADO-specific form fields (AC-107, AC-108)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
-    // If integration is already configured, we can't add another — skip
     const connectAdoButton = page.getByRole('button', { name: /connect azure devops/i });
-    if (!(await connectAdoButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test add-ado form without removing existing integration');
-      return;
-    }
-
+    await expect(connectAdoButton).toBeVisible({ timeout: 10_000 });
     await connectAdoButton.click();
 
     // AC-107: ADO-specific fields visible
@@ -88,17 +94,11 @@ test.describe('Project Settings — Integration Tab', () => {
   });
 
   test('submitting empty ADO required fields shows validation errors (AC-110)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
     const connectAdoButton = page.getByRole('button', { name: /connect azure devops/i });
-    if (!(await connectAdoButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test ADO form validation without removing existing integration');
-      return;
-    }
-
+    await expect(connectAdoButton).toBeVisible({ timeout: 10_000 });
     await connectAdoButton.click();
 
     // Submit empty form
@@ -115,17 +115,11 @@ test.describe('Project Settings — Integration Tab', () => {
   // ---------------------------------------------------------------------------
 
   test('clicking Connect Jira reveals Jira-specific form fields (AC-111)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
     const connectJiraButton = page.getByRole('button', { name: /connect jira/i });
-    if (!(await connectJiraButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test add-jira form without removing existing integration');
-      return;
-    }
-
+    await expect(connectJiraButton).toBeVisible({ timeout: 10_000 });
     await connectJiraButton.click();
 
     // AC-111: Jira-specific fields visible
@@ -135,17 +129,11 @@ test.describe('Project Settings — Integration Tab', () => {
   });
 
   test('selecting API Token + Email auth reveals Email and Token fields (AC-112)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
     const connectJiraButton = page.getByRole('button', { name: /connect jira/i });
-    if (!(await connectJiraButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test Jira auth method form without removing existing integration');
-      return;
-    }
-
+    await expect(connectJiraButton).toBeVisible({ timeout: 10_000 });
     await connectJiraButton.click();
 
     // Auth method is MUI Select — click combobox to open listbox, then select option
@@ -160,17 +148,11 @@ test.describe('Project Settings — Integration Tab', () => {
   });
 
   test('selecting PAT for Jira hides Email field (AC-113)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
     const connectJiraButton = page.getByRole('button', { name: /connect jira/i });
-    if (!(await connectJiraButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test Jira PAT form without removing existing integration');
-      return;
-    }
-
+    await expect(connectJiraButton).toBeVisible({ timeout: 10_000 });
     await connectJiraButton.click();
 
     // Switch to PAT auth method via MUI Select
@@ -185,17 +167,11 @@ test.describe('Project Settings — Integration Tab', () => {
   });
 
   test('submitting empty Jira required fields shows validation errors (AC-114)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+    await page.goto(`/projects/${integrationProjectId}/settings`, { waitUntil: 'load' });
     await page.getByRole('tab', { name: /^integration$/i }).click();
 
     const connectJiraButton = page.getByRole('button', { name: /connect jira/i });
-    if (!(await connectJiraButton.isVisible({ timeout: 5_000 }))) {
-      test.skip(/* reason */ true, 'Integration already configured — cannot test Jira form validation without removing existing integration');
-      return;
-    }
-
+    await expect(connectJiraButton).toBeVisible({ timeout: 10_000 });
     await connectJiraButton.click();
 
     // Submit empty form

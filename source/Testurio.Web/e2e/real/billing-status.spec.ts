@@ -17,7 +17,7 @@ test.describe('Billing — Subscription Status Display', () => {
       ? (await subRes.json() as { status: string })
       : { status: 'None' };
 
-    await page.goto('/settings', { waitUntil: 'networkidle' });
+    await page.goto('/settings', { waitUntil: 'load' });
 
     // Navigate to the billing tab / subscription section if it is a separate tab
     const billingTab = page.getByRole('tab', { name: /billing|subscription/i });

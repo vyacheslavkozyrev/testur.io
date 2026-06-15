@@ -12,7 +12,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Project Create — Happy Path', () => {
   test('form renders with required fields at /projects/new (AC-080)', async ({ page }) => {
-    await page.goto('/projects/new', { waitUntil: 'networkidle' });
+    await page.goto('/projects/new', { waitUntil: 'load' });
 
     await expect(page.getByLabel(/name/i).or(page.locator('input[name="name"]'))).toBeVisible();
     await expect(page.getByLabel(/product url/i).or(page.locator('input[name="productUrl"]'))).toBeVisible();
@@ -25,7 +25,7 @@ test.describe('Project Create — Happy Path', () => {
     let createdProjectId: string | null = null;
 
     try {
-      await page.goto('/projects/new', { waitUntil: 'networkidle' });
+      await page.goto('/projects/new', { waitUntil: 'load' });
 
       // Fill the creation form
       const nameField = page.getByLabel(/name/i).or(page.locator('input[name="name"]')).first();
@@ -56,7 +56,7 @@ test.describe('Project Create — Happy Path', () => {
       if (match) createdProjectId = match[1];
 
       // AC-082: project appears in the project list
-      await page.goto('/projects', { waitUntil: 'networkidle' });
+      await page.goto('/projects', { waitUntil: 'load' });
       await expect(page.getByText('[E2E] Created Project').first()).toBeVisible({ timeout: 10_000 });
     } finally {
       // AC-083: inline teardown — delete the created project
@@ -74,7 +74,7 @@ test.describe('Project Create — Happy Path', () => {
 
 test.describe('Project Create — Validation Errors', () => {
   test('empty Name field shows inline validation error, no navigation (AC-084)', async ({ page }) => {
-    await page.goto('/projects/new', { waitUntil: 'networkidle' });
+    await page.goto('/projects/new', { waitUntil: 'load' });
 
     // Fill URL and strategy, leave name empty
     const urlField = page.getByLabel(/product url/i).or(page.locator('input[name="productUrl"]')).first();
@@ -102,7 +102,7 @@ test.describe('Project Create — Validation Errors', () => {
   });
 
   test('invalid URL shows inline validation error (AC-085)', async ({ page }) => {
-    await page.goto('/projects/new', { waitUntil: 'networkidle' });
+    await page.goto('/projects/new', { waitUntil: 'load' });
 
     const nameField = page.getByLabel(/name/i).or(page.locator('input[name="name"]')).first();
     await nameField.fill('[E2E] Validation Test');
@@ -131,7 +131,7 @@ test.describe('Project Create — Validation Errors', () => {
   });
 
   test('empty Testing Strategy shows inline validation error (AC-086)', async ({ page }) => {
-    await page.goto('/projects/new', { waitUntil: 'networkidle' });
+    await page.goto('/projects/new', { waitUntil: 'load' });
 
     const nameField = page.getByLabel(/name/i).or(page.locator('input[name="name"]')).first();
     await nameField.fill('[E2E] Validation Test');
@@ -150,7 +150,7 @@ test.describe('Project Create — Validation Errors', () => {
   });
 
   test('all three validation errors can appear simultaneously (AC-087)', async ({ page }) => {
-    await page.goto('/projects/new', { waitUntil: 'networkidle' });
+    await page.goto('/projects/new', { waitUntil: 'load' });
 
     // Submit with all fields empty / invalid
     const urlField = page.getByLabel(/product url/i).or(page.locator('input[name="productUrl"]')).first();

@@ -24,7 +24,7 @@ test.describe('Project History — Empty State', () => {
   test('history page loads without error and shows empty state for seed project (AC-139, AC-140, AC-141, AC-142)', async ({ page }) => {
     const seedProjectId = readSeedProjectId();
 
-    await page.goto(`/projects/${seedProjectId}/history`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${seedProjectId}/history`, { waitUntil: 'load' });
 
     // AC-139: page renders without error
     expect(page.url()).toContain(`/projects/${seedProjectId}/history`);
@@ -88,7 +88,7 @@ test.describe('Project History — With Records', () => {
       return;
     }
 
-    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'load' });
 
     // AC-143: history table visible with at least one row
     await expect(page.locator('[data-testid="history-table-row"], [data-testid="run-row"]').first()).toBeVisible({ timeout: 10_000 });
@@ -108,7 +108,7 @@ test.describe('Project History — With Records', () => {
       return;
     }
 
-    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'load' });
 
     // AC-145: trend chart and three toggle buttons visible
     await expect(page.locator('[data-testid="trend-chart"]').or(page.locator('[class*="chart"]').first())).toBeVisible({ timeout: 10_000 });
@@ -154,7 +154,7 @@ test.describe('Project History — With Records', () => {
       return;
     }
 
-    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'load' });
 
     const firstRow = page.locator('[data-testid="history-table-row"], [data-testid="run-row"]').first();
     await firstRow.click();
@@ -177,7 +177,7 @@ test.describe('Project History — With Records', () => {
       return;
     }
 
-    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${historyProjectId}/history`, { waitUntil: 'load' });
 
     const firstRow = page.locator('[data-testid="history-table-row"], [data-testid="run-row"]').first();
     await firstRow.click();

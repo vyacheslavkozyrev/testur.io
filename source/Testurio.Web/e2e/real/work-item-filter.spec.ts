@@ -22,7 +22,7 @@ function readSeedProjectId(): string {
 test.describe('Work Item Type Filter', () => {
   test.beforeEach(async ({ page }) => {
     const seedProjectId = readSeedProjectId();
-    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
 
     // Navigate to the Integration tab where the Work Item Type Filter lives
     const integrationTab = page.getByRole('tab', { name: /integration/i });

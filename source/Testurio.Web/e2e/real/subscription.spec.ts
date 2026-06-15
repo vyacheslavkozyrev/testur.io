@@ -14,7 +14,7 @@ test.describe('Subscription', () => {
     }
 
     // ── 1. Pricing page ───────────────────────────────────────────────────────
-    await page.goto('/pricing', { waitUntil: 'networkidle' });
+    await page.goto('/pricing', { waitUntil: 'load' });
 
     // Find the Test Pro card by plan name heading and click its Upgrade button
     const testProCard = page.locator('h5', { hasText: 'Test Pro' }).locator('../..');

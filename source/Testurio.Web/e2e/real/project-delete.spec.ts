@@ -39,7 +39,7 @@ test.describe('Project Delete', () => {
   });
 
   test('Danger Zone section is visible on settings page (AC-133)', async ({ page }) => {
-    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'load' });
 
     await expect(
       page.getByText(/danger zone|delete project/i).first(),
@@ -47,7 +47,7 @@ test.describe('Project Delete', () => {
   });
 
   test('clicking delete opens a confirmation dialog before any API call (AC-134)', async ({ page }) => {
-    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'load' });
 
     let apiDeleteCalled = false;
     page.on('request', (req) => {
@@ -70,7 +70,7 @@ test.describe('Project Delete', () => {
   });
 
   test('cancelling the confirmation dialog leaves project intact (AC-137)', async ({ page }) => {
-    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'load' });
 
     await page
       .getByRole('button', { name: /delete project|delete/i })
@@ -88,7 +88,7 @@ test.describe('Project Delete', () => {
   });
 
   test('confirming deletion calls DELETE API and redirects to /projects; project no longer appears in list (AC-135, AC-136, AC-138)', async ({ page }) => {
-    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'networkidle' });
+    await page.goto(`/projects/${state.projectId}/settings`, { waitUntil: 'load' });
 
     await page
       .getByRole('button', { name: /delete project|delete/i })
@@ -105,7 +105,7 @@ test.describe('Project Delete', () => {
     expect(page.url()).toMatch(/\/(projects|dashboard)/);
 
     // AC-136: deleted project no longer appears in the project list
-    await page.goto('/projects', { waitUntil: 'networkidle' });
+    await page.goto('/projects', { waitUntil: 'load' });
     await expect(page.getByText('[E2E] Delete Target')).not.toBeVisible({ timeout: 5_000 });
 
     // The project was deleted by the UI — clear the ID so afterEach doesn't double-delete
