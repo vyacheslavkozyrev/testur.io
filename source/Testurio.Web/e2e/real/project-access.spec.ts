@@ -9,15 +9,60 @@
  * The radiogroup has aria-label "Environment access method".
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
 
 const seedFile = path.join(__dirname, '../.auth/seed.json');
 
-function readSeedProjectId(): string {
-  const data = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
-  return data.projectId;
+/**
+ * Resolve the seed project ID.
+ * 1. Try seed.json + live project check.
+ * 2. Fall back to listing /v1/projects and finding [E2E] Seed Project.
+ * 3. Create a new seed project if neither is found.
+ *
+ * Writes seed.json on creation so the teardown can clean up.
+ */
+async function ensureSeedProject(request: APIRequestContext): Promise<string> {
+  if (fs.existsSync(seedFile)) {
+    const { projectId } = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
+    const check = await request.get(`/v1/projects/${projectId}`);
+    if (check.ok()) return projectId;
+  }
+
+  const listRes = await request.get('/v1/projects');
+  if (listRes.ok()) {
+    const projects = (await listRes.json()) as Array<{ projectId: string; name: string }>;
+    const seed = projects.find((p) => p.name === '[E2E] Seed Project');
+    if (seed) {
+      fs.mkdirSync(path.dirname(seedFile), { recursive: true });
+      fs.writeFileSync(seedFile, JSON.stringify({ projectId: seed.projectId }, null, 2));
+      return seed.projectId;
+    }
+  }
+
+  const createRes = await request.post('/v1/projects', {
+    data: {
+      name: '[E2E] Seed Project',
+      productUrl: 'https://example.com',
+      testingStrategy: 'Automated E2E seed project — do not delete manually.',
+      requestTimeoutSeconds: 30,
+    },
+  });
+  const body = (await createRes.json()) as { projectId: string };
+  fs.mkdirSync(path.dirname(seedFile), { recursive: true });
+  fs.writeFileSync(seedFile, JSON.stringify({ projectId: body.projectId }, null, 2));
+  return body.projectId;
+}
+
+/**
+ * Reset the seed project's access mode back to IpAllowlist via API.
+ * Called in afterEach for any describe block that writes access credentials.
+ */
+async function resetToIpAllowlist(request: APIRequestContext, projectId: string): Promise<void> {
+  await request.patch(`/v1/projects/${projectId}/access`, {
+    data: { accessMode: 'IpAllowlist' },
+  });
 }
 
 /**
@@ -26,8 +71,8 @@ function readSeedProjectId(): string {
  * "Testing Environment Access" card. Its radiogroup has
  * aria-label="Environment access method".
  */
-async function navigateToAccessSection(page: import('@playwright/test').Page, seedProjectId: string) {
-  await page.goto(`/projects/${seedProjectId}/settings`, { waitUntil: 'load' });
+async function navigateToAccessSection(page: import('@playwright/test').Page, projectId: string) {
+  await page.goto(`/projects/${projectId}/settings`, { waitUntil: 'load' });
 
   // The Settings tab is the default — click it to be explicit (handles post-reload state)
   const settingsTab = page.getByRole('tab', { name: /^settings$/i });
@@ -58,9 +103,13 @@ function accessTextbox(page: import('@playwright/test').Page, name: RegExp | str
 // ---------------------------------------------------------------------------
 
 test.describe('Project Access Mode — IP Allowlisting', () => {
-  test('access mode section has three options; IP Allowlisting hides credential fields and shows egress IPs (AC-115, AC-116, AC-117)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
+  let seedProjectId: string;
 
+  test.beforeAll(async ({ request }) => {
+    seedProjectId = await ensureSeedProject(request);
+  });
+
+  test('access mode section has three options; IP Allowlisting hides credential fields and shows egress IPs (AC-115, AC-116, AC-117)', async ({ page }) => {
     await navigateToAccessSection(page, seedProjectId);
 
     // AC-115: three access mode radio options visible (scoped to environment access radiogroup)
@@ -83,8 +132,6 @@ test.describe('Project Access Mode — IP Allowlisting', () => {
   });
 
   test('saving with IP Allowlisting selected succeeds (AC-118)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
     await navigateToAccessSection(page, seedProjectId);
 
     await accessRadio(page, /ip allowlisting/i).click();
@@ -104,9 +151,18 @@ test.describe('Project Access Mode — IP Allowlisting', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Project Access Mode — HTTP Basic Auth', () => {
-  test('selecting Basic Auth reveals masked Username and Password fields (AC-119, AC-120)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
+  let seedProjectId: string;
 
+  test.beforeAll(async ({ request }) => {
+    seedProjectId = await ensureSeedProject(request);
+  });
+
+  test.afterEach(async ({ request }) => {
+    // Reset to IpAllowlist so that subsequent tests start from a clean state
+    await resetToIpAllowlist(request, seedProjectId);
+  });
+
+  test('selecting Basic Auth reveals masked Username and Password fields (AC-119, AC-120)', async ({ page }) => {
     await navigateToAccessSection(page, seedProjectId);
 
     await accessRadio(page, /http basic auth/i).click();
@@ -125,17 +181,17 @@ test.describe('Project Access Mode — HTTP Basic Auth', () => {
   });
 
   test('submitting both Basic Auth fields populated succeeds (AC-121)', async ({ page }) => {
-    // AC-121: Saving Basic Auth credentials requires a Key Vault write (StoreAsync).
-    // In local dev the API runs in Development mode with a real Azure Key Vault URI
-    // but without a Managed Identity token, the write fails with a 500.
-    // This test is skipped until the CI/CD pipeline provisions a test-scoped Key Vault
-    // or the local dev env has valid MSI credentials.
-    test.skip(true, 'Skipped: saving Basic Auth credentials requires Azure Key Vault access which is not available in local dev E2E');
+    await navigateToAccessSection(page, seedProjectId);
+    await accessRadio(page, /http basic auth/i).click();
+
+    await accessTextbox(page, /^username$/i).fill('e2e-user');
+    await page.locator('input[type="password"]').first().fill('e2e-pass');
+
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByRole('button', { name: /saved/i })).toBeVisible({ timeout: 10_000 });
   });
 
   test('submitting with empty Basic Auth fields shows validation errors (AC-122)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
     await navigateToAccessSection(page, seedProjectId);
     await accessRadio(page, /http basic auth/i).click();
 
@@ -151,9 +207,18 @@ test.describe('Project Access Mode — HTTP Basic Auth', () => {
   });
 
   test('after saving, Username is pre-filled and Password field is empty (AC-123)', async ({ page }) => {
-    // AC-123: Verifying that the password placeholder appears after save requires a successful
-    // Key Vault write (same constraint as AC-121). Skipped alongside AC-121.
-    test.skip(true, 'Skipped: verifying post-save state requires Azure Key Vault access (same as AC-121)');
+    await navigateToAccessSection(page, seedProjectId);
+    await accessRadio(page, /http basic auth/i).click();
+
+    await accessTextbox(page, /^username$/i).fill('e2e-user');
+    await page.locator('input[type="password"]').first().fill('e2e-pass');
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByRole('button', { name: /saved/i })).toBeVisible({ timeout: 10_000 });
+
+    // Reload and verify username pre-filled, password empty
+    await page.reload({ waitUntil: 'load' });
+    await expect(accessTextbox(page, /^username$/i)).toHaveValue('e2e-user');
+    await expect(page.locator('input[type="password"]').first()).toHaveValue('');
   });
 });
 
@@ -162,9 +227,18 @@ test.describe('Project Access Mode — HTTP Basic Auth', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Project Access Mode — Custom Header Token', () => {
-  test('selecting Header Token reveals Header Name and masked Header Value fields (AC-124, AC-125)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
+  let seedProjectId: string;
 
+  test.beforeAll(async ({ request }) => {
+    seedProjectId = await ensureSeedProject(request);
+  });
+
+  test.afterEach(async ({ request }) => {
+    // Reset to IpAllowlist so that subsequent tests start from a clean state
+    await resetToIpAllowlist(request, seedProjectId);
+  });
+
+  test('selecting Header Token reveals Header Name and masked Header Value fields (AC-124, AC-125)', async ({ page }) => {
     await navigateToAccessSection(page, seedProjectId);
     await accessRadio(page, /custom header token/i).click();
 
@@ -180,14 +254,17 @@ test.describe('Project Access Mode — Custom Header Token', () => {
   });
 
   test('submitting both Header Token fields populated succeeds (AC-126)', async ({ page }) => {
-    // AC-126: Saving a custom header token value requires a Key Vault write (StoreAsync).
-    // Same infrastructure constraint as AC-121 — skipped until Key Vault is available.
-    test.skip(true, 'Skipped: saving Header Token value requires Azure Key Vault access which is not available in local dev E2E');
+    await navigateToAccessSection(page, seedProjectId);
+    await accessRadio(page, /custom header token/i).click();
+
+    await accessTextbox(page, /^header name$/i).fill('X-E2E-Token');
+    await page.locator('input[type="password"]').first().fill('e2e-secret-value');
+
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByRole('button', { name: /saved/i })).toBeVisible({ timeout: 10_000 });
   });
 
   test('submitting with empty Header Token fields shows validation errors (AC-127)', async ({ page }) => {
-    const seedProjectId = readSeedProjectId();
-
     await navigateToAccessSection(page, seedProjectId);
     await accessRadio(page, /custom header token/i).click();
 
@@ -202,8 +279,17 @@ test.describe('Project Access Mode — Custom Header Token', () => {
   });
 
   test('after saving, Header Name is pre-filled and Header Value is empty (AC-128)', async ({ page }) => {
-    // AC-128: Verifying that the value placeholder appears after save requires a successful
-    // Key Vault write (same constraint as AC-126). Skipped alongside AC-126.
-    test.skip(true, 'Skipped: verifying post-save state requires Azure Key Vault access (same as AC-126)');
+    await navigateToAccessSection(page, seedProjectId);
+    await accessRadio(page, /custom header token/i).click();
+
+    await accessTextbox(page, /^header name$/i).fill('X-E2E-Token');
+    await page.locator('input[type="password"]').first().fill('e2e-secret-value');
+    await page.getByRole('button', { name: /save changes/i }).click();
+    await expect(page.getByRole('button', { name: /saved/i })).toBeVisible({ timeout: 10_000 });
+
+    // Reload and verify header name pre-filled, value empty
+    await page.reload({ waitUntil: 'load' });
+    await expect(accessTextbox(page, /^header name$/i)).toHaveValue('X-E2E-Token');
+    await expect(page.locator('input[type="password"]').first()).toHaveValue('');
   });
 });

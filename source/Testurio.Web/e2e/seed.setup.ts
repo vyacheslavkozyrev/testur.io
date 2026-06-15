@@ -27,5 +27,6 @@ setup('create seed project', async ({ request }) => {
   expect(response.ok()).toBeTruthy();
   const project = JSON.parse(body) as { projectId: string };
 
+  fs.mkdirSync(path.dirname(seedFile), { recursive: true });
   fs.writeFileSync(seedFile, JSON.stringify({ projectId: project.projectId }, null, 2));
 });
