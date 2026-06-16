@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decodeAndValidateIdToken } from '@/services/auth/tokenValidator';
 import type { AuthUser } from '@/types/layout.types';
-import { getSessionStore } from './store';
+import { persistSession, getSessionStore } from './store';
 
 /** Evicts all expired sessions from the store. Called lazily on each write. */
 function evictExpired(): void {
@@ -18,7 +18,7 @@ function createSessionResponse(user: AuthUser, exp: number, idToken: string): Ne
   const sessionId = crypto.randomUUID();
   const nowSec = Math.floor(Date.now() / 1000);
 
-  getSessionStore().set(sessionId, {
+  persistSession(sessionId, {
     userId: user.id,
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,

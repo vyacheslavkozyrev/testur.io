@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { getSessionStore } from '@/app/api/auth/session/store';
+import { deleteSession } from '@/app/api/auth/session/store';
 import { SIGN_IN_ROUTE } from '@/routes/routes';
 
 /**
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('testurio_session');
   if (sessionCookie?.value) {
-    getSessionStore().delete(sessionCookie.value);
+    deleteSession(sessionCookie.value);
   }
 
   const response = NextResponse.redirect(new URL(SIGN_IN_ROUTE, request.url));
@@ -51,7 +51,7 @@ export async function POST(): Promise<NextResponse> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('testurio_session');
   if (sessionCookie?.value) {
-    getSessionStore().delete(sessionCookie.value);
+    deleteSession(sessionCookie.value);
   }
 
   // Native auth does not create a browser-side Azure session, so there is no

@@ -25,6 +25,10 @@
 
 **/e2e/.auth
 
+# Ignore file-based session persistence for dev/test
+
+**/.sessions.json
+
 # Ignore environment files
 
 **/.env

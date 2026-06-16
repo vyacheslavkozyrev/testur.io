@@ -49,6 +49,9 @@ async function ensureSeedProject(request: APIRequestContext): Promise<string> {
       requestTimeoutSeconds: 30,
     },
   });
+  if (!createRes.ok()) {
+    throw new Error(`Failed to create seed project: ${createRes.status()} ${await createRes.text()}`);
+  }
   const body = (await createRes.json()) as { projectId: string };
   fs.mkdirSync(path.dirname(seedFile), { recursive: true });
   fs.writeFileSync(seedFile, JSON.stringify({ projectId: body.projectId }, null, 2));
