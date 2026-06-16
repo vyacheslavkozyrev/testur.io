@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 import type { DashboardResponse } from '../src/types/dashboard.types';
 
 const QUOTA_USAGE = {
-  usedToday: 3,
-  dailyLimit: 50,
+  usedThisMonth: 3,
+  monthlyLimit: 50,
   resetsAt: new Date(Date.now() + 86400000).toISOString(),
 };
 

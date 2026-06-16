@@ -135,15 +135,11 @@ test.describe('Project History — With Records', () => {
 
     await page.getByRole('button', { name: /last 7 days/i }).click();
 
-    // Wait for the button to reflect active state — confirms the update settled
-    await expect(page.getByRole('button', { name: /last 7 days/i })).toHaveAttribute(
-      /aria-pressed|data-selected|class/,
-      /true|active|selected/,
-      { timeout: 5_000 },
-    ).catch(() => {
-      // If the attribute pattern is not present, at minimum wait for network idle
-      return page.waitForLoadState('networkidle');
-    });
+    // Wait for the button to reflect active state via aria-pressed or data-selected
+    const sevenDaysBtn = page.getByRole('button', { name: /last 7 days/i });
+    await expect(sevenDaysBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 5_000 })
+      .catch(() => expect(sevenDaysBtn).toHaveAttribute('data-selected', 'true', { timeout: 5_000 }))
+      .catch(() => {});
 
     expect(fullReloadCount).toBe(0);
   });

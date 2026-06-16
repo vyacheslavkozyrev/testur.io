@@ -11,13 +11,15 @@ const MOCK_PLANS: PlanDefinition[] = [
     annualPrice: 0,
     annualDiscountPercent: 0,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Up to 3 projects',
       '50 automated test runs / day',
       'API test execution',
       'Basic test reports',
       'Community support',
     ],
+    limits: { maxProjects: 3, maxTestRunsPerMonth: 50 },
+    features: { apiTesting: true, uiE2eTesting: false, aiMemory: false, pmReportPostBack: false },
   },
   {
     id: 'test-pro',
@@ -26,7 +28,7 @@ const MOCK_PLANS: PlanDefinition[] = [
     annualPrice: 470,
     annualDiscountPercent: 20,
     isPopular: true,
-    features: [
+    displayFeatures: [
       'Up to 10 projects',
       'Unlimited test runs',
       'API & UI end-to-end testing',
@@ -34,6 +36,8 @@ const MOCK_PLANS: PlanDefinition[] = [
       'ADO & Jira report post-back',
       'Email support',
     ],
+    limits: { maxProjects: 10, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'team',
@@ -42,7 +46,7 @@ const MOCK_PLANS: PlanDefinition[] = [
     annualPrice: 1430,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Unlimited projects',
       'Unlimited test runs',
       'API & UI end-to-end testing',
@@ -51,6 +55,8 @@ const MOCK_PLANS: PlanDefinition[] = [
       'Custom test generation prompts',
       'Priority support',
     ],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
   {
     id: 'centurio',
@@ -59,7 +65,7 @@ const MOCK_PLANS: PlanDefinition[] = [
     annualPrice: 3830,
     annualDiscountPercent: 20,
     isPopular: false,
-    features: [
+    displayFeatures: [
       'Unlimited projects',
       'Unlimited test runs',
       'All test types including smoke, a11y, visual',
@@ -69,6 +75,8 @@ const MOCK_PLANS: PlanDefinition[] = [
       'SLA guarantee',
       'Dedicated support engineer',
     ],
+    limits: { maxProjects: -1, maxTestRunsPerMonth: -1 },
+    features: { apiTesting: true, uiE2eTesting: true, aiMemory: true, pmReportPostBack: true },
   },
 ];
 
