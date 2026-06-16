@@ -7,7 +7,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
 const localBaseURL = process.env.BASE_URL_LOCAL ?? 'http://localhost:3100';
 const devBaseURL   = process.env.BASE_URL       ?? 'http://localhost:3000';
 
-const authFile = path.join(__dirname, 'e2e/.auth/user.json');
+const localAuthFile = path.join(__dirname, 'e2e/.auth/local.json');
+const devAuthFile   = path.join(__dirname, 'e2e/.auth/user.json');
 
 const devUse = {
   baseURL: devBaseURL,
@@ -37,15 +38,23 @@ export default defineConfig({
 
   projects: [
     // ── local ────────────────────────────────────────────────────────────────
-    // Mock-based specs only. Next.js is started automatically via webServer.
+    // Mock-based specs. Next.js is started automatically via webServer.
+    // local:setup creates a synthetic server-side session so the auth guard passes.
+    {
+      name: 'local:setup',
+      testMatch: /local\.setup\.ts/,
+      use: { baseURL: localBaseURL },
+    },
     {
       name: 'local',
       testMatch: /(?<!real\/).+\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         baseURL: localBaseURL,
+        storageState: localAuthFile,
         launchOptions: chromiumLaunch,
       },
+      dependencies: ['local:setup'],
     },
 
     // ── dev ──────────────────────────────────────────────────────────────────
@@ -59,7 +68,7 @@ export default defineConfig({
     {
       name: 'dev:seed',
       testMatch: /seed\.setup\.ts/,
-      use: { ...devUse, storageState: authFile },
+      use: { ...devUse, storageState: devAuthFile },
       dependencies: ['dev:auth'],
     },
     {
@@ -68,7 +77,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         ...devUse,
-        storageState: authFile,
+        storageState: devAuthFile,
         launchOptions: chromiumLaunch,
       },
       dependencies: ['dev:auth', 'dev:seed'],
