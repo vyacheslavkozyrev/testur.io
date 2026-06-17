@@ -285,6 +285,24 @@ test.describe('Pricing page (AC-023 – AC-038)', () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthMe(page, null);
     await mockPlansApi(page);
+    // Mock subscription endpoint so plan rank/CTAs aren't affected by the real
+    // dev API returning an active subscription for the seeded test user.
+    await page.route('**/v1/billing/subscription', (route) =>
+      route.fulfill({
+        json: {
+          status: 'None',
+          plan: null,
+          billingInterval: null,
+          trialEndsAt: null,
+          currentPeriodEnd: null,
+          cancelledAt: null,
+          paymentMethodLast4: null,
+          paymentMethodExpMonth: null,
+          paymentMethodExpYear: null,
+          invoices: [],
+        },
+      }),
+    );
   });
 
   test('AC-023/AC-024/AC-025: four plan cards load with names and prices from API', async ({

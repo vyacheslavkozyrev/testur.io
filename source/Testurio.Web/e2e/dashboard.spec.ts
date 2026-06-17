@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { DashboardResponse } from '../src/types/dashboard.types';
+
+const seedFile = path.join(__dirname, '.auth/seed.json');
+function readSeedProjectId(): string {
+  const data = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
+  return data.projectId;
+}
 
 const QUOTA_USAGE = {
   usedThisMonth: 3,
@@ -169,5 +177,69 @@ test.describe('Dashboard Page', () => {
     // Verify the link uses client-side routing (href present, not a full-page reload trigger)
     const href = await cardLink.getAttribute('href');
     expect(href).toBe(`/projects/${projectId}/history`);
+  });
+});
+
+// ─── Real-API tests (skipped in local project) ────────────────────────────────
+// US-013 (Dashboard Overview), US-014 (Card Navigation) — AC-059–AC-065
+
+test.describe('Dashboard — Overview (real API)', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name === 'local', 'Requires real dev API');
+  });
+
+  test('dashboard page loads without error and shows required elements (AC-059, AC-060, AC-062, AC-063)', async ({ page }) => {
+    await page.goto('/dashboard', { waitUntil: 'load', timeout: 15_000 });
+
+    expect(page.url()).toContain('/dashboard');
+    await expect(page.getByRole('heading', { name: /dashboard/i }).first()).toBeVisible({ timeout: 10_000 });
+
+    await expect(
+      page.getByRole('button', { name: /create project/i }).or(page.getByRole('link', { name: /create project/i })),
+    ).toBeVisible();
+
+    await expect(
+      page.getByText(/runs used this month|no active plan/i).first(),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('seed project card is visible with name and run status badge (AC-061, AC-063)', async ({ page }) => {
+    await page.goto('/dashboard', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+
+    const cardLink = page.getByRole('link', { name: /\[E2E\] Seed Project/ });
+    await expect(
+      cardLink.getByText(/never run|queued|running|passed|failed|cancelled|timed out/i).first(),
+    ).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('clicking seed project card navigates to history page (AC-064)', async ({ page }) => {
+    const seedProjectId = readSeedProjectId();
+
+    await page.goto('/dashboard', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+
+    const cardLink = page.getByRole('link', { name: /\[E2E\] Seed Project/ });
+    await cardLink.click();
+
+    await page.waitForURL(`**/projects/${seedProjectId}/history`, { timeout: 10_000 });
+    expect(page.url()).toContain(`/projects/${seedProjectId}/history`);
+  });
+
+  test('Back button from history returns to dashboard (AC-065)', async ({ page }) => {
+    const seedProjectId = readSeedProjectId();
+
+    await page.goto('/dashboard', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+
+    const cardLink = page.getByRole('link', { name: /\[E2E\] Seed Project/ });
+    await cardLink.click();
+    await page.waitForURL(`**/projects/${seedProjectId}/history`, { timeout: 10_000 });
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
   });
 });

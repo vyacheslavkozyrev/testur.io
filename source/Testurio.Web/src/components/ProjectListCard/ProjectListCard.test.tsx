@@ -1,14 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-}));
-
-import { useRouter } from 'next/navigation';
 import ProjectListCard from './ProjectListCard';
 import type { ProjectDto } from '@/types/project.types';
 
@@ -36,9 +30,6 @@ function Wrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-const mockPush = jest.fn();
-const mockUseRouter = useRouter as jest.Mock;
-
 const shortStrategy = 'Focus on API contracts and key user flows.';
 const longStrategy =
   'This is a very long testing strategy that exceeds one hundred and twenty characters in total length so that truncation is applied to it by the component.';
@@ -54,11 +45,6 @@ const mockProject: ProjectDto = {
   createdAt: '2026-05-10T00:00:00Z',
   updatedAt: '2026-05-10T00:00:00Z',
 };
-
-beforeEach(() => {
-  mockPush.mockClear();
-  mockUseRouter.mockReturnValue({ push: mockPush });
-});
 
 describe('ProjectListCard', () => {
   it('renders the card link pointing to the project history URL', () => {
@@ -77,26 +63,15 @@ describe('ProjectListCard', () => {
     );
   });
 
-  it('renders the edit icon button with the correct aria-label', () => {
+  it('renders the edit icon link with the correct aria-label and settings href', () => {
     render(
       <Wrapper>
         <ProjectListCard project={mockProject} />
       </Wrapper>,
     );
-    expect(screen.getByRole('button', { name: 'Edit project' })).toBeInTheDocument();
-  });
-
-  it('navigates to settings URL when the edit button is clicked without triggering card navigation', () => {
-    render(
-      <Wrapper>
-        <ProjectListCard project={mockProject} />
-      </Wrapper>,
-    );
-    const editBtn = screen.getByRole('button', { name: 'Edit project' });
-    fireEvent.click(editBtn);
-
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith(
+    const editLink = screen.getByRole('link', { name: 'Edit project' });
+    expect(editLink).toBeInTheDocument();
+    expect(editLink.getAttribute('href')).toBe(
       `/projects/${mockProject.projectId}/settings`,
     );
   });

@@ -134,7 +134,19 @@ test.describe('Project Access Mode — IP Allowlisting', () => {
     ).toBeVisible({ timeout: 5_000 });
   });
 
-  test('saving with IP Allowlisting selected succeeds (AC-118)', async ({ page }) => {
+  test('saving with IP Allowlisting selected succeeds (AC-118)', async ({ page, request }) => {
+    // Default access mode is already IpAllowlist, so clicking the radio with the
+    // current value would leave the form clean and the SaveBar would not appear.
+    // Pre-set the project to BasicAuth via API so the radio click produces a dirty form.
+    const presetRes = await request.patch(`/v1/projects/${seedProjectId}/access`, {
+      data: {
+        accessMode: 'BasicAuth',
+        basicAuthUser: 'e2e-temp-user',
+        basicAuthPass: 'e2e-temp-pass',
+      },
+    });
+    expect(presetRes.ok()).toBeTruthy();
+
     await navigateToAccessSection(page, seedProjectId);
 
     await accessRadio(page, /ip allowlisting/i).click();

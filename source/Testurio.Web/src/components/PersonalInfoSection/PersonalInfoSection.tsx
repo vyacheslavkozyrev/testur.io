@@ -25,12 +25,14 @@ export default function PersonalInfoSection({ user, onSaveSuccess }: PersonalInf
   const [firstName, setFirstName] = useState(user.firstName ?? '');
   const [lastName, setLastName] = useState(user.lastName ?? '');
   const [saveError, setSaveError] = useState(false);
+  const [firstNameError, setFirstNameError] = useState(false);
 
   const updateProfile = useUpdateProfile();
 
   const handleFirstNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setFirstName(e.target.value);
     setSaveError(false);
+    setFirstNameError(false);
   }, []);
 
   const handleLastNameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +41,10 @@ export default function PersonalInfoSection({ user, onSaveSuccess }: PersonalInf
   }, []);
 
   const handleSave = useCallback(async () => {
+    if (firstName.trim() === '') {
+      setFirstNameError(true);
+      return;
+    }
     setSaveError(false);
     try {
       await updateProfile.mutateAsync({
@@ -68,6 +74,8 @@ export default function PersonalInfoSection({ user, onSaveSuccess }: PersonalInf
             fullWidth
             autoComplete="given-name"
             inputProps={{ maxLength: 100 }}
+            error={firstNameError}
+            helperText={firstNameError ? t('personalInfo.errors.firstNameRequired') : undefined}
           />
           <TextField
             label={t('personalInfo.fields.lastName')}

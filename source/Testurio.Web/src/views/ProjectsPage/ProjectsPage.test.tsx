@@ -4,11 +4,13 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import type { ProjectDto } from '@/types/project.types';
+import type { SubscriptionStatusResponse } from '@/types/plan.types';
 
 // ─── Mock next/navigation ─────────────────────────────────────────────────────
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
+  usePathname: jest.fn(() => '/projects'),
 }));
 
 import { useRouter } from 'next/navigation';
@@ -25,6 +27,16 @@ const mockUseProjectsState = {
 
 jest.mock('@/hooks/useProject', () => ({
   useProjects: () => mockUseProjectsState,
+}));
+
+// ─── Mock useBilling hook ─────────────────────────────────────────────────────
+
+const mockUseSubscriptionState = {
+  data: { status: 'Active', plan: 'TestJunior', billingInterval: 'Monthly', trialEndsAt: null } as SubscriptionStatusResponse | undefined,
+};
+
+jest.mock('@/hooks/useBilling', () => ({
+  useSubscriptionStatus: () => mockUseSubscriptionState,
 }));
 
 // ─── i18n setup ───────────────────────────────────────────────────────────────
@@ -51,6 +63,15 @@ i18nInstance.use(initReactI18next).init({
         error: {
           message: 'Failed to load projects. Please try again.',
           retryButton: 'Retry',
+        },
+      },
+      billing: {
+        upgradeModal: {
+          title: 'Subscription required',
+          message: 'This action requires an active plan.',
+          cta: 'View plans',
+          dismiss: 'Maybe later',
+          close: 'Close',
         },
       },
     },
@@ -89,6 +110,12 @@ beforeEach(() => {
   mockUseProjectsState.data = undefined;
   mockUseProjectsState.isPending = false;
   mockUseProjectsState.isError = false;
+  mockUseSubscriptionState.data = {
+    status: 'Active',
+    plan: 'TestJunior',
+    billingInterval: 'Monthly',
+    trialEndsAt: null,
+  };
 });
 
 // Lazy import after mocks are set up
@@ -108,9 +135,6 @@ describe('ProjectsPage', () => {
       </Wrapper>,
     );
 
-    // MUI Skeleton renders with role="progressbar" via wave animation aria by default,
-    // but rendered as <span>. Check by looking for skeleton elements directly.
-    // Use data from the DOM: Skeleton renders as a div with a class containing "Skeleton".
     const skeletons = document.querySelectorAll('.MuiSkeleton-root');
     expect(skeletons.length).toBeGreaterThan(0);
   });
@@ -142,7 +166,7 @@ describe('ProjectsPage', () => {
     expect(screen.queryByText('No projects yet')).not.toBeInTheDocument();
   });
 
-  it('navigates to /projects/new when "Create your first project" is clicked', () => {
+  it('navigates to /projects/new when "Create your first project" is clicked with active subscription', () => {
     mockUseProjectsState.data = [];
 
     render(
@@ -155,7 +179,7 @@ describe('ProjectsPage', () => {
     expect(mockPush).toHaveBeenCalledWith('/projects/new');
   });
 
-  it('navigates to /projects/new when the header "Create Project" button is clicked', () => {
+  it('navigates to /projects/new when the header "Create Project" button is clicked with active subscription', () => {
     mockUseProjectsState.data = [];
 
     render(
@@ -166,6 +190,27 @@ describe('ProjectsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Project' }));
     expect(mockPush).toHaveBeenCalledWith('/projects/new');
+  });
+
+  it('shows UpgradeModal instead of navigating when subscription status is None', () => {
+    mockUseSubscriptionState.data = {
+      status: 'None',
+      plan: null,
+      billingInterval: null,
+      trialEndsAt: null,
+    };
+    mockUseProjectsState.data = [];
+
+    render(
+      <Wrapper>
+        <ProjectsPage />
+      </Wrapper>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Project' }));
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Subscription required')).toBeInTheDocument();
   });
 
   it('shows the error state and Retry button when the fetch fails', () => {
@@ -221,7 +266,6 @@ describe('ProjectsPage', () => {
       name: 'Newer Project',
       createdAt: '2026-05-10T00:00:00Z',
     });
-    // Hook already returns sorted data; pass in sorted order to verify render order
     mockUseProjectsState.data = [newer, older];
 
     render(

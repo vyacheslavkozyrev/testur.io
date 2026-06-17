@@ -19,15 +19,19 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: path.resolve(__dirname, '../../../../.env.test') });
 
 const authFile = path.join(__dirname, '../.auth/user.json');
-const seedFile = path.join(__dirname, '../.auth/seed.json');
 
 export default async function globalTeardown(): Promise<void> {
+  if (!process.env.BASE_URL) {
+    console.log('[teardown] BASE_URL not set — not a dev run, skipping cleanup.');
+    return;
+  }
+
   if (!fs.existsSync(authFile)) {
     console.log('[teardown] No auth state found — skipping cleanup.');
     return;
   }
 
-  const baseURL = process.env.BASE_URL!;
+  const baseURL = process.env.BASE_URL;
 
   const apiContext = await createRequest.newContext({
     baseURL,
@@ -39,31 +43,20 @@ export default async function globalTeardown(): Promise<void> {
   });
 
   try {
-    // 1. Delete the seed project by explicit ID (fast path)
-    if (fs.existsSync(seedFile)) {
-      try {
-        const { projectId } = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
-        const res = await apiContext.delete(`/v1/projects/${projectId}`);
-        if (res.status() === 404) {
-          console.log(`[teardown] Seed project ${projectId} already gone (404) — skipping.`);
-        } else {
-          console.log(`[teardown] Deleted seed project ${projectId} — status ${res.status()}`);
-        }
-      } catch (err) {
-        console.warn('[teardown] Could not delete seed project:', err);
-      }
-    }
-
-    // 2. Sweep for any remaining [E2E] projects created during the run
+    // Sweep for per-test [E2E] projects created during the run.
+    // The seed project ("[E2E] Seed Project") is intentionally kept alive so the
+    // next run can reuse it without hitting the trial project limit.
     const listRes = await apiContext.get('/v1/projects');
     if (!listRes.ok()) {
-      console.warn(`[teardown] GET /v1/projects returned ${listRes.status()} — cannot sweep remaining [E2E] projects.`);
+      console.warn(`[teardown] GET /v1/projects returned ${listRes.status()} — cannot sweep [E2E] projects.`);
     } else {
       const projects = (await listRes.json()) as Array<{ projectId: string; name: string }>;
-      const e2eProjects = projects.filter((p) => p.name?.startsWith('[E2E]'));
-      console.log(`[teardown] Found ${e2eProjects.length} remaining [E2E] project(s) to delete.`);
+      const toDelete = projects.filter(
+        (p) => p.name?.startsWith('[E2E]') && p.name !== '[E2E] Seed Project',
+      );
+      console.log(`[teardown] Found ${toDelete.length} per-test [E2E] project(s) to delete.`);
 
-      for (const project of e2eProjects) {
+      for (const project of toDelete) {
         try {
           const del = await apiContext.delete(`/v1/projects/${project.projectId}`);
           if (del.status() === 404) {
@@ -78,11 +71,5 @@ export default async function globalTeardown(): Promise<void> {
     }
   } finally {
     await apiContext.dispose();
-
-    // 3. Remove seed.json so the next run starts fresh
-    if (fs.existsSync(seedFile)) {
-      fs.unlinkSync(seedFile);
-      console.log('[teardown] Removed e2e/.auth/seed.json.');
-    }
   }
 }

@@ -14,7 +14,8 @@
       "saving": "Saving…"
     },
     "errors": {
-      "saveFailed": "Failed to save settings. Please try again."
+      "saveFailed": "Failed to save settings. Please try again.",
+      "firstNameRequired": "First Name is required"
     }
   },
   "preferences": {

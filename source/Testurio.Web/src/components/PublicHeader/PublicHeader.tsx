@@ -17,7 +17,6 @@ import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTheme, type Theme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTranslation } from 'react-i18next';
 import { DASHBOARD_ROUTE, SIGN_IN_ROUTE, SIGN_UP_ROUTE } from '@/routes/routes';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -31,7 +30,6 @@ export default function PublicHeader() {
   const { t } = useTranslation('landing');
   const theme = useTheme();
   const pathname = usePathname();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const user = useAuthUser();
   const styles = getStyles(theme);
@@ -55,22 +53,20 @@ export default function PublicHeader() {
             </Typography>
           </Box>
 
-          {/* Desktop nav links — centre */}
-          {!isMobile && (
-            <Box sx={styles.navLinks}>
-              {NAV_LINKS.map(({ labelKey, href }) => (
-                <Box
-                  key={href}
-                  component={Link}
-                  href={href}
-                  sx={isActive(href) ? styles.navLinkActive : styles.navLink}
-                  aria-current={isActive(href) ? 'page' : undefined}
-                >
-                  {t(labelKey)}
-                </Box>
-              ))}
-            </Box>
-          )}
+          {/* Desktop nav links — hidden on mobile via CSS */}
+          <Box sx={styles.navLinks}>
+            {NAV_LINKS.map(({ labelKey, href }) => (
+              <Box
+                key={href}
+                component={Link}
+                href={href}
+                sx={isActive(href) ? styles.navLinkActive : styles.navLink}
+                aria-current={isActive(href) ? 'page' : undefined}
+              >
+                {t(labelKey)}
+              </Box>
+            ))}
+          </Box>
 
           {/* Spacer */}
           <Box sx={{ flex: 1 }} />
@@ -88,11 +84,10 @@ export default function PublicHeader() {
             </Button>
           ) : (
             <Box sx={styles.authActions}>
-              {!isMobile && (
-                <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
-                  {t('publicHeader.action.signIn')}
-                </Box>
-              )}
+              {/* Sign In — hidden on mobile via CSS */}
+              <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
+                {t('publicHeader.action.signIn')}
+              </Box>
               <Button
                 component={Link}
                 href={SIGN_UP_ROUTE}
@@ -105,17 +100,15 @@ export default function PublicHeader() {
             </Box>
           )}
 
-          {/* Hamburger — mobile only */}
-          {isMobile && (
-            <IconButton
-              edge="end"
-              aria-label={t('publicHeader.action.openMenu')}
-              onClick={handleOpenDrawer}
-              sx={styles.hamburger}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
+          {/* Hamburger — hidden on desktop via CSS */}
+          <IconButton
+            edge="end"
+            aria-label={t('publicHeader.action.openMenu')}
+            onClick={handleOpenDrawer}
+            sx={styles.hamburger}
+          >
+            <MenuIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -175,7 +168,7 @@ const getStyles = (theme: Theme) =>
         color: theme.palette.primary.main,
       },
       navLinks: {
-        display: 'flex',
+        display: { xs: 'none', md: 'flex' },
         gap: theme.spacing(3),
         ml: theme.spacing(4),
       },
@@ -199,6 +192,7 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       signInLink: {
+        display: { xs: 'none', md: 'block' },
         textDecoration: 'none',
         color: theme.palette.text.secondary,
         fontWeight: 500,
@@ -210,6 +204,7 @@ const getStyles = (theme: Theme) =>
         minHeight: 44,
       },
       hamburger: {
+        display: { xs: 'flex', md: 'none' },
         ml: theme.spacing(1),
         color: theme.palette.text.primary,
       },

@@ -136,7 +136,16 @@ test.describe('Sign-In — Wrong Password', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Sign-Out', () => {
-  test('sign-out clears session and redirects to /sign-in (AC-018, AC-019, AC-020)', async ({ page }) => {
+  test('sign-out clears session and redirects to /sign-in (AC-018, AC-019, AC-020)', async ({ browser }: { browser: Browser }) => {
+    // Use a fresh context with its own server-side session so that sign-out does NOT
+    // delete the shared storageState session used by the rest of the test suite.
+    const localBaseURL = process.env.BASE_URL_LOCAL ?? 'http://localhost:3000';
+    const context = await browser.newContext({ baseURL: localBaseURL });
+    const page = await context.newPage();
+
+    // Create a dedicated server-side session for this context.
+    await page.request.post('/api/test/session');
+
     // Use 'load' instead of 'networkidle': dashboard has a persistent SSE stream.
     await page.goto('/dashboard', { waitUntil: 'load' });
 
@@ -152,5 +161,7 @@ test.describe('Sign-Out', () => {
     // AC-020: navigating to /dashboard after sign-out redirects to /sign-in
     await page.goto('/dashboard', { waitUntil: 'load' });
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 10_000 });
+
+    await context.close();
   });
 });

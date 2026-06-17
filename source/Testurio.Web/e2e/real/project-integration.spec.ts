@@ -82,15 +82,15 @@ test.describe('Project Settings — Integration Tab', () => {
     await connectAdoButton.click();
 
     // AC-107: ADO-specific fields visible
-    await expect(page.getByLabel(/organization url/i)).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByLabel(/project name/i)).toBeVisible();
-    await expect(page.getByLabel(/^team$/i)).toBeVisible();
-    await expect(page.getByLabel(/"in testing" status name/i)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /organization url/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('textbox', { name: /project name/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /^team$/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /"in testing" status name/i })).toBeVisible();
 
     // AC-108: auth method selector present and PAT field visible (PAT is default)
-    await expect(page.getByLabel(/auth method/i)).toBeVisible();
+    await expect(page.getByRole('combobox', { name: /auth method/i })).toBeVisible();
     // PAT is the default auth method, so the PAT field should already be visible
-    await expect(page.getByLabel(/personal access token/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('textbox', { name: /^personal access token$/i })).toBeVisible({ timeout: 5_000 });
   });
 
   test('submitting empty ADO required fields shows validation errors (AC-110)', async ({ page }) => {
@@ -143,8 +143,8 @@ test.describe('Project Settings — Integration Tab', () => {
     await page.getByRole('option', { name: /api token \+ email/i }).click();
 
     // AC-112: Email and API Token fields both visible
-    await expect(page.getByLabel(/email address/i)).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByLabel(/^api token$/i)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /email address/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('textbox', { name: /^api token$/i })).toBeVisible();
   });
 
   test('selecting PAT for Jira hides Email field (AC-113)', async ({ page }) => {
@@ -162,8 +162,10 @@ test.describe('Project Settings — Integration Tab', () => {
     await page.getByRole('option', { name: /personal access token/i }).click();
 
     // AC-113: PAT field visible, Email field hidden
-    await expect(page.getByLabel(/personal access token/i)).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByLabel(/email address/i)).not.toBeVisible();
+    // Use getByRole to avoid strict-mode collision with the "Auth Method" combobox
+    // which also has "Personal Access Token (PAT)" as its displayed value.
+    await expect(page.getByRole('textbox', { name: /^personal access token$/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole('textbox', { name: /email address/i })).not.toBeVisible();
   });
 
   test('submitting empty Jira required fields shows validation errors (AC-114)', async ({ page }) => {

@@ -104,6 +104,28 @@ describe('PersonalInfoSection', () => {
     await waitFor(() => expect(onSaveSuccess).toHaveBeenCalledTimes(1));
   });
 
+  it('shows validation error and does not call API when first name is empty', async () => {
+    render(
+      <PersonalInfoSection user={{ ...mockUser, firstName: '' }} onSaveSuccess={jest.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(await screen.findByText(/first name is required/i)).toBeInTheDocument();
+    expect(mockAccountService.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('clears first name validation error when user starts typing', async () => {
+    render(
+      <PersonalInfoSection user={{ ...mockUser, firstName: '' }} onSaveSuccess={jest.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+    expect(await screen.findByText(/first name is required/i)).toBeInTheDocument();
+
+    await userEvent.type(screen.getByRole('textbox', { name: /first name/i }), 'A');
+    expect(screen.queryByText(/first name is required/i)).not.toBeInTheDocument();
+  });
+
   it('shows error banner when save request fails', async () => {
     mockAccountService.updateProfile.mockRejectedValue(new Error('Network error'));
 

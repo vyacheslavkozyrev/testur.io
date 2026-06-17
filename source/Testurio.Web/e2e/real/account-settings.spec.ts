@@ -72,12 +72,16 @@ test.describe('Account Settings — Display Name', () => {
     await page.waitForResponse((res) => res.url().includes('/v1/account/profile') && res.status() === 200);
   });
 
-  test.skip('empty Display Name shows validation error (AC-173)', () => {
-    // PersonalInfoSection does not implement client-side validation for empty
-    // firstName/lastName — there is no "required" check or error message rendered.
-    // The "Display Name" field referenced in the spec does not exist in the implementation;
-    // the app uses separate "First Name" + "Last Name" fields with no empty-check validation.
-    // This test cannot pass against the real UI without adding that validation to the app.
+  test('empty First Name shows validation error (AC-173)', async ({ page }) => {
+    await page.goto('/settings', { waitUntil: 'load' });
+
+    const firstNameField = page.getByLabel(/first name/i).first();
+    await expect(firstNameField).toBeVisible({ timeout: 10_000 });
+
+    await firstNameField.clear();
+    await page.getByRole('button', { name: /^save$/i }).first().click();
+
+    await expect(page.getByText(/first name is required/i)).toBeVisible({ timeout: 5_000 });
   });
 });
 
