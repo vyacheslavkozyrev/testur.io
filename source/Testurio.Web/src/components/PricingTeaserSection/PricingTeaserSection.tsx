@@ -74,6 +74,7 @@ const getStyles = (theme: Theme) =>
       root: {
         py: { xs: theme.spacing(8), md: theme.spacing(12) },
         backgroundColor: theme.palette.background.paper,
+        overflow: 'hidden',
       },
       sectionTitle: {
         fontWeight: 700,

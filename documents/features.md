@@ -1,8 +1,8 @@
 ---
 name: Testurio — Feature List
-version: 1.9.0
+version: 1.10.0
 status: draft
-updated: 2026-05-22
+updated: 2026-06-12
 tags: [features, business, product]
 ---
 
@@ -14,7 +14,7 @@ tags: [features, business, product]
 - Features are listed in implementation order
 - v1 scope: single-user accounts, web products only, Azure DevOps and Jira integrations
 - **POC scope:** features 0001–0005; Jira integration, API testing only, commercial LLM API, hardcoded single project config — **completed**
-- **MVP scope:** features 0001–0031 (except 0019); both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
+- **MVP scope:** features 0001–0031 (except 0019) + 0043 + 0046 + 0048 + 0049; both PM tools, API + UI E2E testing, full pipeline with memory layer, full portal and billing
 - **Post-MVP scope:** features 0033–0042; additional test types (smoke, a11y, visual, performance), model tier routing, cross-project memory, training data export
 
 ---
@@ -246,6 +246,14 @@ The plan document is restructured to carry two typed enforcement sections alongs
 **[0048]: Secrets Migration to Azure Key Vault** `MVP`
 _Business Outcome: Eliminates plaintext credentials from deployment configuration, reducing the blast radius of a compromised environment and satisfying baseline security requirements for production._
 All credential-bearing values are removed from environment variables and loaded exclusively from Azure Key Vault at application startup. Affected secrets: Cosmos DB connection string, Service Bus connection string, Blob Storage connection string, Anthropic Claude API key, Stripe secret key, Stripe webhook secret, and Azure OpenAI API key. The API and Worker services authenticate to Key Vault using Azure Managed Identity — no bootstrap secret is required. Non-sensitive configuration (database names, queue names, container names, model IDs, public URLs, Stripe price IDs) remains in standard app settings. Local development continues to use `.env` / .NET user secrets, which are never committed. The `.env.example` file is updated to document which values are Key Vault-backed in production.
+
+---
+
+## MVP — Quality Assurance
+
+**[0049]: Real-Life E2E Test Suite for the Web Portal** `MVP`
+_Business Outcome: Provides high-confidence regression coverage of the authenticated portal by running against a real backend with a real test user, catching breakages that mocked tests cannot._
+The E2E suite runs against a live environment (URL supplied via `BASE_URL` env var). Authentication is handled by a single `auth.setup.ts` fixture that signs in through the Azure AD B2C hosted UI and persists the browser session via Playwright `storageState`; all tests reuse this session without re-authenticating. A `global-setup.ts` script runs once per suite and provisions a deterministic seed — a test project with known name and configuration — via the real API, so per-test assertions are predictable. Tests make real HTTP calls and assert on real response data; `page.route()` mocking is not used. Credentials (`TEST_USER_EMAIL`, `TEST_USER_PASSWORD`) and `BASE_URL` are injected via environment variables and never committed. Coverage spans: sign-in and sign-out flow, project list page, project creation and settings (all tabs), per-project test history (empty state and populated state), and sidebar navigation between portal sections. The suite targets the dev environment (`https://web-dev01.testur.io/`) initially and is promoted to staging and production as those environments are provisioned.
 
 ---
 

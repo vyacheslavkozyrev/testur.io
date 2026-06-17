@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { decodeAndValidateIdToken } from '@/services/auth/tokenValidator';
 import type { AuthUser } from '@/types/layout.types';
-import { getSessionStore } from './store';
+import { persistSession, getSessionStore } from './store';
 
 /** Evicts all expired sessions from the store. Called lazily on each write. */
 function evictExpired(): void {
@@ -18,7 +18,7 @@ function createSessionResponse(user: AuthUser, exp: number, idToken: string): Ne
   const sessionId = crypto.randomUUID();
   const nowSec = Math.floor(Date.now() / 1000);
 
-  getSessionStore().set(sessionId, {
+  persistSession(sessionId, {
     userId: user.id,
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
@@ -99,6 +99,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (typeof decoded.exp === 'number') exp = decoded.exp;
     } catch { /* use default */ }
   }
+
+  // Upsert the user document in Cosmos via the backend API.
+  // Fire-and-forget with swallowed error — session is still created even if the
+  // backend is temporarily unavailable (e.g. local dev without the API running).
+  const apiBase = process.env.API_BASE_URL ?? 'http://localhost:8080';
+  fetch(`${apiBase}/v1/account/profile`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ firstName, lastName }),
+  }).catch(() => { /* non-fatal */ });
 
   return createSessionResponse(user, exp, idToken);
 }

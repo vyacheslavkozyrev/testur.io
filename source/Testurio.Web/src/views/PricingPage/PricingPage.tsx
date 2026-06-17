@@ -128,6 +128,7 @@ const getStyles = (theme: Theme) =>
     () => ({
       root: {
         py: { xs: theme.spacing(6), md: theme.spacing(10) },
+        overflow: 'hidden',
       },
       title: {
         fontWeight: 800,

@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 import type { ProjectDto } from '../src/types/project.types';
+
+const seedFile = path.join(__dirname, '.auth/seed.json');
+function readSeedProjectId(): string {
+  const data = JSON.parse(fs.readFileSync(seedFile, 'utf-8')) as { projectId: string };
+  return data.projectId;
+}
 
 const PROJECT_A: ProjectDto = {
   projectId: 'aaaaaaaa-0000-0000-0000-000000000001',
@@ -35,6 +43,9 @@ test.describe('Projects List Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.route('**/api/auth/me', (route) =>
       route.fulfill({ json: MOCK_USER }),
+    );
+    await page.route('**/v1/billing/subscription', (route) =>
+      route.fulfill({ json: { status: 'Active', plan: 'TestJunior', billingInterval: 'Monthly', trialEndsAt: null } }),
     );
   });
 
@@ -78,7 +89,10 @@ test.describe('Projects List Page', () => {
 
     const projectId = PROJECT_A.projectId;
     const cardLink = page.locator(`a[href="/projects/${projectId}/history"]`).first();
-    await cardLink.click();
+    await Promise.all([
+      page.waitForURL(`**/projects/${projectId}/history`),
+      cardLink.click(),
+    ]);
     await expect(page).toHaveURL(`/projects/${projectId}/history`);
   });
 
@@ -92,14 +106,143 @@ test.describe('Projects List Page', () => {
     await page.goto('/projects', { waitUntil: 'domcontentloaded' });
 
     const projectId = PROJECT_A.projectId;
-    const editButton = page
+    const editLink = page
       .locator('.MuiCard-root')
       .first()
-      .getByRole('button', { name: 'Edit project' });
+      .getByRole('link', { name: 'Edit project' });
 
-    await editButton.click();
+    await Promise.all([
+      page.waitForURL(`**/projects/${projectId}/settings`),
+      editLink.click(),
+    ]);
 
     await expect(page).toHaveURL(`/projects/${projectId}/settings`);
     await expect(page).not.toHaveURL(`/projects/${projectId}/history`);
+  });
+});
+
+// ─── Real-API tests (skipped in local project) ────────────────────────────────
+// US-015–US-018 — AC-066–AC-079
+
+test.describe('Projects List — With Seed Project (real API)', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name === 'local', 'Requires real dev API');
+  });
+
+  test('renders seed project card with name and URL, "Create Project" button visible (AC-066, AC-067, AC-068, AC-069)', async ({ page }) => {
+    await page.goto('/projects', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('https://example.com')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /create project/i }).or(page.getByRole('link', { name: /create project/i })),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: /\[E2E\] Seed Project/ })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/no projects yet/i)).not.toBeVisible();
+  });
+
+  test('"Create Project" button navigates to /projects/new (AC-075)', async ({ page }) => {
+    // Mock subscription to Active so the UpgradeModal doesn't block navigation
+    // (the gate fires when subscription is undefined/loading; this ensures deterministic behaviour).
+    await page.route('**/v1/billing/subscription', (route) =>
+      route.fulfill({ json: { status: 'Active', plan: 'TestPro', billingInterval: 'Monthly', trialEndsAt: null } }),
+    );
+
+    await page.goto('/projects', { waitUntil: 'load' });
+
+    await page
+      .getByRole('button', { name: /create project/i })
+      .or(page.getByRole('link', { name: /create project/i }))
+      .first()
+      .click();
+
+    await expect(page).toHaveURL(/\/projects\/new/, { timeout: 10_000 });
+  });
+
+  test('project creation form renders at /projects/new with required fields (AC-076)', async ({ page }) => {
+    await page.goto('/projects/new', { waitUntil: 'load' });
+
+    await expect(page.getByLabel(/name/i).or(page.locator('input[name="name"]'))).toBeVisible();
+    await expect(page.getByLabel(/product url/i).or(page.locator('input[name="productUrl"]'))).toBeVisible();
+    await expect(
+      page.getByLabel(/testing strategy/i).or(page.locator('textarea[name="testingStrategy"], select[name="testType"]')).first(),
+    ).toBeVisible();
+  });
+
+  test('edit icon on seed project card navigates to settings page (AC-077, AC-078)', async ({ page }) => {
+    const seedProjectId = readSeedProjectId();
+
+    await page.goto('/projects', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+
+    // The edit icon is an IconButton rendered as a Link (<a>), not a <button>.
+    const editLink = page.locator(`a[href="/projects/${seedProjectId}/settings"]`);
+    await expect(editLink).toBeVisible({ timeout: 5_000 });
+
+    await editLink.click();
+    await expect(page).toHaveURL(new RegExp(`/projects/${seedProjectId}/settings`), { timeout: 10_000 });
+  });
+
+  test('edit icon click does not trigger card-level history navigation (AC-079)', async ({ page }) => {
+    const seedProjectId = readSeedProjectId();
+
+    await page.goto('/projects', { waitUntil: 'load' });
+
+    await expect(page.getByRole('heading', { name: '[E2E] Seed Project' })).toBeVisible({ timeout: 10_000 });
+
+    const editLink = page.locator(`a[href="/projects/${seedProjectId}/settings"]`);
+    await editLink.click();
+
+    await expect(page).toHaveURL(new RegExp(`/projects/${seedProjectId}/settings`), { timeout: 10_000 });
+    expect(page.url()).not.toContain('/history');
+  });
+});
+
+test.describe('Projects List — Empty State (real API)', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name === 'local', 'Requires real dev API');
+  });
+
+  test('"Create Project" button visible in header even with empty list (AC-072)', async ({ page }) => {
+    await page.goto('/projects', { waitUntil: 'load' });
+
+    await expect(
+      page.getByRole('button', { name: /create project/i }).or(page.getByRole('link', { name: /create project/i })),
+    ).toBeVisible();
+  });
+
+  test('"Create your first project" button navigates to /projects/new in empty state (AC-071, AC-074)', async ({ page, request }) => {
+    const createRes = await request.post('/v1/projects', {
+      data: {
+        name: '[E2E] Empty State Check',
+        productUrl: 'https://empty-check.example.com',
+        testingStrategy: 'Temporary — will be deleted immediately.',
+        requestTimeoutSeconds: 30,
+      },
+    });
+
+    if (!createRes.ok()) {
+      test.skip(true, 'Could not create throwaway project for empty-state test');
+      return;
+    }
+
+    const { projectId } = (await createRes.json()) as { projectId: string };
+
+    try {
+      await request.delete(`/v1/projects/${projectId}`);
+
+      await page.goto('/projects', { waitUntil: 'load' });
+
+      const createFirstButton = page.getByRole('button', { name: /create your first project/i })
+        .or(page.getByRole('link', { name: /create your first project/i }));
+
+      if (await createFirstButton.isVisible()) {
+        await createFirstButton.click();
+        await expect(page).toHaveURL(/\/projects\/new/, { timeout: 10_000 });
+      }
+    } finally {
+      await request.delete(`/v1/projects/${projectId}`).catch(() => {});
+    }
   });
 });

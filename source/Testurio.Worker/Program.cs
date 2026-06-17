@@ -34,7 +34,7 @@ builder.Services.AddWorkerServices();
 // ISecretResolver handles project-level credential secrets (Basic Auth, header tokens).
 // In production it delegates to the already-registered IKeyVaultSecretLoader so we reuse
 // the same SecretClient and retry logic rather than constructing a second one independently.
-if (builder.Environment.IsTest())
+if (builder.Environment.IsTest() || builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<ISecretResolver, PassthroughSecretResolver>();
 }

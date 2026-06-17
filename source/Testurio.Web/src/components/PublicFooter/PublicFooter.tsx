@@ -61,6 +61,7 @@ const getStyles = (theme: Theme) =>
       root: {
         mt: 'auto',
         backgroundColor: '#ffffff',
+        overflow: 'hidden',
       },
       inner: {
         maxWidth: 1200,
@@ -74,6 +75,8 @@ const getStyles = (theme: Theme) =>
         [theme.breakpoints.down('sm')]: {
           flexDirection: 'column',
           alignItems: 'flex-start',
+          px: theme.spacing(2),
+          gap: theme.spacing(2),
         },
       },
       logoLink: {

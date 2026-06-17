@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import Alert from '@mui/material/Alert';
@@ -12,7 +12,9 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
 import { useTheme, type Theme } from '@mui/material/styles';
 import ProjectListCard from '@/components/ProjectListCard/ProjectListCard';
+import UpgradeModal from '@/components/UpgradeModal/UpgradeModal';
 import { useProjects } from '@/hooks/useProject';
+import { useSubscriptionStatus } from '@/hooks/useBilling';
 import { NEW_PROJECT_ROUTE } from '@/routes/routes';
 
 const SKELETON_COUNT = 6;
@@ -24,14 +26,25 @@ export default function ProjectsPage() {
   const styles = getStyles(theme);
 
   const { data: projects, isPending, isError, refetch } = useProjects();
+  const { data: subscription } = useSubscriptionStatus();
+
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 
   const handleCreateProject = useCallback(() => {
+    if (subscription?.status === 'None') {
+      setUpgradeModalOpen(true);
+      return;
+    }
     router.push(NEW_PROJECT_ROUTE);
-  }, [router]);
+  }, [router, subscription]);
 
   const handleRetry = useCallback(() => {
     void refetch();
   }, [refetch]);
+
+  const handleUpgradeModalClose = useCallback(() => {
+    setUpgradeModalOpen(false);
+  }, []);
 
   const content = useMemo(() => {
     if (isPending) {
@@ -101,6 +114,8 @@ export default function ProjectsPage() {
       </Box>
 
       {content}
+
+      <UpgradeModal open={upgradeModalOpen} onClose={handleUpgradeModalClose} />
     </Box>
   );
 }

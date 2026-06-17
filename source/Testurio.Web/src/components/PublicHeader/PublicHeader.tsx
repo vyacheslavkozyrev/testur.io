@@ -31,9 +31,9 @@ export default function PublicHeader() {
   const { t } = useTranslation('landing');
   const theme = useTheme();
   const pathname = usePathname();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const user = useAuthUser();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const styles = getStyles(theme);
 
   const handleOpenDrawer = useCallback(() => setDrawerOpen(true), []);
@@ -55,22 +55,20 @@ export default function PublicHeader() {
             </Typography>
           </Box>
 
-          {/* Desktop nav links — centre */}
-          {!isMobile && (
-            <Box sx={styles.navLinks}>
-              {NAV_LINKS.map(({ labelKey, href }) => (
-                <Box
-                  key={href}
-                  component={Link}
-                  href={href}
-                  sx={isActive(href) ? styles.navLinkActive : styles.navLink}
-                  aria-current={isActive(href) ? 'page' : undefined}
-                >
-                  {t(labelKey)}
-                </Box>
-              ))}
-            </Box>
-          )}
+          {/* Desktop nav links — hidden on mobile via CSS */}
+          <Box sx={styles.navLinks}>
+            {NAV_LINKS.map(({ labelKey, href }) => (
+              <Box
+                key={href}
+                component={Link}
+                href={href}
+                sx={isActive(href) ? styles.navLinkActive : styles.navLink}
+                aria-current={isActive(href) ? 'page' : undefined}
+              >
+                {t(labelKey)}
+              </Box>
+            ))}
+          </Box>
 
           {/* Spacer */}
           <Box sx={{ flex: 1 }} />
@@ -88,11 +86,10 @@ export default function PublicHeader() {
             </Button>
           ) : (
             <Box sx={styles.authActions}>
-              {!isMobile && (
-                <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
-                  {t('publicHeader.action.signIn')}
-                </Box>
-              )}
+              {/* Sign In — hidden on mobile via CSS */}
+              <Box component={Link} href={SIGN_IN_ROUTE} sx={styles.signInLink}>
+                {t('publicHeader.action.signIn')}
+              </Box>
               <Button
                 component={Link}
                 href={SIGN_UP_ROUTE}
@@ -105,7 +102,7 @@ export default function PublicHeader() {
             </Box>
           )}
 
-          {/* Hamburger — mobile only */}
+          {/* Hamburger — only rendered on mobile */}
           {isMobile && (
             <IconButton
               edge="end"
@@ -175,7 +172,7 @@ const getStyles = (theme: Theme) =>
         color: theme.palette.primary.main,
       },
       navLinks: {
-        display: 'flex',
+        display: { xs: 'none', md: 'flex' },
         gap: theme.spacing(3),
         ml: theme.spacing(4),
       },
@@ -199,6 +196,7 @@ const getStyles = (theme: Theme) =>
         gap: theme.spacing(2),
       },
       signInLink: {
+        display: { xs: 'none', md: 'block' },
         textDecoration: 'none',
         color: theme.palette.text.secondary,
         fontWeight: 500,
@@ -210,6 +208,7 @@ const getStyles = (theme: Theme) =>
         minHeight: 44,
       },
       hamburger: {
+        display: { xs: 'flex', md: 'none' },
         ml: theme.spacing(1),
         color: theme.palette.text.primary,
       },

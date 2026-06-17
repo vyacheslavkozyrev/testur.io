@@ -226,7 +226,7 @@ export const authService = {
     const signUpResult = await client.signUp({
       username: email,
       password,
-      attributes: { givenName: firstName, surname: lastName },
+      attributes: { givenName: firstName, surname: lastName, displayName: `${firstName} ${lastName}` },
     }) as unknown as MsalResult;
 
     if (signUpResult.isFailed()) {
