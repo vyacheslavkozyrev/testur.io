@@ -17,6 +17,7 @@ import Typography from '@mui/material/Typography';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import { useTheme, type Theme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTranslation } from 'react-i18next';
 import { DASHBOARD_ROUTE, SIGN_IN_ROUTE, SIGN_UP_ROUTE } from '@/routes/routes';
 import { useAuthUser } from '@/hooks/useAuthUser';
@@ -32,6 +33,7 @@ export default function PublicHeader() {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const user = useAuthUser();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const styles = getStyles(theme);
 
   const handleOpenDrawer = useCallback(() => setDrawerOpen(true), []);
@@ -100,15 +102,17 @@ export default function PublicHeader() {
             </Box>
           )}
 
-          {/* Hamburger — hidden on desktop via CSS */}
-          <IconButton
-            edge="end"
-            aria-label={t('publicHeader.action.openMenu')}
-            onClick={handleOpenDrawer}
-            sx={styles.hamburger}
-          >
-            <MenuIcon />
-          </IconButton>
+          {/* Hamburger — only rendered on mobile */}
+          {isMobile && (
+            <IconButton
+              edge="end"
+              aria-label={t('publicHeader.action.openMenu')}
+              onClick={handleOpenDrawer}
+              sx={styles.hamburger}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
         </Toolbar>
       </AppBar>
 
